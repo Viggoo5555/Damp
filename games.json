@@ -12,5 +12,12 @@
     "file": "Starclicker.html",
     "category": "Clicker",
     "image": "starclicker.png"
+  },
+  {
+    "title": "Verity Clicker",
+    "description": "Click On Verity",
+    "file": "verity-clicker.html",
+    "category": "Clicker",
+    "image": "verity-clicker.png"
   }
 ]

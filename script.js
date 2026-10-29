@@ -15,6 +15,13 @@ const games = [
     category: "Arcade", 
     image: "flappy.png" // <-- Add this line here
   },
+  { 
+    title: "Star Clicker", 
+    description: "Void.", 
+    file: "Starclicker.html", 
+    category: "Arcade", 
+    image: "flappy.png" // <-- Add this line here
+  },
 ];
 
 // ---------------------------------------------------------------

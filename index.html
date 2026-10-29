@@ -8,27 +8,32 @@
 </head>
 <body>
 
-  <header class="wrap top">
-    <a class="logo" href="#">Skals Site</a>
-    <nav>
-      <a href="#games">Games</a>
-      <a href="#extensions">Extensions</a>
-    </nav>
+  <header class="top">
+    <div class="wrap bar">
+      <a class="logo" href="#games">Skals Site</a>
+      <nav class="tabs">
+        <a id="tab-games" href="#games">Games</a>
+        <a id="tab-extensions" href="#extensions">Extensions</a>
+      </nav>
+    </div>
   </header>
 
   <main class="wrap">
-    <section class="intro">
-      <h1>Play games. Download extensions.</h1>
-      <p>Every game runs right here in your browser. Extensions are free Chrome add-ons you can install in a minute.</p>
-    </section>
 
-    <section id="games">
-      <h2>Games</h2>
+    <section id="view-games">
+      <div id="toolbar" class="toolbar">
+        <input id="search" type="search" placeholder="Search games" aria-label="Search games" autocomplete="off">
+        <button id="random" type="button">Random game</button>
+      </div>
+      <div id="chips" class="chips" role="group" aria-label="Categories"></div>
+      <p id="count" class="count" aria-live="polite"></p>
       <div id="games-grid" class="grid"></div>
+      <p id="empty" class="empty" hidden></p>
     </section>
 
-    <section id="extensions">
-      <h2>Extensions</h2>
+    <section id="view-extensions" hidden>
+      <h1>Extensions</h1>
+      <p class="lead">Free Chrome extensions. Download, unzip and add them in a minute.</p>
       <div id="extensions-list" class="list"></div>
 
       <details class="install">
@@ -41,11 +46,8 @@
         </ol>
       </details>
     </section>
-  </main>
 
-  <footer class="wrap">
-    <p>Skals Site</p>
-  </footer>
+  </main>
 
   <div id="player" class="player" hidden>
     <div class="player-bar">

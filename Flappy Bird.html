@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Flappy Bird</title>
+
+<!-- Google AdSense Global Script -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6851662024546666" crossorigin="anonymous"></script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
@@ -11,7 +15,11 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10262c}}
 :root[data-theme="dark"]{--bg:#10262c}
 html,body{height:100%;margin:0}
-body{background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;font-family:'Press Start 2P',ui-monospace,monospace}
+body{background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;font-family:'Press Start 2P',ui-monospace,monospace}
+
+/* Ad Container Styling */
+.ad-banner{width:100%;max-width:288px;text-align:center;margin-bottom:4px;z-index:10;}
+
 #stage{position:relative;--s:1;touch-action:none;cursor:pointer}
 canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
 .ui{position:absolute;inset:0;pointer-events:none}
@@ -51,7 +59,6 @@ h2{font-size:calc(var(--s)*22px);color:var(--hd,#ffa72b)}
 #stage[data-w="4"]{--ink:#1c3a52;--hd:#fff;--b1:#2a8ac0;--b2:#d8f4ff;--b3:#14507a;--b4:#3ab0c8;--panel:#dff0f8;--ct:#1c3a52}
 #stage[data-w="5"]{--ink:#06243a;--hd:#bff3ff;--b1:#1a8aa8;--b2:#a0ecff;--b3:#0a4560;--b4:#e85a7a;--panel:#0f4a6a;--ct:#d8f6ff}
 #stage[data-w="6"]{--ink:#0a0a20;--hd:#d6c8ff;--b1:#5a3ac0;--b2:#c8baff;--b3:#241660;--b4:#2fa8d8;--panel:#1a1a40;--ct:#dcd8ff}
-/* world themes for all text and buttons */
 #stage[data-w="1"]{--ink:#0a1233;--hd:#a9d4ff;--b1:#2a4fa8;--b2:#9fc4ff;--b3:#0e2058;--b4:#2fa88a;--panel:#1c2a5a;--ct:#dce8ff}
 #stage[data-w="2"]{--ink:#2a0508;--hd:#ffb02e;--b1:#b3200f;--b2:#ffb02e;--b3:#4a0a06;--b4:#e8741a;--panel:#2a0c14;--ct:#ffd9a0}
 #stage[data-w="1"] :is(h1,h2,p,.sub){text-shadow:0 0 calc(var(--s)*10px) rgba(120,170,255,.6)}
@@ -61,6 +68,21 @@ h2{font-size:calc(var(--s)*22px);color:var(--hd,#ffa72b)}
 </style>
 </head>
 <body>
+
+<!-- Optional Top Ad Banner Space -->
+<div class="ad-banner">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6851662024546666" crossorigin="anonymous"></script>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-6851662024546666"
+         data-ad-slot="auto"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+</div>
+
 <main id="stage">
 <canvas id="c" role="img" aria-label="Flappy Bird game"></canvas>
 <div class="ui">
@@ -173,7 +195,6 @@ function update(dt){
 const CITY=[30,44,26,52,36,28,48,34,40,24,46,32];
 function blob(x,y,r,c){cx.fillStyle=c;cx.beginPath();cx.arc(x,y,r,0,7);cx.fill();}
 function tile(k,fn){const o=-((scroll*k)%W);fn(o);fn(o+W);}
-// Pixel-art bird (17x12 sprite at 2x = 34x24, like the original), 3 wing frames
 const SPR=["......KKKKKK.....","....KKYYYYKWK....","...KYYYYYKWWWK...",".KKKKKYYYKWWKWK..","KWWWWWKYYKWWKWK..","KWWWWWKKYYKWWWK..","KYWWWWYKYYYKKKKK.",".KYYYYKYYYKRRRRRK","..KKKKYYYKRKKKKKK",".....KYYYYKRRRRKK","......KKYYYKKKKK.","........KKK......"];
 function mk(PAL){return [-1,0,1].map(o=>{
   const c=document.createElement('canvas');c.width=34;c.height=24;const g=c.getContext('2d');
@@ -190,7 +211,6 @@ function drawBird(){
   cx.restore();
   if(shield>0&&state!=='over'){cx.strokeStyle='rgba(120,220,255,'+(.6+.3*Math.sin(time*6))+')';cx.lineWidth=2;cx.beginPath();cx.arc(BX,bird.y,21,0,7);cx.stroke();}
 }
-/* ---------- shop: skins, pipes, worlds ---------- */
 const K0='#000';
 const BIRDS=[
 {n:'Classic',c:0,d:'No special ability',pal:{K:K0,Y:'#ffeb2f',W:'#fff',R:'#ff5a1e'}},
@@ -251,11 +271,9 @@ function renderShop(){
   });
 }
 
-/* ---------- themed drawing ---------- */
 function drawBg(){
   if(T.lava){lavaBg();return;}
-  if(T.lava){const g=cx.createLinearGradient(0,0,0,GY);g.addColorStop(0,'#0c0303');g.addColorStop(1,'#4a1208');cx.fillStyle=g;}
-  else if(T.sky2){const g=cx.createLinearGradient(0,0,0,GY);g.addColorStop(0,T.sky);g.addColorStop(1,T.sky2);cx.fillStyle=g;}else cx.fillStyle=T.sky;
+  if(T.sky2){const g=cx.createLinearGradient(0,0,0,GY);g.addColorStop(0,T.sky);g.addColorStop(1,T.sky2);cx.fillStyle=g;}else cx.fillStyle=T.sky;
   cx.fillRect(0,0,W,H);
   if(T.stars){
     for(let i=0;i<40;i++){cx.fillStyle=Math.sin(time*2+i)>.5?'#fff':'#9fb2e0';cx.fillRect((i*73)%W,(i*131)%300,2,2);}
@@ -271,12 +289,10 @@ function drawBg(){
     const x=o+i*24;
     if(T.tri){cx.fillStyle=T.ci;cx.beginPath();cx.moveTo(x,GY-10);cx.lineTo(x+12,GY-18-CITY[i]*1.2*T.tri);cx.lineTo(x+24,GY-10);cx.fill();}
     else{const h=CITY[i]*.6+34,y=GY-h;cx.fillStyle=T.ci;cx.fillRect(x+3,y,16,h);cx.fillStyle=T.win;for(let j=y+4;j<GY-14;j+=7){if((i*7+j)%3){cx.fillRect(x+6,j,3,3);cx.fillRect(x+13,j,3,3);}}}
-  }});
+  }]);
   tile(.6,o=>{for(let i=0;i<13;i++)blob(o+i*24,GY-12+(i%2)*3,16,T.bu);cx.fillStyle=T.bu;cx.fillRect(o,GY-10,W+1,12);});
   if(T.fx)extras();
 }
-/* ---- lava cave: rolling rock ceiling and floor, dripping stalactites, lava falls ---- */
-/* ---- lava cave: flat-shaded volcanic style (crags, lava falls, glowing lake) ---- */
 const hs=n=>(((n*2654435761)>>>0)%1000)/1000;
 let VIG;
 function ridge(k,col,base,amp,sp){
@@ -367,7 +383,6 @@ function pipeBody(x,y,w,h,P){
   const g=cx.createLinearGradient(x,0,x+w,0);P.st.forEach((c,i)=>g.addColorStop(AT[i],c));
   cx.fillStyle=g;cx.fillRect(x,y,w,h);
   if(P.m){
-    // volcanic rock: lit and shaded facets, strata, glowing cracks
     cx.save();cx.beginPath();cx.rect(x+2,y+2,w-4,h-4);cx.clip();
     cx.fillStyle='rgba(255,150,120,.14)';cx.fillRect(x+3,y,5,h);
     cx.fillStyle='rgba(0,0,0,.3)';cx.fillRect(x+w-10,y,7,h);
@@ -447,7 +462,6 @@ function draw(){
   if(flash>0){cx.fillStyle=`rgba(255,255,255,${flash*.85})`;cx.fillRect(-10,-10,W+20,H+20);}
 }
 
-/* ---------- loop ---------- */
 let last=0,acc=0;
 function frame(t){
   requestAnimationFrame(frame);
@@ -456,7 +470,6 @@ function frame(t){
   draw();
 }
 
-/* ---------- input (bound once) ---------- */
 stage.addEventListener('pointerdown',e=>{if(e.target.closest('button,#shop'))return;e.preventDefault();press();});
 addEventListener('keydown',e=>{
   if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();if(!e.repeat)press();}

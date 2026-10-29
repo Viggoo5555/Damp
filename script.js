@@ -20,7 +20,7 @@ const games = [
     description: "Void.", 
     file: "Starclicker.html", 
     category: "Arcade", 
-    image: "flappy.png" // <-- Add this line here
+    image: "starclicker.png" // <-- Add this line here
   },
 ];
 

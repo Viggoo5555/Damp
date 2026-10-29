@@ -30,6 +30,8 @@ let loadFailed = false;
 let category = "All";
 let admin = sessionStorage.getItem("damp-admin") === "1";
 let editing = null;
+let playing = "";
+const RECENT = "Recently played";
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -99,12 +101,21 @@ function makeCard(game) {
 
 function showGames() {
   const query = search.value.trim().toLowerCase();
+  const recentIds = recentGames();
 
   const list = games.filter(function (game) {
-    const inCategory = category === "All" || game.category === category;
+    const inCategory = category === "All" || (category === RECENT ? recentIds.includes(slug(game)) : game.category === category);
     const words = (game.title + " " + (game.description || "") + " " + (game.category || "")).toLowerCase();
     return inCategory && words.includes(query);
   });
+
+  if (category === RECENT) {
+    list.sort(function (a, b) { return recentIds.indexOf(slug(a)) - recentIds.indexOf(slug(b)); });
+  } else if ($("sort").value === "newest") {
+    list.reverse();
+  } else if ($("sort").value === "az") {
+    list.sort(function (a, b) { return a.title.localeCompare(b.title); });
+  }
 
   grid.replaceChildren(...list.map(makeCard));
   $("heading").textContent = category === "All" ? "All games" : category;
@@ -120,11 +131,11 @@ function showGames() {
 
 function showChips() {
   chips.replaceChildren();
-  const list = categories();
-  if (category !== "All" && !list.includes(category)) category = "All";
-  chips.hidden = list.length < 2;
+  const names = ["All"].concat(recentGames().length ? [RECENT] : [], categories());
+  if (!names.includes(category)) category = "All";
+  chips.hidden = names.length < 3;
 
-  ["All"].concat(list).forEach(function (name) {
+  names.forEach(function (name) {
     const chip = el("button", "chip", name);
     chip.type = "button";
     chip.setAttribute("aria-pressed", name === category);
@@ -146,9 +157,58 @@ $("random").addEventListener("click", function () {
   location.hash = "play=" + slug(games[Math.floor(Math.random() * games.length)]);
 });
 
+// ----- Recently played (remembered on this device) -----
+function getRecent() {
+  try { return JSON.parse(localStorage.getItem("damp-recent")) || []; } catch (error) { return []; }
+}
+
+function recentGames() {
+  return getRecent().filter(function (id) { return games.some(function (g) { return slug(g) === id; }); });
+}
+
+function addRecent(game) {
+  const id = slug(game);
+  const list = getRecent().filter(function (other) { return other !== id; });
+  list.unshift(id);
+  try { localStorage.setItem("damp-recent", JSON.stringify(list.slice(0, 12))); } catch (error) { /* storage off */ }
+}
+
+// ----- Sorting -----
+$("sort").addEventListener("change", function () {
+  try { localStorage.setItem("damp-sort", $("sort").value); } catch (error) { /* storage off */ }
+  showGames();
+});
+
+// ----- Loading screen (only appears if the game is slow) -----
+let slowTimer, hintTimer;
+
+function startLoading() {
+  stopLoading();
+  slowTimer = setTimeout(function () {
+    $("loading-text").textContent = "Loading game...";
+    $("loading").hidden = false;
+  }, 700);
+  hintTimer = setTimeout(function () {
+    $("loading-text").textContent = "Still loading. If it stays stuck, try Open in new tab at the top.";
+  }, 10000);
+}
+
+function stopLoading() {
+  clearTimeout(slowTimer);
+  clearTimeout(hintTimer);
+  $("loading").hidden = true;
+}
+
+frame.addEventListener("load", stopLoading);
+
 // ----- Game player -----
 function openPlayer(game) {
-  if (player.hidden) frame.src = encodeURI(game.file);
+  if (playing !== slug(game)) {
+    playing = slug(game);
+    frame.src = encodeURI(game.file);
+    startLoading();
+    addRecent(game);
+  }
   $("player-title").textContent = game.title;
   $("player-newtab").href = encodeURI(game.file);
   player.hidden = false;
@@ -159,11 +219,26 @@ function closePlayer() {
   if (player.hidden) return;
   if (document.fullscreenElement) document.exitFullscreen();
   frame.src = "about:blank";
+  playing = "";
+  stopLoading();
   player.hidden = true;
   document.body.classList.remove("locked");
+  showChips();
+  showGames();
 }
 
 $("player-close").addEventListener("click", function () { location.hash = ""; });
+
+$("player-share").addEventListener("click", function () {
+  const button = $("player-share");
+  function copied() {
+    button.textContent = "Link copied";
+    setTimeout(function () { button.textContent = "Copy link"; }, 2000);
+  }
+  function ask() { prompt("Copy this link:", location.href); }
+  if (navigator.clipboard) navigator.clipboard.writeText(location.href).then(copied, ask);
+  else ask();
+});
 
 $("player-fullscreen").addEventListener("click", function () {
   if (frame.requestFullscreen) frame.requestFullscreen();
@@ -501,6 +576,9 @@ async function start() {
   } catch (error) {
     loadFailed = true;
   }
+  let savedSort = "default";
+  try { savedSort = localStorage.getItem("damp-sort") || "default"; } catch (error) { /* storage off */ }
+  $("sort").value = ["default", "newest", "az"].includes(savedSort) ? savedSort : "default";
   syncAdmin();
   showChips();
   showGames();

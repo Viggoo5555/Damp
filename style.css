@@ -446,3 +446,50 @@ label input:focus, .inline input:focus { outline: none; border-color: var(--acce
 
 #remove:hover { background: rgba(255, 143, 154, 0.12); }
 #remove:disabled { opacity: 0.5; cursor: wait; }
+
+/* Sort, loading screen */
+#sort {
+  margin-left: auto;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.stage { position: relative; flex: 1; min-height: 0; }
+#player-frame { display: block; flex: none; height: 100%; }
+
+.loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--muted);
+  text-align: center;
+  pointer-events: none;
+}
+
+.spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 3s; }
+}

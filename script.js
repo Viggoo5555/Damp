@@ -294,6 +294,7 @@ function openEditor(game) {
   editing = game || null;
   $("editor-title").textContent = game ? "Edit game" : "Add a game";
   $("save").textContent = game ? "Save changes" : "Add game";
+  $("remove").hidden = !game;
   $("f-title").value = game ? game.title : "";
   $("f-category").value = game && game.category ? game.category : "";
   $("f-desc").value = game && game.description ? game.description : "";
@@ -371,6 +372,58 @@ async function upload(path, base64, message) {
   });
   if (!res.ok) throw new Error(await problem(res));
 }
+
+async function removeFile(path, message) {
+  const old = await currentFile(path);
+  if (!old) return;
+  const res = await fetch(endpoint(path), {
+    method: "DELETE",
+    headers: Object.assign({ "Content-Type": "application/json" }, authHeaders()),
+    body: JSON.stringify({ message: message, sha: old.sha })
+  });
+  if (!res.ok) throw new Error(await problem(res));
+}
+
+$("remove").addEventListener("click", async function () {
+  if (!editing) return;
+  conn = { repo: $("f-repo").value.trim(), token: $("f-token").value.trim() };
+  if (!conn.repo || !conn.token) {
+    $("conn").open = true;
+    return say("Add the repository and the token first.", true);
+  }
+  if (!confirm('Remove "' + editing.title + '"? Its files are deleted from GitHub too.')) return;
+
+  const gone = editing;
+  $("save").disabled = true;
+  $("remove").disabled = true;
+  try {
+    say("Updating the games list...");
+    const listFile = await currentFile("games.json");
+    const list = (listFile ? JSON.parse(base64ToText(listFile.content)) : games.slice())
+      .filter(function (g) { return g.file !== gone.file; });
+    await upload("games.json", textToBase64(JSON.stringify(list, null, 2) + "\n"), "Remove game: " + gone.title);
+    games = list;
+    showChips();
+    showGames();
+
+    // Delete the game's own files, but never the site's files or a picture another game still uses
+    const keep = ["index.html", "404.html", "style.css", "script.js", "games.json"];
+    const paths = [gone.file, gone.image].filter(function (path) {
+      return path && !path.includes("..") && !keep.includes(path.toLowerCase()) &&
+        !list.some(function (g) { return g.file === path || g.image === path; });
+    });
+    for (const path of paths) {
+      say("Deleting " + path + "...");
+      await removeFile(path, "Delete " + path);
+    }
+    editing = null;
+    editor.close();
+  } catch (error) {
+    say(error.message, true);
+  }
+  $("save").disabled = false;
+  $("remove").disabled = false;
+});
 
 $("editor-form").addEventListener("submit", async function (event) {
   event.preventDefault();

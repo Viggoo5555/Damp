@@ -431,3 +431,18 @@ label input:focus, .inline input:focus { outline: none; border-color: var(--acce
 .note { margin-top: 8px; color: var(--muted); font-size: 0.85rem; }
 .note.bad { color: #ff8f9a; }
 #editor-form .button { margin-top: 12px; }
+
+#remove {
+  margin: 12px 0 0 8px;
+  padding: 8px 18px;
+  border: 1px solid #ff8f9a;
+  border-radius: 10px;
+  background: transparent;
+  color: #ff8f9a;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#remove:hover { background: rgba(255, 143, 154, 0.12); }
+#remove:disabled { opacity: 0.5; cursor: wait; }

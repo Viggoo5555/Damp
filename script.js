@@ -22,6 +22,13 @@ const games = [
     category: "Arcade", 
     image: "starclicker.png" // <-- Add this line here
   },
+    { 
+    title: "Polytrack", 
+    description: "Race.", 
+    file: "Poly Track.html", 
+    category: "Arcade", 
+    image: "polytrack.png" // <-- Add this line here
+  },
 ];
 
 // ---------------------------------------------------------------

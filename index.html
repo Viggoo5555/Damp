@@ -1,67 +1,101 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8">
+
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <title>Damp</title>
-  
-  <!-- Google AdSense Global Script -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6851662024546666" crossorigin="anonymous"></script>
 
   <link rel="stylesheet" href="style.css">
+
 </head>
+
 <body>
 
+
+
   <header class="top">
+
     <div class="wrap bar">
+
       <a class="logo" href="#games">Damp</a>
+
       <nav class="tabs">
+
         <a id="tab-games" href="#games">Games</a>
+
       </nav>
+
     </div>
+
   </header>
 
-  <!-- Optional Homepage Ad Banner Space -->
-  <div style="text-align: center; margin: 15px auto; padding: 0 10px;">
-      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6851662024546666" crossorigin="anonymous"></script>
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-6851662024546666"
-           data-ad-slot="auto"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>
-           (adsbygoogle = window.adsbygoogle || []).push({});
-      </script>
-  </div>
+
 
   <main class="wrap">
 
+
+
     <section id="view-games">
+
       <div id="toolbar" class="toolbar">
+
         <input id="search" type="search" placeholder="Search games" aria-label="Search games" autocomplete="off">
+
         <button id="random" type="button">Random game</button>
+
       </div>
+
       <div id="chips" class="chips" role="group" aria-label="Categories"></div>
+
       <p id="count" class="count" aria-live="polite"></p>
+
       <div id="games-grid" class="grid"></div>
+
       <p id="empty" class="empty" hidden></p>
+
     </section>
+
+
+
+
+
+
 
   </main>
 
+
+
   <div id="player" class="player" hidden>
+
     <div class="player-bar">
+
       <span id="player-title" class="player-title"></span>
+
       <div class="player-actions">
+
         <button id="player-fullscreen" type="button">Fullscreen</button>
+
         <a id="player-newtab" href="#" target="_blank" rel="noopener">Open in new tab</a>
+
         <button id="player-close" type="button">Close</button>
+
       </div>
+
     </div>
+
     <iframe id="player-frame" title="Game" allow="fullscreen; autoplay; gamepad; clipboard-write" allowfullscreen></iframe>
+
   </div>
 
+
+
   <script src="script.js"></script>
+
 </body>
+
 </html>

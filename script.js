@@ -31,7 +31,6 @@ let category = "All";
 let admin = sessionStorage.getItem("damp-admin") === "1";
 let editing = null;
 let playing = "";
-const RECENT = "Recently played";
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -101,17 +100,14 @@ function makeCard(game) {
 
 function showGames() {
   const query = search.value.trim().toLowerCase();
-  const recentIds = recentGames();
 
   const list = games.filter(function (game) {
-    const inCategory = category === "All" || (category === RECENT ? recentIds.includes(slug(game)) : game.category === category);
+    const inCategory = category === "All" || game.category === category;
     const words = (game.title + " " + (game.description || "") + " " + (game.category || "")).toLowerCase();
     return inCategory && words.includes(query);
   });
 
-  if (category === RECENT) {
-    list.sort(function (a, b) { return recentIds.indexOf(slug(a)) - recentIds.indexOf(slug(b)); });
-  } else if ($("sort").value === "newest") {
+  if ($("sort").value === "newest") {
     list.reverse();
   } else if ($("sort").value === "az") {
     list.sort(function (a, b) { return a.title.localeCompare(b.title); });
@@ -127,11 +123,12 @@ function showGames() {
     $("empty").textContent = games.length === 0 ? "No games yet. Check back soon." : "No games match your search.";
   }
   $("empty").hidden = list.length > 0;
+  showShelf();
 }
 
 function showChips() {
   chips.replaceChildren();
-  const names = ["All"].concat(recentGames().length ? [RECENT] : [], categories());
+  const names = ["All"].concat(categories());
   if (!names.includes(category)) category = "All";
   chips.hidden = names.length < 3;
 
@@ -171,6 +168,15 @@ function addRecent(game) {
   const list = getRecent().filter(function (other) { return other !== id; });
   list.unshift(id);
   try { localStorage.setItem("damp-recent", JSON.stringify(list.slice(0, 12))); } catch (error) { /* storage off */ }
+}
+
+// The row right above "All games"
+function showShelf() {
+  const picks = recentGames().slice(0, 6).map(function (id) {
+    return games.find(function (g) { return slug(g) === id; });
+  });
+  $("shelf").hidden = !(category === "All" && search.value.trim() === "" && picks.length > 0);
+  $("shelf-grid").replaceChildren(...picks.map(makeCard));
 }
 
 // ----- Sorting -----

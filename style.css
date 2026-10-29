@@ -493,3 +493,30 @@ label input:focus, .inline input:focus { outline: none; border-color: var(--acce
 @media (prefers-reduced-motion: reduce) {
   .spinner { animation-duration: 3s; }
 }
+
+/* Recently played / Top played shelf */
+.shelf {
+  margin-top: 24px;
+  padding: 16px 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+}
+
+.shelf .chip { background: var(--bg); }
+.shelf .chip[aria-pressed="true"] { background: var(--text); }
+
+.shelf-grid {
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 18px 16px;
+  margin-top: 16px;
+}
+
+.shelf .tile { font-size: 2.4rem; }
+.shelf .game h3 { font-size: 0.95rem; }
+
+@media (max-width: 560px) {
+  .shelf-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.shelf-title { font-size: 1.1rem; }

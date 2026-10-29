@@ -12,12 +12,5 @@
     "file": "Starclicker.html",
     "category": "Clicker",
     "image": "starclicker.png"
-  },
-  {
-    "title": "Flappy Bird 2",
-    "description": "Flappy Bird 2",
-    "file": "flappy-bird-2.html",
-    "category": "Arcade",
-    "image": "flappy-bird-2.png"
   }
 ]

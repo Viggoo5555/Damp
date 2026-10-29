@@ -1,0 +1,1239 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Verity Clicker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@500;700;800&display=swap">
+<style>
+/* Layout: sticky character stage on the left, tabbed control panel on the right; stacks on phones. */
+:root{
+  --bg:#06020d; --bg2:#0d0620; --panel:#130a28; --panel2:#1b0f3a; --line:#34196b;
+  --fg:#f3ecff; --dim:#a08dcf; --pink:#ff3df2; --cyan:#2df7ff; --lime:#b6ff3d;
+  --gold:#ffd23d; --evil:#ff2e55; --form:#ffd400; --form2:#ff9a00;
+  --display:'Lilita One','Trebuchet MS',system-ui,sans-serif;
+  --body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:radial-gradient(1200px 700px at 20% -10%,#2a0d5c55,transparent 60%),radial-gradient(900px 600px at 100% 100%,#5a0a6a33,transparent 60%),var(--bg);
+  color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.4;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:12px 40px;min-height:100vh;overflow-x:hidden;
+  -webkit-tap-highlight-color:transparent;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;letter-spacing:.02em}
+.num{font-variant-numeric:tabular-nums}
+#app{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+
+/* top bar */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;justify-content:space-between}
+.logo{font-family:var(--display);font-size:30px;letter-spacing:.04em;background:linear-gradient(90deg,var(--gold),var(--pink),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 12px #ff3df255)}
+.cur{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:flex;flex-direction:column;min-width:0;padding:6px 12px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,var(--panel2),var(--panel));box-shadow:0 0 18px #7a2cff22 inset}
+.chip small{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.09em}
+.chip b{font-family:var(--display);font-weight:400;font-size:20px;line-height:1.1}
+.chip.vp b{color:var(--gold);text-shadow:0 0 10px #ffd23d88}
+.chip.ep b{color:var(--evil);text-shadow:0 0 10px #ff2e5588}
+.chip.rt b{color:var(--cyan);text-shadow:0 0 10px #2df7ff88}
+.chip.mp b{color:var(--lime);text-shadow:0 0 10px #b6ff3d88}
+.iconbtns{display:flex;gap:6px}
+.ib{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--panel);display:grid;place-items:center;font-size:17px}
+.ib:hover{border-color:var(--pink);box-shadow:0 0 12px #ff3df255}
+.ib[aria-pressed=false]{opacity:.45}
+
+/* grid */
+.grid{display:grid;grid-template-columns:minmax(320px,440px) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+/* stage */
+.stage{position:sticky;top:10px;display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,#160a30cc,#0a0418ee);box-shadow:0 0 40px color-mix(in srgb,var(--form) 20%,transparent),0 0 0 1px #000 inset;transition:box-shadow .6s}
+@media(max-width:860px){.stage{position:static}}
+.formname{text-align:center}
+.formname h2{font-size:28px;color:var(--form);text-shadow:0 0 16px var(--form);line-height:1.1}
+.formname p{margin:2px 0 0;color:var(--dim);font-size:13px}
+.tags{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:6px}
+.tag{font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--dim);text-transform:uppercase;letter-spacing:.07em}
+.tag.hot{border-color:var(--form);color:var(--form)}
+.arena{position:relative;width:100%;aspect-ratio:1/1;max-height:420px;margin:0 auto;border-radius:16px;overflow:hidden;background:radial-gradient(circle at 50% 55%,color-mix(in srgb,var(--form) 22%,#10062a),#07020f 72%);user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.arena canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#face{cursor:pointer}
+#floaters{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.floater{position:absolute;font-family:var(--display);font-size:22px;color:#fff;text-shadow:0 0 8px var(--form),0 0 2px #000;white-space:nowrap;animation:floatup 1s ease-out forwards;will-change:transform,opacity}
+.floater.crit{font-size:34px;color:var(--gold);text-shadow:0 0 14px var(--gold),0 0 3px #000}
+.floater.evil{color:var(--evil);text-shadow:0 0 10px var(--evil)}
+@keyframes floatup{0%{transform:translate(-50%,0) scale(.6);opacity:0}15%{opacity:1;transform:translate(-50%,-10px) scale(1.1)}100%{transform:translate(-50%,-90px) scale(1);opacity:0}}
+.golden{position:absolute;width:64px;height:64px;border:0;background:none;padding:0;z-index:5;filter:drop-shadow(0 0 14px var(--gold));animation:goldfloat 3s ease-in-out infinite}
+@keyframes goldfloat{0%,100%{translate:0 0}50%{translate:0 -10px}}
+.bossbar{display:none;flex-direction:column;gap:4px}
+.bossbar.on{display:flex}
+.bar{height:12px;border-radius:99px;background:#000a;border:1px solid var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--pink),var(--gold));box-shadow:0 0 12px var(--pink);transition:width .15s}
+.bar.evil>i{background:linear-gradient(90deg,#7a0020,var(--evil));box-shadow:0 0 12px var(--evil)}
+.bar.cor>i{background:linear-gradient(90deg,#5b19c9,var(--evil))}
+.barrow{display:flex;justify-content:space-between;font-size:12px;color:var(--dim)}
+.buffs{display:flex;flex-wrap:wrap;gap:6px;min-height:0}
+.buff{font-size:12px;padding:3px 9px;border-radius:99px;background:#2a1257;border:1px solid var(--gold);color:var(--gold);box-shadow:0 0 10px #ffd23d33}
+.buff.evil{border-color:var(--evil);color:var(--evil);box-shadow:0 0 10px #ff2e5533}
+.abil{display:none;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px}
+.abil.on{display:grid}
+.abtn{position:relative;overflow:hidden;padding:7px 8px;border-radius:10px;border:1px solid var(--evil);background:#2a0716;font-size:12px;text-align:left}
+.abtn b{display:block;font-family:var(--display);font-weight:400;font-size:14px;color:#ffb0c0}
+.abtn:disabled{opacity:.45;cursor:not-allowed}
+.abtn i{position:absolute;left:0;bottom:0;height:3px;background:var(--evil)}
+.evo{display:flex;gap:10px;align-items:center}
+.evo .bar{flex:1}
+.btn{border:1px solid var(--pink);background:linear-gradient(180deg,#3b0f72,#22084a);color:#fff;border-radius:10px;padding:8px 14px;font-weight:800;letter-spacing:.02em;transition:transform .08s,box-shadow .2s}
+.btn:hover:not(:disabled){box-shadow:0 0 16px #ff3df288;transform:translateY(-1px)}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn:disabled{opacity:.4;cursor:not-allowed;border-color:var(--line)}
+.btn.go{border-color:var(--lime);background:linear-gradient(180deg,#2f6d12,#15380a);box-shadow:0 0 18px #b6ff3d55;animation:pulse 1.4s infinite}
+.btn.evil{border-color:var(--evil);background:linear-gradient(180deg,#701029,#3a0615)}
+.btn.small{padding:4px 10px;font-size:13px}
+@keyframes pulse{50%{box-shadow:0 0 28px #b6ff3daa}}
+
+/* panel */
+.panel{display:flex;flex-direction:column;gap:10px;min-width:0}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.tab{flex:none;padding:8px 13px;border-radius:10px;border:1px solid var(--line);background:var(--panel);font-weight:800;font-size:13px;position:relative;white-space:nowrap}
+.tab[aria-selected=true]{border-color:var(--pink);background:linear-gradient(180deg,#3a0f6e,#220849);box-shadow:0 0 14px #ff3df255}
+.tab.dot::after{content:"";position:absolute;top:4px;right:5px;width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 8px var(--lime)}
+.tab.locked{opacity:.5}
+.view{display:none;flex-direction:column;gap:8px}
+.view.on{display:flex}
+.hint{color:var(--dim);font-size:13px;margin:0}
+.sec{margin:6px 0 0;font-size:18px;color:var(--pink);text-shadow:0 0 10px #ff3df266}
+.row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 10px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--panel2),var(--panel))}
+.row.can{border-color:#7a3dff;box-shadow:0 0 14px #7a3dff33}
+.row.done{opacity:.8;border-color:var(--lime)}
+.row.locked{opacity:.55}
+.row .ico{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:#0006;border:1px solid var(--line)}
+.row h3{font-size:16px}
+.row p{margin:1px 0 0;font-size:12.5px;color:var(--dim)}
+.row .lv{color:var(--cyan);font-weight:800}
+.row .buy{min-width:98px;text-align:center}
+.row.evilrow{border-color:#5d1230}
+.row.evilrow .ico{border-color:#5d1230}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.fcard{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px;border:1px solid var(--line);border-radius:12px;background:var(--panel);text-align:center;font-size:12px;color:var(--dim)}
+.fcard canvas{width:84px;height:84px}
+.fcard b{font-family:var(--display);font-weight:400;font-size:15px;color:var(--fg)}
+.fcard.cur{border-color:var(--form);box-shadow:0 0 16px color-mix(in srgb,var(--form) 40%,transparent)}
+.fcard.lock canvas{filter:brightness(0) contrast(.6) opacity(.5)}
+.fcard button{margin-top:2px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.stat{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.stat span{color:var(--dim)}
+.stat b{font-variant-numeric:tabular-nums;text-align:right}
+.set{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.set input[type=range]{accent-color:var(--pink);width:150px;max-width:100%}
+select,textarea{font:inherit;background:#0b0418;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+textarea{width:100%;min-height:70px;font-family:ui-monospace,Menlo,monospace;font-size:11px}
+.toggle{width:46px;height:26px;border-radius:99px;border:1px solid var(--line);background:#0b0418;position:relative;padding:0}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--dim);transition:.2s}
+.toggle[aria-pressed=true]{border-color:var(--lime)}
+.toggle[aria-pressed=true]::after{left:23px;background:var(--lime);box-shadow:0 0 8px var(--lime)}
+.card{padding:12px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,var(--panel2),var(--panel));display:flex;flex-direction:column;gap:8px}
+.card.evilcard{border-color:#6b1531;background:linear-gradient(180deg,#2a0716,#14040c)}
+.bulk{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.bulk button[aria-pressed=true]{border-color:var(--cyan);color:var(--cyan)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}
+
+/* toasts + modal */
+#toasts{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;flex-direction:column-reverse;gap:6px;z-index:50;pointer-events:none;width:min(92vw,420px)}
+.toast{padding:9px 14px;border-radius:12px;border:1px solid var(--pink);background:#150a2ce8;box-shadow:0 0 22px #ff3df266;font-weight:800;animation:tin .3s ease-out,tout .4s 3.2s forwards}
+.toast small{display:block;font-weight:600;color:var(--dim)}
+.toast.good{border-color:var(--lime);box-shadow:0 0 22px #b6ff3d55}
+.toast.bad{border-color:var(--evil);box-shadow:0 0 22px #ff2e5566}
+.toast.gold{border-color:var(--gold);box-shadow:0 0 22px #ffd23d66}
+@keyframes tin{from{transform:translateY(14px);opacity:0}}
+@keyframes tout{to{opacity:0;transform:translateY(10px)}}
+#modal{position:fixed;inset:0;display:none;place-items:center;background:#000b;z-index:60;padding:16px}
+#modal.on{display:grid}
+#modal .box{max-width:460px;width:100%;padding:20px;border:1px solid var(--pink);border-radius:18px;background:linear-gradient(180deg,#1d0f42,#0c0520);box-shadow:0 0 50px #ff3df255;display:flex;flex-direction:column;gap:12px;max-height:88vh;overflow:auto}
+#modal h2{font-size:26px;color:var(--gold)}
+#flash{position:fixed;inset:0;pointer-events:none;z-index:40;opacity:0;background:radial-gradient(circle,#fff,var(--form) 40%,transparent 75%);mix-blend-mode:screen}
+#flash.on{animation:flash 1.1s ease-out}
+@keyframes flash{0%{opacity:.9}100%{opacity:0}}
+.shake{animation:shake .25s}
+@keyframes shake{25%{transform:translate(-3px,2px)}50%{transform:translate(3px,-2px)}75%{transform:translate(-2px,-1px)}}
+body.noanim *,body.noanim *::before,body.noanim *::after{animation:none!important;transition:none!important}
+@media(prefers-reduced-motion:reduce){.golden,.btn.go{animation:none}}
+.foot{text-align:center;color:var(--dim);font-size:12px}
+</style>
+<div id="app">
+  <header class="top">
+    <div class="logo">VERITY CLICKER</div>
+    <div class="cur" id="cur"></div>
+    <div class="iconbtns">
+      <button class="ib" id="btnSound" aria-pressed="true" title="Sound effects" aria-label="Toggle sound effects">🔊</button>
+      <button class="ib" id="btnMusic" aria-pressed="true" title="Music" aria-label="Toggle music">🎵</button>
+    </div>
+  </header>
+  <div class="grid">
+    <section class="stage" aria-label="Character">
+      <div class="formname"><h2 id="formName">Verity</h2><p id="formDesc"></p><div class="tags" id="formTags"></div></div>
+      <div class="arena" id="arena">
+        <canvas id="fx"></canvas>
+        <canvas id="face" aria-label="Click Verity to earn points" role="button" tabindex="0"></canvas>
+        <div id="floaters"></div>
+      </div>
+      <div class="bossbar" id="bossBar">
+        <div class="barrow"><span id="bossName"></span><span id="bossTime"></span></div>
+        <div class="bar evil"><i id="bossHp"></i></div>
+      </div>
+      <div class="buffs" id="buffs"></div>
+      <div class="abil" id="abil"></div>
+      <div id="corWrap" hidden>
+        <div class="barrow"><span>Corruption</span><span id="corTxt"></span></div>
+        <div class="bar cor"><i id="corBar"></i></div>
+      </div>
+      <div>
+        <div class="barrow"><span id="evoLabel"></span><span id="evoPct"></span></div>
+        <div class="evo"><div class="bar"><i id="evoBar"></i></div><button class="btn" id="evoBtn" disabled>Evolve</button></div>
+      </div>
+    </section>
+    <section class="panel">
+      <nav class="tabs" id="tabs" role="tablist"></nav>
+      <div id="views"></div>
+    </section>
+  </div>
+  <p class="foot">Verity Clicker saves automatically in this browser. Use Settings to export a backup.</p>
+</div>
+<div id="toasts" aria-live="polite"></div>
+<div id="modal"><div class="box" id="modalBox"></div></div>
+<div id="flash"></div>
+<script>
+'use strict';
+/* ============ DATA ============ */
+const SAVE_KEY='verityClicker.v1';
+const FORMS=[
+ {n:'Verity',c1:'#ffd400',c2:'#ff9a00',eyes:'dot',mouth:'smile',ex:[],fx:'spark',mult:1,cost:0,evil:0,d:'The original smile. Everything begins here.'},
+ {n:'Super Verity',c1:'#ffcc00',c2:'#ff6a00',eyes:'dot',mouth:'grin',ex:['aura','bolt'],fx:'spark',mult:2,cost:1200,evil:0,d:'Power crackles around the grin.'},
+ {n:'Mega Verity',c1:'#3be6ff',c2:'#2a5cff',eyes:'happy',mouth:'big',ex:['aura','rings'],fx:'ring',mult:5,cost:180000,evil:0,d:'Bigger, bluer, brighter.'},
+ {n:'Dark Verity',c1:'#8a3cff',c2:'#1d0646',eyes:'glow',mouth:'smirk',ex:['aura'],fx:'smoke',mult:12,cost:2.2e7,evil:1,d:'A shadow has fallen over the smile.'},
+ {n:'Evilty',c1:'#ff2e55',c2:'#5a0020',eyes:'angry',mouth:'fang',ex:['horns'],fx:'ember',mult:30,cost:3.2e9,evil:2,d:'Pure mischief. Evil Points awaken.'},
+ {n:'Super Evilty',c1:'#ff5a1f',c2:'#7a0a00',eyes:'angry',mouth:'fang',ex:['horns','aura'],fx:'ember',mult:80,cost:7.3e11,evil:4,d:'Evilty with the volume turned up.'},
+ {n:'Demon Evilty',c1:'#c40026',c2:'#14000a',eyes:'slit',mouth:'wide',ex:['horns','bighorns','aura'],fx:'flame',mult:250,cost:2.2e14,evil:6,d:'Hellfire for a halo.'},
+ {n:'Void Verity',c1:'#1c0236',c2:'#000000',eyes:'void',mouth:'flat',ex:['rim','orbit'],fx:'void',mult:800,cost:4.4e16,evil:8,d:'It stares back. Light bends around it.'},
+ {n:'Corrupted Verity',c1:'#28ff8f',c2:'#6a00ff',eyes:'multi',mouth:'zig',ex:['glitch','cracks'],fx:'glitch',mult:3000,cost:1.3e19,evil:10,d:'Reality flickers when it smiles.'},
+ {n:'God Verity',c1:'#fff3a0',c2:'#ffd23d',eyes:'dot',mouth:'smile',ex:['halo','rays'],fx:'star',mult:12000,cost:3.9e22,evil:0,d:'Worshipped across the points. Rebirth unlocks here.'},
+ {n:'True Verity',c1:'#ffffff',c2:'#d4c2ff',eyes:'dot',mouth:'smile',ex:['halo','rays','rings'],fx:'light',mult:6e4,cost:1.2e26,evil:0,d:'Nothing hidden, nothing false.'},
+ {n:'Absolute Verity',c1:'#ffe14d',c2:'#ff3df2',eyes:'star',mouth:'big',ex:['crown','rays'],fx:'star',mult:3e5,cost:2e30,evil:0,d:'No higher authority exists.'},
+ {n:'Infinite Verity',c1:'#2df7ff',c2:'#ff3df2',eyes:'spiral',mouth:'smile',ex:['infinity','rings'],fx:'ring',mult:2e6,cost:5e34,evil:0,d:'The smile that never ends.'},
+ {n:'Cosmic Verity',c1:'#1a1a7a',c2:'#8a3cff',eyes:'cosmic',mouth:'smile',ex:['galaxy','orbit'],fx:'star',mult:2e7,cost:1e39,evil:0,d:'Wears a galaxy like a sweater.'},
+ {n:'Omniversal Verity',c1:'#ff5adf',c2:'#2df7ff',eyes:'star',mouth:'big',ex:['rainbow','halo','orbit'],fx:'rainbow',mult:3e8,cost:5e43,evil:0,d:'Every universe, every Verity, all at once.'},
+ {n:'Verity Omega',c1:'#ffffff',c2:'#12001f',eyes:'split',mouth:'smirk',ex:['split','halo','horns','rays'],fx:'rainbow',mult:1e10,cost:1e49,evil:0,secret:true,d:'The last form. Light and dark in balance.'}
+];
+const SECRETS=[
+ {id:'boredity',n:'Boredity',c1:'#d4d4dc',c2:'#8f8f9c',eyes:'dot',mouth:'flat',ex:[],mult:1.1,fx:'smoke',hint:'Doing nothing is a skill. Leave Verity alone for a while.'},
+ {id:'curiosity',n:'Curiosity',c1:'#36ff52',c2:'#00b01f',eyes:'wide',mouth:'o',ex:[],mult:1.1,fx:'spark',hint:'Curious players look everywhere.'},
+ {id:'lovity',n:'Lovity',c1:'#ff4fd8',c2:'#c000a0',eyes:'heart',mouth:'smile',ex:[],mult:1.15,fx:'heart',hint:'Show it some love. A lot of love.'},
+ {id:'cloudity',n:'Cloudity',c1:'#b0f8ff',c2:'#58d0e6',eyes:'dot',mouth:'flat',ex:[],mult:1.15,fx:'light',hint:'Luck falls from the sky. Catch it.'},
+ {id:'sadity',n:'Sadity',c1:'#6a3cff',c2:'#2b0f99',eyes:'sad',mouth:'frown',ex:[],mult:1.2,fx:'smoke',hint:'Even Verity loses sometimes.'},
+ {id:'invisibility',n:'Invisibility',c1:'#ffffff',c2:'#ffffff',eyes:'dot',mouth:'smile',ex:['ghost'],mult:1.2,fx:'light',hint:'Try clicking where nothing is.'},
+ {id:'moggity',n:'Moggity',c1:'#ffd400',c2:'#e8a600',eyes:'derp',mouth:'squig',ex:[],mult:1.25,fx:'glitch',hint:'Be fast. Faster than that.'},
+ {id:'rainbowity',n:'Rainbowity',c1:'#ff5adf',c2:'#2df7ff',eyes:'happy',mouth:'big',ex:['rainbow'],mult:1.5,fx:'rainbow',hint:'Find every other secret.'}
+];
+const SKINS=[
+ {id:'phoenix',n:'Phoenix Verity',c1:'#ff9a1f',c2:'#ff2e00',eyes:'dot',mouth:'grin',ex:['wings','aura'],fx:'flame',mult:25,cost:25,req:0,d:'Rises from every rebirth.'},
+ {id:'chrono',n:'Chrono Verity',c1:'#2df7ff',c2:'#0a4a6e',eyes:'spiral',mouth:'smile',ex:['rings','orbit'],fx:'ring',mult:500,cost:150,req:0,d:'Bends the clock in your favor.'},
+ {id:'prime',n:'Prime Verity',c1:'#ffffff',c2:'#ffd23d',eyes:'star',mouth:'big',ex:['crown','halo','wings','rays'],fx:'star',mult:1e5,cost:1200,req:1,d:'Reserved for those who have ascended.'}
+];
+const UPG=[
+ {id:'click',n:'Stronger Clicks',i:'💪',d:'+points per click.',base:15,g:1.15,max:Infinity,fx:l=>`+${fmt(l*(1+.05*l))} per click`},
+ {id:'auto',n:'Auto Clicker',i:'🤖',d:'Generates points every second.',base:100,g:1.15,max:Infinity,fx:l=>`+${fmt(l*(1+.05*l))}/s`},
+ {id:'power',n:'Verity Power',i:'✨',d:'Multiplies all point production by 1.2 per level.',base:500,g:2.3,max:70,fx:l=>`×${fmt(Math.pow(1.2,l))}`},
+ {id:'crit',n:'Critical Clicks',i:'🎯',d:'Chance for a huge bonus click.',base:300,g:1.8,max:40,fx:l=>`${(2+1.2*l).toFixed(1)}% chance`},
+ {id:'factory',n:'Verity Factory',i:'🏭',d:'Mass-produces points.',base:12000,g:1.16,max:Infinity,fx:l=>`+${fmt(150*l)}/s`,gate:5e3},
+ {id:'evo',n:'Evolution Boost',i:'📉',d:'Evolutions cost 3% less per level.',base:2000,g:2.2,max:30,fx:l=>`-${((1-Math.pow(.97,l))*100).toFixed(0)}% cost`,gate:800},
+ {id:'evil',n:'Evil Energy',i:'😈',d:'Unlocks dark evolutions and speeds Evil Point flow.',base:1000,g:2.6,max:12,fx:l=>`Level ${l}`,gate:500},
+ {id:'multi',n:'Multiverse Generator',i:'🌌',d:'Harvests points from other universes.',base:5e8,g:1.2,max:Infinity,fx:l=>`+${fmt(2e4*l)}/s`,gate:1e8},
+ {id:'forge',n:'Reality Forge',i:'🔱',d:'Hammers new points out of reality itself.',base:1e14,g:1.22,max:Infinity,fx:l=>`+${fmt(5e9*l)}/s`,gate:1e13}
+];
+const EVU=[
+ {id:'dclick',n:'Dark Clicks',i:'🗡️',d:'Clicks hit 1.3x harder per level.',base:20,g:1.6,max:25,cor:3},
+ {id:'engine',n:'Shadow Engine',i:'🕳️',d:'Passive points ×1.25 per level.',base:40,g:1.7,max:25,cor:3},
+ {id:'soul',n:'Soul Harvest',i:'👻',d:'Evil Point flow ×1.35 per level.',base:30,g:1.7,max:25,cor:2},
+ {id:'hcrit',n:'Hellfire Crits',i:'🔥',d:'+1.5% crit chance and +1 crit multiplier per level.',base:60,g:1.8,max:20,cor:4},
+ {id:'disc',n:'Abyssal Discount',i:'🪙',d:'Shop prices 3% lower per level.',base:100,g:2,max:15,cor:5},
+ {id:'pact',n:'Demon Pact',i:'📜',d:'All production ×1.6 per level.',base:500,g:3.5,max:10,cor:8}
+];
+const COR_MS=[
+ {at:25,n:'Whispers',d:'Eyes glow red. Unlocks Dark Pulse.'},
+ {at:50,n:'Shadowbound',d:'Dark aura swirls. Unlocks Soul Rend.'},
+ {at:75,n:'Hellborn',d:'Horns grow in. Unlocks Abyss Surge.'},
+ {at:100,n:'Fully Corrupted',d:'Cracks of void light. Unlocks Void Collapse.'}
+];
+const ABIL=[
+ {id:'pulse',n:'Dark Pulse',at:25,cost:20,cd:45,dur:0,d:'Instantly gain 90s of production.'},
+ {id:'rend',n:'Soul Rend',at:50,cost:120,cd:90,dur:15,d:'Clicks ×5 for 15s.'},
+ {id:'surge',n:'Abyss Surge',at:75,cost:600,cd:120,dur:20,d:'All production ×3 for 20s.'},
+ {id:'collapse',n:'Void Collapse',at:100,cost:4000,cd:300,dur:0,d:'Instantly gain 20 minutes of production.'}
+];
+const RUP=[
+ {id:'tpower',n:'Token Power',i:'⚡',d:'All production ×1.5 per level.',base:1,g:1.7,max:30},
+ {id:'eclick',n:'Eternal Clicks',i:'👆',d:'+100% click power per level.',base:2,g:1.8,max:30},
+ {id:'eauto',n:'Eternal Engine',i:'⚙️',d:'+100% passive production per level.',base:2,g:1.8,max:30},
+ {id:'head',n:'Head Start',i:'🚀',d:'Start each run with bonus points.',base:1,g:2.2,max:12},
+ {id:'edisc',n:'Cheaper Evolutions',i:'💸',d:'Evolutions cost 7% less per level.',base:3,g:2,max:12},
+ {id:'sform',n:'Starting Form',i:'🧬',d:'Begin each run as a more evolved form.',base:5,g:3.5,max:4},
+ {id:'dark',n:'Dark Heritage',i:'🩸',d:'Keep 20% of your corruption per level on rebirth.',base:4,g:2,max:5},
+ {id:'luck',n:'Lucky Charm',i:'🍀',d:'Golden Verity and lucky events appear 8% faster.',base:3,g:1.9,max:8}
+];
+const TIERS=[
+ {n:'Rebirth',form:9,tok:4,mp:0,d:'Reset your run and earn Rebirth Tokens.'},
+ {n:'Ascension',form:11,tok:25,mp:3,d:'A deeper reset. Bigger rewards and Mastery Points.'},
+ {n:'Transcendence',form:13,tok:150,mp:10,d:'The ultimate reset. Huge tokens and many Mastery Points.'}
+];
+const MUP=[
+ {id:'mclick',n:'Click Mastery',i:'🖱️',d:'+25% click power per level.',max:20},
+ {id:'mauto',n:'Engine Mastery',i:'🔧',d:'+25% passive production per level.',max:20},
+ {id:'mtok',n:'Token Mastery',i:'🪙',d:'+10% Rebirth Tokens per level.',max:15},
+ {id:'mevil',n:'Evil Mastery',i:'🩸',d:'+25% Evil Points per level.',max:15},
+ {id:'mluck',n:'Luck Mastery',i:'🍀',d:'Golden Verity appear 10% faster per level.',max:5},
+ {id:'moff',n:'Offline Mastery',i:'🌙',d:'+10% offline efficiency and +1 hour cap per level.',max:5}
+];
+const BOSSES=[
+ {n:'Shadow Imp',form:3,diff:.55,ep:150,m:1.15,c1:'#8a3cff',c2:'#1d0646',eyes:'angry',mouth:'fang',ex:['horns']},
+ {n:'Evilty Warden',form:4,diff:.65,ep:600,m:1.2,c1:'#ff2e55',c2:'#4a0018',eyes:'angry',mouth:'fang',ex:['horns','aura']},
+ {n:'Super Evilty Lord',form:5,diff:.75,ep:3000,m:1.25,c1:'#ff5a1f',c2:'#5a0600',eyes:'slit',mouth:'wide',ex:['horns','aura']},
+ {n:'Demon Overlord',form:6,diff:.85,ep:15000,m:1.3,c1:'#c40026',c2:'#14000a',eyes:'slit',mouth:'wide',ex:['horns','bighorns','aura']},
+ {n:'Void Eater',form:7,diff:.95,ep:8e4,m:1.35,c1:'#1c0236',c2:'#000',eyes:'void',mouth:'wide',ex:['rim','orbit']},
+ {n:'The Corrupted One',form:8,diff:1.05,ep:4e5,m:1.4,c1:'#28ff8f',c2:'#6a00ff',eyes:'multi',mouth:'zig',ex:['glitch','cracks']}
+];
+const DAILY=[5,10,15,20,30,45,60]; /* minutes of production per day */
+/* achievements: id, icon, name, description, test(S) */
+const ACH=[
+ ['c1','👆','First Click','Click Verity once.',s=>s.clicks>=1],
+ ['c100','🖱️','Warming Up','Click 100 times.',s=>s.clicks>=100],
+ ['c1k','🔥','Click Addict','Click 1,000 times.',s=>s.clicks>=1e3],
+ ['c10k','⚡','Finger Fury','Click 10,000 times.',s=>s.clicks>=1e4],
+ ['c100k','💥','Carpal Legend','Click 100,000 times.',s=>s.clicks>=1e5],
+ ['p1k','💰','Pocket Change','Earn 1,000 points in total.',s=>s.total>=1e3],
+ ['p1m','🏦','Millionaire','Earn 1 million points in total.',s=>s.total>=1e6],
+ ['p1b','💎','Billionaire','Earn 1 billion points in total.',s=>s.total>=1e9],
+ ['p1t','👑','Trillionaire','Earn 1 trillion points in total.',s=>s.total>=1e12],
+ ['p1qa','🌠','Beyond Counting','Earn 1 quadrillion points in total.',s=>s.total>=1e15],
+ ['p1e30','♾️','Numbers Break','Earn 1e30 points in total.',s=>s.total>=1e30],
+ ['f1','🌟','Super!','Evolve into Super Verity.',s=>s.maxForm>=1],
+ ['f3','🌑','Into the Dark','Reach Dark Verity.',s=>s.maxForm>=3],
+ ['f4','😈','Evilty Awakens','Reach Evilty.',s=>s.maxForm>=4],
+ ['f7','🕳️','Staring Back','Reach Void Verity.',s=>s.maxForm>=7],
+ ['f9','🙏','Divine','Reach God Verity.',s=>s.maxForm>=9],
+ ['f12','♾️','Never Ending','Reach Infinite Verity.',s=>s.maxForm>=12],
+ ['f14','🌈','Everything','Reach Omniversal Verity.',s=>s.maxForm>=14],
+ ['f15','🏆','The Last Verity','Unlock the Secret Final Form.',s=>s.maxForm>=15],
+ ['u10','🛒','Shopper','Buy 10 upgrades.',s=>s.buys>=10],
+ ['u100','🛍️','Big Spender','Buy 100 upgrades.',s=>s.buys>=100],
+ ['u1k','🧾','Hoarder','Buy 1,000 upgrades.',s=>s.buys>=1e3],
+ ['cr1','🎯','Critical!','Land a critical click.',s=>s.crits>=1],
+ ['cr100','🔮','Sharpshooter','Land 100 critical clicks.',s=>s.crits>=100],
+ ['g1','🟡','Shiny!','Catch a golden Verity.',s=>s.golden>=1],
+ ['g10','✨','Gold Rush','Catch 10 golden Verities.',s=>s.golden>=10],
+ ['b1','⚔️','Boss Slayer','Defeat a boss.',s=>s.bossWins>=1],
+ ['b6','🗡️','Evilty Hunter','Defeat all six bosses.',s=>BOSSES.every((_,i)=>s.bossDone[i])],
+ ['cor50','🩸','Shadowbound','Reach 50% corruption.',s=>s.corruption>=50],
+ ['cor100','☠️','Fully Corrupted','Reach 100% corruption.',s=>s.corruption>=100||s.maxCor>=100],
+ ['rb1','🔁','Born Again','Rebirth for the first time.',s=>s.rebirths[0]+s.rebirths[1]+s.rebirths[2]>=1],
+ ['rb5','🔄','Cycle of Life','Rebirth 5 times.',s=>s.rebirths[0]+s.rebirths[1]+s.rebirths[2]>=5],
+ ['asc','🪽','Ascended','Perform an Ascension.',s=>s.rebirths[1]>=1],
+ ['tr','🌌','Transcended','Perform a Transcendence.',s=>s.rebirths[2]>=1],
+ ['sec1','🕵️','Secret Hunter','Unlock a secret form.',s=>Object.keys(s.secrets).length>=1],
+ ['sec8','🌈','Know-it-all','Unlock all secret forms.',s=>Object.keys(s.secrets).length>=SECRETS.length],
+ ['q10','📜','Quest Giver','Complete 10 quests.',s=>s.questsDone>=10],
+ ['day7','📅','Regular','Claim 7 daily rewards.',s=>s.dailyClaims>=7],
+ ['time1','⏱️','Dedicated','Play for 1 hour.',s=>s.playtime>=3600]
+];
+const SUFFIX=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','Ud','Dd','Td','Qad','Qid','Sxd','Spd','Ocd','Nod','Vg'];
+/* ============ CORE ============ */
+const H={toast(){},burst(){},floater(){},sfx(){},flash(){},refresh(){},golden(){},shake(){},bossEnd(){},center(){return{x:0,y:0}}};
+const now=()=>Date.now();
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+
+function newState(){return{
+ v:1,pts:0,total:0,run:0,clicks:0,crits:0,buys:0,evilPts:0,totalEvil:0,corruption:0,maxCor:0,
+ tokens:0,totalTokens:0,mp:0,rebirths:[0,0,0],form:0,maxForm:0,look:null,
+ up:{},ev:{},ru:{},mu:{},skins:{},secrets:{},ach:{},bossDone:[],bossWins:0,bossFails:0,
+ golden:0,bestClick:0,quests:[],questsDone:0,daily:{last:'',streak:0},dailyClaims:0,
+ playtime:0,lastSave:now(),tabsSeen:{},bgClicks:0,bestRun:0,
+ set:{sfx:true,sfxv:.6,music:true,musv:.35,anim:'full',part:'high',fmt:'short',shake:true}
+}}
+let S=newState();
+/* transient state */
+const T={buffs:[],cd:{},idle:0,clickTimes:[],goldIn:rnd(45,90),eventIn:rnd(90,180),boss:null,achT:0,saveT:0,cloudT:0,squish:0,lastClick:0,flashFx:0};
+let D={};
+
+/* ---------- formatting ---------- */
+function trim(s){return s.indexOf('.')>=0?s.replace(/\.?0+$/,''):s}
+function fmt(n,d=2){
+  if(!isFinite(n)) return 'Infinity'; n=Number(n); if(n<0) return '-'+fmt(-n,d);
+  const f=(S&&S.set&&S.set.fmt)||'short';
+  if(n<1000) return n>=100?String(Math.floor(n)):trim(n.toFixed(n<10?d:1));
+  if(f==='sci'){let e=Math.floor(Math.log10(n)),s=(n/Math.pow(10,e)).toFixed(2);if(parseFloat(s)>=10){e++;s=(n/Math.pow(10,e)).toFixed(2)}return trim(s)+'e'+e}
+  if(f==='eng'){let e=Math.floor(Math.log10(n)/3)*3,s=(n/Math.pow(10,e)).toFixed(2);if(parseFloat(s)>=1000){e+=3;s=(n/Math.pow(10,e)).toFixed(2)}return trim(s)+'e'+e}
+  let e=Math.floor(Math.log10(n)/3);if(e>=SUFFIX.length){const x=Math.floor(Math.log10(n));return trim((n/Math.pow(10,x)).toFixed(2))+'e'+x}
+  let s=(n/Math.pow(1000,e)).toFixed(2);if(parseFloat(s)>=1000){e++;s=(n/Math.pow(1000,e)).toFixed(2)}
+  return trim(s)+SUFFIX[e];
+}
+function fmtTime(s){s=Math.floor(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}h ${m}m`:m?`${m}m ${x}s`:`${x}s`}
+
+/* ---------- derived values ---------- */
+const lv=id=>S.up[id]||0, ev=id=>S.ev[id]||0, ru=id=>S.ru[id]||0, mu=id=>S.mu[id]||0;
+const evilUnlocked=()=>S.maxForm>=4;
+const achCount=()=>Object.keys(S.ach).length;
+function buffMul(k){let m=1;for(const b of T.buffs)if(b.k===k)m*=b.m;return m}
+function buffAdd(k){let m=0;for(const b of T.buffs)if(b.k===k)m+=b.m;return m}
+function recompute(){
+  const d={};
+  const tier=(1+.25*S.rebirths[0])*(1+.75*S.rebirths[1])*(1+3*S.rebirths[2]);
+  let sk=1;for(const k in S.skins){const s=SKINS.find(x=>x.id===k);if(s)sk*=s.mult}
+  for(const k in S.secrets){const s=SECRETS.find(x=>x.id===k);if(s)sk*=s.mult}
+  let bm=1;S.bossDone.forEach((x,i)=>{if(x)bm*=BOSSES[i].m});
+  d.formMul=FORMS[S.form].mult;
+  d.global=d.formMul*Math.pow(1.2,lv('power'))*tier*(1+.02*achCount())*(1+.1*Math.pow(S.totalTokens,.6))*bm*sk*(1+.02*S.corruption)*Math.pow(1.6,ev('pact'))*Math.pow(1.5,ru('tpower'))*buffMul('all');
+  const baseAuto=lv('auto')*(1+.05*lv('auto'))+150*lv('factory')+2e4*lv('multi')+5e9*lv('forge');
+  d.pps=baseAuto*(1+ru('eauto'))*(1+.25*mu('mauto'))*Math.pow(1.25,ev('engine'))*d.global;
+  const cb=1+lv('click')*(1+.05*lv('click'))+baseAuto*.01;
+  d.clickVal=cb*(1+ru('eclick'))*(1+.25*mu('mclick'))*Math.pow(1.3,ev('dclick'))*buffMul('click')*d.global;
+  d.critCh=clamp((lv('crit')>0?.02+.012*lv('crit'):0)+.015*ev('hcrit')+buffAdd('crit'),0,.8);
+  d.critMul=8+.2*lv('crit')+ev('hcrit');
+  d.priceMul=Math.max(.05,Math.pow(.97,ev('disc'))*buffMul('price'));
+  d.evoMul=Math.pow(.97,lv('evo'))*Math.pow(.93,ru('edisc'));
+  d.eps=evilUnlocked()?.5*(1+.5*lv('evil'))*Math.pow(2,Math.max(0,S.form-4))*Math.pow(1.35,ev('soul'))*(1+.25*mu('mevil'))*buffMul('ep'):0;
+  d.avgClick=d.clickVal*(1+d.critCh*(d.critMul-1));
+  D=d;return d;
+}
+const upCost=(u,l)=>Math.floor(u.base*Math.pow(u.g,l)*D.priceMul);
+const evCost=(u,l)=>Math.floor(u.base*Math.pow(u.g,l));
+const ruCost=(u,l)=>Math.ceil(u.base*Math.pow(u.g,l));
+const evoCostOf=i=>Math.floor(FORMS[i].cost*D.evoMul);
+const addPts=v=>{S.pts+=v;S.total+=v;S.run+=v};
+const addEP=v=>{S.evilPts+=v;S.totalEvil+=v};
+function addBuff(k,m,sec,label,evil){
+  const ex=T.buffs.find(b=>b.label===label);
+  if(ex){ex.until=Math.max(ex.until,now()+sec*1000);return}
+  T.buffs.push({k,m,until:now()+sec*1000,label,evil:!!evil});
+}
+
+/* ---------- clicking ---------- */
+function doClick(x,y){
+  recompute();
+  let v=D.clickVal,crit=Math.random()<D.critCh;
+  if(crit){v*=D.critMul;S.crits++}
+  addPts(v);if(evilUnlocked())addEP(D.eps*.1);
+  S.clicks++;if(v>S.bestClick)S.bestClick=v;
+  if(T.boss)hitBoss(v);
+  const t=now();T.idle=0;T.squish=1;
+  T.combo=(t-T.lastClick<450)?Math.min(12,(T.combo||0)+1):0;T.lastClick=t;
+  T.clickTimes.push(t);if(T.clickTimes.length>24)T.clickTimes.shift();
+  if(T.clickTimes.length>=24&&t-T.clickTimes[0]<2000)unlockSecret('moggity');
+  H.floater('+'+fmt(v),crit?'crit':'',x,y);
+  H.burst(x,y,crit?26:8,{crit});
+  H.sfx(crit?'crit':'click',T.combo);
+  if(crit&&S.set.shake)H.shake();
+}
+
+/* ---------- shop ---------- */
+function bulkCost(kind,u,n){
+  const lvl=kind==='up'?lv(u.id):kind==='ev'?ev(u.id):ru(u.id);
+  const f=kind==='up'?upCost:kind==='ev'?evCost:ruCost;
+  const wallet=kind==='up'?S.pts:kind==='ev'?S.evilPts:S.tokens;
+  const mx=isFinite(u.max)?u.max-lvl:Infinity;
+  const lim=n==='max'?500:n;let total=0,cnt=0;
+  while(cnt<Math.min(lim,mx)){const c=f(u,lvl+cnt);if(n==='max'&&total+c>wallet)break;total+=c;cnt++}
+  if(cnt===0&&mx>0){total=f(u,lvl);cnt=1}
+  return{total,cnt};
+}
+function buy(kind,id,n=1){
+  const list=kind==='up'?UPG:kind==='ev'?EVU:RUP,u=list.find(x=>x.id===id);if(!u)return false;
+  const store=kind==='up'?S.up:kind==='ev'?S.ev:S.ru;
+  const f=kind==='up'?upCost:kind==='ev'?evCost:ruCost;
+  recompute();let bought=0;
+  const lim=n==='max'?1e4:n;
+  while(bought<lim){
+    const l=store[id]||0;if(l>=u.max)break;
+    const c=f(u,l);
+    const wallet=kind==='up'?S.pts:kind==='ev'?S.evilPts:S.tokens;
+    if(wallet<c)break;
+    if(kind==='up')S.pts-=c;else if(kind==='ev')S.evilPts-=c;else S.tokens-=c;
+    store[id]=l+1;bought++;S.buys++;
+    if(kind==='ev'){addCorruption(u.cor)}
+    if(kind==='ru'&&id==='sform')S.form=Math.max(S.form,0);
+    recompute();
+  }
+  if(bought){H.sfx('buy');H.refresh('shop');}else H.sfx('no');
+  return bought>0;
+}
+function addCorruption(n){
+  const before=S.corruption;S.corruption=Math.min(100,S.corruption+n);S.maxCor=Math.max(S.maxCor,S.corruption);
+  for(const m of COR_MS)if(before<m.at&&S.corruption>=m.at){H.toast('Corruption: '+m.n,m.d,'bad');H.sfx('evil');H.flash()}
+}
+
+/* ---------- evolution ---------- */
+function secretReqOK(){return S.form>=14&&S.maxCor>=100&&BOSSES.every((_,i)=>S.bossDone[i])&&S.golden>=7}
+function secretReqs(){return[
+  ['Reach Omniversal Verity',S.form>=14],['Reach 100% corruption (once)',S.maxCor>=100],
+  ['Defeat all six bosses',BOSSES.every((_,i)=>S.bossDone[i])],['Catch 7 golden Verities',S.golden>=7]]}
+function canEvolve(){
+  const n=S.form+1;if(n>=FORMS.length)return{ok:false,why:'Max form'};
+  recompute();const f=FORMS[n];
+  if(f.secret&&!secretReqOK())return{ok:false,why:'Hidden requirements'};
+  if(lv('evil')<f.evil)return{ok:false,why:'Needs Evil Energy '+f.evil};
+  const c=evoCostOf(n);if(S.pts<c)return{ok:false,why:'Not enough points',cost:c};
+  return{ok:true,cost:c};
+}
+function evolve(){
+  const r=canEvolve();if(!r.ok){H.sfx('no');return false}
+  S.pts-=r.cost;S.form++;
+  if(S.form>S.maxForm){S.maxForm=S.form;if(S.form>=9)S.mp++}
+  S.look=null;recompute();
+  H.sfx('evolve');H.flash();H.shake();
+  H.toast('Evolved into '+FORMS[S.form].n+'!','×'+fmt(FORMS[S.form].mult)+' power','good');
+  H.burst(...Object.values(H.center()),60,{big:true});
+  H.refresh('all');return true;
+}
+
+/* ---------- golden, events ---------- */
+const luckMul=()=>Math.pow(.92,ru('luck'))*Math.pow(.9,mu('mluck'));
+function goldenCaught(){
+  recompute();S.golden++;
+  const opts=['frenzy','clickfrenzy','lump','blessing'];if(evilUnlocked())opts.push('evil');
+  const k=pick(opts);
+  if(k==='frenzy'){addBuff('all',7,25,'Frenzy ×7');H.toast('Golden Verity: Frenzy!','All production ×7 for 25s','gold')}
+  else if(k==='clickfrenzy'){addBuff('click',40,15,'Click Frenzy ×40');H.toast('Golden Verity: Click Frenzy!','Clicks ×40 for 15s','gold')}
+  else if(k==='lump'){const v=Math.max(D.pps*900,D.clickVal*300);addPts(v);H.toast('Golden Verity: Lucky Lump!','+'+fmt(v)+' points','gold')}
+  else if(k==='blessing'){addBuff('crit',.4,20,'Blessing +40% crit');H.toast('Golden Verity: Blessing!','+40% crit chance for 20s','gold')}
+  else{const v=D.eps*600+25;addEP(v);H.toast('Golden Verity: Dark Gift!','+'+fmt(v)+' Evil Points','gold')}
+  H.sfx('golden');H.refresh('all');
+}
+function luckyEvent(){
+  recompute();
+  const opts=['shower','double','critstorm','sale'];if(evilUnlocked())opts.push('evilsurge');
+  const k=pick(opts);
+  if(k==='shower'){const v=Math.max(D.pps*300,D.clickVal*100);addPts(v);H.toast('Lucky Shower!','+'+fmt(v)+' points rain down','gold');H.burst(...Object.values(H.center()),40,{rain:true})}
+  else if(k==='double'){addBuff('all',2,30,'Double Time ×2');H.toast('Double Time!','All production ×2 for 30s','gold')}
+  else if(k==='critstorm'){addBuff('crit',.3,20,'Crit Storm +30%');H.toast('Crit Storm!','+30% crit chance for 20s','gold')}
+  else if(k==='sale'){addBuff('price',.5,20,'Flash Sale -50%');H.toast('Flash Sale!','Shop prices halved for 20s','gold')}
+  else{addBuff('ep',3,30,'Evil Surge ×3 EP',true);H.toast('Evil Surge!','Evil Points ×3 for 30s','bad')}
+  H.sfx('lucky');
+}
+
+/* ---------- abilities ---------- */
+function abilCost(a){recompute();return Math.max(a.cost,Math.floor(D.eps*a.cd*.5))}
+function useAbility(id){
+  const a=ABIL.find(x=>x.id===id);if(!a)return;recompute();
+  if(S.corruption<a.at||(T.cd[id]||0)>0||S.evilPts<abilCost(a)){H.sfx('no');return}
+  S.evilPts-=abilCost(a);T.cd[id]=a.cd;
+  if(id==='pulse'){addPts(D.pps*90)}
+  if(id==='rend')addBuff('click',5,a.dur,'Soul Rend ×5',true);
+  if(id==='surge')addBuff('all',3,a.dur,'Abyss Surge ×3',true);
+  if(id==='collapse'){addPts(D.pps*1200)}
+  H.sfx('evil');H.flash();H.toast(a.n+'!',a.d,'bad');H.refresh('all');
+}
+
+/* ---------- bosses ---------- */
+function bossAvail(i){return S.maxForm>=BOSSES[i].form}
+function startBoss(i){
+  if(T.boss||!bossAvail(i))return;recompute();
+  const b=BOSSES[i],hp=Math.max(10,D.avgClick*150*b.diff);
+  T.boss={i,hp,max:hp,t:30};H.sfx('boss');H.toast(b.n+' appears!','Click fast! You have 30 seconds.','bad');H.refresh('all');
+}
+function hitBoss(v){if(!T.boss)return;T.boss.hp-=v;if(T.boss.hp<=0)endBoss(true)}
+function endBoss(win){
+  const bs=T.boss;if(!bs)return;const b=BOSSES[bs.i];T.boss=null;
+  if(win){
+    S.bossWins++;recompute();
+    if(!S.bossDone[bs.i]){S.bossDone[bs.i]=true;S.mp++;addEP(b.ep);recompute();H.toast('Defeated '+b.n+'!','+'+fmt(b.ep)+' EP and a permanent ×'+b.m+' multiplier','good')}
+    else{const e=b.ep*.3;addEP(e);H.toast('Rematch won!','+'+fmt(e)+' Evil Points','good')}
+    H.sfx('win');H.flash();
+  }else{S.bossFails++;H.toast(b.n+' escaped','Time ran out. Try again!','bad');H.sfx('lose');unlockSecret('sadity')}
+  H.bossEnd();H.refresh('all');
+}
+
+/* ---------- rebirth ---------- */
+function tokenGain(t){return Math.floor(Math.pow(Math.max(0,S.run)/1e18,.12)*TIERS[t].tok*(1+.1*mu('mtok')))}
+function canRebirth(t){return S.form>=TIERS[t].form&&tokenGain(t)>=1}
+function doRebirth(t){
+  if(!canRebirth(t))return false;
+  const g=tokenGain(t);
+  S.tokens+=g;S.totalTokens+=g;S.rebirths[t]++;S.mp+=TIERS[t].mp;
+  if(S.run>S.bestRun)S.bestRun=S.run;
+  S.pts=ru('head')>0?250*Math.pow(8,ru('head')):0;S.run=0;S.up={};S.ev={};S.evilPts=0;
+  S.corruption=Math.floor(S.corruption*.2*ru('dark'));
+  S.form=Math.min(ru('sform'),FORMS.length-2);S.maxForm=Math.max(S.maxForm,S.form);S.look=null;
+  T.boss=null;T.buffs=[];T.cd={};recompute();
+  H.sfx('rebirth');H.flash();H.toast(TIERS[t].n+' complete!','+'+fmt(g)+' Rebirth Tokens','good');
+  save();H.refresh('all');return true;
+}
+function buySkin(id){
+  const s=SKINS.find(x=>x.id===id);if(!s||S.skins[id])return;
+  if(S.tokens<s.cost||S.rebirths[1]<s.req){H.sfx('no');return}
+  S.tokens-=s.cost;S.skins[id]=true;S.look='skin:'+id;recompute();H.sfx('evolve');H.toast(s.n+' unlocked!','×'+fmt(s.mult)+' permanent power','good');H.refresh('all');
+}
+function buyMastery(id){
+  const u=MUP.find(x=>x.id===id),l=mu(id),c=l+1;
+  if(l>=u.max||S.mp<c){H.sfx('no');return}
+  S.mp-=c;S.mu[id]=l+1;recompute();H.sfx('buy');H.refresh('all');
+}
+
+/* ---------- secrets / achievements ---------- */
+function unlockSecret(id){
+  if(S.secrets[id])return;const s=SECRETS.find(x=>x.id===id);if(!s)return;
+  S.secrets[id]=true;recompute();H.sfx('secret');H.flash();
+  H.toast('Secret form found: '+s.n+'!','×'+s.mult+' permanent power','gold');H.refresh('all');
+}
+function checkSecrets(){
+  if(T.idle>=60)unlockSecret('boredity');
+  if(S.clicks>=777)unlockSecret('lovity');
+  if(S.golden>=3)unlockSecret('cloudity');
+  if(S.bgClicks>=25)unlockSecret('invisibility');
+  if(Object.keys(S.tabsSeen).length>=TABS.length)unlockSecret('curiosity');
+  if(SECRETS.filter(s=>s.id!=='rainbowity').every(s=>S.secrets[s.id]))unlockSecret('rainbowity');
+}
+function checkAch(){
+  for(const a of ACH){if(S.ach[a[0]])continue;let ok=false;try{ok=a[4](S)}catch(e){}
+    if(ok){S.ach[a[0]]=true;recompute();H.sfx('ach');H.toast(a[1]+' '+a[2],a[3]+' (+2% production)','good');H.refresh('ach')}}
+}
+
+/* ---------- quests ---------- */
+const metric=k=>({clicks:S.clicks,earned:S.total,buys:S.buys,crit:S.crits,golden:S.golden,boss:S.bossWins+S.bossFails,evil:S.totalEvil})[k]||0;
+function newQuest(){
+  recompute();const have=S.quests.map(q=>q.k);
+  const opts=['clicks','earned','buys'];
+  if(lv('crit')>0)opts.push('crit');opts.push('golden');
+  if(S.maxForm>=3)opts.push('boss');if(evilUnlocked())opts.push('evil');
+  let k=pick(opts.filter(o=>!have.includes(o)));if(!k)k=pick(opts);
+  const vpR=D.pps*600+D.clickVal*150+200;let goal,label,reward={vp:vpR};
+  if(k==='clicks'){goal=pick([100,200,400,800,1500]);label=`Click Verity ${fmt(goal)} times`}
+  else if(k==='earned'){goal=Math.max(2000,D.pps*900+D.clickVal*300);label=`Earn ${fmt(goal)} points`}
+  else if(k==='buys'){goal=pick([8,15,25,40]);label=`Buy ${goal} upgrades`}
+  else if(k==='crit'){goal=pick([10,25,40]);label=`Land ${goal} critical clicks`;reward={vp:vpR*1.5}}
+  else if(k==='golden'){goal=1;label='Catch a golden Verity';reward={vp:vpR*3}}
+  else if(k==='boss'){goal=1;label='Fight a boss';reward={ep:Math.max(50,D.eps*300)}}
+  else{goal=Math.max(50,D.eps*600);label=`Earn ${fmt(goal)} Evil Points`;reward={ep:goal*.8}}
+  return{k,goal,label,reward,start:metric(k)};
+}
+function ensureQuests(){while(S.quests.length<3)S.quests.push(newQuest())}
+const qProg=q=>Math.min(q.goal,metric(q.k)-q.start);
+function claimQuest(i){
+  const q=S.quests[i];if(!q||qProg(q)<q.goal)return;
+  if(q.reward.vp){addPts(q.reward.vp);H.toast('Quest complete!','+'+fmt(q.reward.vp)+' points','good')}
+  if(q.reward.ep){addEP(q.reward.ep);H.toast('Quest complete!','+'+fmt(q.reward.ep)+' Evil Points','good')}
+  S.questsDone++;S.quests.splice(i,1);ensureQuests();H.sfx('ach');H.refresh('quests');
+}
+
+/* ---------- daily ---------- */
+const today=()=>{try{return new Date().toLocaleDateString('en-CA')}catch(e){return new Date().toISOString().slice(0,10)}};
+const yesterday=()=>{const d=new Date();d.setDate(d.getDate()-1);try{return d.toLocaleDateString('en-CA')}catch(e){return d.toISOString().slice(0,10)}};
+const dailyReady=()=>S.daily.last!==today();
+function dailyDay(){return S.daily.last===yesterday()?S.daily.streak%7:S.daily.last===today()?(S.daily.streak-1)%7:0}
+function claimDaily(){
+  if(!dailyReady())return;recompute();
+  const day=dailyDay(),min=DAILY[day];
+  S.daily.streak=S.daily.last===yesterday()?S.daily.streak+1:1;S.daily.last=today();S.dailyClaims++;
+  const vp=Math.max(500,D.pps*60*min+D.clickVal*50);addPts(vp);let msg='+'+fmt(vp)+' points';
+  if(evilUnlocked()&&(day===2||day===4)){const e=Math.max(20,D.eps*60*min);addEP(e);msg+=', +'+fmt(e)+' EP'}
+  if(day===6){if(S.rebirths[0]+S.rebirths[1]+S.rebirths[2]>0){S.tokens++;msg+=', +1 Rebirth Token'}else{addPts(vp);msg+=' (doubled)'}}
+  H.toast('Daily reward claimed!',msg,'gold');H.sfx('ach');H.refresh('all');
+}
+
+/* ---------- tick ---------- */
+function tick(dt){
+  recompute();
+  S.playtime+=dt;T.idle+=dt;
+  if(D.pps>0)addPts(D.pps*dt);
+  if(D.eps>0)addEP(D.eps*dt);
+  const t=now();T.buffs=T.buffs.filter(b=>b.until>t);
+  for(const k in T.cd)if(T.cd[k]>0)T.cd[k]=Math.max(0,T.cd[k]-dt);
+  T.goldIn-=dt;if(T.goldIn<=0){T.goldIn=rnd(60,180)*luckMul();H.golden()}
+  T.eventIn-=dt;if(T.eventIn<=0){T.eventIn=rnd(110,260)*luckMul();luckyEvent()}
+  if(T.boss){T.boss.t-=dt;T.boss.hp-=D.pps*.1*dt;if(T.boss.hp<=0)endBoss(true);else if(T.boss.t<=0)endBoss(false)}
+  T.achT+=dt;if(T.achT>=.5){T.achT=0;checkAch();checkSecrets();}
+  T.squish=Math.max(0,T.squish-dt*5);
+}
+
+/* ---------- look ---------- */
+function currentLook(){
+  if(S.look){
+    const [ty,id]=S.look.split(':');
+    const s=(ty==='secret'?SECRETS:SKINS).find(x=>x.id===id);
+    if(s&&(ty==='secret'?S.secrets[id]:S.skins[id]))return s;
+  }
+  return FORMS[S.form];
+}
+function corruptionExtras(){
+  const e=[];if(S.corruption>=25)e.push('redeyes');if(S.corruption>=50)e.push('darkaura');
+  if(S.corruption>=75)e.push('cohorns');if(S.corruption>=100)e.push('corcracks');return e;
+}
+
+/* ---------- save / load ---------- */
+function mergeDeep(a,b){for(const k in b){if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])&&a[k]&&typeof a[k]==='object')mergeDeep(a[k],b[k]);else a[k]=b[k]}return a}
+function serialize(){S.lastSave=now();return JSON.stringify(S)}
+function save(){try{localStorage.setItem(SAVE_KEY,serialize())}catch(e){}}
+function loadFromString(str){
+  try{const o=JSON.parse(str);const s=mergeDeep(newState(),o);if(!Array.isArray(s.rebirths)||s.rebirths.length<3)s.rebirths=[0,0,0];
+    s.form=clamp(s.form|0,0,FORMS.length-1);return s}catch(e){return null}
+}
+function exportSave(){try{return btoa(unescape(encodeURIComponent(serialize())))}catch(e){return''}}
+function importSave(txt){
+  try{const s=loadFromString(decodeURIComponent(escape(atob(txt.trim()))));if(!s)return false;S=s;recompute();save();return true}catch(e){return false}
+}
+function offlineGain(){
+  recompute();const dt=(now()-S.lastSave)/1000;if(dt<60||!isFinite(dt))return null;
+  const cap=(8+mu('moff'))*3600,eff=Math.min(1,.5+.1*mu('moff')),secs=Math.min(dt,cap);
+  const pts=D.pps*secs*eff,ep=D.eps*secs*eff*.5;
+  if(pts<=0&&ep<=0)return null;
+  addPts(pts);addEP(ep);return{away:dt,secs,eff,pts,ep,capped:dt>cap};
+}
+/* ============ AUDIO ============ */
+let AC=null,sfxG=null,musG=null,musTimer=null,musStep=0;
+function audioInit(){
+  if(AC){if(AC.state==='suspended')AC.resume();return}
+  try{
+    AC=new (window.AudioContext||window.webkitAudioContext)();
+    sfxG=AC.createGain();musG=AC.createGain();sfxG.connect(AC.destination);musG.connect(AC.destination);
+    applyAudio();
+  }catch(e){AC=null}
+}
+function applyAudio(){
+  if(!AC)return;
+  sfxG.gain.value=S.set.sfx?S.set.sfxv:0;musG.gain.value=S.set.music?S.set.musv*.5:0;
+  if(S.set.music&&!musTimer)musTimer=setInterval(musTick,340);
+  if(!S.set.music&&musTimer){clearInterval(musTimer);musTimer=null}
+}
+function tone(f,dur,type='sine',vol=.3,delay=0,slideTo=null,dest){
+  if(!AC)return;const t=AC.currentTime+delay,o=AC.createOscillator(),g=AC.createGain();
+  o.type=type;o.frequency.setValueAtTime(f,t);if(slideTo)o.frequency.exponentialRampToValueAtTime(Math.max(20,slideTo),t+dur);
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g);g.connect(dest||sfxG);o.start(t);o.stop(t+dur+.05);
+}
+const NOTE=n=>440*Math.pow(2,(n-69)/12);
+function sfx(name,arg){
+  if(!AC||!S.set.sfx)return;
+  const c=arg||0;
+  switch(name){
+    case'click':tone(380+c*45+Math.random()*30,.09,'triangle',.28,0,(380+c*45)*1.5);tone(NOTE(84+Math.min(c,7)),.05,'sine',.08);break;
+    case'crit':[76,83,88].forEach((n,i)=>tone(NOTE(n),.14,'sawtooth',.14,i*.045));tone(120,.2,'square',.12,0,60);break;
+    case'buy':tone(520,.08,'sine',.25);tone(780,.12,'sine',.22,.06);break;
+    case'no':tone(140,.12,'square',.12,0,90);break;
+    case'evolve':[60,64,67,72,76,79,84].forEach((n,i)=>tone(NOTE(n),.35,'triangle',.22,i*.07));tone(NOTE(48),.9,'sawtooth',.1,0,NOTE(36));break;
+    case'evil':tone(220,.7,'sawtooth',.2,0,45);tone(110,.7,'square',.12,0,40);break;
+    case'golden':[88,91,95,100,103].forEach((n,i)=>tone(NOTE(n),.4,'sine',.2,i*.06));break;
+    case'lucky':[72,76,79].forEach((n,i)=>tone(NOTE(n),.25,'triangle',.2,i*.08));break;
+    case'ach':tone(NOTE(76),.2,'triangle',.22);tone(NOTE(83),.35,'triangle',.22,.1);break;
+    case'boss':tone(70,.35,'sawtooth',.3,0,40);tone(70,.35,'sawtooth',.3,.3,40);tone(55,.6,'sawtooth',.3,.6,35);break;
+    case'win':[67,71,74,79,83].forEach((n,i)=>tone(NOTE(n),.3,'square',.12,i*.09));break;
+    case'lose':[67,64,60,55].forEach((n,i)=>tone(NOTE(n),.3,'triangle',.2,i*.14));break;
+    case'rebirth':tone(100,1.4,'sawtooth',.18,0,1600);[84,88,91,96].forEach((n,i)=>tone(NOTE(n),.6,'sine',.2,.6+i*.1));break;
+    case'secret':[69,72,76,81,84].forEach((n,i)=>tone(NOTE(n),.5,'sine',.2,i*.12));break;
+  }
+}
+const SCALES={bright:[0,2,4,7,9,12,14,16],dark:[0,3,5,7,10,12,15,17],cosmic:[0,2,7,9,11,14,16,19]};
+function musTick(){
+  if(!AC||!S.set.music||document.hidden)return;
+  const f=S.form,sc=f>=3&&f<=8?SCALES.dark:f>=11?SCALES.cosmic:SCALES.bright;
+  const prog=f>=3&&f<=8?[45,41,43,40]:[48,45,41,43];
+  const bar=Math.floor(musStep/8)%4,root=prog[bar],st=musStep%8;
+  if(st===0){tone(NOTE(root-12),2.6,'sine',.5,0,null,musG);tone(NOTE(root),2.6,'triangle',.12,0,null,musG);tone(NOTE(root+(f>=3&&f<=8?3:4)),2.6,'sine',.12,0,null,musG)}
+  if(st%2===0||Math.random()<.4){const n=root+12+sc[Math.floor(Math.random()*sc.length)];tone(NOTE(n),.5,'triangle',.18,0,null,musG)}
+  musStep++;
+}
+
+/* ============ DRAWING ============ */
+const lum=h=>{const n=parseInt(h.slice(1),16);return(.299*(n>>16)+.587*(n>>8&255)+.114*(n&255))/255};
+function star(ctx,x,y,r,p=5,inner=.45){ctx.beginPath();for(let i=0;i<p*2;i++){const a=-Math.PI/2+i*Math.PI/p,rr=i%2?r*inner:r;ctx.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr)}ctx.closePath()}
+function heart(ctx,x,y,s){ctx.beginPath();ctx.moveTo(x,y+s*.9);ctx.bezierCurveTo(x-s*1.4,y-s*.2,x-s*.6,y-s*1.1,x,y-s*.35);ctx.bezierCurveTo(x+s*.6,y-s*1.1,x+s*1.4,y-s*.2,x,y+s*.9);ctx.closePath()}
+function horn(ctx,x,dir,r,len,col){ctx.save();ctx.translate(x,-r*.82);ctx.rotate(dir*.35);ctx.beginPath();ctx.moveTo(-r*.13,0);ctx.quadraticCurveTo(dir*r*.05,-len*.6,dir*r*.12,-len);ctx.quadraticCurveTo(r*.15*dir,-len*.4,r*.13,0);ctx.closePath();ctx.fillStyle=col;ctx.fill();ctx.restore()}
+function eyesDraw(ctx,k,r,t,ink,red){
+  const ex=r*.33,ey=-r*.14,rx=r*.085,ry=r*.14;
+  const dot=(x,y,a,b,c)=>{ctx.beginPath();ctx.ellipse(x,y,a,b,0,0,7);ctx.fillStyle=c||ink;ctx.fill()};
+  const hl=(x,y)=>{ctx.beginPath();ctx.arc(x-rx*.25,y-ry*.35,rx*.28,0,7);ctx.fillStyle='rgba(255,255,255,.9)';ctx.fill()};
+  const blink=(Math.sin(t*.9)>.985)?.15:1;
+  ctx.lineCap='round';ctx.lineWidth=r*.055;ctx.strokeStyle=ink;
+  if(red){for(const s of[-1,1]){ctx.save();ctx.shadowColor='#ff1030';ctx.shadowBlur=r*.2;dot(s*ex,ey,rx*1.05,ry*blink,'#ff1030');ctx.restore()}return}
+  switch(k){
+    case'dot':for(const s of[-1,1]){dot(s*ex,ey,rx,ry*blink);if(blink>.5&&ink[1]==='1'||ink==='#1a0a00')hl(s*ex,ey)}break;
+    case'happy':for(const s of[-1,1]){ctx.beginPath();ctx.arc(s*ex,ey+ry*.5,rx*1.3,Math.PI*1.1,Math.PI*1.9);ctx.stroke()}break;
+    case'glow':for(const s of[-1,1]){ctx.save();ctx.shadowColor='#2df7ff';ctx.shadowBlur=r*.25;dot(s*ex,ey,rx*1.1,ry*blink,'#c9fbff');ctx.restore()}break;
+    case'angry':for(const s of[-1,1]){dot(s*ex,ey+ry*.2,rx,ry*.85);ctx.beginPath();ctx.moveTo(s*ex*1.65,ey-ry*1.45);ctx.lineTo(s*ex*.45,ey-ry*.55);ctx.lineWidth=r*.07;ctx.stroke()}break;
+    case'slit':for(const s of[-1,1]){ctx.save();ctx.shadowColor='#ffb000';ctx.shadowBlur=r*.2;dot(s*ex,ey,rx*1.25,ry*.9,'#ffcc00');ctx.restore();dot(s*ex,ey,rx*.28,ry*.85,'#000');ctx.beginPath();ctx.moveTo(s*ex*1.7,ey-ry*1.5);ctx.lineTo(s*ex*.4,ey-ry*.7);ctx.lineWidth=r*.07;ctx.stroke()}break;
+    case'void':for(const s of[-1,1]){ctx.save();ctx.shadowColor='#b45cff';ctx.shadowBlur=r*.3;dot(s*ex,ey,rx*1.2,ry*1.15,'#000');ctx.restore();ctx.beginPath();ctx.ellipse(s*ex,ey,rx*1.2,ry*1.15,0,0,7);ctx.strokeStyle='#b45cff';ctx.lineWidth=r*.02;ctx.stroke()}break;
+    case'multi':for(const s of[-1,1]){dot(s*ex,ey,rx,ry);dot(s*ex*.55,ey-ry*1.9,rx*.55,ry*.55);dot(s*ex*1.35,ey-ry*1.7+Math.sin(t*5+s)*2,rx*.4,rx*.4)}break;
+    case'star':for(const s of[-1,1]){ctx.save();ctx.shadowColor='#fff27a';ctx.shadowBlur=r*.15;star(ctx,s*ex,ey,ry*1.35);ctx.fillStyle='#fff7a8';ctx.fill();ctx.restore();ctx.lineWidth=r*.02;star(ctx,s*ex,ey,ry*1.35);ctx.strokeStyle=ink;ctx.stroke()}break;
+    case'spiral':for(const s of[-1,1]){ctx.beginPath();for(let a=0;a<14;a+=.3){const rr=a*r*.0105;ctx.lineTo(s*ex+Math.cos(a+t*3)*rr,ey+Math.sin(a+t*3)*rr)}ctx.lineWidth=r*.035;ctx.stroke()}break;
+    case'cosmic':for(const s of[-1,1]){ctx.save();ctx.shadowColor='#8fd0ff';ctx.shadowBlur=r*.2;dot(s*ex,ey,rx*1.2,ry*1.2,'#0a0a30');ctx.restore();ctx.fillStyle='#fff';for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(s*ex+Math.cos(t*2+i*1.6)*rx*.7,ey+Math.sin(t*2+i*1.6)*ry*.7,r*.014,0,7);ctx.fill()}}break;
+    case'split':dot(-ex,ey,rx,ry*blink);ctx.save();ctx.shadowColor='#ff3df2';ctx.shadowBlur=r*.2;dot(ex,ey,rx*1.1,ry*.9,'#ff3df2');ctx.restore();dot(ex,ey,rx*.3,ry*.85,'#000');break;
+    case'wide':for(const s of[-1,1]){dot(s*ex,ey,rx*1.6,ry*1.4,'#fff');ctx.beginPath();ctx.ellipse(s*ex,ey,rx*1.6,ry*1.4,0,0,7);ctx.lineWidth=r*.02;ctx.stroke();dot(s*ex+Math.sin(t)*rx*.4,ey,rx*.7,ry*.8)}break;
+    case'heart':for(const s of[-1,1]){heart(ctx,s*ex,ey,ry*1.1*(1+Math.sin(t*6)*.06));ctx.fillStyle='#ff1b6d';ctx.fill()}break;
+    case'sad':for(const s of[-1,1]){dot(s*ex,ey+ry*.2,rx,ry);ctx.beginPath();ctx.moveTo(s*ex*1.6,ey-ry*.9);ctx.lineTo(s*ex*.5,ey-ry*1.5);ctx.stroke()}ctx.beginPath();ctx.ellipse(-ex*1.1,ey+ry*1.9+((t*40)%20),rx*.35,ry*.45,0,0,7);ctx.fillStyle='#6cf';ctx.fill();break;
+    case'derp':dot(-ex,ey-ry*.2,rx*1.5,ry*1.3,'#fff');dot(-ex+rx*.5,ey,rx*.6,ry*.7);ctx.beginPath();ctx.ellipse(-ex,ey-ry*.2,rx*1.5,ry*1.3,0,0,7);ctx.lineWidth=r*.02;ctx.stroke();dot(ex,ey+ry*.3,rx*.8,ry*.6);break;
+    default:dot(-ex,ey,rx,ry);dot(ex,ey,rx,ry);
+  }
+}
+function mouthDraw(ctx,k,r,t,ink){
+  const y=r*.3;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=ink;ctx.lineWidth=r*.065;
+  const arc=(w,h,off=0)=>{ctx.beginPath();ctx.moveTo(-w,y+off);ctx.quadraticCurveTo(0,y+h+off,w,y+off)};
+  switch(k){
+    case'smile':arc(r*.42,r*.34);ctx.stroke();break;
+    case'grin':arc(r*.5,r*.4);ctx.lineTo(-r*.5,y);ctx.fillStyle=ink;ctx.fill();ctx.beginPath();ctx.moveTo(-r*.4,y+r*.04);ctx.lineTo(r*.4,y+r*.04);ctx.strokeStyle='#fff';ctx.lineWidth=r*.04;ctx.stroke();break;
+    case'big':ctx.beginPath();ctx.moveTo(-r*.5,y-r*.05);ctx.quadraticCurveTo(0,y+r*.75,r*.5,y-r*.05);ctx.closePath();ctx.fillStyle=ink;ctx.fill();ctx.beginPath();ctx.ellipse(0,y+r*.3,r*.2,r*.12,0,0,Math.PI);ctx.fillStyle='#ff6f91';ctx.fill();break;
+    case'smirk':ctx.beginPath();ctx.moveTo(-r*.35,y+r*.1);ctx.quadraticCurveTo(r*.1,y+r*.2,r*.45,y-r*.1);ctx.stroke();break;
+    case'fang':arc(r*.45,r*.3,r*.03);ctx.stroke();ctx.fillStyle='#fff';for(const s of[-1,1]){ctx.beginPath();ctx.moveTo(s*r*.22,y+r*.18);ctx.lineTo(s*r*.12,y+r*.18);ctx.lineTo(s*r*.17,y+r*.34);ctx.closePath();ctx.fill()}break;
+    case'wide':ctx.beginPath();ctx.moveTo(-r*.55,y);ctx.quadraticCurveTo(0,y+r*.55,r*.55,y);ctx.quadraticCurveTo(0,y+r*.12,-r*.55,y);ctx.fillStyle='#200008';ctx.fill();ctx.stroke();ctx.fillStyle='#fff';for(let i=-2;i<=2;i++){ctx.beginPath();ctx.moveTo(i*r*.2-r*.07,y+r*.1+Math.abs(i)*.0);ctx.lineTo(i*r*.2+r*.07,y+r*.1);ctx.lineTo(i*r*.2,y+r*.26-Math.abs(i)*r*.04);ctx.closePath();ctx.fill()}break;
+    case'flat':ctx.beginPath();ctx.moveTo(-r*.3,y+r*.1);ctx.lineTo(r*.3,y+r*.1);ctx.stroke();break;
+    case'zig':ctx.beginPath();for(let i=0;i<=8;i++)ctx.lineTo(-r*.45+i*r*.1125,y+(i%2?r*.12:-r*.02)+Math.sin(t*20+i)*r*.01);ctx.stroke();break;
+    case'o':ctx.beginPath();ctx.ellipse(0,y+r*.1,r*.1,r*.14,0,0,7);ctx.fillStyle=ink;ctx.fill();break;
+    case'frown':ctx.beginPath();ctx.moveTo(-r*.3,y+r*.25);ctx.quadraticCurveTo(0,y-r*.08,r*.3,y+r*.25);ctx.stroke();break;
+    case'squig':ctx.beginPath();for(let i=0;i<=20;i++){const x=-r*.45+i*r*.045;ctx.lineTo(x,y+r*.1+Math.sin(i*.9+t*2)*r*.06)}ctx.stroke();break;
+  }
+}
+function drawFace(ctx,sp,cx,cy,r,t,o={}){
+  const ex=sp.ex.concat(o.extra||[]),has=k=>ex.includes(k);
+  const dark=lum(sp.c1)<.35,ink=o.ink||(dark?'#e9d5ff':'#1a0a00');
+  ctx.save();ctx.translate(cx,cy);
+  const sq=o.squish||0;ctx.scale(1+sq*.09,1-sq*.11);
+  if(has('rays')){ctx.save();ctx.rotate(t*.3);for(let i=0;i<14;i++){ctx.rotate(Math.PI*2/14);ctx.beginPath();ctx.moveTo(r*1.05,-r*.04);ctx.lineTo(r*1.75,0);ctx.lineTo(r*1.05,r*.04);ctx.fillStyle=sp.c1+'88';ctx.fill()}ctx.restore()}
+  if(has('aura')||has('darkaura')){const g=ctx.createRadialGradient(0,0,r*.8,0,0,r*1.7);const c=has('darkaura')&&!has('aura')?'#ff1030':sp.c1;g.addColorStop(0,c+'99');g.addColorStop(1,c+'00');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,r*1.7*(1+Math.sin(t*3)*.03),0,7);ctx.fill()}
+  if(has('wings')){for(const s of[-1,1]){ctx.save();ctx.scale(s,1);ctx.rotate(Math.sin(t*2)*.06);ctx.beginPath();ctx.moveTo(r*.8,-r*.1);ctx.bezierCurveTo(r*1.9,-r*1.3,r*2.1,-r*.1,r*1.6,r*.5);ctx.bezierCurveTo(r*1.4,r*.2,r*1.2,r*.3,r*.9,r*.35);ctx.closePath();const g=ctx.createLinearGradient(r*.8,0,r*2,0);g.addColorStop(0,sp.c1);g.addColorStop(1,sp.c2+'55');ctx.fillStyle=g;ctx.fill();ctx.restore()}}
+  if(has('horns')||has('bighorns')||has('cohorns')){const L=has('bighorns')?r*.85:has('horns')?r*.55:r*.5,col=has('cohorns')&&!has('horns')?'#400010':(dark?'#6a00ff':sp.c2);horn(ctx,-r*.52,-1,r,L,col);horn(ctx,r*.52,1,r,L,col)}
+  if(has('halo')){ctx.save();ctx.translate(0,-r*1.18);ctx.beginPath();ctx.ellipse(0,0,r*.55,r*.14,0,0,7);ctx.lineWidth=r*.06;ctx.strokeStyle='#fff3a0';ctx.shadowColor='#ffd23d';ctx.shadowBlur=r*.25;ctx.stroke();ctx.restore()}
+  if(has('crown')){ctx.save();ctx.translate(0,-r*1.03);ctx.beginPath();ctx.moveTo(-r*.45,0);ctx.lineTo(-r*.5,-r*.4);ctx.lineTo(-r*.25,-r*.2);ctx.lineTo(0,-r*.5);ctx.lineTo(r*.25,-r*.2);ctx.lineTo(r*.5,-r*.4);ctx.lineTo(r*.45,0);ctx.closePath();ctx.fillStyle='#ffd23d';ctx.fill();ctx.strokeStyle='#a06a00';ctx.lineWidth=r*.025;ctx.stroke();ctx.restore()}
+  if(has('infinity')){ctx.save();ctx.translate(0,-r*1.2);ctx.beginPath();for(let a=0;a<=Math.PI*2+.1;a+=.1){const d=1+Math.sin(a)**2;ctx.lineTo(Math.cos(a)*r*.5/d*1.6,Math.sin(a)*Math.cos(a)*r*.5/d*1.6)}ctx.lineWidth=r*.07;ctx.strokeStyle='#2df7ff';ctx.shadowColor='#2df7ff';ctx.shadowBlur=r*.2;ctx.stroke();ctx.restore()}
+  /* body */
+  ctx.save();ctx.beginPath();ctx.arc(0,0,r,0,7);
+  if(has('ghost')){ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=r*.04;ctx.shadowColor='#fff';ctx.shadowBlur=r*.1;ctx.stroke()}
+  else{
+    let g;
+    if(has('rainbow')&&ctx.createConicGradient){g=ctx.createConicGradient(t*.5,0,0);['#ff3b3b','#ffd23d','#3bff6e','#2df7ff','#6a5cff','#ff3df2','#ff3b3b'].forEach((c,i)=>g.addColorStop(i/6,c))}
+    else{g=ctx.createRadialGradient(-r*.3,-r*.35,r*.1,0,0,r);g.addColorStop(0,sp.c1);g.addColorStop(1,sp.c2)}
+    ctx.fillStyle=g;ctx.fill();
+    if(has('split')){ctx.save();ctx.clip();ctx.fillStyle='#14002a';ctx.fillRect(0,-r,r,r*2);ctx.restore()}
+    if(has('galaxy')){ctx.save();ctx.clip();for(let i=0;i<40;i++){const a=i*2.4+t*.1,d=(i%13)/13*r*.95;ctx.fillStyle=i%3?'#fff':'#ff9cf0';ctx.globalAlpha=.5+.5*Math.sin(t*2+i);ctx.fillRect(Math.cos(a)*d,Math.sin(a)*d,r*.02,r*.02)}ctx.restore()}
+    if(has('rim')){ctx.lineWidth=r*.05;ctx.strokeStyle='#b45cff';ctx.shadowColor='#b45cff';ctx.shadowBlur=r*.3;ctx.stroke()}
+    else{ctx.lineWidth=r*.035;ctx.strokeStyle=dark?sp.c1:'rgba(0,0,0,.35)';ctx.stroke()}
+    if(has('glitch')){ctx.save();ctx.clip();const k=Math.floor(t*8)%4;ctx.fillStyle='#ff3df266';ctx.fillRect(-r,-r*.5+k*r*.2,r*2,r*.12);ctx.fillStyle='#2df7ff66';ctx.fillRect(-r,r*.2-k*r*.1,r*2,r*.1);ctx.restore()}
+  }
+  ctx.restore();
+  /* face */
+  ctx.save();if(has('ghost')){ctx.globalAlpha=.8;}
+  eyesDraw(ctx,sp.eyes,r,t,ink,has('redeyes'));mouthDraw(ctx,sp.mouth,r,t,ink);ctx.restore();
+  if(has('cracks')||has('corcracks')){ctx.save();ctx.beginPath();ctx.arc(0,0,r,0,7);ctx.clip();ctx.strokeStyle=has('corcracks')?'#ff2e55':'#b4ffd8';ctx.shadowColor=ctx.strokeStyle;ctx.shadowBlur=r*.1;ctx.lineWidth=r*.025;
+    for(const[a,b,c,d]of[[-.5,-1,-.2,-.5],[-.2,-.5,-.45,-.1],[.4,-1,.25,-.55],[.25,-.55,.5,-.2],[-.4,1,-.15,.6],[.5,.9,.25,.55]]){ctx.beginPath();ctx.moveTo(a*r,b*r);ctx.lineTo(c*r,d*r);ctx.stroke()}ctx.restore()}
+  if(has('bolt')){ctx.save();ctx.strokeStyle='#fff7a8';ctx.lineWidth=r*.04;ctx.shadowColor='#ffe14d';ctx.shadowBlur=r*.15;for(const s of[-1,1]){ctx.beginPath();const x=s*r*1.15;ctx.moveTo(x,-r*.6);ctx.lineTo(x-s*r*.12,-r*.25);ctx.lineTo(x+s*r*.05,-r*.2);ctx.lineTo(x-s*r*.1,r*.2);ctx.stroke()}ctx.restore()}
+  if(has('rings')){ctx.lineWidth=r*.03;for(let i=0;i<2;i++){ctx.save();ctx.rotate(t*(i?-.8:.6)+i);ctx.beginPath();ctx.ellipse(0,0,r*1.35,r*.35,0,0,7);ctx.strokeStyle=sp.c1+'bb';ctx.stroke();ctx.restore()}}
+  if(has('orbit')){for(let i=0;i<3;i++){const a=t*(1+i*.3)+i*2.1;ctx.beginPath();ctx.arc(Math.cos(a)*r*1.4,Math.sin(a)*r*.5,r*.07,0,7);ctx.fillStyle=i===1?'#ff3df2':'#2df7ff';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=r*.12;ctx.fill()}ctx.shadowBlur=0}
+  ctx.restore();
+}
+function drawSpecTo(cv,sp,locked){
+  const d=Math.min(2,devicePixelRatio||1),s=84;cv.width=s*d;cv.height=s*d;const c=cv.getContext('2d');c.scale(d,d);
+  drawFace(c,sp,s/2,s/2+4,s*.3,0,{});
+}
+
+/* ============ PARTICLES + RENDER LOOP ============ */
+const arena=document.getElementById('arena'),fxC=document.getElementById('fx'),faceC=document.getElementById('face'),floaters=document.getElementById('floaters');
+const fxX=fxC.getContext('2d'),faceX=faceC.getContext('2d');
+let W=300,Hh=300,DPR=1,P=[],lastT=0,clock=0,FACE={x:150,y:160,r:90};
+function resize(){
+  const b=arena.getBoundingClientRect();W=Math.max(100,b.width);Hh=Math.max(100,b.height);DPR=Math.min(2,devicePixelRatio||1);
+  for(const c of[fxC,faceC]){c.width=Math.round(W*DPR);c.height=Math.round(Hh*DPR)}
+  FACE={x:W/2,y:Hh/2+Hh*.03,r:Math.min(W,Hh)*.27};
+}
+H.center=()=>({x:FACE.x,y:FACE.y});
+const rainbow=t=>`hsl(${(t*120)%360},100%,65%)`;
+function pmax(){return S.set.part==='off'?0:S.set.part==='low'?140:520}
+function spawnP(kind,x,y,o={}){
+  if(P.length>=pmax())return;
+  const sp=currentLook(),c1=sp.c1,c2=sp.c2,a=Math.random()*6.283,s=o.speed||rnd(40,200);
+  const pt={x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:0,max:rnd(.5,1.1),size:rnd(2,5),kind,col:Math.random()<.5?c1:c2,g:0,rot:rnd(0,6)};
+  switch(kind){
+    case'ring':pt.vx*=.4;pt.vy*=.4;pt.size=rnd(3,6);break;
+    case'smoke':pt.vx*=.2;pt.vy=rnd(-60,-20);pt.size=rnd(8,18);pt.max=rnd(1,1.8);pt.col=Math.random()<.5?'#6a2cff':'#2a0a60';break;
+    case'ember':pt.vy=rnd(-160,-50);pt.vx*=.3;pt.g=-20;pt.col=pick(['#ff2e55','#ff7a1f','#ffb000']);break;
+    case'flame':pt.vy=rnd(-200,-80);pt.vx*=.3;pt.size=rnd(5,11);pt.col=pick(['#ff4d00','#ff9a00','#ffd23d']);break;
+    case'void':{const d=rnd(r0()*1.2,r0()*2),aa=a;pt.x=x+Math.cos(aa)*d;pt.y=y+Math.sin(aa)*d;pt.vx=-Math.cos(aa)*d*1.6;pt.vy=-Math.sin(aa)*d*1.6;pt.max=.7;pt.col=pick(['#b45cff','#5a00b0','#fff']);break}
+    case'glitch':pt.size=rnd(4,9);pt.col=pick(['#28ff8f','#ff3df2','#2df7ff']);pt.max=.4;break;
+    case'star':pt.g=30;pt.size=rnd(5,10);pt.col=pick(['#fff7a8','#ffd23d','#fff']);break;
+    case'light':pt.vx*=.3;pt.vy*=.3;pt.size=rnd(4,10);pt.col='#fff';pt.max=1.3;break;
+    case'rainbow':pt.col=null;pt.size=rnd(4,8);break;
+    case'heart':pt.vy=rnd(-120,-50);pt.vx*=.3;pt.size=rnd(6,11);pt.col='#ff4fd8';break;
+    case'drop':pt.x=rnd(0,W);pt.y=-10;pt.vx=0;pt.vy=rnd(200,420);pt.max=1.4;pt.col=pick(['#ffd23d','#fff','#2df7ff']);break;
+    default:pt.g=240;
+  }
+  P.push(pt);
+}
+const r0=()=>FACE.r;
+H.burst=(x,y,n,o={})=>{
+  if(S.set.part==='off')return;const k=currentLook().fx;
+  if(o.rain){for(let i=0;i<n*1.5;i++)spawnP('drop',0,0);return}
+  const cnt=S.set.part==='low'?Math.ceil(n/3):n;
+  for(let i=0;i<cnt;i++)spawnP(k==='void'||k==='smoke'?'spark':k,x,y,{speed:o.big?rnd(120,420):o.crit?rnd(100,320):rnd(50,220)});
+  if(o.big||o.crit)P.push({x,y,vx:0,vy:0,life:0,max:.7,size:0,kind:'shock',col:currentLook().c1,g:0,rot:0});
+};
+function drawParticles(dt){
+  fxX.setTransform(DPR,0,0,DPR,0,0);fxX.clearRect(0,0,W,Hh);fxX.globalCompositeOperation='lighter';
+  for(let i=P.length-1;i>=0;i--){
+    const p=P[i];p.life+=dt;if(p.life>=p.max){P.splice(i,1);continue}
+    const k=p.life/p.max,al=1-k;
+    p.vy+=p.g*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.rot+=dt*3;
+    const col=p.col||rainbow(clock+p.rot);
+    fxX.globalAlpha=Math.max(0,al);
+    if(p.kind==='shock'){fxX.beginPath();fxX.arc(p.x,p.y,k*Math.max(W,Hh)*.6,0,7);fxX.lineWidth=6*al;fxX.strokeStyle=col;fxX.stroke();continue}
+    if(p.kind==='ring'){fxX.beginPath();fxX.arc(p.x,p.y,p.size+k*18,0,7);fxX.lineWidth=2;fxX.strokeStyle=col;fxX.stroke();continue}
+    if(p.kind==='star'||p.kind==='rainbow'&&p.size>6){fxX.fillStyle=col;star(fxX,p.x,p.y,p.size*(1-k*.4),4,.35);fxX.fill();continue}
+    if(p.kind==='heart'){fxX.fillStyle=col;heart(fxX,p.x,p.y,p.size*.6);fxX.fill();continue}
+    if(p.kind==='glitch'){fxX.fillStyle=col;fxX.fillRect(p.x,p.y,p.size*2,p.size*.7);continue}
+    const sz=p.kind==='smoke'?p.size*(1+k):p.size*(1-k*.5);
+    fxX.fillStyle=col;fxX.beginPath();fxX.arc(p.x,p.y,sz,0,7);fxX.fill();
+    if(p.kind!=='smoke'){fxX.globalAlpha=al*.25;fxX.beginPath();fxX.arc(p.x,p.y,sz*2.4,0,7);fxX.fill()}
+  }
+  fxX.globalCompositeOperation='source-over';fxX.globalAlpha=1;
+}
+let ambT=0;
+function frame(ts){
+  const dt=Math.min(.1,(ts-lastT)/1000||0);lastT=ts;clock+=dt;
+  const sp=T.boss?Object.assign({fx:'ember'},BOSSES[T.boss.i]):currentLook();
+  faceX.setTransform(DPR,0,0,DPR,0,0);faceX.clearRect(0,0,W,Hh);
+  const anim=S.set.anim,bob=anim==='off'?0:Math.sin(clock*2)*FACE.r*.03*(anim==='reduced'?.4:1);
+  const pulse=anim==='full'?1+Math.sin(clock*3)*.015:1;
+  drawFace(faceX,sp,FACE.x,FACE.y+bob,FACE.r*pulse,anim==='off'?0:clock,{squish:anim==='off'?0:T.squish,extra:corruptionExtras()});
+  /* ambient particles */
+  ambT+=dt;const rate=S.set.part==='high'?.07:.2;
+  while(ambT>rate&&S.set.part!=='off'){ambT-=rate;const a=rnd(0,6.283),d=FACE.r*rnd(.9,1.3);spawnP(sp.fx,FACE.x+Math.cos(a)*d,FACE.y+Math.sin(a)*d,{speed:rnd(10,50)})}
+  if(S.set.part==='off')ambT=0;
+  drawParticles(dt);
+  requestAnimationFrame(frame);
+}
+H.floater=(txt,cls,x,y)=>{
+  if(floaters.childElementCount>36)floaters.firstChild.remove();
+  const d=document.createElement('div');d.className='floater '+(cls||'');d.textContent=txt;
+  d.style.left=(x+rnd(-14,14))+'px';d.style.top=(y-20)+'px';floaters.appendChild(d);setTimeout(()=>d.remove(),1000);
+};
+H.sfx=sfx;
+H.flash=()=>{if(S.set.anim==='off')return;const f=document.getElementById('flash');f.classList.remove('on');void f.offsetWidth;f.classList.add('on')};
+H.shake=()=>{if(S.set.anim!=='full')return;arena.classList.remove('shake');void arena.offsetWidth;arena.classList.add('shake')};
+H.golden=()=>{
+  if(document.hidden||arena.querySelector('.golden'))return;
+  const b=document.createElement('button');b.className='golden';b.setAttribute('aria-label','Golden Verity: click to catch');
+  const cv=document.createElement('canvas');cv.width=128;cv.height=128;cv.style.cssText='width:64px;height:64px';b.appendChild(cv);
+  const g={n:'g',c1:'#fff27a',c2:'#ffb000',eyes:'star',mouth:'big',ex:['aura','halo'],fx:'star'};
+  const gx=cv.getContext('2d');let alive=true;
+  (function loop(ts){if(!alive)return;gx.clearRect(0,0,128,128);drawFace(gx,g,64,70,28,ts/1000,{});requestAnimationFrame(loop)})(0);
+  b.style.left=rnd(10,Math.max(20,W-74))+'px';b.style.top=rnd(10,Math.max(20,Hh-74))+'px';
+  const kill=()=>{alive=false;b.remove()};
+  b.addEventListener('pointerdown',e=>{e.stopPropagation();audioInit();H.burst(b.offsetLeft+32,b.offsetTop+32,40,{big:true});kill();goldenCaught()});
+  arena.appendChild(b);H.sfx('lucky');setTimeout(kill,12000);
+};
+/* ============ UI ============ */
+const TABS=[{id:'shop',l:'Shop'},{id:'forms',l:'Forms'},{id:'evil',l:'Evilty'},{id:'rebirth',l:'Rebirth'},{id:'mastery',l:'Mastery'},{id:'bosses',l:'Bosses'},{id:'quests',l:'Quests'},{id:'ach',l:'Awards'},{id:'stats',l:'Stats'},{id:'settings',l:'Settings'}];
+const ui={tab:'shop',bulk:1,confirmReset:false,cloud:'checking',dirtySet:true,pend:false};
+const $=id=>document.getElementById(id);
+const viewsEl=$('views'),tabsEl=$('tabs'),curEl=$('cur'),modalEl=$('modal'),modalBox=$('modalBox');
+
+/* tiny DOM morpher so buttons keep focus/hover while numbers update */
+function morph(el,html){const t=document.createElement('template');t.innerHTML=html;patch(el,t.content)}
+function patch(a,b){
+  const ac=Array.from(a.childNodes),bc=Array.from(b.childNodes);
+  for(let i=0;i<bc.length;i++){
+    const x=ac[i],y=bc[i];
+    if(!x){a.appendChild(y.cloneNode(true));continue}
+    if(x.nodeType!==y.nodeType||x.nodeName!==y.nodeName){a.replaceChild(y.cloneNode(true),x);continue}
+    if(x.nodeType===3){if(x.nodeValue!==y.nodeValue)x.nodeValue=y.nodeValue;continue}
+    if(x.nodeType!==1)continue;
+    if(x.nodeName!=='CANVAS'){
+      for(const at of Array.from(y.attributes))if(x.getAttribute(at.name)!==at.value)x.setAttribute(at.name,at.value);
+      for(const at of Array.from(x.attributes))if(!y.hasAttribute(at.name))x.removeAttribute(at.name);
+    }else{for(const at of Array.from(y.attributes))if(at.name.startsWith('data-')||at.name==='class')x.setAttribute(at.name,at.value)}
+    patch(x,y);
+  }
+  while(a.childNodes.length>bc.length)a.removeChild(a.lastChild);
+}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pct=(a,b)=>b>0?Math.max(0,Math.min(100,a/b*100)):0;
+
+/* toasts + modal */
+H.toast=(m,sub,kind)=>{
+  const box=$('toasts');while(box.childElementCount>3)box.firstChild.remove();
+  const d=document.createElement('div');d.className='toast '+(kind||'');d.innerHTML=esc(m)+(sub?`<small>${esc(sub)}</small>`:'');
+  box.appendChild(d);setTimeout(()=>d.remove(),3700);
+};
+function openModal(html,btns){modalBox.innerHTML=html+`<div class="two">${btns.map((b,i)=>`<button class="btn ${b.cls||''}" data-m="${i}">${b.l}</button>`).join('')}</div>`;modalEl.classList.add('on');ui.mb=btns}
+function closeModal(){modalEl.classList.remove('on')}
+modalEl.addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(!b)return;const f=ui.mb[+b.dataset.m];if(!f.fn||f.fn()!==false)closeModal()});
+H.bossEnd=()=>{};
+
+/* ----- views ----- */
+function rowH(o){
+  const cls=['row',o.can?'can':'',o.done?'done':'',o.locked?'locked':'',o.evil?'evilrow':''].join(' ');
+  return `<div class="${cls}"><div class="ico">${o.ico}</div><div style="min-width:0"><h3>${o.name}${o.lvl!=null?` <span class="lv">Lv ${o.lvl}</span>`:''}</h3><p>${o.desc}</p>${o.eff?`<p class="lv">${o.eff}</p>`:''}</div>${o.btn||''}</div>`;
+}
+function bulkBar(){return `<div class="bulk"><span class="hint">Buy amount</span>${[1,10,'max'].map(b=>`<button class="btn small" aria-pressed="${ui.bulk===b}" data-a="bulk" data-v="${b}">${b==='max'?'Max':'×'+b}</button>`).join('')}</div>`}
+function buyRow(kind,u,wallet,unit){
+  const l=kind==='up'?lv(u.id):kind==='ev'?ev(u.id):ru(u.id);
+  const f=kind==='up'?upCost:kind==='ev'?evCost:ruCost;
+  const maxed=l>=u.max;const bc=bulkCost(kind,u,ui.bulk);const can=!maxed&&wallet>=f(u,l);
+  const label=maxed?'MAX':`${fmt(bc.total)} ${unit}${bc.cnt>1?` <small>(×${bc.cnt})</small>`:''}`;
+  return rowH({ico:u.i,name:u.n,lvl:l,desc:u.d+(u.cor?` <b style="color:var(--evil)">+${u.cor}% corruption</b>`:''),eff:u.fx?'Now: '+u.fx(l):'',can,done:maxed,evil:kind==='ev',
+    btn:`<button class="btn buy ${kind==='ev'?'evil':''}" data-a="buy" data-k="${kind}" data-id="${u.id}" ${can?'':'disabled'}>${label}</button>`});
+}
+function shopV(){
+  recompute();let h=bulkBar(),teased=false;
+  for(const u of UPG){
+    const show=lv(u.id)>0||S.total>=(u.gate||0);
+    if(show)h+=buyRow('up',u,S.pts,'VP');
+    else if(!teased){teased=true;h+=rowH({ico:'❔',name:'???',desc:`Unlocks after earning ${fmt(u.gate)} points in total.`,locked:true})}
+  }
+  return h;
+}
+function formsV(){
+  recompute();let h=`<p class="hint">Evolving spends points, so save up! Each form multiplies all production. Evolution cost now: ×${D.evoMul.toFixed(2)}.</p><div class="formgrid">`;
+  FORMS.forEach((f,i)=>{
+    const known=i<=S.maxForm+1&&!(f.secret&&i>S.maxForm&&S.maxForm<12);const cur=i===S.form,next=i===S.form+1;
+    const nm=known||cur?f.n:'???';
+    let btn='';
+    if(next){const r=canEvolve();btn=`<button class="btn small ${r.ok?'go':''}" data-a="evolve" ${r.ok?'':'disabled'}>${r.ok?'Evolve':esc(r.why)}</button>`}
+    else if(cur)btn='<span class="tag hot">Current</span>';
+    else if(i<S.form)btn='<span class="tag">Reached</span>';
+    h+=`<div class="fcard ${cur?'cur':''} ${known?'':'lock'}"><canvas data-f="${i}"></canvas><b>${nm}</b><span>${known?`×${fmt(f.mult)} power`:'Hidden'}</span><span>${i>S.form?(known?(f.secret?'Secret requirements':fmt(evoCostOf(i))+' VP'):''):''}</span>${f.evil&&known&&i>S.form?`<span style="color:var(--evil)">Evil Energy ${f.evil}</span>`:''}${btn}</div>`;
+  });
+  h+='</div>';
+  if(S.maxForm>=12){h+=`<div class="card"><h3>Secret Final Form</h3><p class="hint">Hidden requirements, revealed to those who got this far:</p>${secretReqs().map(r=>`<div class="stat"><span>${r[0]}</span><b>${r[1]?'✅':'⬜'}</b></div>`).join('')}</div>`}
+  h+=`<h3 class="sec">Secret forms</h3><p class="hint">Each has a hidden trigger and gives a permanent bonus. Wear any form you own.</p><div class="formgrid">`;
+  SECRETS.forEach(s=>{const own=S.secrets[s.id],worn=S.look==='secret:'+s.id;
+    h+=`<div class="fcard ${own?'':'lock'} ${worn?'cur':''}"><canvas data-s="${s.id}"></canvas><b>${own?s.n:'???'}</b><span>${own?`×${s.mult} power`:esc(s.hint)}</span>${own?`<button class="btn small" data-a="look" data-v="${worn?'':'secret:'+s.id}">${worn?'Worn':'Wear'}</button>`:''}</div>`});
+  h+='</div>';
+  if(Object.keys(S.skins).length){h+=`<h3 class="sec">Exclusive forms</h3><div class="formgrid">`;SKINS.filter(s=>S.skins[s.id]).forEach(s=>{const worn=S.look==='skin:'+s.id;h+=`<div class="fcard ${worn?'cur':''}"><canvas data-k2="${s.id}"></canvas><b>${s.n}</b><span>×${fmt(s.mult)} power</span><button class="btn small" data-a="look" data-v="${worn?'':'skin:'+s.id}">${worn?'Worn':'Wear'}</button></div>`});h+='</div>'}
+  return h;
+}
+function evilV(){
+  recompute();
+  if(!evilUnlocked())return `<div class="card evilcard"><h3>Evilty System</h3><p class="hint">Reach <b>Evilty</b> (the fifth form) to awaken Evil Points, corruption and dark abilities. Buy Evil Energy in the shop to unlock the dark forms on the way.</p></div>`;
+  let h=`<div class="card evilcard"><div class="stat"><span>Evil Points</span><b style="color:var(--evil)">${fmt(S.evilPts)}</b></div><div class="stat"><span>Evil Points per second</span><b>${fmt(D.eps)}</b></div><div class="stat"><span>Corruption bonus</span><b>×${(1+.02*S.corruption).toFixed(2)} production</b></div><div class="barrow"><span>Corruption</span><span>${S.corruption.toFixed(0)}%</span></div><div class="bar cor"><i style="width:${S.corruption}%"></i></div></div>`;
+  h+=`<h3 class="sec">Corruption milestones</h3>`;
+  COR_MS.forEach(m=>{h+=rowH({ico:S.corruption>=m.at?'☠️':'🔒',name:`${m.at}% ${m.n}`,desc:m.d,done:S.corruption>=m.at,locked:S.corruption<m.at})});
+  h+=`<h3 class="sec">Dark abilities</h3><p class="hint">Abilities cost Evil Points and are also on the character panel.</p>`;
+  ABIL.forEach(a=>{const ok=S.corruption>=a.at;h+=rowH({ico:'🌀',name:a.n,desc:`${a.d} Needs ${a.at}% corruption. Cooldown ${a.cd}s.`,locked:!ok,evil:true,btn:`<button class="btn buy evil" data-a="abil" data-id="${a.id}" ${ok&&S.evilPts>=abilCost(a)&&!(T.cd[a.id]>0)?'':'disabled'}>${T.cd[a.id]>0?Math.ceil(T.cd[a.id])+'s':fmt(abilCost(a))+' EP'}</button>`})});
+  h+=`<h3 class="sec">Corruption upgrades</h3>${bulkBar()}`;
+  EVU.forEach(u=>{h+=buyRow('ev',u,S.evilPts,'EP')});
+  return h;
+}
+function rebirthV(){
+  recompute();
+  const mult=(1+.25*S.rebirths[0])*(1+.75*S.rebirths[1])*(1+3*S.rebirths[2]);
+  let h=`<div class="card"><div class="stat"><span>Rebirth Tokens</span><b style="color:var(--cyan)">${fmt(S.tokens)}</b></div><div class="stat"><span>Rebirth tier bonus</span><b>×${fmt(mult)} production</b></div><p class="hint">Rebirth resets points, shop upgrades, Evil Points and your form. Tokens, achievements, bosses, secrets and mastery are permanent.</p></div>`;
+  TIERS.forEach((t,i)=>{
+    const ok=canRebirth(i),g=tokenGain(i);
+    h+=rowH({ico:['🔁','🪽','🌌'][i],name:t.n,lvl:S.rebirths[i],desc:`${t.d} Requires ${FORMS[t.form].n}. ${ok?`You would gain <b>${fmt(g)}</b> tokens${t.mp?` and ${t.mp} Mastery Points`:''}.`:`Current form: ${FORMS[S.form].n}.`}`,can:ok,locked:!ok,
+      btn:`<button class="btn buy ${ok?'go':''}" data-a="rebirth" data-v="${i}" ${ok?'':'disabled'}>${t.n}</button>`});
+  });
+  h+=`<h3 class="sec">Permanent upgrades</h3>${bulkBar()}`;
+  RUP.forEach(u=>{h+=buyRow('ru',u,S.tokens,'RT')});
+  h+=`<h3 class="sec">Exclusive evolutions</h3>`;
+  SKINS.forEach(s=>{const own=S.skins[s.id],lock=S.rebirths[1]<s.req;
+    h+=rowH({ico:'🧬',name:s.n,desc:`${s.d} Permanent ×${fmt(s.mult)} power.${lock?' Requires one Ascension.':''}`,done:own,locked:lock&&!own,can:!own&&!lock&&S.tokens>=s.cost,
+      btn:own?'<span class="tag hot">Owned</span>':`<button class="btn buy" data-a="skin" data-id="${s.id}" ${!lock&&S.tokens>=s.cost?'':'disabled'}>${s.cost} RT</button>`})});
+  return h;
+}
+function masteryV(){
+  let h=`<div class="card"><div class="stat"><span>Mastery Points</span><b style="color:var(--lime)">${S.mp}</b></div><p class="hint">Earn Mastery Points by reaching God Verity and beyond (1 per new form), defeating each boss for the first time, and through Ascension (3) and Transcendence (10). Mastery upgrades are permanent endgame boosts.</p></div>`;
+  MUP.forEach(u=>{const l=mu(u.id),c=l+1,max=l>=u.max;h+=rowH({ico:u.i,name:u.n,lvl:l,desc:u.d,can:!max&&S.mp>=c,done:max,btn:`<button class="btn buy" data-a="mast" data-id="${u.id}" ${!max&&S.mp>=c?'':'disabled'}>${max?'MAX':c+' MP'}</button>`})});
+  return h;
+}
+function bossesV(){
+  recompute();let h=`<p class="hint">Fight evil forms of Verity. You have 30 seconds. Click as fast as you can, since crits and dark abilities help. Win once for a permanent multiplier, Evil Points and a Mastery Point. Rematch for Evil Points.</p>`;
+  if(T.boss)h+=`<div class="card evilcard"><b>Battle in progress: ${BOSSES[T.boss.i].n}</b><p class="hint">Click the character to deal damage!</p></div>`;
+  BOSSES.forEach((b,i)=>{const av=bossAvail(i),done=S.bossDone[i];
+    h+=`<div class="row evilrow ${av?'':'locked'} ${done?'done':''}"><div class="ico"><canvas data-b="${i}" style="width:40px;height:40px"></canvas></div><div style="min-width:0"><h3>${av||done?b.n:'???'} ${done?'✅':''}</h3><p>${av?`Reward: ${fmt(b.ep)} EP and ×${b.m} permanent power`:`Reach ${FORMS[b.form].n} to challenge`}</p></div><button class="btn buy evil" data-a="boss" data-v="${i}" ${av&&!T.boss?'':'disabled'}>${done?'Rematch':'Fight'}</button></div>`});
+  return h;
+}
+function questsV(){
+  recompute();let h='';
+  const ready=dailyReady(),day=dailyDay();
+  h+=`<div class="card"><h3>Daily reward</h3><p class="hint">Come back every day. Day 7 gives the biggest prize. Streak: ${S.daily.streak} day${S.daily.streak===1?'':'s'}.</p><div class="formgrid" style="grid-template-columns:repeat(7,minmax(0,1fr))">${DAILY.map((m,i)=>`<div class="stat" style="flex-direction:column;align-items:center;padding:6px 2px;${i===day&&ready?'border-color:var(--lime)':''}${(ready?i<day:i<=day)?'opacity:.5':''}"><span>D${i+1}</span><b>${m}m</b></div>`).join('')}</div><button class="btn ${ready?'go':''}" data-a="daily" ${ready?'':'disabled'}>${ready?'Claim daily reward':'Come back tomorrow'}</button></div>`;
+  h+=`<h3 class="sec">Quests</h3>`;
+  S.quests.forEach((q,i)=>{const p=qProg(q),done=p>=q.goal;
+    h+=`<div class="row ${done?'can':''}"><div class="ico">📜</div><div style="min-width:0"><h3>${esc(q.label)}</h3><p>Reward: ${q.reward.vp?fmt(q.reward.vp)+' points':fmt(q.reward.ep)+' Evil Points'}</p><div class="bar" style="margin-top:6px"><i style="width:${pct(p,q.goal)}%"></i></div><p>${fmt(p)} / ${fmt(q.goal)}</p></div><button class="btn buy ${done?'go':''}" data-a="quest" data-v="${i}" ${done?'':'disabled'}>Claim</button></div>`});
+  return h;
+}
+function achV(){
+  const n=achCount();let h=`<p class="hint">${n} / ${ACH.length} unlocked. Each gives +2% production (currently ×${(1+.02*n).toFixed(2)}).</p><div class="two">`;
+  ACH.forEach(a=>{const ok=S.ach[a[0]];h+=`<div class="row ${ok?'done':'locked'}"><div class="ico">${ok?a[1]:'🔒'}</div><div style="min-width:0"><h3>${a[2]}</h3><p>${a[3]}</p></div><span></span></div>`});
+  return h+'</div>';
+}
+function statsV(){
+  recompute();
+  const st=[['Total clicks',fmt(S.clicks)],['Total points earned',fmt(S.total)],['Points this run',fmt(S.run)],['Best run',fmt(Math.max(S.bestRun,S.run))],['Play time',fmtTime(S.playtime)],
+   ['Highest evolution',FORMS[S.maxForm].n],['Current form',FORMS[S.form].n],['Points per click',fmt(D.clickVal)],['Points per second',fmt(D.pps)],['Biggest click',fmt(S.bestClick)],
+   ['Critical clicks',fmt(S.crits)+` (${(D.critCh*100).toFixed(0)}% chance)`],['Upgrades bought',fmt(S.buys)],['Total multiplier',`×${fmt(D.global)}`],['Evil Points earned',fmt(S.totalEvil)],['Corruption',S.corruption.toFixed(0)+'%'],
+   ['Rebirths',S.rebirths.join(' / ')+' (R / A / T)'],['Rebirth Tokens earned',fmt(S.totalTokens)],['Mastery Points',S.mp],['Bosses defeated',S.bossWins+' wins, '+S.bossFails+' losses'],
+   ['Golden Verities caught',S.golden],['Achievements',achCount()+' / '+ACH.length],['Quests completed',S.questsDone],['Secret forms',Object.keys(S.secrets).length+' / '+SECRETS.length],['Daily rewards claimed',S.dailyClaims]];
+  return `<div class="stats">${st.map(s=>`<div class="stat"><span>${s[0]}</span><b>${s[1]}</b></div>`).join('')}</div>`;
+}
+function setV(){
+  const s=S.set,tg=(k,l)=>`<div class="set"><span>${l}</span><button class="toggle" aria-pressed="${s[k]}" data-a="set" data-k="${k}" aria-label="${l}"></button></div>`;
+  const sel=(k,l,o)=>`<div class="set"><label for="s_${k}">${l}</label><select id="s_${k}" data-s="${k}">${o.map(x=>`<option value="${x[0]}" ${s[k]===x[0]?'selected':''}>${x[1]}</option>`).join('')}</select></div>`;
+  const rg=(k,l)=>`<div class="set"><label for="s_${k}">${l}</label><input id="s_${k}" type="range" min="0" max="100" value="${Math.round(s[k]*100)}" data-s="${k}"></div>`;
+  return tg('sfx','Sound effects')+rg('sfxv','Sound volume')+tg('music','Music')+rg('musv','Music volume')+
+   sel('anim','Animations',[['full','Full'],['reduced','Reduced'],['off','Off']])+sel('part','Particles',[['high','High'],['low','Low'],['off','Off']])+tg('shake','Screen shake on crits')+
+   sel('fmt','Number format',[['short','Short (1.5M)'],['sci','Scientific (1.5e6)'],['eng','Engineering (1.5e6)']])+
+   `<div class="card"><h3>Save data</h3><p class="hint">Saves automatically every 10 seconds. ${ui.cloud==='on'?'Cloud backup is active for your account.':'Cloud backup is not available here, so progress stays in this browser.'}</p><div class="bulk"><button class="btn small" data-a="saveNow">Save now</button><button class="btn small" data-a="export">Export</button><button class="btn small" data-a="import">Import</button></div><textarea id="saveBox" aria-label="Save code" placeholder="Export creates a code here. Paste a code and press Import to restore it."></textarea>
+   ${ui.confirmReset?`<p class="hint" style="color:var(--evil)">This erases everything. Are you sure?</p><div class="bulk"><button class="btn evil small" data-a="reset2">Yes, erase all progress</button><button class="btn small" data-a="resetNo">Cancel</button></div>`:`<button class="btn evil small" data-a="reset1">Reset all progress</button>`}</div>`;
+}
+const VIEWS={shop:shopV,forms:formsV,evil:evilV,rebirth:rebirthV,mastery:masteryV,bosses:bossesV,quests:questsV,ach:achV,stats:statsV,settings:setV};
+
+/* ----- render ----- */
+function drawCanvases(){
+  viewsEl.querySelectorAll('canvas').forEach(cv=>{
+    let sp,key;const d=cv.dataset;
+    if(d.f!==undefined){sp=FORMS[+d.f];key='f'+d.f+(S.set.anim)}
+    else if(d.s){sp=SECRETS.find(x=>x.id===d.s);key='s'+d.s}
+    else if(d.k2){sp=SKINS.find(x=>x.id===d.k2);key='k'+d.k2}
+    else if(d.b!==undefined){sp=BOSSES[+d.b];key='b'+d.b}
+    if(!sp||cv._k===key)return;cv._k=key;
+    if(d.b!==undefined){cv.width=80;cv.height=80;const c=cv.getContext('2d');c.clearRect(0,0,80,80);drawFace(c,sp,40,42,17,0,{});}
+    else drawSpecTo(cv,sp);
+  });
+}
+function renderTabs(){
+  const dots={shop:false,forms:canEvolve().ok,quests:dailyReady()||S.quests.some(q=>qProg(q)>=q.goal),rebirth:TIERS.some((_,i)=>canRebirth(i)),bosses:!T.boss&&BOSSES.some((b,i)=>bossAvail(i)&&!S.bossDone[i])};
+  morph(tabsEl,TABS.map(t=>`<button class="tab ${dots[t.id]?'dot':''} ${t.id==='evil'&&!evilUnlocked()?'locked':''}" role="tab" aria-selected="${ui.tab===t.id}" data-a="tab" data-v="${t.id}">${t.l}</button>`).join(''));
+}
+function renderView(force){
+  if(ui.tab==='settings'&&!force&&!ui.dirtySet)return;
+  const box=viewsEl.firstElementChild&&viewsEl.firstElementChild.dataset.t===ui.tab?viewsEl.firstElementChild:null;
+  if(!box){viewsEl.innerHTML=`<div class="view on" data-t="${ui.tab}"></div>`}
+  const el=viewsEl.firstElementChild;
+  if(ui.tab==='settings'){const sv=$('saveBox')&&$('saveBox').value;el.innerHTML=VIEWS.settings();if(sv)$('saveBox').value=sv;ui.dirtySet=false}
+  else morph(el,VIEWS[ui.tab]());
+  drawCanvases();
+}
+function renderStage(){
+  const sp=currentLook(),f=FORMS[S.form];
+  const root=document.documentElement.style;root.setProperty('--form',sp.c1==='#ffffff'&&sp.c2==='#ffffff'?'#d8c8ff':(lum(sp.c1)<.2?sp.c2.length===7&&lum(sp.c2)>.1?sp.c2:'#b45cff':sp.c1));
+  $('formName').textContent=sp.n;$('formDesc').textContent=sp.d||(S.look?'A rare look you earned.':f.d);
+  $('formTags').innerHTML=`<span class="tag hot">×${fmt(D.formMul)} form</span><span class="tag">${fmt(D.clickVal)} / click</span><span class="tag">${fmt(D.pps)} / sec</span>${D.critCh>0?`<span class="tag">${(D.critCh*100).toFixed(0)}% crit ×${fmt(D.critMul)}</span>`:''}`;
+  const n=S.form+1;
+  if(n<FORMS.length){const fn=FORMS[n],r=canEvolve(),c=evoCostOf(n);
+    $('evoLabel').textContent=fn.secret&&!secretReqOK()?'Next: ??? (hidden requirements)':`Next: ${fn.n} (${fmt(c)} VP)`;
+    $('evoPct').textContent=fn.secret&&!secretReqOK()?'':Math.min(100,pct(S.pts,c)).toFixed(0)+'%';
+    $('evoBar').style.width=(fn.secret&&!secretReqOK()?0:pct(S.pts,c))+'%';
+    const b=$('evoBtn');b.disabled=!r.ok;b.classList.toggle('go',r.ok);b.textContent=r.ok?'Evolve!':(r.why==='Not enough points'?'Evolve':r.why);
+  }else{$('evoLabel').textContent='Final form reached';$('evoPct').textContent='';$('evoBar').style.width='100%';$('evoBtn').disabled=true;$('evoBtn').textContent='Max'}
+  /* buffs */
+  const t=now();$('buffs').innerHTML=T.buffs.map(b=>`<span class="buff ${b.evil?'evil':''}">${esc(b.label)} ${Math.ceil((b.until-t)/1000)}s</span>`).join('');
+  /* corruption & abilities */
+  const cw=$('corWrap');cw.hidden=!evilUnlocked();$('corTxt').textContent=S.corruption.toFixed(0)+'%';$('corBar').style.width=S.corruption+'%';
+  const ab=$('abil'),show=evilUnlocked()&&S.corruption>=25;ab.classList.toggle('on',show);
+  if(show){morph(ab,ABIL.filter(a=>S.corruption>=a.at).map(a=>{const cd=T.cd[a.id]||0;return `<button class="abtn" data-a="abil" data-id="${a.id}" ${cd>0||S.evilPts<abilCost(a)?'disabled':''}><b>${a.n}</b>${cd>0?Math.ceil(cd)+'s':fmt(abilCost(a))+' EP'}<i style="width:${cd>0?pct(cd,a.cd):0}%"></i></button>`}).join(''))}
+  /* boss bar */
+  const bb=$('bossBar');bb.classList.toggle('on',!!T.boss);
+  if(T.boss){$('bossName').textContent=BOSSES[T.boss.i].n;$('bossTime').textContent=Math.max(0,T.boss.t).toFixed(1)+'s';$('bossHp').style.width=pct(T.boss.hp,T.boss.max)+'%'}
+}
+function renderCur(){
+  let h=`<div class="chip vp"><small>Verity Points</small><b class="num">${fmt(S.pts)}</b><small class="num">${fmt(D.pps)} / sec</small></div>`;
+  if(evilUnlocked())h+=`<div class="chip ep"><small>Evil Points</small><b class="num">${fmt(S.evilPts)}</b><small class="num">${fmt(D.eps)} / sec</small></div>`;
+  if(S.totalTokens>0||S.tokens>0)h+=`<div class="chip rt"><small>Rebirth Tokens</small><b class="num">${fmt(S.tokens)}</b></div>`;
+  if(S.mp>0||S.mu&&Object.keys(S.mu).length)h+=`<div class="chip mp"><small>Mastery</small><b class="num">${S.mp}</b></div>`;
+  morph(curEl,h);
+}
+let rq=null;
+H.refresh=()=>{if(rq)return;rq=setTimeout(()=>{rq=null;recompute();renderAll(true)},0)};
+function renderAll(force){recompute();renderCur();renderStage();renderTabs();renderView(force)}
+
+/* ----- events ----- */
+function setTab(id){ui.tab=id;S.tabsSeen[id]=true;viewsEl.innerHTML='';renderAll(true)}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b||b.disabled)return;audioInit();
+  const a=b.dataset.a,id=b.dataset.id,v=b.dataset.v;
+  switch(a){
+    case'tab':setTab(v);break;
+    case'bulk':ui.bulk=v==='max'?'max':+v;renderAll(true);break;
+    case'buy':buy(b.dataset.k,id,ui.bulk);renderAll(true);break;
+    case'evolve':evolve();break;
+    case'look':S.look=v||null;renderAll(true);break;
+    case'abil':useAbility(id);renderAll(true);break;
+    case'boss':startBoss(+v);break;
+    case'quest':claimQuest(+v);break;
+    case'daily':claimDaily();break;
+    case'skin':buySkin(id);break;
+    case'mast':buyMastery(id);break;
+    case'rebirth':{const t=+v;openModal(`<h2>${TIERS[t].n}?</h2><p>You will gain <b>${fmt(tokenGain(t))} Rebirth Tokens</b>${TIERS[t].mp?` and ${TIERS[t].mp} Mastery Points`:''}. Points, shop upgrades, Evil Points and your form reset.</p>`,[{l:'Cancel'},{l:TIERS[t].n,cls:'go',fn:()=>{doRebirth(t)}}]);break}
+    case'set':S.set[b.dataset.k]=!S.set[b.dataset.k];applyAudio();ui.dirtySet=true;renderAll(true);break;
+    case'saveNow':save();pushCloud(true);H.toast('Game saved');break;
+    case'export':{const box=$('saveBox');box.value=exportSave();box.select();try{navigator.clipboard.writeText(box.value).then(()=>H.toast('Save code copied'),()=>H.toast('Save code ready','Select the text and copy it'))}catch(er){H.toast('Save code ready','Select the text and copy it')}break}
+    case'import':{const box=$('saveBox');if(box.value.trim()&&importSave(box.value)){T.boss=null;ensureQuests();H.toast('Save imported','','good');ui.dirtySet=true;renderAll(true)}else H.toast('Import failed','That code is not a valid save','bad');break}
+    case'reset1':ui.confirmReset=true;ui.dirtySet=true;renderAll(true);break;
+    case'resetNo':ui.confirmReset=false;ui.dirtySet=true;renderAll(true);break;
+    case'reset2':S=newState();T.boss=null;T.buffs=[];ensureQuests();ui.confirmReset=false;ui.dirtySet=true;save();pushCloud(true);applyBody();renderAll(true);H.toast('Progress erased');break;
+  }
+});
+document.addEventListener('input',e=>{
+  const s=e.target.dataset&&e.target.dataset.s;if(!s)return;audioInit();
+  if(e.target.type==='range')S.set[s]=e.target.value/100;else S.set[s]=e.target.value;
+  applyAudio();applyBody();if(s==='fmt'||s==='anim'||s==='part'){renderAll(true)}
+});
+$('evoBtn').addEventListener('click',()=>{audioInit();evolve()});
+function applyBody(){document.body.classList.toggle('noanim',S.set.anim==='off')}
+arena.addEventListener('pointerdown',e=>{
+  if(e.button>0)return;audioInit();
+  const r=arena.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+  if(Math.hypot(x-FACE.x,y-FACE.y)<=FACE.r*1.25)doClick(x,y);else{S.bgClicks++;}
+});
+faceC.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.repeat){e.preventDefault();audioInit();doClick(FACE.x,FACE.y)}});
+$('btnSound').addEventListener('click',e=>{S.set.sfx=!S.set.sfx;audioInit();applyAudio();e.currentTarget.setAttribute('aria-pressed',S.set.sfx);ui.dirtySet=true});
+$('btnMusic').addEventListener('click',e=>{S.set.music=!S.set.music;audioInit();applyAudio();e.currentTarget.setAttribute('aria-pressed',S.set.music);ui.dirtySet=true});
+window.addEventListener('resize',resize);
+if(window.ResizeObserver)new ResizeObserver(resize).observe(arena);
+
+/* ----- cloud backup (optional, only when the viewer is signed in) ----- */
+let cloudRef=null,cloudLast=0;
+async function initCloud(){
+  try{
+    if(!window.claude||!claude.use){ui.cloud='off';return}
+    const [db,user]=await Promise.all([claude.use('db'),claude.use('user')]);
+    if(!db||!user){ui.cloud='off';return}
+    const id=await user.id();if(!id){ui.cloud='off';return}cloudRef=db.doc('data/users/'+id+'/verity');
+    const snap=await cloudRef.get();ui.cloud='on';
+    if(snap.exists){const d=snap.data();
+      if(d&&d.json&&d.t>S.lastSave+5000){const ns=loadFromString(d.json);if(ns){S=ns;T.boss=null;recompute();ensureQuests();const off=offlineGain();save();applyBody();applyAudio();renderAll(true);H.toast('Cloud save loaded','Your newest progress was restored','good');if(off)showOffline(off)}}
+    }
+    pushCloud(true);
+  }catch(e){ui.cloud='off'}
+  ui.dirtySet=true;
+}
+async function pushCloud(force){
+  if(!cloudRef)return;const t=now();if(!force&&t-cloudLast<45000)return;cloudLast=t;
+  try{await cloudRef.set({json:serialize(),t:S.lastSave,total:S.total})}catch(e){}
+}
+function showOffline(o){
+  openModal(`<h2>Welcome back!</h2><p>You were away for <b>${fmtTime(o.away)}</b>${o.capped?` (rewards capped at ${fmtTime(o.secs)})`:''}. Verity kept working at ${(o.eff*100).toFixed(0)}% efficiency.</p><div class="stat"><span>Verity Points earned</span><b style="color:var(--gold)">+${fmt(o.pts)}</b></div>${o.ep>0?`<div class="stat"><span>Evil Points earned</span><b style="color:var(--evil)">+${fmt(o.ep)}</b></div>`:''}`,[{l:'Collect',cls:'go'}]);
+}
+
+/* ----- boot ----- */
+(function boot(){
+  let raw=null;try{raw=localStorage.getItem(SAVE_KEY)}catch(e){}
+  if(raw){const s=loadFromString(raw);if(s)S=s}
+  recompute();ensureQuests();applyBody();
+  const off=offlineGain();
+  resize();renderAll(true);
+  $('btnSound').setAttribute('aria-pressed',S.set.sfx);$('btnMusic').setAttribute('aria-pressed',S.set.music);
+  if(off)showOffline(off);
+  let last=performance.now(),acc=0,uiT=0;
+  setInterval(()=>{
+    const n=performance.now();let dt=(n-last)/1000;last=n;dt=Math.min(dt,7200);
+    tick(dt);acc+=dt;uiT+=dt;
+    if(uiT>=.2){uiT=0;renderCur();renderStage();if(!T.uiN)T.uiN=0;if(++T.uiN%2===0){renderTabs();renderView(false)}}
+    if(acc>=10){acc=0;save();pushCloud(false)}
+  },50);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){save();pushCloud(true)}});
+  window.addEventListener('pagehide',()=>{save()});
+  requestAnimationFrame(frame);
+  initCloud();
+  window.__vc={S:()=>S,D:()=>D,T,tick,buy,evolve,doClick,recompute,canEvolve,startBoss,doRebirth,canRebirth,tokenGain,claimDaily,save,exportSave,importSave,unlockSecret,addPts,fmt,useAbility,endBoss,goldenCaught,luckyEvent,ensureQuests,newState,load:s=>{S=s},renderAll};
+})();
+</script>
+
+</body></html>

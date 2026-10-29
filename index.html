@@ -1,101 +1,61 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
   <meta charset="UTF-8">
-
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <title>Damp</title>
-
+  <title>Damp – Free browser games</title>
+  <meta name="description" content="Play free games right in your browser.">
   <link rel="stylesheet" href="style.css">
-
 </head>
-
 <body>
 
-
-
   <header class="top">
-
     <div class="wrap bar">
-
-      <a class="logo" href="#games">Damp</a>
-
-      <nav class="tabs">
-
-        <a id="tab-games" href="#games">Games</a>
-
-      </nav>
-
+      <a class="logo" href="./">Damp</a>
+      <input id="search" type="search" placeholder="Search games  (press / )" aria-label="Search games" autocomplete="off">
+      <button id="random" type="button">Random game</button>
     </div>
-
   </header>
 
-
-
   <main class="wrap">
+    <div id="chips" class="chips" role="group" aria-label="Categories"></div>
 
-
-
-    <section id="view-games">
-
-      <div id="toolbar" class="toolbar">
-
-        <input id="search" type="search" placeholder="Search games" aria-label="Search games" autocomplete="off">
-
-        <button id="random" type="button">Random game</button>
-
-      </div>
-
-      <div id="chips" class="chips" role="group" aria-label="Categories"></div>
-
+    <div class="head">
+      <h1 id="heading">All games</h1>
       <p id="count" class="count" aria-live="polite"></p>
-
-      <div id="games-grid" class="grid"></div>
-
-      <p id="empty" class="empty" hidden></p>
-
-    </section>
-
-
-
-
-
-
-
-  </main>
-
-
-
-  <div id="player" class="player" hidden>
-
-    <div class="player-bar">
-
-      <span id="player-title" class="player-title"></span>
-
-      <div class="player-actions">
-
-        <button id="player-fullscreen" type="button">Fullscreen</button>
-
-        <a id="player-newtab" href="#" target="_blank" rel="noopener">Open in new tab</a>
-
-        <button id="player-close" type="button">Close</button>
-
-      </div>
-
     </div>
 
-    <iframe id="player-frame" title="Game" allow="fullscreen; autoplay; gamepad; clipboard-write" allowfullscreen></iframe>
+    <div id="games-grid" class="grid"></div>
+    <p id="empty" class="empty" hidden>No games match your search.</p>
+  </main>
 
+  <footer class="wrap foot">&copy; <span id="year"></span> Damp</footer>
+
+  <div id="player" class="player" hidden>
+    <div class="player-bar">
+      <button id="player-close" type="button">&larr; Back to games</button>
+      <span id="player-title" class="player-title"></span>
+      <div class="player-actions">
+        <button id="player-fullscreen" type="button">Fullscreen</button>
+        <a id="player-newtab" href="#" target="_blank" rel="noopener">Open in new tab</a>
+      </div>
+    </div>
+    <iframe id="player-frame" title="Game" allow="fullscreen; autoplay; gamepad; clipboard-write" allowfullscreen></iframe>
   </div>
 
-
+  <dialog id="ext" aria-labelledby="ext-title">
+    <div class="dlg-head">
+      <h2 id="ext-title">Extensions</h2>
+      <button id="ext-close" type="button">Close</button>
+    </div>
+    <div id="ext-list" class="list"></div>
+    <ol class="steps">
+      <li>Unzip the download.</li>
+      <li>Open <code>chrome://extensions</code> and turn on Developer mode.</li>
+      <li>Click Load unpacked and pick the unzipped folder.</li>
+    </ol>
+  </dialog>
 
   <script src="script.js"></script>
-
 </body>
-
 </html>

@@ -9,6 +9,9 @@
 // ---------------------------------------------------------------
 const games = [
   { title: "Flappy Bird", description: "Classic arcade bird game with custom skins and worlds shop.", file: "Flappy Bird.html", category: "Arcade" },
+  { title: "Snake", description: "Eat food, grow longer, and avoid hitting the walls or yourself.", file: "snake.html", category: "Arcade" },
+  { title: "Pong", description: "Retro table tennis arcade game. Beat the AI!", file: "pong.html", category: "Arcade" },
+  { title: "Tic-Tac-Toe", description: "Classic 3-in-a-row strategy game against a friend.", file: "tictactoe.html", category: "Puzzle" }
 ];
 
 // ---------------------------------------------------------------

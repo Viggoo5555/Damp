@@ -172,7 +172,7 @@ function addRecent(game) {
 
 // The row right above "All games"
 function showShelf() {
-  const picks = recentGames().slice(0, 6).map(function (id) {
+  const picks = recentGames().slice(0, 12).map(function (id) {
     return games.find(function (g) { return slug(g) === id; });
   });
   $("shelf").hidden = !(category === "All" && search.value.trim() === "" && picks.length > 0);

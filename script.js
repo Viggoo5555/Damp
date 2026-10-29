@@ -34,7 +34,7 @@ const games = [
     description: "Mix the right drink!", 
     file: "Bartender.html", 
     category: "Racing", 
-    image: "Bartender.png" // <-- Add this line here
+    image: "bartender.png" // <-- Add this line here
   },
 ];
 

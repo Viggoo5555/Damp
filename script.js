@@ -29,6 +29,13 @@ const games = [
     category: "Racing", 
     image: "polytrack.png" // <-- Add this line here
   },
+    { 
+    title: "Geometry Dash", 
+    description: "Jump over stuff..", 
+    file: "geometrydash.html", 
+    category: "Arcade", 
+    image: "geometry.png" // <-- Add this line here
+  },
 ];
 
 // ---------------------------------------------------------------

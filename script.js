@@ -403,12 +403,8 @@ function updateFileInfo() {
   const html = editing ? editing.file : "";
   const icon = editing && editing.image ? editing.image : "";
 
-  $("f-file-info").textContent = htmlFile
-    ? "Selected: " + htmlFile.name + (html ? " (replaces " + html + ")" : "")
-    : (html ? "Current file: " + html : "No game file picked yet.");
-  $("f-icon-info").textContent = iconFile
-    ? "Selected: " + iconFile.name + (icon ? " (replaces " + icon + ")" : "")
-    : (icon ? "Current icon: " + icon : "No icon yet. A coloured letter is used instead.");
+  $("f-file-name").textContent = htmlFile ? htmlFile.name : (html || "No file chosen");
+  $("f-icon-name").textContent = iconFile ? iconFile.name : (icon || "No file chosen");
 
   const preview = $("f-icon-preview");
   if (previewUrl) URL.revokeObjectURL(previewUrl);

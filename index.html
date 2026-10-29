@@ -94,12 +94,22 @@
       <label>Category<input id="f-category" list="categories" maxlength="24" placeholder="Arcade, Racing, ..." autocomplete="off"></label>
       <datalist id="categories"></datalist>
       <label>Description<input id="f-desc" maxlength="120" autocomplete="off"></label>
-      <label>Game file (.html)<input id="f-file" type="file" accept=".html,.htm"></label>
-      <p id="f-file-info" class="note"></p>
-      <label>Icon image<input id="f-icon" type="file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
-      <div class="icon-row">
+      <div class="field">
+        <span class="field-label">Game file (.html)</span>
+        <div class="file-row">
+          <label class="file-btn" for="f-file">Choose file</label>
+          <span id="f-file-name" class="file-name"></span>
+          <input id="f-file" type="file" accept=".html,.htm">
+        </div>
+      </div>
+      <div class="field">
+        <span class="field-label">Icon image</span>
+        <div class="file-row">
+          <label class="file-btn" for="f-icon">Choose file</label>
+          <span id="f-icon-name" class="file-name"></span>
+          <input id="f-icon" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+        </div>
         <img id="f-icon-preview" alt="Icon preview" hidden>
-        <p id="f-icon-info" class="note"></p>
       </div>
       <details id="conn" class="conn">
         <summary>GitHub connection</summary>

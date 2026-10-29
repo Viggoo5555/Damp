@@ -3,60 +3,62 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>My Games & Extensions</title>
+  <title>Skals Site</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>My Games & Extensions</h1>
+
+  <header class="wrap top">
+    <a class="logo" href="#">Skals Site</a>
     <nav>
       <a href="#games">Games</a>
       <a href="#extensions">Extensions</a>
-      <a href="#install">How to install</a>
     </nav>
   </header>
 
-  <main>
+  <main class="wrap">
+    <section class="intro">
+      <h1>Play games. Download extensions.</h1>
+      <p>Every game runs right here in your browser. Extensions are free Chrome add-ons you can install in a minute.</p>
+    </section>
+
     <section id="games">
       <h2>Games</h2>
-      <div class="grid">
-        <a class="card" href="games/game1/index.html">
-          <img src="images/game1.png" alt="Game 1 screenshot">
-          <h3>Game 1</h3>
-          <p>Short description. Click to play.</p>
-        </a>
-      </div>
+      <div id="games-grid" class="grid"></div>
     </section>
 
     <section id="extensions">
       <h2>Extensions</h2>
-      <div class="grid">
-        <div class="card">
-          <h3>Emat Hjælper</h3>
-          <p>Chrome extension for emat.</p>
-          <a class="button" href="downloads/emat-extension.zip" download>Download</a>
-        </div>
-        <div class="card">
-          <h3>Grammatik Hjælper</h3>
-          <p>Chrome extension for grammatip.</p>
-          <a class="button" href="downloads/grammatik-hjaelper.zip" download>Download</a>
-        </div>
-      </div>
-    </section>
+      <div id="extensions-list" class="list"></div>
 
-    <section id="install">
-      <h2>How to install an extension</h2>
-      <ol>
-        <li>Download the zip and <strong>unzip</strong> it.</li>
-        <li>Open <code>chrome://extensions</code> in Chrome.</li>
-        <li>Turn on <strong>Developer mode</strong> (top right).</li>
-        <li>Click <strong>Load unpacked</strong> and pick the unzipped folder.</li>
-      </ol>
+      <details class="install">
+        <summary>How to install an extension</summary>
+        <ol>
+          <li>Download the zip file and unzip it.</li>
+          <li>Open <code>chrome://extensions</code> in Chrome.</li>
+          <li>Turn on <strong>Developer mode</strong> in the top right.</li>
+          <li>Click <strong>Load unpacked</strong> and choose the unzipped folder.</li>
+        </ol>
+      </details>
     </section>
   </main>
 
-  <footer>
-    <p>Made by me.</p>
+  <footer class="wrap">
+    <p>Skals Site</p>
   </footer>
+
+  <div id="player" class="player" hidden>
+    <div class="player-bar">
+      <span id="player-title" class="player-title"></span>
+      <div class="player-actions">
+        <button id="player-fullscreen" type="button">Fullscreen</button>
+        <a id="player-newtab" href="#" target="_blank" rel="noopener">Open in new tab</a>
+        <button id="player-close" type="button">Close</button>
+      </div>
+    </div>
+    <iframe id="player-frame" title="Game" allow="fullscreen; autoplay; gamepad; clipboard-write" allowfullscreen></iframe>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>

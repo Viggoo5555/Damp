@@ -29,13 +29,6 @@ const games = [
     category: "Racing", 
     image: "polytrack.png" // <-- Add this line here
   },
-    { 
-    title: "Bartender", 
-    description: "Mix the right drink!", 
-    file: "Bartender.html", 
-    category: "Racing", 
-    image: "bartender.png" // <-- Add this line here
-  },
 ];
 
 // ---------------------------------------------------------------

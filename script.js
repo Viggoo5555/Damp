@@ -19,14 +19,14 @@ const games = [
     title: "Star Clicker", 
     description: "Void.", 
     file: "Starclicker.html", 
-    category: "Arcade", 
+    category: "Clicker", 
     image: "starclicker.png" // <-- Add this line here
   },
     { 
     title: "Polytrack", 
     description: "Race.", 
     file: "Poly Track.html", 
-    category: "Arcade", 
+    category: "Racing", 
     image: "polytrack.png" // <-- Add this line here
   },
 ];

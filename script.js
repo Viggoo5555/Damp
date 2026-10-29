@@ -1,38 +1,16 @@
 // ---------------------------------------------------------------
-// 1. YOUR GAMES
-// Each game is one .html file in the main folder of the repository.
-// To add a game, upload the file (and a picture), then add a line:
-//   { title: "Snake", description: "Classic snake game.", file: "snake.html", category: "Arcade", image: "snake.png" },
-// "category" and "image" are optional. Games with the same category
-// get one filter button at the top of the page.
-// ---------------------------------------------------------------
-const games = [
-  {
-    title: "Flappy Bird",
-    description: "Classic arcade bird game with custom skins and worlds shop.",
-    file: "Flappy Bird.html",
-    category: "Arcade",
-    image: "flappy.png"
-  },
-  {
-    title: "Star Clicker",
-    description: "Click your star, grow it and add orbiting planets.",
-    file: "Starclicker.html",
-    category: "Clicker",
-    image: "starclicker.png"
-  },
-  // Ready for when you upload the game file:
-  // { title: "Bartender", description: "Mix the perfect cocktail.", file: "bartender.html", category: "Puzzle", image: "bartender.png" },
-];
-
-// ---------------------------------------------------------------
-// 2. YOUR EXTENSIONS (shown only in the hidden extensions window)
+// Your games are listed in games.json (the secret editor on the
+// site adds to it for you).
+//
+// YOUR EXTENSIONS (shown only inside the secret window)
 // The file must match the zip name in the repository exactly.
 // ---------------------------------------------------------------
 const extensions = [
   { name: "Emat Hjælper", description: "Chrome extension for emat.", file: "emat-svar.zip" },
   { name: "Grammatik Hjælper", description: "Chrome extension for grammatip.", file: "grammatik-hjaelper.zip" },
 ];
+
+const ADMIN_CODE = "1203";
 
 // ---------------------------------------------------------------
 // Everything below builds the page. You don't need to change it.
@@ -45,8 +23,13 @@ const chips = $("chips");
 const player = $("player");
 const frame = $("player-frame");
 const ext = $("ext");
+const editor = $("editor");
 
+let games = [];
+let loadFailed = false;
 let category = "All";
+let admin = sessionStorage.getItem("damp-admin") === "1";
+let editing = null;
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -55,9 +38,13 @@ function el(tag, className, text) {
   return node;
 }
 
+function slugText(text) {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
 // A game's link name: "Star Clicker" becomes "star-clicker"
 function slug(game) {
-  return game.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return slugText(game.title);
 }
 
 // Gives each picture-less game its own tile color
@@ -67,8 +54,17 @@ function hueFrom(text) {
   return hue;
 }
 
+function categories() {
+  const list = [];
+  games.forEach(function (game) {
+    if (game.category && !list.includes(game.category)) list.push(game.category);
+  });
+  return list;
+}
+
 // ----- Games -----
 function makeCard(game) {
+  const item = el("div", "item");
   const card = el("a", "game");
   card.href = "#play=" + slug(game);
   card.title = game.description || "";
@@ -80,7 +76,7 @@ function makeCard(game) {
   }
   if (game.image) {
     const img = el("img");
-    img.src = game.image;
+    img.src = encodeURI(game.image);
     img.alt = "";
     img.loading = "lazy";
     img.addEventListener("error", function () { img.remove(); letterTile(); });
@@ -90,7 +86,15 @@ function makeCard(game) {
   }
 
   card.append(tile, el("h3", null, game.title), el("p", null, game.category || "Game"));
-  return card;
+  item.appendChild(card);
+
+  if (admin) {
+    const edit = el("button", "edit", "Edit");
+    edit.type = "button";
+    edit.addEventListener("click", function () { openEditor(game); });
+    item.appendChild(edit);
+  }
+  return item;
 }
 
 function showGames() {
@@ -105,18 +109,22 @@ function showGames() {
   grid.replaceChildren(...list.map(makeCard));
   $("heading").textContent = category === "All" ? "All games" : category;
   $("count").textContent = list.length + (list.length === 1 ? " game" : " games");
+
+  if (loadFailed) {
+    $("empty").textContent = "The games list didn't load. Open the site through its web address.";
+  } else {
+    $("empty").textContent = games.length === 0 ? "No games yet. Check back soon." : "No games match your search.";
+  }
   $("empty").hidden = list.length > 0;
 }
 
 function showChips() {
-  const categories = [];
-  games.forEach(function (game) {
-    if (game.category && !categories.includes(game.category)) categories.push(game.category);
-  });
+  chips.replaceChildren();
+  const list = categories();
+  if (category !== "All" && !list.includes(category)) category = "All";
+  chips.hidden = list.length < 2;
 
-  chips.hidden = categories.length < 2;
-
-  ["All"].concat(categories).forEach(function (name) {
+  ["All"].concat(list).forEach(function (name) {
     const chip = el("button", "chip", name);
     chip.type = "button";
     chip.setAttribute("aria-pressed", name === category);
@@ -177,7 +185,7 @@ function route() {
 
 window.addEventListener("hashchange", route);
 
-// ----- Secret door to the extensions -----
+// ----- Secret door -----
 function openExtensions() {
   const list = $("ext-list");
   list.replaceChildren();
@@ -215,7 +223,7 @@ document.addEventListener("keydown", function (event) {
 
   // Press / to jump to the search box
   const typing = document.activeElement && /input|textarea/i.test(document.activeElement.tagName);
-  if (event.key === "/" && !typing && player.hidden && !ext.open) {
+  if (event.key === "/" && !typing && player.hidden && !ext.open && !editor.open) {
     event.preventDefault();
     search.focus();
   }
@@ -238,6 +246,212 @@ $("year").addEventListener("click", function () {
   }
 });
 
-showChips();
-showGames();
-route();
+// ----- Code lock -----
+function syncAdmin() {
+  $("add-game").hidden = !admin;
+  $("lock").hidden = !admin;
+  $("code-form").hidden = admin;
+}
+
+function setAdmin(on) {
+  admin = on;
+  sessionStorage.setItem("damp-admin", on ? "1" : "0");
+  syncAdmin();
+  showGames();
+}
+
+$("code-form").addEventListener("submit", function (event) {
+  event.preventDefault();
+  const ok = $("code").value === ADMIN_CODE;
+  $("code").value = "";
+  $("code-msg").textContent = ok ? "" : "Wrong code.";
+  if (ok) {
+    setAdmin(true);
+    ext.close();
+  }
+});
+
+$("lock").addEventListener("click", function () {
+  setAdmin(false);
+  ext.close();
+});
+
+// ----- Game editor (saves straight to GitHub) -----
+let conn = { repo: "", token: "" };
+
+function say(text, bad) {
+  $("status").textContent = text;
+  $("status").className = bad ? "note bad" : "note";
+}
+
+function guessRepo() {
+  const owner = location.hostname.endsWith(".github.io") ? location.hostname.split(".")[0] : "";
+  const name = location.pathname.split("/")[1] || "";
+  return owner && name && !name.includes(".") ? owner + "/" + name : "";
+}
+
+function openEditor(game) {
+  editing = game || null;
+  $("editor-title").textContent = game ? "Edit game" : "Add a game";
+  $("save").textContent = game ? "Save changes" : "Add game";
+  $("f-title").value = game ? game.title : "";
+  $("f-category").value = game && game.category ? game.category : "";
+  $("f-desc").value = game && game.description ? game.description : "";
+  $("f-file").value = "";
+  $("f-icon").value = "";
+  $("f-repo").value = localStorage.getItem("damp-repo") || guessRepo();
+  $("f-token").value = localStorage.getItem("damp-token") || "";
+  $("conn").open = !$("f-token").value;
+  $("categories").replaceChildren(...categories().map(function (name) {
+    const option = el("option");
+    option.value = name;
+    return option;
+  }));
+  say("");
+  editor.showModal();
+}
+
+$("add-game").addEventListener("click", function () { openEditor(null); });
+$("editor-close").addEventListener("click", function () { editor.close(); });
+
+function toBase64(file) {
+  return new Promise(function (resolve, reject) {
+    const reader = new FileReader();
+    reader.onload = function () { resolve(reader.result.split(",")[1]); };
+    reader.onerror = function () { reject(new Error("Couldn't read " + file.name)); };
+    reader.readAsDataURL(file);
+  });
+}
+
+function textToBase64(text) {
+  let binary = "";
+  new TextEncoder().encode(text).forEach(function (byte) { binary += String.fromCharCode(byte); });
+  return btoa(binary);
+}
+
+function base64ToText(data) {
+  const binary = atob(data.replace(/\s/g, ""));
+  return new TextDecoder().decode(Uint8Array.from(binary, function (c) { return c.charCodeAt(0); }));
+}
+
+function endpoint(path) {
+  return "https://api.github.com/repos/" + conn.repo + "/contents/" + encodeURI(path);
+}
+
+function authHeaders() {
+  return { Authorization: "Bearer " + conn.token, Accept: "application/vnd.github+json" };
+}
+
+async function problem(res) {
+  if (res.status === 401) return "GitHub rejected the token.";
+  if (res.status === 403 || res.status === 404) {
+    return "No access to that repository. Check its name, and that the token has Contents read and write.";
+  }
+  let message = "";
+  try { message = (await res.json()).message; } catch (error) { /* no details */ }
+  return "GitHub said " + res.status + (message ? ": " + message : "");
+}
+
+// Returns the file's info (including its version id), or null if it doesn't exist yet
+async function currentFile(path) {
+  const res = await fetch(endpoint(path), { headers: authHeaders(), cache: "no-store" });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(await problem(res));
+  return res.json();
+}
+
+async function upload(path, base64, message) {
+  const old = await currentFile(path);
+  const body = { message: message, content: base64 };
+  if (old) body.sha = old.sha;
+  const res = await fetch(endpoint(path), {
+    method: "PUT",
+    headers: Object.assign({ "Content-Type": "application/json" }, authHeaders()),
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(await problem(res));
+}
+
+$("editor-form").addEventListener("submit", async function (event) {
+  event.preventDefault();
+  const title = $("f-title").value.trim();
+  const htmlFile = $("f-file").files[0];
+  const iconFile = $("f-icon").files[0];
+  conn = { repo: $("f-repo").value.trim(), token: $("f-token").value.trim() };
+
+  if (!title) return say("Add a title.", true);
+  if (!editing && !htmlFile) return say("Pick the game's .html file.", true);
+  if (!conn.repo || !conn.token) {
+    $("conn").open = true;
+    return say("Add the repository and the token first.", true);
+  }
+  const taken = games.some(function (g) { return g !== editing && g.title.toLowerCase() === title.toLowerCase(); });
+  if (taken) return say("A game with that title already exists.", true);
+
+  let iconType = "";
+  if (iconFile) {
+    iconType = iconFile.name.split(".").pop().toLowerCase();
+    if (!["png", "jpg", "jpeg", "webp", "gif"].includes(iconType)) {
+      return say("The icon must be png, jpg, webp or gif.", true);
+    }
+  }
+
+  // File names never clash with the site's own files
+  let base = slugText(title) || "game";
+  if (base === "index" || base === "404") base += "-game";
+
+  const entry = {
+    title: title,
+    description: $("f-desc").value.trim(),
+    file: editing ? editing.file : base + ".html",
+    category: $("f-category").value.trim(),
+    image: iconFile ? base + "." + iconType : (editing ? editing.image || "" : "")
+  };
+
+  $("save").disabled = true;
+  try {
+    if (htmlFile) {
+      say("Uploading the game...");
+      await upload(entry.file, await toBase64(htmlFile), "Add game file: " + title);
+    }
+    if (iconFile) {
+      say("Uploading the icon...");
+      await upload(entry.image, await toBase64(iconFile), "Add icon: " + title);
+    }
+
+    say("Updating the games list...");
+    const listFile = await currentFile("games.json");
+    const list = listFile ? JSON.parse(base64ToText(listFile.content)) : games.slice();
+    const at = editing ? list.findIndex(function (g) { return g.file === editing.file; }) : -1;
+    ["description", "category", "image"].forEach(function (key) { if (!entry[key]) delete entry[key]; });
+    if (at >= 0) list[at] = entry; else list.push(entry);
+    await upload("games.json", textToBase64(JSON.stringify(list, null, 2) + "\n"), "Update games list: " + title);
+
+    localStorage.setItem("damp-repo", conn.repo);
+    localStorage.setItem("damp-token", conn.token);
+    games = list;
+    editing = entry;
+    showChips();
+    showGames();
+    say("Saved. It goes live for everyone in about a minute.");
+  } catch (error) {
+    say(error.message, true);
+  }
+  $("save").disabled = false;
+});
+
+// ----- Start -----
+async function start() {
+  try {
+    const res = await fetch("games.json", { cache: "no-store" });
+    games = await res.json();
+  } catch (error) {
+    loadFailed = true;
+  }
+  syncAdmin();
+  showChips();
+  showGames();
+  route();
+}
+
+start();

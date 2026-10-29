@@ -1,0 +1,16 @@
+[
+  {
+    "title": "Flappy Bird",
+    "description": "Classic arcade bird game with custom skins and worlds shop.",
+    "file": "Flappy Bird.html",
+    "category": "Arcade",
+    "image": "flappy.png"
+  },
+  {
+    "title": "Star Clicker",
+    "description": "Click your star, grow it and add orbiting planets.",
+    "file": "Starclicker.html",
+    "category": "Clicker",
+    "image": "starclicker.png"
+  }
+]

@@ -337,3 +337,97 @@ dialog::backdrop { background: rgba(5, 6, 15, 0.78); }
 @media (prefers-reduced-motion: reduce) {
   .tile img, .tile::after { transition: none; }
 }
+
+/* Hidden editor */
+.item { position: relative; }
+
+.edit {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(14, 15, 28, 0.88);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.edit:hover { background: var(--accent); color: #12113a; }
+
+#add-game {
+  height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#editor-close,
+#lock {
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+#editor-close:hover,
+#lock:hover { border-color: var(--accent); }
+
+button.button {
+  border: 0;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button.button:disabled { opacity: 0.5; cursor: wait; }
+
+.admin-box {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.admin-box h3 { margin-bottom: 10px; font-size: 1rem; }
+.inline { display: flex; gap: 8px; }
+
+label {
+  display: block;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+label input,
+.inline input {
+  display: block;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+label input { margin-top: 4px; }
+label input[type="file"] { height: auto; padding: 8px 12px; }
+label input:focus, .inline input:focus { outline: none; border-color: var(--accent); }
+
+.conn { margin-top: 14px; color: var(--muted); font-size: 0.9rem; }
+.conn summary { cursor: pointer; color: var(--text); }
+.note { margin-top: 8px; color: var(--muted); font-size: 0.85rem; }
+.note.bad { color: #ff8f9a; }
+#editor-form .button { margin-top: 12px; }

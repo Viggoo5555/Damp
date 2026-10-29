@@ -14,6 +14,7 @@
       <a class="logo" href="./">Damp</a>
       <input id="search" type="search" placeholder="Search games  (press / )" aria-label="Search games" autocomplete="off">
       <button id="random" type="button">Random game</button>
+      <button id="add-game" type="button" hidden>+ Add game</button>
     </div>
   </header>
 
@@ -54,6 +55,39 @@
       <li>Open <code>chrome://extensions</code> and turn on Developer mode.</li>
       <li>Click Load unpacked and pick the unzipped folder.</li>
     </ol>
+
+    <div class="admin-box">
+      <h3>Manage games</h3>
+      <form id="code-form" class="inline">
+        <input id="code" type="password" inputmode="numeric" placeholder="Code" autocomplete="off" aria-label="Code">
+        <button class="button" type="submit">Unlock</button>
+      </form>
+      <p id="code-msg" class="note"></p>
+      <button id="lock" type="button" hidden>Lock editor</button>
+    </div>
+  </dialog>
+
+  <dialog id="editor" aria-labelledby="editor-title">
+    <form id="editor-form">
+      <div class="dlg-head">
+        <h2 id="editor-title">Add a game</h2>
+        <button id="editor-close" type="button">Close</button>
+      </div>
+      <label>Title<input id="f-title" maxlength="40" autocomplete="off"></label>
+      <label>Category<input id="f-category" list="categories" maxlength="24" placeholder="Arcade, Racing, ..." autocomplete="off"></label>
+      <datalist id="categories"></datalist>
+      <label>Description<input id="f-desc" maxlength="120" autocomplete="off"></label>
+      <label>Game file (.html)<input id="f-file" type="file" accept=".html,.htm"></label>
+      <label>Icon image<input id="f-icon" type="file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
+      <details id="conn" class="conn">
+        <summary>GitHub connection</summary>
+        <label>Repository<input id="f-repo" placeholder="your-name/Skals-site" autocomplete="off"></label>
+        <label>Access token<input id="f-token" type="password" autocomplete="off"></label>
+        <p class="note">Use a fine-grained token for this repository only, with Contents set to read and write. It stays on this device.</p>
+      </details>
+      <p id="status" class="note" aria-live="polite"></p>
+      <button id="save" class="button" type="submit">Add game</button>
+    </form>
   </dialog>
 
   <script src="script.js"></script>

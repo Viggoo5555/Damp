@@ -5,55 +5,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bartender The Right Mix</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             width: 100%;
             height: 100%;
-            background: #111;
+            background: #1a1a1a;
             overflow: hidden;
+            font-family: Arial, sans-serif;
         }
-        #game-container {
+        #container {
             width: 100%;
             height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative;
+        }
+        #status {
+            position: absolute;
+            color: #fff;
+            font-size: 18px;
+            z-index: 10;
         }
         ruffle-player {
-            width: 100%;
-            height: 100%;
-            max-width: 100vw;
-            max-height: 100vh;
+            width: 800px;
+            height: 600px;
+            max-width: 100%;
+            max-height: 100%;
         }
     </style>
-    <!-- Ruffle (Flash emulator) -->
-    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
 </head>
 <body>
-    <div id="game-container">
+    <div id="container">
+        <div id="status">Loading game...</div>
         <div id="player"></div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@ruffle-rs/ruffle"></script>
     <script>
         window.RufflePlayer = window.RufflePlayer || {};
         window.RufflePlayer.config = {
             autoplay: "on",
             unmuteOverlay: "hidden",
-            letterbox: "on"
+            letterbox: "on",
+            backgroundColor: "#000000"
         };
 
-        window.addEventListener("load", () => {
-            const ruffle = window.RufflePlayer.newest();
-            const player = ruffle.createPlayer();
+        window.addEventListener("DOMContentLoaded", () => {
+            const status = document.getElementById("status");
             const container = document.getElementById("player");
-            container.appendChild(player);
 
-            // Official SWF hosted by CrazyGames
-            player.load("https://files.crazygames.com/bartendertherightmix.swf");
+            try {
+                const ruffle = window.RufflePlayer.newest();
+                const player = ruffle.createPlayer();
+                container.appendChild(player);
+
+                player.style.width = "800px";
+                player.style.height = "600px";
+
+                player.load("https://files.crazygames.com/bartendertherightmix.swf")
+                    .then(() => {
+                        status.style.display = "none";
+                        console.log("Game loaded successfully");
+                    })
+                    .catch((err) => {
+                        status.textContent = "Failed to load game. Error: " + err;
+                        console.error(err);
+                    });
+            } catch (e) {
+                status.textContent = "Ruffle failed to start: " + e.message;
+            }
         });
     </script>
 </body>

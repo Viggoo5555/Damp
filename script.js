@@ -8,7 +8,7 @@
 // Optional: add  image: "snake.png"  to use a picture instead of the colored tile.
 // ---------------------------------------------------------------
 const games = [
-  // { title: "Snake", description: "Classic snake game.", file: "snake.html", category: "Arcade" },
+  { title: "Flappy Bird", description: "Classic arcade bird game with custom skins and worlds shop.", file: "Flappy Bird.html", category: "Arcade" },
 ];
 
 // ---------------------------------------------------------------

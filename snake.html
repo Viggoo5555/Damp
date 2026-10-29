@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Snake</title>
+  <style>
+    body { background: #10121f; color: #eceef9; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    canvas { background: #191c30; border: 2px solid #2b2f4b; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+    h2 { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Score: <span id="score">0</span></h2>
+  <canvas id="canvas" width="400" height="400"></canvas>
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("score");
+    let snake = [{x: 10, y: 10}];
+    let food = {x: 15, y: 15};
+    let dx = 1, dy = 0, score = 0, changingDirection = false;
+    
+    function main() {
+      if (hasGameEnded()) return;
+      changingDirection = false;
+      setTimeout(onTick, 100);
+    }
+    function onTick() {
+      clearCanvas();
+      drawFood();
+      moveSnake();
+      drawSnake();
+      main();
+    }
+    function clearCanvas() {
+      ctx.fillStyle = "#191c30";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    function drawSnake() {
+      snake.forEach((part, index) => {
+        ctx.fillStyle = index === 0 ? "#8b8dff" : "#5a5ce3";
+        ctx.fillRect(part.x * 20, part.y * 20, 18, 18);
+      });
+    }
+    function moveSnake() {
+      const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+      snake.unshift(head);
+      if (head.x === food.x && head.y === food.y) {
+        score += 10;
+        scoreEl.textContent = score;
+        generateFood();
+      } else {
+        snake.pop();
+      }
+    }
+    function generateFood() {
+      food.x = Math.floor(Math.random() * 20);
+      food.y = Math.floor(Math.random() * 20);
+      snake.forEach(part => {
+        if (part.x === food.x && part.y === food.y) generateFood();
+      });
+    }
+    function drawFood() {
+      ctx.fillStyle = "#ff5a5a";
+      ctx.fillRect(food.x * 20, food.y * 20, 18, 18);
+    }
+    function hasGameEnded() {
+      for (let i = 4; i < snake.length; i++) {
+        if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) return true;
+      }
+      return snake[0].x < 0 || snake[0].x > 19 || snake[0].y < 0 || snake[0].y > 19;
+    }
+    document.addEventListener("keydown", changeDirection);
+    function changeDirection(event) {
+      if (changingDirection) return;
+      if (event.key === "ArrowLeft" && dx === 0) { dx = -1; dy = 0; changingDirection = true; }
+      if (event.key === "ArrowUp" && dy === 0) { dx = 0; dy = -1; changingDirection = true; }
+      if (event.key === "ArrowRight" && dx === 0) { dx = 1; dy = 0; changingDirection = true; }
+      if (event.key === "ArrowDown" && dy === 0) { dx = 0; dy = 1; changingDirection = true; }
+    }
+    generateFood();
+    main();
+  </script>
+</body>
+</html>

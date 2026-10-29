@@ -15,9 +15,6 @@ const games = [
     category: "Arcade", 
     image: "flappy.png" // <-- Add this line here
   },
-  { title: "Snake", description: "Eat food, grow longer, and avoid hitting the walls or yourself.", file: "snake.html", category: "Arcade" },
-  { title: "Pong", description: "Retro table tennis arcade game. Beat the AI!", file: "pong.html", category: "Arcade" },
-  { title: "Tic-Tac-Toe", description: "Classic 3-in-a-row strategy game against a friend.", file: "tictactoe.html", category: "Puzzle" }
 ];
 
 // ---------------------------------------------------------------

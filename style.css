@@ -503,3 +503,17 @@ label input:focus, .inline input:focus { outline: none; border-color: var(--acce
   row-gap: 0;
   overflow: hidden;
 }
+
+/* Editor: current files and icon preview */
+.icon-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+.icon-row .note { margin-top: 0; }
+
+#f-icon-preview {
+  width: 96px;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+#f-file-info { margin-top: 6px; }

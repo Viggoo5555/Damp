@@ -381,6 +381,7 @@ function openEditor(game) {
   $("f-desc").value = game && game.description ? game.description : "";
   $("f-file").value = "";
   $("f-icon").value = "";
+  updateFileInfo();
   $("f-repo").value = localStorage.getItem("damp-repo") || guessRepo();
   $("f-token").value = localStorage.getItem("damp-token") || "";
   $("conn").open = !$("f-token").value;
@@ -392,6 +393,41 @@ function openEditor(game) {
   say("");
   editor.showModal();
 }
+
+// Shows which files are set now, and which new ones are picked
+let previewUrl = null;
+
+function updateFileInfo() {
+  const htmlFile = $("f-file").files[0];
+  const iconFile = $("f-icon").files[0];
+  const html = editing ? editing.file : "";
+  const icon = editing && editing.image ? editing.image : "";
+
+  $("f-file-info").textContent = htmlFile
+    ? "Selected: " + htmlFile.name + (html ? " (replaces " + html + ")" : "")
+    : (html ? "Current file: " + html : "No game file picked yet.");
+  $("f-icon-info").textContent = iconFile
+    ? "Selected: " + iconFile.name + (icon ? " (replaces " + icon + ")" : "")
+    : (icon ? "Current icon: " + icon : "No icon yet. A coloured letter is used instead.");
+
+  const preview = $("f-icon-preview");
+  if (previewUrl) URL.revokeObjectURL(previewUrl);
+  previewUrl = null;
+  if (iconFile) {
+    previewUrl = URL.createObjectURL(iconFile);
+    preview.src = previewUrl;
+    preview.hidden = false;
+  } else if (icon) {
+    preview.src = encodeURI(icon);
+    preview.hidden = false;
+  } else {
+    preview.hidden = true;
+  }
+}
+
+$("f-icon-preview").addEventListener("error", function () { $("f-icon-preview").hidden = true; });
+$("f-file").addEventListener("change", updateFileInfo);
+$("f-icon").addEventListener("change", updateFileInfo);
 
 $("add-game").addEventListener("click", function () { openEditor(null); });
 $("editor-close").addEventListener("click", function () { editor.close(); });
@@ -565,6 +601,9 @@ $("editor-form").addEventListener("submit", async function (event) {
     localStorage.setItem("damp-token", conn.token);
     games = list;
     editing = entry;
+    $("f-file").value = "";
+    $("f-icon").value = "";
+    updateFileInfo();
     showChips();
     showGames();
     say("Saved. It goes live for everyone in about a minute.");

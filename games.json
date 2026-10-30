@@ -29,7 +29,8 @@
   {
     "title": "Guess the Color!",
     "file": "guess-the-color.html",
-    "category": "Guessing"
+    "category": "Guessing",
+    "image": "guess-the-color.png"
   },
   {
     "title": "Slope",

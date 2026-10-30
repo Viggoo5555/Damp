@@ -1,174 +1,181 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Verity Clicker</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Lilita+One&display=swap">
 <style>
-/* Layout: sticky character stage on the left, tabbed control panel on the right; stacks on phones. */
+/* Layout: sticky character stage on the left, tabbed panel on the right; stacks on phones.
+   UI: neutral charcoal, one accent (Verity yellow), shifting to red as Verity gets more evil.
+   Verity herself keeps her original glowing look (Lilita One title, form-coloured glow, particles). */
 :root{
-  --bg:#06020d; --bg2:#0d0620; --panel:#130a28; --panel2:#1b0f3a; --line:#34196b;
-  --fg:#f3ecff; --dim:#a08dcf; --pink:#ff3df2; --cyan:#2df7ff; --lime:#b6ff3d;
-  --gold:#ffd23d; --evil:#ff2e55; --form:#ffd400; --form2:#ff9a00;
+  --bg:#0e0f12; --surface:#16181d; --surface2:#1e2128; --line:#2c303a; --arena:#0c0c10;
+  --fg:#eceef2; --dim:#8d95a6; --accent:#ffd400; --ink:#1a1400; --good:#4ade80; --evil:#ff3b4f;
+  --form:#ffd400;
+  --ui:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
   --display:'Lilita One','Trebuchet MS',system-ui,sans-serif;
-  --body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
 body{
-  background:radial-gradient(1200px 700px at 20% -10%,#2a0d5c55,transparent 60%),radial-gradient(900px 600px at 100% 100%,#5a0a6a33,transparent 60%),var(--bg);
-  color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.4;
+  background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:15px;line-height:1.4;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
-  padding-block:12px 40px;min-height:100vh;overflow-x:hidden;
-  -webkit-tap-highlight-color:transparent;
+  padding-block:16px 48px;min-height:100vh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;
 }
 button{font:inherit;color:inherit;cursor:pointer}
-button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
-h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;letter-spacing:.02em}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{margin:0;font-weight:600;line-height:1.2}
 .num{font-variant-numeric:tabular-nums}
-#app{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+#app{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
 
 /* top bar */
-.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;justify-content:space-between}
-.logo{font-family:var(--display);font-size:30px;letter-spacing:.04em;background:linear-gradient(90deg,var(--gold),var(--pink),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 12px #ff3df255)}
-.cur{display:flex;flex-wrap:wrap;gap:8px}
-.chip{display:flex;flex-direction:column;min-width:0;padding:6px 12px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,var(--panel2),var(--panel));box-shadow:0 0 18px #7a2cff22 inset}
-.chip small{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.09em}
-.chip b{font-family:var(--display);font-weight:400;font-size:20px;line-height:1.1}
-.chip.vp b{color:var(--gold);text-shadow:0 0 10px #ffd23d88}
-.chip.ep b{color:var(--evil);text-shadow:0 0 10px #ff2e5588}
-.chip.rt b{color:var(--cyan);text-shadow:0 0 10px #2df7ff88}
-.chip.mp b{color:var(--lime);text-shadow:0 0 10px #b6ff3d88}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 28px;justify-content:space-between}
+.logo{font-size:18px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.logo span{color:var(--accent)}
+.cur{display:flex;flex-wrap:wrap;gap:6px 28px}
+.chip{display:flex;flex-direction:column;min-width:0}
+.chip small{color:var(--dim);font-size:12px;font-weight:500}
+.chip b{font-family:var(--mono);font-weight:600;font-size:26px;line-height:1.15}
+.chip.vp b{color:var(--accent)}
+.chip.ep b{color:var(--evil)}
+.chip.rt b{color:#6cc4ff}
+.chip.mp b{color:var(--good)}
 .iconbtns{display:flex;gap:6px}
-.ib{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--panel);display:grid;place-items:center;font-size:17px}
-.ib:hover{border-color:var(--pink);box-shadow:0 0 12px #ff3df255}
-.ib[aria-pressed=false]{opacity:.45}
+.ib{height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-size:12px;font-weight:600;letter-spacing:.04em}
+.ib[aria-pressed=false]{color:var(--dim);text-decoration:line-through}
+.ib:hover{border-color:var(--dim)}
 
 /* grid */
-.grid{display:grid;grid-template-columns:minmax(320px,440px) minmax(0,1fr);gap:16px;align-items:start}
+.grid{display:grid;grid-template-columns:minmax(320px,440px) minmax(0,1fr);gap:24px;align-items:start}
 @media(max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
 
 /* stage */
-.stage{position:sticky;top:10px;display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,#160a30cc,#0a0418ee);box-shadow:0 0 40px color-mix(in srgb,var(--form) 20%,transparent),0 0 0 1px #000 inset;transition:box-shadow .6s}
+.stage{position:sticky;top:16px;display:flex;flex-direction:column;gap:12px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
 @media(max-width:860px){.stage{position:static}}
 .formname{text-align:center}
-.formname h2{font-size:28px;color:var(--form);text-shadow:0 0 16px var(--form);line-height:1.1}
-.formname p{margin:2px 0 0;color:var(--dim);font-size:13px}
-.tags{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:6px}
-.tag{font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--dim);text-transform:uppercase;letter-spacing:.07em}
+.formname h2{font-family:var(--display);font-weight:400;font-size:30px;letter-spacing:.02em;color:var(--form);text-shadow:0 0 16px var(--form);line-height:1.1}
+.formname p{margin:4px 0 0;color:var(--dim);font-size:13px}
+.tags{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:8px}
+.tag{font-family:var(--mono);font-size:11.5px;padding:2px 8px;border-radius:6px;border:1px solid var(--line);color:var(--dim)}
 .tag.hot{border-color:var(--form);color:var(--form)}
-.arena{position:relative;width:100%;aspect-ratio:1/1;max-height:420px;margin:0 auto;border-radius:16px;overflow:hidden;background:radial-gradient(circle at 50% 55%,color-mix(in srgb,var(--form) 22%,#10062a),#07020f 72%);user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.arena{position:relative;width:100%;aspect-ratio:1/1;max-height:420px;margin:0 auto;border-radius:12px;overflow:hidden;background:radial-gradient(circle at 50% 55%,color-mix(in srgb,var(--form) 22%,var(--arena)),#060608 72%);user-select:none;-webkit-user-select:none;touch-action:manipulation;transition:box-shadow .6s;box-shadow:0 0 40px color-mix(in srgb,var(--form) 18%,transparent)}
 .arena canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 #face{cursor:pointer}
 #floaters{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .floater{position:absolute;font-family:var(--display);font-size:22px;color:#fff;text-shadow:0 0 8px var(--form),0 0 2px #000;white-space:nowrap;animation:floatup 1s ease-out forwards;will-change:transform,opacity}
-.floater.crit{font-size:34px;color:var(--gold);text-shadow:0 0 14px var(--gold),0 0 3px #000}
+.floater.crit{font-size:34px;color:#ffd23d;text-shadow:0 0 14px #ffd23d,0 0 3px #000}
 .floater.evil{color:var(--evil);text-shadow:0 0 10px var(--evil)}
 @keyframes floatup{0%{transform:translate(-50%,0) scale(.6);opacity:0}15%{opacity:1;transform:translate(-50%,-10px) scale(1.1)}100%{transform:translate(-50%,-90px) scale(1);opacity:0}}
-.golden{position:absolute;width:64px;height:64px;border:0;background:none;padding:0;z-index:5;filter:drop-shadow(0 0 14px var(--gold));animation:goldfloat 3s ease-in-out infinite}
+.golden{position:absolute;width:64px;height:64px;border:0;background:none;padding:0;z-index:5;filter:drop-shadow(0 0 14px #ffd23d);animation:goldfloat 3s ease-in-out infinite}
 @keyframes goldfloat{0%,100%{translate:0 0}50%{translate:0 -10px}}
 .bossbar{display:none;flex-direction:column;gap:4px}
 .bossbar.on{display:flex}
-.bar{height:12px;border-radius:99px;background:#000a;border:1px solid var(--line);overflow:hidden}
-.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--pink),var(--gold));box-shadow:0 0 12px var(--pink);transition:width .15s}
-.bar.evil>i{background:linear-gradient(90deg,#7a0020,var(--evil));box-shadow:0 0 12px var(--evil)}
-.bar.cor>i{background:linear-gradient(90deg,#5b19c9,var(--evil))}
-.barrow{display:flex;justify-content:space-between;font-size:12px;color:var(--dim)}
-.buffs{display:flex;flex-wrap:wrap;gap:6px;min-height:0}
-.buff{font-size:12px;padding:3px 9px;border-radius:99px;background:#2a1257;border:1px solid var(--gold);color:var(--gold);box-shadow:0 0 10px #ffd23d33}
-.buff.evil{border-color:var(--evil);color:var(--evil);box-shadow:0 0 10px #ff2e5533}
-.abil{display:none;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px}
+.bar{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .15s}
+.bar.evil>i{background:var(--evil)}
+.bar.cor>i{background:var(--evil)}
+.barrow{display:flex;justify-content:space-between;font-size:12.5px;color:var(--dim)}
+.buffs{display:flex;flex-wrap:wrap;gap:6px}
+.buff{font-family:var(--mono);font-size:12px;padding:2px 8px;border-radius:6px;border:1px solid var(--accent);color:var(--accent)}
+.buff.evil{border-color:var(--evil);color:var(--evil)}
+.abil{display:none;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:8px}
 .abil.on{display:grid}
-.abtn{position:relative;overflow:hidden;padding:7px 8px;border-radius:10px;border:1px solid var(--evil);background:#2a0716;font-size:12px;text-align:left}
-.abtn b{display:block;font-family:var(--display);font-weight:400;font-size:14px;color:#ffb0c0}
-.abtn:disabled{opacity:.45;cursor:not-allowed}
+.abtn{position:relative;overflow:hidden;padding:8px 10px;border-radius:8px;border:1px solid var(--evil);background:var(--surface2);font-size:12px;text-align:left;color:var(--dim)}
+.abtn b{display:block;font-size:13.5px;font-weight:600;color:var(--fg)}
+.abtn:hover:not(:disabled){background:#2a1a1e}
+.abtn:disabled{border-color:var(--line);cursor:not-allowed}
 .abtn i{position:absolute;left:0;bottom:0;height:3px;background:var(--evil)}
 .evo{display:flex;gap:10px;align-items:center}
 .evo .bar{flex:1}
-.btn{border:1px solid var(--pink);background:linear-gradient(180deg,#3b0f72,#22084a);color:#fff;border-radius:10px;padding:8px 14px;font-weight:800;letter-spacing:.02em;transition:transform .08s,box-shadow .2s}
-.btn:hover:not(:disabled){box-shadow:0 0 16px #ff3df288;transform:translateY(-1px)}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--ink);border-radius:8px;padding:7px 14px;font-weight:600;transition:filter .12s,transform .06s}
+.btn:hover:not(:disabled){filter:brightness(1.1)}
 .btn:active:not(:disabled){transform:translateY(1px)}
-.btn:disabled{opacity:.4;cursor:not-allowed;border-color:var(--line)}
-.btn.go{border-color:var(--lime);background:linear-gradient(180deg,#2f6d12,#15380a);box-shadow:0 0 18px #b6ff3d55;animation:pulse 1.4s infinite}
-.btn.evil{border-color:var(--evil);background:linear-gradient(180deg,#701029,#3a0615)}
+.btn:disabled{background:var(--surface2);border-color:var(--line);color:var(--dim);cursor:not-allowed;font-weight:500}
+.btn.go{background:var(--good);border-color:var(--good);color:#04200f}
+.btn.evil{background:var(--evil);border-color:var(--evil);color:#fff}
+.btn.evil:disabled{background:var(--surface2);border-color:var(--line);color:var(--dim)}
 .btn.small{padding:4px 10px;font-size:13px}
-@keyframes pulse{50%{box-shadow:0 0 28px #b6ff3daa}}
+.bulk .btn{background:var(--surface2);border-color:var(--line);color:var(--fg);font-weight:500}
+.bulk .btn[aria-pressed=true]{border-color:var(--accent);color:var(--accent)}
+.bulk .btn.evil,.bulk .btn:disabled{color:inherit}
 
 /* panel */
-.panel{display:flex;flex-direction:column;gap:10px;min-width:0}
-.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
-.tab{flex:none;padding:8px 13px;border-radius:10px;border:1px solid var(--line);background:var(--panel);font-weight:800;font-size:13px;position:relative;white-space:nowrap}
-.tab[aria-selected=true]{border-color:var(--pink);background:linear-gradient(180deg,#3a0f6e,#220849);box-shadow:0 0 14px #ff3df255}
-.tab.dot::after{content:"";position:absolute;top:4px;right:5px;width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 8px var(--lime)}
-.tab.locked{opacity:.5}
-.view{display:none;flex-direction:column;gap:8px}
-.view.on{display:flex}
-.hint{color:var(--dim);font-size:13px;margin:0}
-.sec{margin:6px 0 0;font-size:18px;color:var(--pink);text-shadow:0 0 10px #ff3df266}
-.row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 10px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--panel2),var(--panel))}
-.row.can{border-color:#7a3dff;box-shadow:0 0 14px #7a3dff33}
-.row.done{opacity:.8;border-color:var(--lime)}
-.row.locked{opacity:.55}
-.row .ico{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:#0006;border:1px solid var(--line)}
-.row h3{font-size:16px}
-.row p{margin:1px 0 0;font-size:12.5px;color:var(--dim)}
-.row .lv{color:var(--cyan);font-weight:800}
-.row .buy{min-width:98px;text-align:center}
-.row.evilrow{border-color:#5d1230}
-.row.evilrow .ico{border-color:#5d1230}
+.panel{display:flex;flex-direction:column;gap:14px;min-width:0}
+.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.tab{flex:none;padding:9px 14px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;font-weight:500;font-size:14px;color:var(--dim);position:relative;white-space:nowrap}
+.tab:hover{color:var(--fg)}
+.tab[aria-selected=true]{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
+.tab.dot::after{content:"";position:absolute;top:8px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--good)}
+.view{display:flex;flex-direction:column;gap:8px}
+.hint{color:var(--dim);font-size:13.5px;margin:0;max-width:70ch}
+.sec{margin:14px 0 0;font-size:13px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.1em}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.row.hasico{grid-template-columns:44px minmax(0,1fr) auto}
+.row .ico canvas{width:40px;height:40px;display:block}
+.row.can{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+.row.done{background:transparent}
+.row.locked{background:transparent;color:var(--dim)}
+.row h3{font-size:15px}
+.row p{margin:2px 0 0;font-size:13px;color:var(--dim)}
+.row .lv{font-family:var(--mono);font-size:12.5px;font-weight:500;color:var(--dim);margin-left:6px}
+.row .now{font-family:var(--mono);font-size:12.5px;color:var(--fg)}
+.row .buy{min-width:108px;text-align:center;font-family:var(--mono);font-size:13px}
+.row.evilrow{background:#1b1214}
 .formgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
-.fcard{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px;border:1px solid var(--line);border-radius:12px;background:var(--panel);text-align:center;font-size:12px;color:var(--dim)}
+.fcard{display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 8px;border:1px solid var(--line);border-radius:10px;background:var(--surface);text-align:center;font-size:12.5px;color:var(--dim)}
 .fcard canvas{width:84px;height:84px}
-.fcard b{font-family:var(--display);font-weight:400;font-size:15px;color:var(--fg)}
-.fcard.cur{border-color:var(--form);box-shadow:0 0 16px color-mix(in srgb,var(--form) 40%,transparent)}
+.fcard b{font-weight:600;font-size:14px;color:var(--fg)}
+.fcard.cur{border-color:var(--form)}
 .fcard.lock canvas{filter:brightness(0) contrast(.6) opacity(.5)}
-.fcard button{margin-top:2px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
-.stat{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.fcard button,.fcard .tag{margin-top:4px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:0 28px}
+.stat{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
 .stat span{color:var(--dim)}
-.stat b{font-variant-numeric:tabular-nums;text-align:right}
-.set{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
-.set input[type=range]{accent-color:var(--pink);width:150px;max-width:100%}
-select,textarea{font:inherit;background:#0b0418;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
-textarea{width:100%;min-height:70px;font-family:ui-monospace,Menlo,monospace;font-size:11px}
-.toggle{width:46px;height:26px;border-radius:99px;border:1px solid var(--line);background:#0b0418;position:relative;padding:0}
-.toggle::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--dim);transition:.2s}
-.toggle[aria-pressed=true]{border-color:var(--lime)}
-.toggle[aria-pressed=true]::after{left:23px;background:var(--lime);box-shadow:0 0 8px var(--lime)}
-.card{padding:12px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,var(--panel2),var(--panel));display:flex;flex-direction:column;gap:8px}
-.card.evilcard{border-color:#6b1531;background:linear-gradient(180deg,#2a0716,#14040c)}
+.stat b{font-family:var(--mono);font-weight:500;font-size:13.5px;text-align:right}
+.set{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.set input[type=range]{accent-color:var(--accent);width:160px;max-width:100%}
+select,textarea{font:inherit;background:var(--surface2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+textarea{width:100%;min-height:70px;font-family:var(--mono);font-size:11px}
+.toggle{width:40px;height:22px;border-radius:99px;border:0;background:var(--line);position:relative;padding:0}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--fg);transition:.15s}
+.toggle[aria-pressed=true]{background:var(--accent)}
+.toggle[aria-pressed=true]::after{left:21px;background:var(--ink)}
+.card{padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;gap:8px}
+.card h3{font-size:16px}
+.card.evilcard{background:#1b1214}
 .bulk{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.bulk button[aria-pressed=true]{border-color:var(--cyan);color:var(--cyan)}
-.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px}
+.card .stat:last-of-type{border-bottom:0}
 
 /* toasts + modal */
-#toasts{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;flex-direction:column-reverse;gap:6px;z-index:50;pointer-events:none;width:min(92vw,420px)}
-.toast{padding:9px 14px;border-radius:12px;border:1px solid var(--pink);background:#150a2ce8;box-shadow:0 0 22px #ff3df266;font-weight:800;animation:tin .3s ease-out,tout .4s 3.2s forwards}
-.toast small{display:block;font-weight:600;color:var(--dim)}
-.toast.good{border-color:var(--lime);box-shadow:0 0 22px #b6ff3d55}
-.toast.bad{border-color:var(--evil);box-shadow:0 0 22px #ff2e5566}
-.toast.gold{border-color:var(--gold);box-shadow:0 0 22px #ffd23d66}
-@keyframes tin{from{transform:translateY(14px);opacity:0}}
-@keyframes tout{to{opacity:0;transform:translateY(10px)}}
+#toasts{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;flex-direction:column-reverse;gap:6px;z-index:50;pointer-events:none;width:min(92vw,400px)}
+.toast{padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:#23262eee;font-weight:600;font-size:14px;animation:tin .25s ease-out,tout .3s 3.2s forwards}
+.toast small{display:block;font-weight:400;font-size:12.5px;color:var(--dim)}
+.toast.good{border-color:var(--good)}
+.toast.gold{border-color:var(--accent)}
+.toast.bad{border-color:var(--evil)}
+@keyframes tin{from{transform:translateY(10px);opacity:0}}
+@keyframes tout{to{opacity:0;transform:translateY(8px)}}
 #modal{position:fixed;inset:0;display:none;place-items:center;background:#000b;z-index:60;padding:16px}
 #modal.on{display:grid}
-#modal .box{max-width:460px;width:100%;padding:20px;border:1px solid var(--pink);border-radius:18px;background:linear-gradient(180deg,#1d0f42,#0c0520);box-shadow:0 0 50px #ff3df255;display:flex;flex-direction:column;gap:12px;max-height:88vh;overflow:auto}
-#modal h2{font-size:26px;color:var(--gold)}
+#modal .box{max-width:440px;width:100%;padding:22px;border:1px solid var(--line);border-radius:14px;background:var(--surface);display:flex;flex-direction:column;gap:12px;max-height:88vh;overflow:auto}
+#modal h2{font-size:22px}
 #flash{position:fixed;inset:0;pointer-events:none;z-index:40;opacity:0;background:radial-gradient(circle,#fff,var(--form) 40%,transparent 75%);mix-blend-mode:screen}
 #flash.on{animation:flash 1.1s ease-out}
 @keyframes flash{0%{opacity:.9}100%{opacity:0}}
 .shake{animation:shake .25s}
 @keyframes shake{25%{transform:translate(-3px,2px)}50%{transform:translate(3px,-2px)}75%{transform:translate(-2px,-1px)}}
 body.noanim *,body.noanim *::before,body.noanim *::after{animation:none!important;transition:none!important}
-@media(prefers-reduced-motion:reduce){.golden,.btn.go{animation:none}}
-.foot{text-align:center;color:var(--dim);font-size:12px}
+@media(prefers-reduced-motion:reduce){.golden{animation:none}}
+.foot{text-align:center;color:var(--dim);font-size:12.5px}
 </style>
 <div id="app">
   <header class="top">
-    <div class="logo">VERITY CLICKER</div>
+    <div class="logo">VERITY <span>CLICKER</span></div>
     <div class="cur" id="cur"></div>
     <div class="iconbtns">
-      <button class="ib" id="btnSound" aria-pressed="true" title="Sound effects" aria-label="Toggle sound effects">🔊</button>
-      <button class="ib" id="btnMusic" aria-pressed="true" title="Music" aria-label="Toggle music">🎵</button>
+      <button class="ib" id="btnSound" aria-pressed="true" title="Sound effects" aria-label="Toggle sound effects">SFX</button>
+      <button class="ib" id="btnMusic" aria-pressed="true" title="Music" aria-label="Toggle music">MUS</button>
     </div>
   </header>
   <div class="grid">
@@ -191,7 +198,7 @@ body.noanim *,body.noanim *::before,body.noanim *::after{animation:none!importan
       </div>
       <div>
         <div class="barrow"><span id="evoLabel"></span><span id="evoPct"></span></div>
-        <div class="evo"><div class="bar"><i id="evoBar"></i></div><button class="btn" id="evoBtn" disabled>Evolve</button></div>
+        <div class="bar"><i id="evoBar"></i></div>
       </div>
     </section>
     <section class="panel">
@@ -360,7 +367,7 @@ function newState(){return{
  up:{},ev:{},ru:{},mu:{},skins:{},secrets:{},ach:{},bossDone:[],bossWins:0,bossFails:0,
  golden:0,bestClick:0,quests:[],questsDone:0,daily:{last:'',streak:0},dailyClaims:0,
  playtime:0,lastSave:now(),tabsSeen:{},bgClicks:0,bestRun:0,
- set:{sfx:true,sfxv:.6,music:true,musv:.35,anim:'full',part:'high',fmt:'short',shake:true}
+ set:{auto:true,sfx:true,sfxv:.6,music:true,musv:.35,anim:'full',part:'high',fmt:'short',shake:true}
 }}
 let S=newState();
 /* transient state */
@@ -596,7 +603,7 @@ function checkSecrets(){
 }
 function checkAch(){
   for(const a of ACH){if(S.ach[a[0]])continue;let ok=false;try{ok=a[4](S)}catch(e){}
-    if(ok){S.ach[a[0]]=true;recompute();H.sfx('ach');H.toast(a[1]+' '+a[2],a[3]+' (+2% production)','good');H.refresh('ach')}}
+    if(ok){S.ach[a[0]]=true;recompute();H.sfx('ach');H.toast(a[2],a[3]+' (+2% production)','good');H.refresh('ach')}}
 }
 
 /* ---------- quests ---------- */
@@ -654,6 +661,7 @@ function tick(dt){
   if(T.boss){T.boss.t-=dt;T.boss.hp-=D.pps*.1*dt;if(T.boss.hp<=0)endBoss(true);else if(T.boss.t<=0)endBoss(false)}
   T.achT+=dt;if(T.achT>=.5){T.achT=0;checkAch();checkSecrets();}
   T.squish=Math.max(0,T.squish-dt*5);
+  if(!T.boss&&canEvolve().ok)evolve();
 }
 
 /* ---------- look ---------- */
@@ -665,9 +673,14 @@ function currentLook(){
   }
   return FORMS[S.form];
 }
+const EV_STEPS=[.2,.4,.55,.75,.9];
+const EV_MSG=['Verity is getting a little mean.','Verity is getting evil.','Something is wrong with Verity.','Verity has embraced the dark.','There is no Verity left.'];
+function evilLevel(){return clamp(S.form/15*.8+S.corruption/100*.4,0,1)}
+function evilStep(){const l=evilLevel();return EV_STEPS.filter(x=>l>=x).length}
 function corruptionExtras(){
-  const e=[];if(S.corruption>=25)e.push('redeyes');if(S.corruption>=50)e.push('darkaura');
-  if(S.corruption>=75)e.push('cohorns');if(S.corruption>=100)e.push('corcracks');return e;
+  const l=evilLevel(),e=[];
+  if(l>=.2)e.push('redeyes');if(l>=.4)e.push('brows');if(l>=.55)e.push('cohorns');if(l>=.75)e.push('corcracks');if(l>=.9)e.push('darkaura');
+  return e;
 }
 
 /* ---------- save / load ---------- */
@@ -820,7 +833,9 @@ function drawFace(ctx,sp,cx,cy,r,t,o={}){
   ctx.restore();
   /* face */
   ctx.save();if(has('ghost')){ctx.globalAlpha=.8;}
-  eyesDraw(ctx,sp.eyes,r,t,ink,has('redeyes'));mouthDraw(ctx,sp.mouth,r,t,ink);ctx.restore();
+  eyesDraw(ctx,sp.eyes,r,t,ink,has('redeyes'));mouthDraw(ctx,sp.mouth,r,t,ink);
+  if(has('brows')&&sp.eyes!=='angry'&&sp.eyes!=='slit'){ctx.strokeStyle=has('redeyes')?'#1a0a00':ink;ctx.lineCap='round';ctx.lineWidth=r*.075;for(const s of[-1,1]){ctx.beginPath();ctx.moveTo(s*r*.56,-r*.46);ctx.lineTo(s*r*.12,-r*.28);ctx.stroke()}}
+  ctx.restore();
   if(has('cracks')||has('corcracks')){ctx.save();ctx.beginPath();ctx.arc(0,0,r,0,7);ctx.clip();ctx.strokeStyle=has('corcracks')?'#ff2e55':'#b4ffd8';ctx.shadowColor=ctx.strokeStyle;ctx.shadowBlur=r*.1;ctx.lineWidth=r*.025;
     for(const[a,b,c,d]of[[-.5,-1,-.2,-.5],[-.2,-.5,-.45,-.1],[.4,-1,.25,-.55],[.25,-.55,.5,-.2],[-.4,1,-.15,.6],[.5,.9,.25,.55]]){ctx.beginPath();ctx.moveTo(a*r,b*r);ctx.lineTo(c*r,d*r);ctx.stroke()}ctx.restore()}
   if(has('bolt')){ctx.save();ctx.strokeStyle='#fff7a8';ctx.lineWidth=r*.04;ctx.shadowColor='#ffe14d';ctx.shadowBlur=r*.15;for(const s of[-1,1]){ctx.beginPath();const x=s*r*1.15;ctx.moveTo(x,-r*.6);ctx.lineTo(x-s*r*.12,-r*.25);ctx.lineTo(x+s*r*.05,-r*.2);ctx.lineTo(x-s*r*.1,r*.2);ctx.stroke()}ctx.restore()}
@@ -968,7 +983,7 @@ H.bossEnd=()=>{};
 /* ----- views ----- */
 function rowH(o){
   const cls=['row',o.can?'can':'',o.done?'done':'',o.locked?'locked':'',o.evil?'evilrow':''].join(' ');
-  return `<div class="${cls}"><div class="ico">${o.ico}</div><div style="min-width:0"><h3>${o.name}${o.lvl!=null?` <span class="lv">Lv ${o.lvl}</span>`:''}</h3><p>${o.desc}</p>${o.eff?`<p class="lv">${o.eff}</p>`:''}</div>${o.btn||''}</div>`;
+  return `<div class="${cls}"><div style="min-width:0"><h3>${o.name}${o.lvl!=null?` <span class="lv">Lv ${o.lvl}</span>`:''}</h3><p>${o.desc}</p>${o.eff?`<p class="now">${o.eff}</p>`:''}</div>${o.btn||''}</div>`;
 }
 function bulkBar(){return `<div class="bulk"><span class="hint">Buy amount</span>${[1,10,'max'].map(b=>`<button class="btn small" aria-pressed="${ui.bulk===b}" data-a="bulk" data-v="${b}">${b==='max'?'Max':'×'+b}</button>`).join('')}</div>`}
 function buyRow(kind,u,wallet,unit){
@@ -989,18 +1004,18 @@ function shopV(){
   return h;
 }
 function formsV(){
-  recompute();let h=`<p class="hint">Evolving spends points, so save up! Each form multiplies all production. Evolution cost now: ×${D.evoMul.toFixed(2)}.</p><div class="formgrid">`;
+  recompute();let h=`<p class="hint">Verity evolves by herself as soon as you can afford the next form. Evolving spends points. Each form multiplies all production. Evolution cost now: ×${D.evoMul.toFixed(2)}.</p><div class="formgrid">`;
   FORMS.forEach((f,i)=>{
     const known=i<=S.maxForm+1&&!(f.secret&&i>S.maxForm&&S.maxForm<12);const cur=i===S.form,next=i===S.form+1;
     const nm=known||cur?f.n:'???';
     let btn='';
-    if(next){const r=canEvolve();btn=`<button class="btn small ${r.ok?'go':''}" data-a="evolve" ${r.ok?'':'disabled'}>${r.ok?'Evolve':esc(r.why)}</button>`}
+    if(next){const r=canEvolve();btn=`<span class="tag ${r.ok?'hot':''}">${r.ok?'Evolving...':esc(r.why)}</span>`}
     else if(cur)btn='<span class="tag hot">Current</span>';
     else if(i<S.form)btn='<span class="tag">Reached</span>';
     h+=`<div class="fcard ${cur?'cur':''} ${known?'':'lock'}"><canvas data-f="${i}"></canvas><b>${nm}</b><span>${known?`×${fmt(f.mult)} power`:'Hidden'}</span><span>${i>S.form?(known?(f.secret?'Secret requirements':fmt(evoCostOf(i))+' VP'):''):''}</span>${f.evil&&known&&i>S.form?`<span style="color:var(--evil)">Evil Energy ${f.evil}</span>`:''}${btn}</div>`;
   });
   h+='</div>';
-  if(S.maxForm>=12){h+=`<div class="card"><h3>Secret Final Form</h3><p class="hint">Hidden requirements, revealed to those who got this far:</p>${secretReqs().map(r=>`<div class="stat"><span>${r[0]}</span><b>${r[1]?'✅':'⬜'}</b></div>`).join('')}</div>`}
+  if(S.maxForm>=12){h+=`<div class="card"><h3>Secret Final Form</h3><p class="hint">Hidden requirements, revealed to those who got this far:</p>${secretReqs().map(r=>`<div class="stat"><span>${r[0]}</span><b>${r[1]?'Done':'Not yet'}</b></div>`).join('')}</div>`}
   h+=`<h3 class="sec">Secret forms</h3><p class="hint">Each has a hidden trigger and gives a permanent bonus. Wear any form you own.</p><div class="formgrid">`;
   SECRETS.forEach(s=>{const own=S.secrets[s.id],worn=S.look==='secret:'+s.id;
     h+=`<div class="fcard ${own?'':'lock'} ${worn?'cur':''}"><canvas data-s="${s.id}"></canvas><b>${own?s.n:'???'}</b><span>${own?`×${s.mult} power`:esc(s.hint)}</span>${own?`<button class="btn small" data-a="look" data-v="${worn?'':'secret:'+s.id}">${worn?'Worn':'Wear'}</button>`:''}</div>`});
@@ -1013,7 +1028,7 @@ function evilV(){
   if(!evilUnlocked())return `<div class="card evilcard"><h3>Evilty System</h3><p class="hint">Reach <b>Evilty</b> (the fifth form) to awaken Evil Points, corruption and dark abilities. Buy Evil Energy in the shop to unlock the dark forms on the way.</p></div>`;
   let h=`<div class="card evilcard"><div class="stat"><span>Evil Points</span><b style="color:var(--evil)">${fmt(S.evilPts)}</b></div><div class="stat"><span>Evil Points per second</span><b>${fmt(D.eps)}</b></div><div class="stat"><span>Corruption bonus</span><b>×${(1+.02*S.corruption).toFixed(2)} production</b></div><div class="barrow"><span>Corruption</span><span>${S.corruption.toFixed(0)}%</span></div><div class="bar cor"><i style="width:${S.corruption}%"></i></div></div>`;
   h+=`<h3 class="sec">Corruption milestones</h3>`;
-  COR_MS.forEach(m=>{h+=rowH({ico:S.corruption>=m.at?'☠️':'🔒',name:`${m.at}% ${m.n}`,desc:m.d,done:S.corruption>=m.at,locked:S.corruption<m.at})});
+  COR_MS.forEach(m=>{h+=rowH({ico:'cor'+m.at,name:`${m.at}% ${m.n}`,desc:m.d,done:S.corruption>=m.at,locked:S.corruption<m.at})});
   h+=`<h3 class="sec">Dark abilities</h3><p class="hint">Abilities cost Evil Points and are also on the character panel.</p>`;
   ABIL.forEach(a=>{const ok=S.corruption>=a.at;h+=rowH({ico:'🌀',name:a.n,desc:`${a.d} Needs ${a.at}% corruption. Cooldown ${a.cd}s.`,locked:!ok,evil:true,btn:`<button class="btn buy evil" data-a="abil" data-id="${a.id}" ${ok&&S.evilPts>=abilCost(a)&&!(T.cd[a.id]>0)?'':'disabled'}>${T.cd[a.id]>0?Math.ceil(T.cd[a.id])+'s':fmt(abilCost(a))+' EP'}</button>`})});
   h+=`<h3 class="sec">Corruption upgrades</h3>${bulkBar()}`;
@@ -1046,7 +1061,7 @@ function bossesV(){
   recompute();let h=`<p class="hint">Fight evil forms of Verity. You have 30 seconds. Click as fast as you can, since crits and dark abilities help. Win once for a permanent multiplier, Evil Points and a Mastery Point. Rematch for Evil Points.</p>`;
   if(T.boss)h+=`<div class="card evilcard"><b>Battle in progress: ${BOSSES[T.boss.i].n}</b><p class="hint">Click the character to deal damage!</p></div>`;
   BOSSES.forEach((b,i)=>{const av=bossAvail(i),done=S.bossDone[i];
-    h+=`<div class="row evilrow ${av?'':'locked'} ${done?'done':''}"><div class="ico"><canvas data-b="${i}" style="width:40px;height:40px"></canvas></div><div style="min-width:0"><h3>${av||done?b.n:'???'} ${done?'✅':''}</h3><p>${av?`Reward: ${fmt(b.ep)} EP and ×${b.m} permanent power`:`Reach ${FORMS[b.form].n} to challenge`}</p></div><button class="btn buy evil" data-a="boss" data-v="${i}" ${av&&!T.boss?'':'disabled'}>${done?'Rematch':'Fight'}</button></div>`});
+    h+=`<div class="row hasico evilrow ${av?'':'locked'} ${done?'done':''}"><div class="ico"><canvas data-b="${i}" style="width:40px;height:40px"></canvas></div><div style="min-width:0"><h3>${av||done?b.n:'???'} ${done?'(done)':''}</h3><p>${av?`Reward: ${fmt(b.ep)} EP and ×${b.m} permanent power`:`Reach ${FORMS[b.form].n} to challenge`}</p></div><button class="btn buy evil" data-a="boss" data-v="${i}" ${av&&!T.boss?'':'disabled'}>${done?'Rematch':'Fight'}</button></div>`});
   return h;
 }
 function questsV(){
@@ -1055,12 +1070,12 @@ function questsV(){
   h+=`<div class="card"><h3>Daily reward</h3><p class="hint">Come back every day. Day 7 gives the biggest prize. Streak: ${S.daily.streak} day${S.daily.streak===1?'':'s'}.</p><div class="formgrid" style="grid-template-columns:repeat(7,minmax(0,1fr))">${DAILY.map((m,i)=>`<div class="stat" style="flex-direction:column;align-items:center;padding:6px 2px;${i===day&&ready?'border-color:var(--lime)':''}${(ready?i<day:i<=day)?'opacity:.5':''}"><span>D${i+1}</span><b>${m}m</b></div>`).join('')}</div><button class="btn ${ready?'go':''}" data-a="daily" ${ready?'':'disabled'}>${ready?'Claim daily reward':'Come back tomorrow'}</button></div>`;
   h+=`<h3 class="sec">Quests</h3>`;
   S.quests.forEach((q,i)=>{const p=qProg(q),done=p>=q.goal;
-    h+=`<div class="row ${done?'can':''}"><div class="ico">📜</div><div style="min-width:0"><h3>${esc(q.label)}</h3><p>Reward: ${q.reward.vp?fmt(q.reward.vp)+' points':fmt(q.reward.ep)+' Evil Points'}</p><div class="bar" style="margin-top:6px"><i style="width:${pct(p,q.goal)}%"></i></div><p>${fmt(p)} / ${fmt(q.goal)}</p></div><button class="btn buy ${done?'go':''}" data-a="quest" data-v="${i}" ${done?'':'disabled'}>Claim</button></div>`});
+    h+=`<div class="row ${done?'can':''}"><div style="min-width:0"><h3>${esc(q.label)}</h3><p>Reward: ${q.reward.vp?fmt(q.reward.vp)+' points':fmt(q.reward.ep)+' Evil Points'}</p><div class="bar" style="margin-top:6px"><i style="width:${pct(p,q.goal)}%"></i></div><p>${fmt(p)} / ${fmt(q.goal)}</p></div><button class="btn buy ${done?'go':''}" data-a="quest" data-v="${i}" ${done?'':'disabled'}>Claim</button></div>`});
   return h;
 }
 function achV(){
   const n=achCount();let h=`<p class="hint">${n} / ${ACH.length} unlocked. Each gives +2% production (currently ×${(1+.02*n).toFixed(2)}).</p><div class="two">`;
-  ACH.forEach(a=>{const ok=S.ach[a[0]];h+=`<div class="row ${ok?'done':'locked'}"><div class="ico">${ok?a[1]:'🔒'}</div><div style="min-width:0"><h3>${a[2]}</h3><p>${a[3]}</p></div><span></span></div>`});
+  ACH.forEach(a=>{const ok=S.ach[a[0]];h+=`<div class="row ${ok?'done':'locked'}"><div style="min-width:0"><h3>${a[2]}</h3><p>${a[3]}</p></div><span class="tag ${ok?'hot':''}">${ok?'Unlocked':'Locked'}</span></div>`});
   return h+'</div>';
 }
 function statsV(){
@@ -1097,9 +1112,10 @@ function drawCanvases(){
     else drawSpecTo(cv,sp);
   });
 }
+function tabOn(id){switch(id){case'evil':return evilUnlocked();case'bosses':return S.maxForm>=3;case'rebirth':return S.maxForm>=7||S.rebirths.some(x=>x>0)||S.totalTokens>0;case'mastery':return S.mp>0||S.maxForm>=9||Object.keys(S.mu).length>0;default:return true}}
 function renderTabs(){
   const dots={shop:false,forms:canEvolve().ok,quests:dailyReady()||S.quests.some(q=>qProg(q)>=q.goal),rebirth:TIERS.some((_,i)=>canRebirth(i)),bosses:!T.boss&&BOSSES.some((b,i)=>bossAvail(i)&&!S.bossDone[i])};
-  morph(tabsEl,TABS.map(t=>`<button class="tab ${dots[t.id]?'dot':''} ${t.id==='evil'&&!evilUnlocked()?'locked':''}" role="tab" aria-selected="${ui.tab===t.id}" data-a="tab" data-v="${t.id}">${t.l}</button>`).join(''));
+  morph(tabsEl,TABS.filter(t=>tabOn(t.id)).map(t=>`<button class="tab ${dots[t.id]?'dot':''} ${t.id==='evil'&&!evilUnlocked()?'locked':''}" role="tab" aria-selected="${ui.tab===t.id}" data-a="tab" data-v="${t.id}">${t.l}</button>`).join(''));
 }
 function renderView(force){
   if(ui.tab==='settings'&&!force&&!ui.dirtySet)return;
@@ -1110,7 +1126,20 @@ function renderView(force){
   else morph(el,VIEWS[ui.tab]());
   drawCanvases();
 }
-function renderStage(){
+const mixHex=(a,b,t)=>{const pa=parseInt(a.slice(1),16),pb=parseInt(b.slice(1),16),c=i=>Math.round(((pa>>i)&255)*(1-t)+((pb>>i)&255)*t);return '#'+((1<<24)|(c(16)<<16)|(c(8)<<8)|c(0)).toString(16).slice(1)};
+function applyEvilTheme(){
+  const l=evilLevel(),key=Math.round(l*40);
+  const step=evilStep();
+  if(T.evStep===undefined)T.evStep=step;
+  else if(step!==T.evStep){if(step>T.evStep){H.toast(EV_MSG[step-1],'','bad');H.sfx('evil');H.flash()}T.evStep=step}
+  if(key===ui.evK)return;ui.evK=key;
+  const r=document.documentElement.style,set=(k,v)=>r.setProperty(k,v);
+  set('--bg',mixHex('#0e0f12','#150707',l));set('--surface',mixHex('#16181d','#230e10',l));set('--surface2',mixHex('#1e2128','#301517',l));
+  set('--line',mixHex('#2c303a','#55222a',l));set('--arena',mixHex('#0c0c10','#1c0508',l));set('--accent',mixHex('#ffd400','#ff3b4f',l));
+  set('--ink',mixHex('#1a1400','#1a0004',l));set('--dim',mixHex('#8d95a6','#b3949a',l));
+  document.body.dataset.evil=step;
+}
+function renderStage(){applyEvilTheme();
   const sp=currentLook(),f=FORMS[S.form];
   const root=document.documentElement.style;root.setProperty('--form',sp.c1==='#ffffff'&&sp.c2==='#ffffff'?'#d8c8ff':(lum(sp.c1)<.2?sp.c2.length===7&&lum(sp.c2)>.1?sp.c2:'#b45cff':sp.c1));
   $('formName').textContent=sp.n;$('formDesc').textContent=sp.d||(S.look?'A rare look you earned.':f.d);
@@ -1118,10 +1147,10 @@ function renderStage(){
   const n=S.form+1;
   if(n<FORMS.length){const fn=FORMS[n],r=canEvolve(),c=evoCostOf(n);
     $('evoLabel').textContent=fn.secret&&!secretReqOK()?'Next: ??? (hidden requirements)':`Next: ${fn.n} (${fmt(c)} VP)`;
-    $('evoPct').textContent=fn.secret&&!secretReqOK()?'':Math.min(100,pct(S.pts,c)).toFixed(0)+'%';
-    $('evoBar').style.width=(fn.secret&&!secretReqOK()?0:pct(S.pts,c))+'%';
-    const b=$('evoBtn');b.disabled=!r.ok;b.classList.toggle('go',r.ok);b.textContent=r.ok?'Evolve!':(r.why==='Not enough points'?'Evolve':r.why);
-  }else{$('evoLabel').textContent='Final form reached';$('evoPct').textContent='';$('evoBar').style.width='100%';$('evoBtn').disabled=true;$('evoBtn').textContent='Max'}
+    const hid=fn.secret&&!secretReqOK();
+    $('evoPct').textContent=hid?'':(r.ok?'Evolving...':(r.why==='Not enough points'?Math.min(100,pct(S.pts,c)).toFixed(0)+'%':r.why));
+    $('evoBar').style.width=(hid?0:pct(S.pts,c))+'%';
+  }else{$('evoLabel').textContent='Final form reached';$('evoPct').textContent='';$('evoBar').style.width='100%'}
   /* buffs */
   const t=now();$('buffs').innerHTML=T.buffs.map(b=>`<span class="buff ${b.evil?'evil':''}">${esc(b.label)} ${Math.ceil((b.until-t)/1000)}s</span>`).join('');
   /* corruption & abilities */
@@ -1152,7 +1181,6 @@ document.addEventListener('click',e=>{
     case'tab':setTab(v);break;
     case'bulk':ui.bulk=v==='max'?'max':+v;renderAll(true);break;
     case'buy':buy(b.dataset.k,id,ui.bulk);renderAll(true);break;
-    case'evolve':evolve();break;
     case'look':S.look=v||null;renderAll(true);break;
     case'abil':useAbility(id);renderAll(true);break;
     case'boss':startBoss(+v);break;
@@ -1175,7 +1203,6 @@ document.addEventListener('input',e=>{
   if(e.target.type==='range')S.set[s]=e.target.value/100;else S.set[s]=e.target.value;
   applyAudio();applyBody();if(s==='fmt'||s==='anim'||s==='part'){renderAll(true)}
 });
-$('evoBtn').addEventListener('click',()=>{audioInit();evolve()});
 function applyBody(){document.body.classList.toggle('noanim',S.set.anim==='off')}
 arena.addEventListener('pointerdown',e=>{
   if(e.button>0)return;audioInit();

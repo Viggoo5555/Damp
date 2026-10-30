@@ -25,5 +25,10 @@
     "file": "10-minute-dungeon.html",
     "category": "Dungeon",
     "image": "10-minute-dungeon.png"
+  },
+  {
+    "title": "Guess the Color!",
+    "file": "guess-the-color.html",
+    "category": "Guessing"
   }
 ]

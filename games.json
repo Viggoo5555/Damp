@@ -19,5 +19,11 @@
     "file": "verity-clicker.html",
     "category": "Clicker",
     "image": "verity-clicker.png"
+  },
+  {
+    "title": "10-Minute Dungeon",
+    "file": "10-minute-dungeon.html",
+    "category": "Dungeon",
+    "image": "10-minute-dungeon.png"
   }
 ]

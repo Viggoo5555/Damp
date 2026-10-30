@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Color memory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--frame:#e2e2e2;--ink:#111;--mute:#5e5e5e;--line:#b4b4b4;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--frame:#1a1a1a;--ink:#ececec;--mute:#9b9b9b;--line:#3c3c3c}}
+:root[data-theme="dark"]{--frame:#1a1a1a;--ink:#ececec;--mute:#9b9b9b;--line:#3c3c3c}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--frame);color:var(--ink);font-family:"Familjen Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.35;overflow:hidden}
+#app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto}
+button{font:inherit;font-weight:700;background:var(--ink);color:var(--frame);border:0;border-radius:0;padding:14px 28px;cursor:pointer}
+button:active{opacity:.8}
+button:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.seg{display:flex;gap:16px}
+.seg button{background:none;color:var(--mute);padding:0 0 3px;border-bottom:2px solid transparent;font-weight:600}
+.seg button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+#hud{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;font-variant-numeric:tabular-nums}
+#hud .t{font-weight:700;display:none}
+@media(min-width:520px){#hud .t{display:block}}
+#strip{display:flex;gap:6px}
+#strip i{width:20px;height:20px;border:1.5px solid var(--line)}
+#strip i.now{border-color:var(--ink)}
+#hud .r{color:var(--mute)}
+#hud .r b{color:var(--ink);font-size:20px;margin-left:10px}
+#field{position:relative;display:flex;background:#808080;min-height:0}
+#a{flex:1}
+#b{flex:0;transition:flex .5s cubic-bezier(.3,.7,.2,1)}
+#field.split #b{flex:1}
+#tags{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;pointer-events:none}
+#tags span{background:var(--frame);color:var(--ink);padding:6px 12px;font-size:14px;font-variant-numeric:tabular-nums}
+#bar{display:none;position:absolute;left:0;bottom:0;height:6px;width:100%;background:#fff;mix-blend-mode:difference;transform-origin:left;animation:shrink 5s linear forwards}
+@keyframes shrink{to{transform:scaleX(0)}}
+#sheet{position:absolute;inset:0;background:var(--frame);display:none;flex-direction:column;justify-content:flex-end;padding:clamp(18px,5vw,44px);overflow:auto}
+#sheet h2{font-size:clamp(30px,7.5vw,56px);line-height:1;letter-spacing:-.03em;margin:0 0 14px;max-width:15ch}
+#sheet p{margin:0 0 18px;color:var(--mute);max-width:44ch}
+#sheet .hs{color:var(--ink);font-weight:700;font-size:18px}
+#sheet p.hs.new{background:var(--ink);color:var(--frame);padding:6px 12px;width:fit-content}
+#sheet .opt{display:flex;gap:18px;align-items:baseline;margin-bottom:22px;color:var(--mute)}
+#sheet .big{font-size:clamp(48px,12vw,88px);font-weight:700;line-height:.95;letter-spacing:-.04em;margin:0 0 14px}
+#sheet ol{list-style:none;margin:0 0 20px;padding:0;max-width:420px;font-variant-numeric:tabular-nums}
+#sheet li{display:grid;grid-template-columns:24px 1fr auto auto;gap:14px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
+#sheet li i{width:24px;height:24px}
+#sheet li em{font-style:normal;color:var(--mute)}
+#ctl{background:var(--frame);border-top:1px solid var(--line);padding:12px 16px;max-height:480px;overflow:hidden;transition:max-height .35s ease,padding .35s ease}
+#ctl.shut{max-height:0;padding-top:0;padding-bottom:0;border-top-width:0}
+#ctl .in{max-width:640px;margin:0 auto}
+#pick.hid{display:none}
+.bar1{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+#hex{color:var(--mute);font-variant-numeric:tabular-nums}
+#pad{position:relative;height:clamp(110px,26vh,200px);touch-action:none;cursor:crosshair}
+#hd{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1.5px #000;pointer-events:none}
+#hue{position:relative;height:26px;margin-top:10px;touch-action:none;cursor:ew-resize;background:linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)}
+#hm{position:absolute;top:-3px;bottom:-3px;width:7px;margin-left:-3.5px;background:#fff;box-shadow:0 0 0 1.5px #000;pointer-events:none}
+.row{display:grid;grid-template-columns:60px 1fr 36px;align-items:center;gap:10px;margin:9px 0;font-size:15px}
+.row output{text-align:right;color:var(--mute);font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:16px;border-radius:0;margin:0;touch-action:pan-y}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:8px;height:30px;background:#fff;border:1.5px solid #000;border-radius:0}
+input[type=range]::-moz-range-thumb{width:8px;height:28px;background:#fff;border:1.5px solid #000;border-radius:0}
+.foot{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:12px;min-height:50px}
+#res .pts{font-size:clamp(44px,11vw,64px);font-weight:700;line-height:.9;letter-spacing:-.04em}
+#res .s{font-size:15px;margin-top:6px}
+#res .s.d{color:var(--mute);font-size:14px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="hud">
+    <span class="t">Color memory</span>
+    <div id="strip" aria-hidden="true"></div>
+    <div class="r"><span id="rd"></span><b id="tot">0</b></div>
+  </header>
+
+  <main id="field" aria-live="polite">
+    <div id="a"></div><div id="b"></div>
+    <div id="tags"></div>
+    <div id="bar"></div>
+    <div id="sheet"></div>
+  </main>
+
+  <footer id="ctl" class="shut"><div class="in">
+    <div id="pick">
+      <div class="bar1">
+        <div class="seg"><button id="m-pad" aria-pressed="true">Pad</button><button id="m-rgb" aria-pressed="false">RGB</button></div>
+        <span id="hex"></span>
+      </div>
+      <div id="rows"></div>
+    </div>
+    <div class="foot"><div id="res"></div><button id="act" hidden>Lock in</button></div>
+  </div></footer>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const ROUNDS=5;
+let SHOW=5000, st='intro', round=0, scores=[], dists=[], mine=[], targets=[], target, best=+(function(){try{return localStorage.getItem('colorMemoryBest')}catch(e){return 0}})()||0, mode='pad', timers=[];
+let cur={r:128,g:128,b:128}, hsb={h:0,s:0,v:.5};
+
+const clamp=x=>Math.max(0,Math.min(1,x));
+const css=c=>`rgb(${c.r},${c.g},${c.b})`;
+const hex=c=>'#'+[c.r,c.g,c.b].map(x=>x.toString(16).padStart(2,'0')).join('');
+function hsv2rgb(h,s,v){const f=n=>{const k=(n+h/60)%6;return v-v*s*Math.max(0,Math.min(k,4-k,1))};return{r:Math.round(f(5)*255),g:Math.round(f(3)*255),b:Math.round(f(1)*255)}}
+function rgb2hsv({r,g,b}){r/=255;g/=255;b/=255;const m=Math.max(r,g,b),n=Math.min(r,g,b),d=m-n;let h=0;if(d){if(m===r)h=((g-b)/d+6)%6;else if(m===g)h=(b-r)/d+2;else h=(r-g)/d+4;h*=60}return{h,s:m?d/m:0,v:m}}
+function lab({r,g,b}){const f=c=>{c/=255;return c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4)};const R=f(r),G=f(g),B=f(b);
+  let x=(R*.4124+G*.3576+B*.1805)/.95047,y=R*.2126+G*.7152+B*.0722,z=(R*.0193+G*.1192+B*.9505)/1.08883;
+  const t=v=>v>.008856?Math.cbrt(v):7.787*v+16/116;x=t(x);y=t(y);z=t(z);return[116*y-16,500*(x-y),200*(y-z)]}
+const dE=(a,b)=>{const p=lab(a),q=lab(b);return Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2])};
+const rndColor=()=>hsv2rgb(Math.random()*360,.25+Math.random()*.7,.3+Math.random()*.65);
+const sg=x=>{x=Math.round(x);return x>0?'+'+x:x<0?'−'+Math.abs(x):'0'};
+function drag(el,fn){el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);fn(e)});el.addEventListener('pointermove',e=>{if(e.buttons)fn(e)})}
+
+/* picker */
+function buildRows(){
+  const rows=$('#rows');
+  if(mode==='pad'){
+    rows.innerHTML=`<div id="pad"><i id="hd"></i></div><div id="hue"><i id="hm"></i></div>`;
+    drag($('#pad'),e=>{const r=$('#pad').getBoundingClientRect();hsb.s=clamp((e.clientX-r.left)/r.width);hsb.v=1-clamp((e.clientY-r.top)/r.height);cur=hsv2rgb(hsb.h,hsb.s,hsb.v);sync()});
+    drag($('#hue'),e=>{const r=$('#hue').getBoundingClientRect();hsb.h=clamp((e.clientX-r.left)/r.width)*360;cur=hsv2rgb(hsb.h,hsb.s,hsb.v);sync()});
+  }else{
+    rows.innerHTML=['Red','Green','Blue'].map(n=>`<label class="row"><span>${n}</span><input type="range" min="0" max="255" aria-label="${n}"><output></output></label>`).join('');
+    rows.querySelectorAll('input').forEach(el=>el.addEventListener('input',()=>{
+      const v=[...rows.querySelectorAll('input')].map(i=>+i.value);cur={r:v[0],g:v[1],b:v[2]};hsb=rgb2hsv(cur);sync()}));
+  }
+  sync();
+}
+function sync(){
+  if(mode==='pad'){
+    $('#pad').style.background=`linear-gradient(to top,#000,transparent),linear-gradient(to right,#fff,${css(hsv2rgb(hsb.h,1,1))})`;
+    $('#hd').style.left=hsb.s*100+'%';$('#hd').style.top=(1-hsb.v)*100+'%';
+    $('#hm').style.left=hsb.h/360*100+'%';
+  }else{
+    const vals=[cur.r,cur.g,cur.b];
+    document.querySelectorAll('#rows input').forEach((el,i)=>{const k='rgb'[i];
+      el.value=vals[i];el.style.background=`linear-gradient(90deg,${css({...cur,[k]:0})},${css({...cur,[k]:255})})`;el.nextElementSibling.textContent=vals[i]});
+  }
+  if(st==='recall'){$('#a').style.background=css(cur);$('#hex').textContent=hex(cur)}
+}
+function setMode(m){mode=m;$('#m-pad').setAttribute('aria-pressed',m==='pad');$('#m-rgb').setAttribute('aria-pressed',m==='rgb');buildRows()}
+$('#m-pad').onclick=()=>setMode('pad');
+$('#m-rgb').onclick=()=>setMode('rgb');
+
+/* ui helpers */
+const total=()=>scores.reduce((a,b)=>a+b,0);
+function head(){
+  $('#rd').textContent=st==='intro'?'':`Round ${Math.min(round,ROUNDS)} / ${ROUNDS}`;
+  $('#tot').textContent=total();
+  $('#strip').innerHTML=Array.from({length:ROUNDS},(_,i)=>i<mine.length
+    ?`<i style="border:0;background:linear-gradient(135deg,${css(mine[i])} 50%,${css(targets[i])} 50%)"></i>`
+    :`<i class="${i===round-1?'now':''}"></i>`).join('');
+}
+function sheet(html){const s=$('#sheet');s.innerHTML=html;s.style.display='flex'}
+const tags=(a,b)=>{$('#tags').innerHTML=(a?`<span>${a}</span>`:'<span style="visibility:hidden"></span>')+(b?`<span>${b}</span>`:'')};
+const shut=on=>$('#ctl').classList.toggle('shut',on);
+function countUp(el,to){const t0=performance.now();(function f(t){const p=Math.min(1,(t-t0)/600);el.textContent='+'+Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(t0)}
+const verdict=d=>d<2?'Indistinguishable':d<5?'Barely off':d<12?'Close':d<25?'Noticeably off':'Way off';
+
+/* game flow */
+function intro(){
+  st='intro';round=0;scores=[];dists=[];mine=[];targets=[];timers.forEach(clearTimeout);timers=[];
+  $('#field').classList.remove('split');$('#a').style.background='transparent';tags();
+  $('#bar').style.display='none';shut(true);$('#act').hidden=true;$('#res').innerHTML='';
+  head();
+  sheet(`<h2>How well do you remember a color?</h2><p>Five rounds. A color appears, vanishes, and you rebuild it from memory. You are scored on how different the two look to the eye.</p><div class="opt">Show time<div class="seg">${[3,5,8].map(s=>`<button data-t="${s}" aria-pressed="${SHOW===s*1000}">${s} seconds</button>`).join('')}</div></div>${best?`<p class="hs">High score ${best}</p>`:''}<div><button id="go">Start</button></div>`);
+}
+function nextRound(){
+  round++;target=rndColor();targets.push(target);
+  st='show';$('#sheet').style.display='none';
+  hsb={h:0,s:0,v:.5};cur=hsv2rgb(0,0,.5);head();buildRows();
+  $('#field').classList.remove('split');$('#a').style.background=css(target);
+  shut(true);$('#act').hidden=true;$('#res').innerHTML='';$('#hex').textContent='';$('#pick').classList.remove('hid');
+  let left=Math.round(SHOW/1000);
+  tags(`Memorize · ${left}s`);
+  const bar=$('#bar');bar.style.display='none';bar.style.animationDuration=SHOW+'ms';void bar.offsetWidth;bar.style.display='block';
+  const iv=setInterval(()=>{left--;if(left>0)tags(`Memorize · ${left}s`)},1000);
+  timers.push(setTimeout(()=>{clearInterval(iv);recall()},SHOW));
+}
+function recall(){
+  st='recall';$('#bar').style.display='none';tags();
+  $('#a').style.background=css(cur);
+  shut(false);$('#act').hidden=false;$('#act').textContent='Lock in';
+  sync();
+}
+function lock(){
+  const d=dE(cur,target),pts=Math.round(100*Math.exp(-d/20));
+  scores.push(pts);dists.push(d);mine.push({...cur});st='reveal';
+  const c=rgb2hsv(cur),t=rgb2hsv(target),dh=((c.h-t.h+540)%360)-180;
+  $('#field').classList.add('split');
+  $('#a').style.background=css(cur);$('#b').style.background=css(target);
+  tags(`You ${hex(cur)}`,`Target ${hex(target)}`);
+  $('#pick').classList.add('hid');$('#hex').textContent='';
+  $('#res').innerHTML=`<div class="pts" id="pts">+0</div><div class="s"><b>${verdict(d)}</b> · difference ${d.toFixed(1)}</div><div class="s d">Yours vs target: hue ${sg(dh)}°, saturation ${sg((c.s-t.s)*100)}%, brightness ${sg((c.v-t.v)*100)}%</div>`;
+  countUp($('#pts'),pts);
+  $('#act').textContent=round<ROUNDS?'Next round':'See results';
+  head();
+}
+function end(){
+  st='end';const t=total(),prev=best,isNew=t>prev;if(isNew){best=t;try{localStorage.setItem('colorMemoryBest',t)}catch(e){}}
+  const rank=t>=450?'Eyedropper in disguise':t>=350?'Sharp eye':t>=250?'Solid memory':t>=150?'Getting warm':'Back to the swatch book';
+  shut(true);$('#act').hidden=true;$('#res').innerHTML='';head();
+  sheet(`<h2>${rank}</h2><div class="big">${t}<span style="font-size:.35em;color:var(--mute);letter-spacing:0"> / ${ROUNDS*100}</span></div>${isNew?`<p class="hs new">New high score${prev?` · previous best ${prev}`:''}</p>`:`<p class="hs">High score ${best} · ${best-t} points to beat it</p>`}<ol>${mine.map((c,i)=>`<li><i style="background:linear-gradient(135deg,${css(c)} 50%,${css(targets[i])} 50%)"></i>Round ${i+1}<em>off by ${dists[i].toFixed(1)}</em><b>${scores[i]}</b></li>`).join('')}</ol><div><button id="go">Play again</button></div>`);
+}
+$('#act').onclick=()=>{if(st==='recall')lock();else if(st==='reveal'){round<ROUNDS?nextRound():end()}};
+$('#sheet').addEventListener('click',e=>{
+  const t=e.target;
+  if(t.dataset.t){SHOW=+t.dataset.t*1000;t.parentNode.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b===t))}
+  else if(t.id==='go'){if(st==='end')intro();else nextRound()}
+});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||e.target.tagName==='BUTTON')return;
+  if(st==='recall'||st==='reveal')$('#act').click();
+  else if(st==='intro'||st==='end')$('#go').click();
+});
+
+buildRows();intro();
+</script>
+</body>
+</html>

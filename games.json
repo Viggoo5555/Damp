@@ -37,5 +37,11 @@
     "file": "slope.html",
     "category": "Racing",
     "image": "slope.jpg"
+  },
+  {
+    "title": "Guessing Game",
+    "file": "guessing-game.html",
+    "category": "Guessing",
+    "image": "guessing-game.png"
   }
 ]

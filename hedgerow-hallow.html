@@ -112,7 +112,7 @@
   .ctrls { display: flex; gap: 6px; }
   .ctrls .btn { padding: 0 12px; min-height: 34px; box-shadow: 2px 2px 0 var(--ink); }
 
-  .main { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+  .main { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
   .stage { flex: 1 1 0; min-width: 0; min-height: 0; position: relative; }
   .frame {
     position: absolute; inset: 0; margin: auto; width: 320px; height: 224px;
@@ -131,7 +131,7 @@
   .dock > * { flex: none; }
   .shop { min-height: 150px; display: flex; flex-direction: column; gap: 6px; }
   #buyView { display: flex; flex-direction: column; gap: 6px; }
-  .tray { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
+  .tray { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
   .tcard { position: relative; display: flex; flex-direction: column; align-items: center; padding: 3px 2px; min-width: 0; min-height: 0; box-shadow: 2px 2px 0 var(--ink); }
   .tcard canvas { width: 38px; height: 38px; max-width: 100%; }
   .tcard .tn { display: none; font-size: 18px; line-height: 1.05; }
@@ -190,7 +190,7 @@
 
   /* wide or landscape: dock moves to the right */
   @media (min-aspect-ratio: 5/4) {
-    .main { flex-direction: row; }
+    .main { flex-direction: row; justify-content: flex-start; }
     .dock { width: clamp(230px, 32vw, 310px); overflow-y: auto; scrollbar-width: thin; padding: 0 6px 6px 0; }
     .shop { min-height: 0; }
     .tray { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -205,6 +205,47 @@
     .kb-hint { display: block; }
   }
 
+  /* menu v2 */
+  .cta { display: flex; flex-direction: column; gap: 10px; }
+  .cta .big { width: 100%; min-height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; font-size: 38px; padding: 4px 22px; }
+  .cta .big small { font-family: var(--f-body); font-size: 19px; line-height: 1.1; color: var(--ink); }
+  .modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .cta .mode { display: flex; flex-direction: column; align-items: flex-start; gap: 0; min-height: 58px; padding: 4px 14px; font-size: 18px; text-align: left; min-width: 0; }
+  .cta .mode b { font-family: var(--f-display); font-weight: 400; font-size: 24px; line-height: 1.1; }
+  .cta .mode span { font-size: 16px; line-height: 1.1; color: var(--ink-soft); }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .tab { font-family: var(--f-display); font-size: 21px; min-height: 40px; padding: 0 16px; box-shadow: 2px 2px 0 var(--ink); }
+  .tab[aria-selected="true"] { background: var(--honey); }
+  .tabnote { margin: 0 0 10px; color: var(--ink-soft); font-size: 17px; }
+  .lvl .tag { display: inline-block; align-self: flex-start; background: var(--honey); border: 2px solid var(--ink); border-radius: var(--wob); padding: 0 10px; font-size: 15px; line-height: 1.3; }
+  .lvl .num { color: var(--ink-soft); font-size: 15px; letter-spacing: .04em; text-transform: uppercase; }
+  body.playing { padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px)); }
+  .stats { gap: 4px; }
+  .stat { padding: 0 8px; font-size: 18px; gap: 4px; }
+  .ctrls { gap: 4px; }
+  .ctrls .btn { padding: 0 7px; }
+  .stat svg { width: 19px; height: 19px; }
+  .hud { flex-wrap: nowrap; }
+  .levels { grid-template-columns: repeat(auto-fit, minmax(min(100%, 165px), 1fr)); gap: 12px; }
+  .lvl .nm { font-size: 24px; }
+  .lvl .bl { font-size: 15px; line-height: 1.15; }
+  .lvl .meta { font-size: 15px; }
+
+  .dock .hint { position: static; transform: none; max-width: none; pointer-events: none; padding: 4px 14px; font-size: 18px; }
+  /* floating upgrade panel next to the tapped buddy */
+  .uppanel { position: absolute; z-index: 3; width: min(330px, calc(100% - 12px)); box-shadow: 4px 4px 0 var(--ink); }
+  .uppanel .stats-line { display: block; margin: 0; font-size: 14px; line-height: 1.1; }
+  .uppanel .path .pn { font-size: 17px; }
+  .uppanel .path .un { font-size: 15px; }
+  .uppanel .path .ud { font-size: 13px; }
+  .uppanel .tv-head strong { font-size: 20px; }
+  .tcard.locked { opacity: .55; filter: grayscale(.8); }
+  .tcard.nudge { animation: nudge 1.1s ease-in-out infinite; }
+  @keyframes nudge { 50% { transform: translateY(-3px) scale(1.03); } }
+  #btnWave.go:not([disabled]) { animation: nudge 1.3s ease-in-out infinite; }
+  .daily-tag { display: inline-block; background: var(--honey); border: 2px solid var(--ink); border-radius: var(--wob); padding: 0 8px; font-size: 14px; margin-left: 6px; vertical-align: middle; }
+  .helplist { text-align: left; margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+
   /* modals */
   .modal {
     position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center;
@@ -216,7 +257,9 @@
   .mcard h2 { font-family: var(--f-display); font-weight: 400; font-size: 38px; line-height: 1; margin: 0; text-wrap: balance; }
   .mcard p { margin: 0; }
   .mcard .big { font-size: 24px; font-variant-numeric: tabular-nums; }
-  .mcard .new-best { background: var(--honey); border: 2px solid var(--ink); border-radius: var(--wob); padding: 0 12px; }
+  .mcard .new-best { background: var(--honey); border: 2px solid var(--ink); border-radius: var(--wob); padding: 2px 14px; line-height: 1.2; }
+  #endBest { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .eb-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
   .mcard .acts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 4px; }
   .mcard .star { width: 30px; height: 30px; }
 
@@ -241,19 +284,35 @@
     </div>
     <canvas class="scene" id="hero" role="img" aria-label="A sunny meadow where woodland buddies guard a garden path while critters crawl along it"></canvas>
     <div class="cta">
-      <button class="btn primary" id="btnPlay" type="button">Play</button>
-      <button class="btn" id="btnEndless" type="button">Endless meadow</button>
+      <button class="btn primary big" id="btnPlay" type="button">Play</button>
+      <div class="modes">
+        <button class="btn mode" id="btnDaily" type="button"><b>Daily garden</b><span id="dailySub"></span></button>
+        <button class="btn mode" id="btnEndless" type="button"><b>Endless meadow</b><span id="endlessSub"></span></button>
+      </div>
     </div>
-    <h2 class="sec-h">Pick a garden</h2>
-    <div class="levels" id="levels"></div>
-    <h2 class="sec-h">Meet your buddies</h2>
-    <div class="guide" id="guideB"></div>
-    <h2 class="sec-h">Watch out for</h2>
-    <div class="guide" id="guideC"></div>
-    <div class="panel how">
-      <h2>How to play</h2>
-      <p>Pick a buddy, then tap a patch of grass to plant it. Tap a planted buddy to open its two upgrade paths. Send each wave when you are ready, or switch on Auto. Powers help in a tight spot. Every critter that reaches the patch eats a veggie.</p>
-      <p class="kb-only">Keyboard: arrows or WASD move the cursor, 1 to 6 pick a buddy, Enter plants, U and I buy upgrades, X sells, N sends the wave, Q E R use powers, T toggles Auto, P pauses, F changes speed.</p>
+    <div class="tabs" role="tablist" id="tabs" aria-label="Menu sections">
+      <button class="btn tab" role="tab" type="button" data-tab="gardens" aria-selected="true">Gardens</button>
+      <button class="btn tab" role="tab" type="button" data-tab="buddies" aria-selected="false">Buddies</button>
+      <button class="btn tab" role="tab" type="button" data-tab="critters" aria-selected="false">Critters</button>
+      <button class="btn tab" role="tab" type="button" data-tab="how" aria-selected="false">How to play</button>
+    </div>
+    <div class="tabpanel" id="tab-gardens" role="tabpanel"><div class="levels" id="levels"></div></div>
+    <div class="tabpanel" id="tab-buddies" role="tabpanel" hidden>
+      <p class="tabnote" id="buddyNote"></p>
+      <div class="guide" id="guideB"></div>
+    </div>
+    <div class="tabpanel" id="tab-critters" role="tabpanel" hidden>
+      <p class="tabnote">These are the critters that walk the path. Every one that reaches the patch eats a veggie.</p>
+      <div class="guide" id="guideC"></div>
+    </div>
+    <div class="tabpanel" id="tab-how" role="tabpanel" hidden>
+      <div class="panel how">
+        <h2>How to play</h2>
+        <p>Pick a buddy, then tap a patch of grass to plant it. Tap a planted buddy and a box pops up right over it with two upgrade paths.</p>
+        <p>Press Send wave when you are ready, or switch on Auto. Rain, Thunder and Sunshine help in a tight spot.</p>
+        <p>Finish gardens to earn stars. Stars unlock new buddies. The Daily garden changes every day and keeps a streak. The Endless meadow never ends.</p>
+        <p class="kb-only">Keyboard: arrows or WASD move the cursor, 1 to 9 pick a buddy, Enter plants, U and I buy upgrades, X sells, N sends the wave, Q E R use powers, T toggles Auto, P pauses, F changes speed.</p>
+      </div>
     </div>
     <p class="foot"><span>Sound starts after your first tap. Progress is saved in this browser.</span><button class="btn" id="btnErase" type="button">Erase progress</button></p>
   </section>
@@ -276,6 +335,7 @@
         </div>
       </div>
       <div class="ctrls">
+        <button class="btn" id="btnHelp" type="button" title="How to play">?</button>
         <button class="btn" id="btnSpeed" type="button" title="Game speed (F)">1x</button>
         <button class="btn" id="btnPause" type="button" title="Pause (P)">Pause</button>
       </div>
@@ -287,23 +347,23 @@
           <canvas id="cv" role="img" aria-label="The garden. Plant buddies on the grass to stop critters walking along the path."></canvas>
         </div>
         <div class="toast" id="toast" role="status" aria-live="polite"></div>
-        <div class="hint" id="hint" hidden></div>
+        <div class="panel uppanel" id="towerView" hidden></div>
       </div>
 
       <aside class="dock" id="dock">
+        <div class="hint" id="hint" hidden></div>
         <div class="shop">
           <div id="buyView">
             <div class="tray" id="tray"></div>
             <div class="panel info" id="info"></div>
           </div>
-          <div class="panel" id="towerView" hidden></div>
         </div>
         <div class="powers" id="powers"></div>
         <div class="waverow">
           <button class="btn toggle" id="btnAuto" type="button" aria-pressed="false" title="Send waves by itself (T)">Auto</button>
           <button class="btn primary" id="btnWave" type="button"><span class="w1">Send wave 1</span><span class="w2"></span></button>
         </div>
-        <p class="kb-hint">Arrows move, 1-6 pick, Enter plants, U or I upgrade, X sells, N waves, Q E R powers</p>
+        <p class="kb-hint">Arrows move, 1-9 pick, Enter plants, U or I upgrade, X sells, N waves, Q E R powers</p>
       </aside>
     </div>
   </section>
@@ -317,6 +377,19 @@
     <p class="big" id="endScore"></p>
     <p id="endBest"></p>
     <div class="acts" id="endActs"></div>
+  </div>
+</div>
+<div class="modal" id="helpModal" hidden>
+  <div class="mcard" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <h2 id="helpTitle">How to play</h2>
+    <ol class="helplist">
+      <li>Pick a buddy in the bar, then tap the glowing grass to plant it.</li>
+      <li>Tap a planted buddy. A box pops up right over it with two upgrade paths.</li>
+      <li>A green arrow over a buddy means you can afford an upgrade.</li>
+      <li>Press Send wave. Critters follow the arrows to the veggie patch.</li>
+      <li>Rain, Thunder and Sunshine help in a tight spot.</li>
+    </ol>
+    <div class="acts"><button class="btn primary" id="hClose" type="button">Got it</button></div>
   </div>
 </div>
 <div class="modal" id="pauseModal" hidden>
@@ -407,7 +480,7 @@ const TOWERS = {
         { name: 'Bright flash', cost: 150, desc: 'Faster, longer, some damage', fx: { pulseEvery: 5, pulseStun: 1.1, pulseDmg: 20 } },
         { name: 'Supernova', cost: 340, desc: 'Rapid stuns, big damage', fx: { pulseEvery: 4, pulseStun: 1.4, pulseDmg: 55 } } ] } ] },
   owl: { key: 'owl', name: 'Night Owl', short: 'Owl', cost: 130, kind: 'shot',
-    base: { range: 210, dmg: 42, rate: 2.0, target: 'strong' },
+    base: { range: 210, dmg: 42, rate: 2.0, target: 'strong', splashDmg: 0.6 },
     blurb: 'Huge reach and heavy feathers. Goes after the toughest critter in sight.',
     paths: [
       { name: 'Heavy Hitter', tiers: [
@@ -417,14 +490,50 @@ const TOWERS = {
       { name: 'Night Watch', tiers: [
         { name: 'Keen eyes', cost: 100, desc: 'Faster, longer reach', fx: { rateMul: 0.8, rangeAdd: 30 } },
         { name: 'Twin talons', cost: 190, desc: 'Hits 2 critters at once', fx: { shotsAdd: 1 } },
-        { name: 'Moon owl', cost: 420, desc: 'Much faster, hits 3', fx: { rateMul: 0.6, shotsAdd: 1 } } ] } ] }
+        { name: 'Moon owl', cost: 420, desc: 'Much faster, hits 3', fx: { rateMul: 0.6, shotsAdd: 1 } } ] } ] },
+  mole: { key: 'mole', name: 'Mortar Mole', short: 'Mole', cost: 110, kind: 'shot', unlock: 2,
+    base: { range: 150, dmg: 24, rate: 2.2, splash: 48, splashDmg: 0.7, groundOnly: true },
+    blurb: 'Lobs big dirt bombs that hurt every ground critter in the blast. Great against crowds. Cannot hit flyers.',
+    paths: [
+      { name: 'Big Boom', tiers: [
+        { name: 'Bigger boom', cost: 70, desc: 'Bigger blast, +50% damage', fx: { dmgMul: 1.5, splashAdd: 14 } },
+        { name: 'Heavy shells', cost: 130, desc: 'More reach, more damage', fx: { dmgMul: 1.5, rangeAdd: 25 } },
+        { name: 'Earthquake', cost: 320, desc: 'Huge blast that stuns', fx: { dmgMul: 1.6, splashAdd: 24, stunHit: 0.6 } } ] },
+      { name: 'Rapid Dig', tiers: [
+        { name: 'Quick dig', cost: 65, desc: 'Fires 25% faster', fx: { rateMul: 0.75 } },
+        { name: 'Twin shells', cost: 130, desc: 'Lobs 2 bombs at once', fx: { shotsAdd: 1, rateMul: 0.9 } },
+        { name: 'Mole barrage', cost: 300, desc: 'Lobs 3 bombs, faster', fx: { shotsAdd: 1, rateMul: 0.75, splashAdd: 10 } } ] } ] },
+  magpie: { key: 'magpie', name: 'Magpie Banker', short: 'Magpie', cost: 80, kind: 'shot', unlock: 4,
+    base: { range: 95, dmg: 6, rate: 1.0, income: 14 },
+    blurb: 'Collects shiny seeds. Pays you 14 extra seeds every time a wave is cleared, and flicks small pebbles.',
+    paths: [
+      { name: 'Treasure Hoard', tiers: [
+        { name: 'Shiny nest', cost: 60, desc: 'Pays 24 seeds per wave', fx: { income: 24 } },
+        { name: 'Golden nest', cost: 120, desc: 'Pays 36 seeds per wave', fx: { income: 36 } },
+        { name: 'Dragon hoard', cost: 260, desc: 'Pays 54 seeds per wave', fx: { income: 54 } } ] },
+      { name: 'Pickpocket', tiers: [
+        { name: 'Sharp beak', cost: 55, desc: 'Triple damage', fx: { dmgMul: 3 } },
+        { name: 'Light fingers', cost: 110, desc: '+2 seeds for every kill', fx: { bountyAdd: 2, dmgMul: 1.4 } },
+        { name: 'Master thief', cost: 240, desc: 'Fast, +4 seeds per kill', fx: { bountyAdd: 4, rateMul: 0.6, dmgMul: 1.5, rangeAdd: 25 } } ] } ] },
+  dragonfly: { key: 'dragonfly', name: 'Storm Dragonfly', short: 'Dragonfly', cost: 120, kind: 'chain', unlock: 7,
+    base: { range: 125, dmg: 22, rate: 1.1, chain: 2, chainRange: 75 },
+    blurb: 'Zaps a critter and the lightning jumps to 2 more nearby. Hits flyers too. Never misses.',
+    paths: [
+      { name: 'Long Chain', tiers: [
+        { name: 'Longer chain', cost: 70, desc: 'Lightning jumps 3 times', fx: { chain: 3 } },
+        { name: 'Storm cell', cost: 140, desc: 'Jumps 5 times, more reach', fx: { chain: 5, rangeAdd: 20, chainRange: 85 } },
+        { name: 'Thunder swarm', cost: 320, desc: 'Jumps 8 times, stronger', fx: { chain: 8, dmgMul: 1.4, chainRange: 100 } } ] },
+      { name: 'Static Shock', tiers: [
+        { name: 'Static', cost: 65, desc: 'Sometimes stuns critters', fx: { stunChance: 0.25, stunTime: 0.5 } },
+        { name: 'Overcharge', cost: 130, desc: '+80% damage, more stuns', fx: { dmgMul: 1.8, stunChance: 0.3, stunTime: 0.7 } },
+        { name: 'Tempest', cost: 310, desc: 'Fast, strong, stuns often', fx: { dmgMul: 2, rateMul: 0.7, stunChance: 0.45, stunTime: 0.9 } } ] } ] }
 };
-const TOWER_ORDER = ['squirrel', 'hive', 'bramble', 'frog', 'firefly', 'owl'];
+const TOWER_ORDER = ['squirrel', 'hive', 'bramble', 'frog', 'firefly', 'owl', 'mole', 'magpie', 'dragonfly'];
 
 function computeStat(type, tiers) {
   const T = TOWERS[type];
   const s = Object.assign({ shots: 1, slow: 0, slowTime: 0, splash: 0, stunHit: 0, poisonDps: 0, poisonTime: 0, crit: 0, pierce: false,
-    stunChance: 0, stunTime: 0, exec: 0, aura: 0, dmgAura: 0, pulseEvery: 0, pulseStun: 0, pulseDmg: 0 }, T.base);
+    stunChance: 0, stunTime: 0, exec: 0, aura: 0, dmgAura: 0, pulseEvery: 0, pulseStun: 0, pulseDmg: 0, splashDmg: 0, income: 0, chain: 0, chainRange: 0, bountyAdd: 0 }, T.base);
   for (let p = 0; p < 2; p++) {
     for (let i = 0; i < tiers[p]; i++) {
       const f = T.paths[p].tiers[i].fx;
@@ -503,6 +612,34 @@ LEVELS.splice(3, 0, { id: 'l4', name: 'Frosty Glade', waves: 14, seeds: 170, hea
   decor: [{ k: 'tree', c: 0, r: 0 }, { k: 'tree', c: 5, r: 0 }, { k: 'pond', c: 2, r: 4, w: 2, h: 2 }, { k: 'rock', c: 5, r: 4 }, { k: 'stump', c: 8, r: 2 }, { k: 'mush', c: 9, r: 6 }] });
 for (const L of LEVELS) L.theme = THEMES[THEME_OF[L.id]];
 LEVELS.find(L => L.id === 'endless').blurb = 'Under the moon with no finish line. See how many waves you can survive.';
+
+/* Daily garden: the same for everyone on a given date */
+const DAILY_PATHS = [
+  { path: [[-1, 0], [8, 0], [8, 2], [1, 2], [1, 4], [8, 4], [8, 6], [10, 6]],
+    decor: [{ k: 'tree', c: 9, r: 2 }, { k: 'tree', c: 0, r: 3 }, { k: 'rock', c: 5, r: 6 }, { k: 'mush', c: 0, r: 6 }, { k: 'pond', c: 3, r: 5, w: 2, h: 1 }] },
+  { path: [[-1, 3], [2, 3], [2, 0], [4, 0], [4, 5], [6, 5], [6, 1], [8, 1], [8, 4], [10, 4]],
+    decor: [{ k: 'tree', c: 0, r: 0 }, { k: 'rock', c: 3, r: 2 }, { k: 'pond', c: 0, r: 5, w: 2, h: 1 }, { k: 'stump', c: 9, r: 0 }, { k: 'mush', c: 9, r: 6 }] },
+  { path: [[-1, 1], [3, 1], [3, 5], [5, 5], [5, 1], [9, 1], [9, 5], [10, 5]],
+    decor: [{ k: 'tree', c: 0, r: 0 }, { k: 'tree', c: 9, r: 0 }, { k: 'pond', c: 1, r: 3, w: 1, h: 2 }, { k: 'rock', c: 7, r: 3 }, { k: 'stump', c: 7, r: 5 }, { k: 'mush', c: 4, r: 3 }] }
+];
+const DAILY_MODS = [
+  { name: 'Speedy day', blurb: 'Critters run 25% faster. You start with extra seeds.', speedMul: 1.25, seedsAdd: 80 },
+  { name: 'Tough day', blurb: 'Critters are 35% tougher but drop 30% more seeds.', hpBase: 1.35, bountyMul: 1.3 },
+  { name: 'Rich day', blurb: 'Start with loads of seeds. Critters are 40% tougher.', seedsAdd: 200, hpBase: 1.4 },
+  { name: 'Nibbly day', blurb: 'Only 5 veggies to guard, but plenty of seeds to start.', hearts: 5, seedsAdd: 120 }
+];
+function dateKey(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function makeDaily() {
+  const key = dateKey(new Date());
+  let h = 7; for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619);
+  h = h >>> 0;
+  const P = DAILY_PATHS[h % DAILY_PATHS.length], M = DAILY_MODS[(h >>> 5) % DAILY_MODS.length];
+  const th = ['meadow', 'pond', 'autumn', 'frost', 'dusk'][(h >>> 9) % 5];
+  return { id: 'daily', daily: true, dkey: key, name: 'Daily Garden', waves: 10, seeds: 150 + (M.seedsAdd || 0), hearts: M.hearts || 10, diff: 1.15,
+    speedMul: M.speedMul, hpBase: M.hpBase, bountyMul: M.bountyMul, modName: M.name,
+    blurb: M.name + '. ' + M.blurb, path: P.path, decor: P.decor, theme: THEMES[th] };
+}
+LEVELS.push(makeDaily());
 
 function waveSpawns(n, diff) {
   const defs = [
@@ -637,8 +774,8 @@ function createGame(L, onEvent) {
 
   function makeEnemy(type, hpMul, bMul, dist) {
     const E = ENEMIES[type], p = path.pointAt(dist);
-    const jitter = 1 + (((g.nid * 37) % 9) - 4) * 0.01, hp = E.hp * hpMul;
-    return { id: g.nid++, type, hp, maxHp: hp, hpMul, bMul, speed: E.speed * jitter, r: E.r, bounty: Math.max(1, Math.round(E.bounty * bMul * 1.3)),
+    const jitter = 1 + (((g.nid * 37) % 9) - 4) * 0.01, hp = E.hp * hpMul * (L.hpBase || 1), sm = L.speedMul || 1, bm = L.bountyMul || 1;
+    return { id: g.nid++, type, hp, maxHp: hp, hpMul, bMul, speed: E.speed * jitter * sm, r: E.r, bounty: Math.max(1, Math.round(E.bounty * bMul * 1.3 * bm)),
       dmg: E.dmg, armor: E.armor || 0, fly: !!E.fly, healer: !!E.healer, split: E.split || 0, boss: !!E.boss, healCd: 1.2,
       stunT: 0, poisonT: 0, poisonDps: 0, dist, x: p.x, y: p.y, dx: 1, dy: 0, slowT: 0, slowAmt: 0, flash: 0, gone: false };
   }
@@ -780,12 +917,28 @@ function createGame(L, onEvent) {
           const e = cands[i];
           let dmg = base;
           if (st.crit && Math.random() < st.crit) dmg *= 3;
-          if (t.kind === 'tongue') {
+          if (t.kind === 'chain') {
+            const seen = [e]; let cur = e, dm = dmg;
+            emit('zap', { x1: t.x, y1: t.y - 10, x2: e.x, y2: e.y });
+            hit(e, st, dm);
+            for (let j = 0; j < st.chain; j++) {
+              let best = null, bd = 1e9;
+              for (const o of g.enemies) {
+                if (o.gone || seen.includes(o)) continue;
+                const d = Math.hypot(o.x - cur.x, o.y - cur.y);
+                if (d <= st.chainRange && d < bd) { bd = d; best = o; }
+              }
+              if (!best) break;
+              seen.push(best); dm *= 0.8;
+              emit('zap', { x1: cur.x, y1: cur.y, x2: best.x, y2: best.y });
+              hit(best, st, dm); cur = best;
+            }
+          } else if (t.kind === 'tongue') {
             emit('tongue', { x1: t.x, y1: t.y - 8, x2: e.x, y2: e.y });
             hit(e, st, dmg);
           } else {
-            g.shots.push({ x: t.x, y: t.y - 6, tx: e.x, ty: e.y, target: e, kind: t.type, dmg, st,
-              speed: t.type === 'owl' ? 540 : t.type === 'hive' ? 270 : 330 });
+            const sp = { owl: 540, hive: 270, mole: 230, magpie: 380 }[t.type] || 330;
+            g.shots.push({ x: t.x, y: t.y - 6, tx: e.x, ty: e.y, target: e, kind: t.type, dmg, st, speed: sp, d0: Math.hypot(e.x - t.x, e.y - t.y + 6) || 1, rem: 1 });
           }
         }
         t.flash = 0.15;
@@ -798,17 +951,20 @@ function createGame(L, onEvent) {
     for (const s of g.shots) {
       if (s.target && !s.target.gone) { s.tx = s.target.x; s.ty = s.target.y; } else s.target = null;
       const dx = s.tx - s.x, dy = s.ty - s.y, d = Math.hypot(dx, dy), step = s.speed * dt;
-      s.vx = dx / (d || 1); s.vy = dy / (d || 1);
+      s.vx = dx / (d || 1); s.vy = dy / (d || 1); s.rem = d;
       if (d <= step + 4) {
         s.done = true;
         if (s.target) {
+          const alive = !s.target.gone;
           hit(s.target, s.st, s.dmg);
+          if (alive && s.target.gone && s.st.bountyAdd) { g.seeds += s.st.bountyAdd; emit('bonus', { x: s.tx, y: s.ty, n: s.st.bountyAdd }); }
           if (s.st.splash) {
             for (const e of g.enemies) {
-              if (e.gone || e === s.target || Math.hypot(e.x - s.tx, e.y - s.ty) > s.st.splash) continue;
-              if (s.kind === 'owl') hit(e, s.st, s.dmg * 0.6); else effects(e, s.st);
+              if (e.gone || e === s.target || (s.st.groundOnly && e.fly) || Math.hypot(e.x - s.tx, e.y - s.ty) > s.st.splash) continue;
+              if (s.st.splashDmg) hit(e, s.st, s.dmg * s.st.splashDmg); else effects(e, s.st);
             }
           }
+          if (s.kind === 'mole') emit('boom', { x: s.tx, y: s.ty, r: s.st.splash });
         }
       } else { s.x += s.vx * step; s.y += s.vy * step; }
     }
@@ -818,7 +974,8 @@ function createGame(L, onEvent) {
 
     // wave end
     if (g.state === 'wave' && !g.queue.length && !g.enemies.length) {
-      const bonus = 20 + 4 * g.wave;
+      let bonus = 20 + 4 * g.wave;
+      for (const t of g.towers) if (t.st.income) { bonus += t.st.income; emit('income', { x: t.x, y: t.y, n: t.st.income }); }
       g.seeds += bonus; g.cleared = g.wave; g.score += 50 * g.wave; g.autoT = g.autoDelay;
       emit('waveClear', { wave: g.wave, bonus });
       if (g.wave >= L.waves) {
@@ -835,7 +992,7 @@ function createGame(L, onEvent) {
 
 /* ===================== SAVE ===================== */
 const SAVE_KEY = 'hedgerow-hollow-v1';
-const defaultSave = () => ({ stars: {}, best: {}, endless: { wave: 0, score: 0 }, music: true, sfx: true, auto: false, tut: false, last: 0 });
+const defaultSave = () => ({ stars: {}, best: {}, endless: { wave: 0, score: 0 }, daily: { date: '', best: 0, streak: 0, lastWin: '' }, music: true, sfx: true, auto: false, tut: false, last: 0 });
 function loadSave() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
@@ -926,6 +1083,11 @@ const Sound = (() => {
     lose: n => { [392, 349, 311, 262].forEach((f, i) => tone(f, n + i * 0.22, 0.4, { type: 'triangle', gain: 0.18 })); },
     error: n => tone(130, n, 0.15, { type: 'square', gain: 0.08 }),
     click: n => tone(700, n, 0.05, { gain: 0.08 }),
+    'fire-mole': n => { tone(110, n, 0.25, { type: 'sawtooth', gain: 0.18, to: 60 }); hiss(n, 0.12, 0.1, 500); },
+    'fire-magpie': n => tone(1200, n, 0.08, { gain: 0.09, to: 1700 }),
+    'fire-dragonfly': n => { hiss(n, 0.12, 0.1, 4000); tone(500, n, 0.1, { type: 'square', gain: 0.05, to: 1400 }); },
+    boom: n => { hiss(n, 0.25, 0.18, 300); tone(80, n, 0.25, { type: 'sawtooth', gain: 0.16, to: 40 }); },
+    coin: n => { tone(1320, n, 0.08, { gain: 0.1 }); tone(1760, n + 0.07, 0.12, { gain: 0.1 }); },
     'fire-frog': n => tone(240, n, 0.09, { type: 'triangle', gain: 0.18, to: 560 }),
     pulse: n => tone(900, n, 0.25, { gain: 0.14, to: 300 }),
     boss: n => { tone(98, n, 0.5, { type: 'sawtooth', gain: 0.16, to: 82 }); tone(147, n + 0.25, 0.6, { type: 'sawtooth', gain: 0.14, to: 110 }); },
@@ -934,7 +1096,7 @@ const Sound = (() => {
     thunder: n => { hiss(n, 0.6, 0.3, 200); tone(90, n, 0.6, { type: 'sawtooth', gain: 0.2, to: 40 }); },
     sun: n => { [523, 659, 784, 988].forEach((f, i) => tone(f, n + i * 0.09, 0.3, { type: 'triangle', gain: 0.16 })); }
   };
-  const gap = { heal: 0.3, pulse: 0.1, 'fire-frog': 0.05, hit: 0.06, 'fire-squirrel': 0.05, 'fire-hive': 0.06, 'fire-bramble': 0.08, pop: 0.05 };
+  const gap = { 'fire-mole': 0.08, 'fire-magpie': 0.06, 'fire-dragonfly': 0.08, boom: 0.06, coin: 0.12, heal: 0.3, pulse: 0.1, 'fire-frog': 0.05, hit: 0.06, 'fire-squirrel': 0.05, 'fire-hive': 0.06, 'fire-bramble': 0.08, pop: 0.05 };
   function play(name) {
     if (!ctx || !S.sfx || ctx.state !== 'running') return;
     const now = ctx.currentTime;
@@ -1187,6 +1349,57 @@ function drawTowerBody(c, t, time) {
       if (lvl >= 2) tri(c, [0, -31, -3.5, -22, 3.5, -22], HONEY);
       break;
     }
+    case 'mole': {
+      blob(c, 0, 15, 25, 8, '#8a5d33', id, 0.06);
+      c.lineWidth = 1.4; for (const x of [-13, -3, 9]) ln(c, x, 13, x + 3, 17); setInk(c, 2.4);
+      blob(c, 0, 4, 13, 12, '#6e5f7a', id + 1);
+      c.save(); c.translate(0, -3); c.rotate(Math.atan2(t.aimY || 0, t.aimX || 1));
+      c.fillStyle = '#4b4f66'; c.fillRect(2, -4.5, 20, 9); c.strokeRect(2, -4.5, 20, 9);
+      c.fillStyle = HONEY; c.fillRect(20, -5.5, 4, 11); c.strokeRect(20, -5.5, 4, 11); c.restore();
+      blob(c, 2, -8, 9, 8, '#7a6a88', id + 2);
+      blob(c, 10, -6, 3.4, 3, '#f2a0a8', id + 3, 0.02);
+      dot(c, 3, -10, 2, '#fff'); dot(c, 3.6, -10, 1, INK);
+      blob(c, -9, 12, 4, 3.2, '#f2c98f', id + 4); blob(c, 9, 12, 4, 3.2, '#f2c98f', id + 5);
+      if (lvl >= 1) { c.beginPath(); c.arc(2, -10, 9.5, Math.PI, 0); c.closePath(); c.fillStyle = '#8a9aa8'; c.fill(); c.stroke(); }
+      if (lvl >= 2) tri(c, [0, -26, -3.5, -19, 3.5, -19], HONEY);
+      break;
+    }
+    case 'magpie': {
+      c.save(); c.strokeStyle = '#7d5628'; c.lineWidth = 6; ln(c, -20, 17, 20, 17); c.restore(); setInk(c, 2.4);
+      blob(c, -14, 13, 4.5, 3, HONEY, id, 0.02); blob(c, -8, 15, 4, 2.8, HONEY, id + 1, 0.02); blob(c, 15, 14, 4.5, 3, HONEY, id + 2, 0.02);
+      c.scale(fx, 1);
+      tri(c, [-6, 6, -22, 17, -11, 18], '#2f3350');
+      blob(c, 0, 2, 11, 15, '#2f3350', id + 3);
+      blob(c, 3, 5, 6, 10, '#fff', id + 4, 0.03);
+      blob(c, -5, 2, 5, 10, '#4a6fb0', id + 5, 0.03);
+      blob(c, 3, -13, 8.5, 8, '#2f3350', id + 6);
+      tri(c, [10, -14, 19, -12, 10, -10], '#d9d3c4');
+      dot(c, 6, -15, 2.1, '#fff'); dot(c, 6.6, -15, 1, INK);
+      if (lvl >= 1) blob(c, -1, 20, 5, 3, HONEY, id + 7, 0.02);
+      if (lvl >= 2) tri(c, [-3, -20, -5, -29, -1, -24, 3, -30, 6, -24, 9, -28, 8, -20], HONEY);
+      break;
+    }
+    case 'dragonfly': {
+      const by = Math.sin(time * 3 + id) * 2.5, fl = 0.55 + 0.45 * Math.abs(Math.sin(time * 18 + id));
+      c.save(); c.strokeStyle = LEAF; c.lineWidth = 3; ln(c, -8, 25, -10, 6); ln(c, 6, 25, 8, 10); c.restore(); setInk(c, 2.4);
+      blob(c, 0, 25, 14, 4, '#a9773f', id);
+      c.translate(0, by);
+      c.save(); c.globalAlpha = 0.75; c.lineWidth = 1.6;
+      for (const s of [-1, 1]) {
+        c.beginPath(); c.ellipse(s * 13, -9, 13, 4.5 * fl, -0.35 * s, 0, 7); c.fillStyle = '#dff1f7'; c.fill(); c.stroke();
+        c.beginPath(); c.ellipse(s * 12, -1, 12, 4 * fl, 0.2 * s, 0, 7); c.fillStyle = '#cfe8f2'; c.fill(); c.stroke();
+      }
+      c.restore();
+      tri(c, [-2.8, 12, 2.8, 12, 0, 24], '#3b82a6');
+      blob(c, 0, 0, 5.2, 14, '#4fa3c7', id + 1, 0.03);
+      c.lineWidth = 1.4; for (const y of [-6, 0, 6]) ln(c, -4.5, y, 4.5, y); setInk(c, 2.4);
+      blob(c, 0, -16, 7, 6.5, '#3b82a6', id + 2);
+      dot(c, -4.5, -18, 3.3, '#ffe27a'); dot(c, 4.5, -18, 3.3, '#ffe27a'); dot(c, -4.5, -18, 1.4, INK); dot(c, 4.5, -18, 1.4, INK);
+      if (lvl >= 1) { c.fillStyle = HONEY; for (const y of [-6, 0, 6]) c.fillRect(-3, y - 1.2, 6, 2.4); }
+      if (lvl >= 2) tri(c, [0, -31, -4, -22, 4, -22], HONEY);
+      if (t.flash > 0) { c.strokeStyle = '#fff6a0'; c.lineWidth = 2; ln(c, 0, -22, -6, -30); ln(c, 0, -22, 7, -29); }
+      break;
+    }
     case 'owl': {
       c.save(); c.strokeStyle = '#7d5628'; c.lineWidth = 6; ln(c, -20, 15, 20, 15); c.restore(); setInk(c, 2.4);
       blob(c, -13, 0, 4, 11, '#7d5b3b', id + 1); blob(c, 13, 0, 4, 11, '#7d5b3b', id + 2);
@@ -1217,6 +1430,7 @@ function drawTower(c, t, time, game) {
     for (let i = 0; i < t.tiers[0]; i++) blob(c, -20 + i * 8, 27, 3.2, 3.2, HONEY, i, 0);
     for (let i = 0; i < t.tiers[1]; i++) blob(c, 20 - i * 8, 27, 3.2, 3.2, BERRY, i + 3, 0);
   }
+  if (t.canUp) { const by = -37 + Math.sin(time * 5 + t.id) * 2; c.fillStyle = '#7ac45a'; c.strokeStyle = INK; c.lineWidth = 1.8; c.beginPath(); c.moveTo(0, by - 7); c.lineTo(7, by + 1); c.lineTo(3, by + 1); c.lineTo(3, by + 7); c.lineTo(-3, by + 7); c.lineTo(-3, by + 1); c.lineTo(-7, by + 1); c.closePath(); c.fill(); c.stroke(); }
   if (t.buff > 1) { c.globalAlpha = 0.6 + 0.4 * Math.sin(time * 6 + t.id); dot(c, 16, -26, 2.4, '#fff3a0'); dot(c, 22, -20, 1.6, '#fff3a0'); c.globalAlpha = 1; }
   c.restore();
   if (t.pulse > 0 && (t.type === 'bramble' || t.type === 'firefly')) {
@@ -1232,6 +1446,12 @@ function drawShot(c, s) {
     c.beginPath(); c.arc(s.x, s.y - 2, 3.4, Math.PI, 0); c.fillStyle = '#5e3c1a'; c.fill(); c.stroke();
   } else if (s.kind === 'hive') {
     blob(c, s.x, s.y, 4.6, 4.6, '#f4c14f', 1, 0.1); dot(c, s.x - 1.5, s.y - 1.5, 1.4, '#fff');
+  } else if (s.kind === 'mole') {
+    const pr = 1 - Math.min(1, (s.rem || 0) / (s.d0 || 1)), lift = Math.sin(Math.PI * pr) * 34;
+    c.save(); c.globalAlpha = 0.2; c.fillStyle = INK; c.beginPath(); c.ellipse(s.x, s.y, 5, 2.5, 0, 0, 7); c.fill(); c.restore();
+    blob(c, s.x, s.y - lift, 6, 6, '#6b5a4a', 2, 0.08); dot(c, s.x - 2, s.y - lift - 2, 1.6, '#b8a58f');
+  } else if (s.kind === 'magpie') {
+    blob(c, s.x, s.y, 4.2, 4.2, HONEY, 3, 0.04); dot(c, s.x - 1.3, s.y - 1.3, 1.3, '#fff');
   } else {
     c.save(); c.translate(s.x, s.y); c.rotate(Math.atan2(s.vy || 0, s.vx || 1));
     blob(c, 0, 0, 9, 2.8, '#f7f7f2', 0, 0.02); ln(c, -8, 0, 8, 0);
@@ -1306,7 +1526,7 @@ function renderBg(g, cw, ch) {
   TH = g.L.theme;
   const off = document.createElement('canvas'); off.width = cw; off.height = ch;
   const c = off.getContext('2d'), s = cw / W; c.scale(s, s);
-  const rnd = mulberry(hash(g.L.id));
+  const rnd = mulberry(hash(g.L.id + (g.L.dkey || '')));
   c.fillStyle = TH.grass; c.fillRect(0, 0, W, H);
   for (let i = 0; i < 16; i++) { c.globalAlpha = 0.4; wob(c, rnd() * W, rnd() * H, 40 + rnd() * 60, 26 + rnd() * 40, rnd() * 9, 0.15); c.fillStyle = i % 2 ? TH.lo : TH.hi; c.fill(); }
   c.globalAlpha = 0.07; for (let i = 0; i < 900; i++) dot(c, rnd() * W, rnd() * H, 0.8 + rnd() * 1.2, INK);
@@ -1364,10 +1584,27 @@ const set = (el, k, v) => { if (hudCache[k] !== v) { hudCache[k] = v; el.textCon
 /* ---------- menu ---------- */
 const DISPLAY = "'Caveat Brush', 'Chalkboard SE', 'Comic Sans MS', cursive";
 function starsHTML(n) { let h = '<span class="star-row" aria-label="' + n + ' of 3 stars">'; for (let i = 0; i < 3; i++) h += '<i class="star' + (i < n ? ' on' : '') + '"></i>'; return h + '</span>'; }
-function totalStars() { let s = 0; for (const L of LEVELS) if (!L.endless) s += save.stars[L.id] || 0; return s; }
+function totalStars() { let s = 0; for (const L of LEVELS) if (!L.endless && !L.daily) s += save.stars[L.id] || 0; return s; }
+const isUnlocked = (type, stars) => (stars == null ? totalStars() : stars) >= (TOWERS[type].unlock || 0);
 function nextLevelIdx() {
-  for (let i = 0; i < LEVELS.length; i++) if (!LEVELS[i].endless && !(save.stars[LEVELS[i].id] > 0)) return i;
-  return Math.min(save.last || 0, LEVELS.length - 1);
+  for (let i = 0; i < LEVELS.length; i++) if (!LEVELS[i].endless && !LEVELS[i].daily && !(save.stars[LEVELS[i].id] > 0)) return i;
+  const l = save.last || 0;
+  return LEVELS[l] && !LEVELS[l].daily ? l : 0;
+}
+function dailyInfo() {
+  const L = LEVELS.find(q => q.daily), d = save.daily || {}, key = L.dkey;
+  return { doneToday: d.lastWin === key, best: d.date === key ? d.best : 0, streak: d.streak || 0 };
+}
+function bestCell(g) {
+  const pts = []; for (let d = 0; d <= g.leakDist; d += 24) pts.push(g.path.pointAt(d));
+  let best = null, bs = -1;
+  for (let col = 0; col < COLS; col++) for (let row = 0; row < ROWS; row++) {
+    if (!g.canBuild(col, row)) continue;
+    const x = (col + 0.5) * TILE, y = (row + 0.5) * TILE;
+    const s = pts.filter(p => Math.hypot(p.x - x, p.y - y) <= 120).length;
+    if (s > bs) { bs = s; best = { col, row }; }
+  }
+  return best;
 }
 function drawThumb(cvs, L) {
   const c = cvs.getContext('2d'), th = L.theme, s = cvs.width / W;
@@ -1393,19 +1630,29 @@ function drawThumb(cvs, L) {
 }
 function buildMenu() {
   const box = $('levels'); box.innerHTML = '';
+  const up = nextLevelIdx(); let gn = 0;
   LEVELS.forEach((L, i) => {
+    if (L.endless || L.daily) return;
+    gn++;
     const b = document.createElement('button'); b.type = 'button'; b.className = 'btn lvl';
     const cvs = document.createElement('canvas'); cvs.width = 200; cvs.height = 140; drawThumb(cvs, L); b.appendChild(cvs);
     let rec;
     if (L.endless) rec = '<span>Best: ' + (save.endless.wave ? save.endless.wave + ' waves' : 'not played yet') + '</span>';
+    else if (L.daily) { const di = dailyInfo(); rec = '<span>Streak ' + di.streak + (di.streak === 1 ? ' day' : ' days') + (di.doneToday ? ', done today' : '') + '</span><span>' + (di.best ? 'Best ' + di.best : '') + '</span>'; }
     else rec = starsHTML(save.stars[L.id] || 0) + '<span>' + (save.best[L.id] ? 'Best ' + save.best[L.id] : '') + '</span>';
-    b.insertAdjacentHTML('beforeend', '<span class="nm">' + L.name + '</span><span class="meta">' + (L.endless ? 'Endless' : L.waves + ' waves') + ' &middot; ' + L.theme.name + '</span><span class="bl">' + L.blurb + '</span><span class="rec">' + rec + '</span>');
+    b.insertAdjacentHTML('beforeend', (i === up ? '<span class="tag">Up next</span>' : '<span class="num">Garden ' + gn + '</span>') + '<span class="nm">' + L.name + '</span><span class="meta">' + (L.endless ? 'Endless' : L.waves + ' waves') + ' &middot; ' + L.theme.name + '</span><span class="bl">' + L.blurb + '</span><span class="rec">' + rec + '</span>');
     b.addEventListener('click', () => startLevel(i));
     box.appendChild(b);
   });
-  const mx = LEVELS.filter(L => !L.endless).length * 3, ts = totalStars();
+  const mx = LEVELS.filter(L => !L.endless && !L.daily).length * 3, ts = totalStars();
   $('totals').textContent = 'Stars ' + ts + ' of ' + mx;
-  $('btnPlay').textContent = (ts || save.last ? 'Continue: ' : 'Play: ') + LEVELS[nextLevelIdx()].name;
+  const nl = LEVELS[nextLevelIdx()];
+  $('btnPlay').innerHTML = (ts || save.last ? 'Continue' : 'Play') + '<small>' + nl.name + ' &middot; ' + nl.waves + ' waves</small>';
+  const di = dailyInfo(), dl = LEVELS.find(q => q.daily);
+  $('dailySub').textContent = dl.modName + ' \u00b7 ' + (di.doneToday ? 'done today' : di.streak ? 'streak ' + di.streak : 'new today');
+  $('endlessSub').textContent = save.endless.wave ? 'Best ' + save.endless.wave + ' waves' : 'No finish line';
+  $('buddyNote').textContent = 'You have ' + ts + ' of ' + mx + ' stars. Earn stars in the gardens to unlock more buddies.';
+  buildGuide();
 }
 const ENEMY_NOTE = {
   snail: 'Slow and sturdy.', beetle: 'Quick on its feet.', mouse: 'Very fast, very soft.', caterpillar: 'Splits into two grubs when it falls.',
@@ -1418,7 +1665,8 @@ function buildGuide() {
     const ic = document.createElement('canvas'); ic.width = ic.height = 116; const c = ic.getContext('2d'); c.translate(58, 64); c.scale(1.75, 1.75);
     drawTowerBody(c, { type, lvl: 0, id: i + 1, aimX: 1, aimY: 0, flash: 0 }, 0);
     d.appendChild(ic);
-    d.insertAdjacentHTML('beforeend', '<div><strong>' + T.name + '</strong> <span class="gc">' + T.cost + ' seeds</span><br><span class="gs">' + T.blurb + '</span></div>');
+    const un = T.unlock ? '<br><span class="gc">' + (isUnlocked(type) ? 'Unlocked' : 'Unlocks at ' + T.unlock + ' stars') + '</span>' : '';
+    d.insertAdjacentHTML('beforeend', '<div><strong>' + T.name + '</strong> <span class="gc">' + T.cost + ' seeds</span><br><span class="gs">' + T.blurb + '</span>' + un + '</div>');
     gb.appendChild(d);
   });
   Object.keys(ENEMY_NOTE).forEach((type, i) => {
@@ -1452,7 +1700,7 @@ function drawHero(t) {
   c.lineCap = 'round'; c.strokeStyle = INK; c.lineWidth = 54; c.beginPath(); c.moveTo(-20, 262); c.lineTo(660, 262); c.stroke();
   c.strokeStyle = '#e6d1a0'; c.lineWidth = 48; c.beginPath(); c.moveTo(-20, 262); c.lineTo(660, 262); c.stroke();
   TOWER_ORDER.forEach((type, i) => {
-    c.save(); c.translate(56 + i * 106, 184 + Math.sin(t * 1.6 + i) * 1.6); c.scale(1.2, 1.2);
+    c.save(); c.translate(46 + i * 68, 184 + Math.sin(t * 1.6 + i) * 1.6); c.scale(1.02, 1.02);
     drawTowerBody(c, { type, lvl: i % 3, id: i + 3, aimX: 1, aimY: 0.4, flash: 0 }, t); c.restore();
   });
   HERO_CRITTERS.forEach((type, i) => {
@@ -1480,7 +1728,10 @@ function buildTray() {
     const c = ic.getContext('2d'); c.translate(56, 60); c.scale(1.7, 1.7);
     drawTowerBody(c, { type, lvl: 0, id: i + 1, aimX: 1, aimY: 0, flash: 0 }, 0);
     b.appendChild(ic);
-    b.insertAdjacentHTML('beforeend', '<span class="tn">' + T.short + '</span><span class="tc">' + SEED_SVG + T.cost + '</span><span class="kbd">' + (i + 1) + '</span>');
+    const lock = !isUnlocked(type);
+    b.classList.toggle('locked', lock); b.dataset.locked = lock ? '1' : '';
+    b.insertAdjacentHTML('beforeend', '<span class="tn">' + T.short + '</span><span class="tc">' + (lock ? T.unlock + ' stars' : SEED_SVG + T.cost) + '</span><span class="kbd">' + (i + 1) + '</span>');
+    if (lock) b.setAttribute('aria-label', T.name + ', locked. Earn ' + T.unlock + ' stars to unlock');
     b.addEventListener('click', () => { Sound.play('click'); setBuildType(type); });
     trayEl.appendChild(b);
   });
@@ -1497,6 +1748,7 @@ function buildPowers() {
 }
 function setBuildType(type) {
   if (!game || mode !== 'play') return;
+  if (!isUnlocked(type)) { toast('Earn ' + TOWERS[type].unlock + ' stars to unlock ' + TOWERS[type].name); Sound.play('error'); return; }
   sel = null; pending = null; buildType = type;
 }
 function statLine(type, st) {
@@ -1507,6 +1759,10 @@ function statLine(type, st) {
     return s;
   }
   let s = 'Damage ' + st.dmg + ' &middot; Reach ' + (st.range / TILE).toFixed(1) + ' tiles &middot; Every ' + st.rate + 's';
+  if (st.income) s = 'Pays ' + st.income + ' seeds every wave &middot; ' + s;
+  if (st.bountyAdd) s += ' &middot; +' + st.bountyAdd + ' seeds per kill';
+  if (st.chain) s += ' &middot; Chains ' + st.chain + ' times';
+  if (st.splash && st.splashDmg) s += ' &middot; Blast';
   if (st.shots > 1) s += ' &middot; ' + st.shots + ' targets';
   if (st.slow) s += ' &middot; Slows ' + Math.round(st.slow * 100) + '%';
   if (st.poisonDps) s += ' &middot; Poison';
@@ -1556,22 +1812,34 @@ function toggleAuto() {
   toast(game.autoWave ? 'Auto waves on' : 'Auto waves off');
 }
 
+function placePanel(t) {
+  const cell = cv.clientWidth / COLS;
+  const px = frame.offsetLeft + frame.clientLeft + t.x / W * cv.clientWidth, py = frame.offsetTop + frame.clientTop + t.y / H * cv.clientHeight;
+  const pw = towerView.offsetWidth, ph = towerView.offsetHeight, sw = stage.clientWidth, sh = stage.clientHeight;
+  const left = Math.max(6, Math.min(sw - pw - 6, px - pw / 2));
+  let top = py - cell * 0.6 - ph - 4;
+  if (top < 6) top = py + cell * 0.6 + 4;
+  top = Math.max(6, Math.min(sh - ph - 6, top));
+  towerView.style.left = left + 'px'; towerView.style.top = top + 'px';
+}
 function syncUI() {
   const g = game;
   if (sel && !g.towers.includes(sel)) sel = null;
-  buyView.hidden = !!sel; towerView.hidden = !sel;
+  for (const tw of g.towers) tw.canUp = !save.tut && [0, 1].some(p => { const n = g.nextTier(tw, p); return !n.maxed && !n.locked && n.cost <= g.seeds; });
+  towerView.hidden = !sel;
   if (sel) {
     const key = sel.id + ':' + sel.tiers.join('');
     if (key !== tvKey) { tvKey = key; towerView.innerHTML = towerViewHTML(sel); }
     for (const b of towerView.querySelectorAll('.path')) b.classList.toggle('poor', Number(b.dataset.cost) > g.seeds);
-  } else {
-    tvKey = '';
-    if (buildType !== infoKey) { infoKey = buildType; infoEl.innerHTML = infoHTML(); }
-    for (const b of trayEl.children) {
-      b.classList.toggle('poor', g.seeds < TOWERS[b.dataset.type].cost);
-      b.setAttribute('aria-pressed', String(buildType === b.dataset.type));
-    }
+    placePanel(sel);
+  } else tvKey = '';
+  if (buildType !== infoKey) { infoKey = buildType; infoEl.innerHTML = infoHTML(); }
+  for (const b of trayEl.children) {
+    b.classList.toggle('poor', g.seeds < TOWERS[b.dataset.type].cost);
+    b.setAttribute('aria-pressed', String(!sel && buildType === b.dataset.type));
   }
+  trayEl.children[0].classList.toggle('nudge', !save.tut && !g.towers.length);
+  btnWave.classList.toggle('go', !save.tut && g.state === 'idle' && g.wave === 0 && g.towers.length > 0);
   for (const b of powersEl.children) {
     const p = g.powers.find(q => q.id === b.dataset.id);
     const pct = p.cd > 0 ? Math.round(p.cd / p.max * 100) : 0, txt = p.cd > 0 ? Math.ceil(p.cd) + 's' : 'Ready';
@@ -1584,14 +1852,14 @@ function syncUI() {
   if (sel) tutSel = true;
   if (!save.tut) {
     let h = '';
-    if (!g.towers.length) h = 'Pick a buddy below, then tap the grass to plant it';
+    if (!g.towers.length) h = 'Pick a buddy below, then tap the glowing grass to plant it';
     else if (g.wave === 0) h = 'Nice! Now press Send wave';
-    else if (!tutSel) h = 'Tap a buddy to see its two upgrade paths';
+    else if (!tutSel) h = 'Tap your buddy. The upgrade box pops up right over it';
     else { save.tut = true; persist(); }
     set(hintEl, 'hint', h); hintEl.hidden = !h;
   } else hintEl.hidden = true;
   set($('hSeeds'), 'seeds', g.seeds); set($('hHearts'), 'hearts', g.hearts);
-  set($('hWave'), 'wave', g.L.endless ? String(g.wave) : g.wave + ' of ' + g.L.waves);
+  set($('hWave'), 'wave', g.L.endless ? String(g.wave) : g.wave + '/' + g.L.waves);
   let w1, w2, dis = false;
   if (g.state === 'idle') {
     w1 = 'Send wave ' + (g.wave + 1);
@@ -1677,6 +1945,10 @@ function onGameEvent(k, d) {
     case 'fire': Sound.play('fire-' + d.type); break;
     case 'tongue': fxs.push({ k: 'line', x: d.x1, y: d.y1, x2: d.x2, y2: d.y2, vx: 0, vy: 0, life: 0.14, max: 0.14, col: '#e9788a' }); break;
     case 'pulse': Sound.play('pulse'); break;
+    case 'zap': fxs.push({ k: 'line', x: d.x1, y: d.y1, x2: d.x2, y2: d.y2, vx: 0, vy: 0, life: 0.18, max: 0.18, col: '#bfe3ff' }); puffs(d.x2, d.y2, '#fff6a0', 2, 50); break;
+    case 'boom': Sound.play('boom'); shake = Math.max(shake, 0.25); puffs(d.x, d.y, '#8a6a4a', 10, 80); fxs.push({ k: 'ring', x: d.x, y: d.y, r: d.r, vx: 0, vy: 0, life: 0.3, max: 0.3 }); break;
+    case 'income': Sound.play('coin'); floatText(d.x, d.y - 18, '+' + d.n, HONEY); puffs(d.x, d.y - 10, HONEY, 6, 50); break;
+    case 'bonus': floatText(d.x, d.y - 10, '+' + d.n, HONEY); break;
     case 'heal': Sound.play('heal'); puffs(d.x, d.y - 10, LEAF, 4, 30); break;
     case 'split': puffs(d.x, d.y, '#a8d67f', 6, 50); break;
     case 'hit': Sound.play('hit'); puffs(d.x, d.y, '#ffffff', 2, 40); break;
@@ -1717,12 +1989,15 @@ function onGameEvent(k, d) {
 /* ---------- start / end ---------- */
 function fit() {
   if (gameScreen.hidden || !game) return;
-  const aw = stage.clientWidth, ah = stage.clientHeight;
-  if (!aw || !ah) return;
+  const land = window.matchMedia('(min-aspect-ratio: 5/4)').matches, mainEl = document.querySelector('.main');
+  if (land) { stage.style.flex = ''; stage.style.height = ''; }
+  const aw = stage.clientWidth, ah = land ? stage.clientHeight : mainEl.clientHeight - $('dock').offsetHeight - 8;
+  if (!aw || ah < 60) return;
   const edge = 6 + 6; // border plus shadow room
   let cw = Math.floor(Math.min(aw - edge, (ah - edge) / 0.7));
   cw = Math.max(160, cw);
   const ch = Math.round(cw * 0.7);
+  if (!land) { stage.style.flex = '0 0 auto'; stage.style.height = (ch + 14) + 'px'; }
   frame.style.width = (cw + 6) + 'px'; frame.style.height = (ch + 6) + 'px';
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   cv.width = Math.round(cw * dpr); cv.height = Math.round(cw * dpr * 0.7);
@@ -1734,13 +2009,13 @@ function startLevel(i) {
   game.autoWave = !!save.auto; game.autoT = game.autoDelay;
   fxs = []; sel = null; buildType = 'squirrel'; hover = null; pending = null; kb = { on: false, col: 4, row: 3 }; speed = 1; infoKey = ''; tvKey = ''; shake = 0; flashT = 0;
   for (const k in hudCache) delete hudCache[k];
-  save.last = i; persist(); initAmb(); banner = null; patchShake = 0; tutSel = false;
-  mode = 'play'; menuScreen.hidden = true; gameScreen.hidden = false; $('endModal').hidden = true; $('pauseModal').hidden = true;
+  save.last = i; persist(); buildTray(); initAmb(); game.hintCell = bestCell(game); banner = null; patchShake = 0; tutSel = false;
+  mode = 'play'; menuScreen.hidden = true; gameScreen.hidden = false; $('endModal').hidden = true; $('pauseModal').hidden = true; $('helpModal').hidden = true;
   document.body.classList.add('playing');
   $('btnSpeed').textContent = '1x';
   Sound.setIntense(false);
   fit(); window.scrollTo(0, 0);
-  toast(LEVELS[i].name + ': send the first wave when ready');
+
 }
 function recordEndless() {
   if (!game || !game.L.endless) return;
@@ -1751,13 +2026,21 @@ function recordEndless() {
 function endGame(won) {
   mode = 'ended'; Sound.setIntense(false); Sound.play(won ? 'win' : 'lose');
   const g = game, L = g.L; let newBest = false;
-  if (won) {
+  const before = totalStars();
+  if (won && L.daily) {
+    const d = save.daily, key = L.dkey;
+    if (d.date !== key) { d.date = key; d.best = 0; }
+    if (g.score > d.best) { d.best = g.score; newBest = true; }
+    if (d.lastWin !== key) { d.streak = d.lastWin === dateKey(new Date(Date.now() - 864e5)) ? d.streak + 1 : 1; d.lastWin = key; }
+  } else if (won) {
     save.stars[L.id] = Math.max(save.stars[L.id] || 0, g.stars);
     if (g.score > (save.best[L.id] || 0)) { save.best[L.id] = g.score; newBest = true; }
   } else if (L.endless) {
     newBest = g.cleared > save.endless.wave || (g.cleared === save.endless.wave && g.score > save.endless.score);
     recordEndless();
   }
+  const after = totalStars();
+  g.unlocked = TOWER_ORDER.filter(k => TOWERS[k].unlock && TOWERS[k].unlock > before && TOWERS[k].unlock <= after).map(k => TOWERS[k].name);
   persist();
   setTimeout(() => { if (mode === 'ended' && game === g) showEnd(won, newBest); }, 1100);
 }
@@ -1768,8 +2051,8 @@ function showEnd(won, newBest) {
   $('endMsg').textContent = won ? 'All ' + L.waves + ' waves stopped with ' + g.hearts + ' veggies left.'
     : L.endless ? 'You stopped ' + g.cleared + (g.cleared === 1 ? ' wave.' : ' waves.') : 'You reached wave ' + g.wave + ' of ' + L.waves + '.';
   $('endScore').textContent = 'Score ' + g.score;
-  const best = L.endless ? 'Best: ' + save.endless.wave + ' waves, score ' + save.endless.score : save.best[L.id] ? 'Best score ' + save.best[L.id] : '';
-  $('endBest').innerHTML = (newBest ? '<span class="new-best">New best!</span> ' : '') + best;
+  const best = L.endless ? 'Best: ' + save.endless.wave + ' waves, score ' + save.endless.score : L.daily ? (won ? 'Daily streak: ' + save.daily.streak + (save.daily.streak === 1 ? ' day' : ' days') : 'Try again, today is still open') : save.best[L.id] ? 'Best score ' + save.best[L.id] : '';
+  $('endBest').innerHTML = '<span class="eb-line">' + (newBest ? '<span class="new-best">New best!</span>' : '') + (best ? '<span>' + best + '</span>' : '') + '</span>' + (g.unlocked && g.unlocked.length ? '<span class="new-best">New buddy: ' + g.unlocked.join(', ') + '!</span>' : '');
   const acts = $('endActs'); acts.innerHTML = '';
   const add = (txt, fn, primary) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (primary ? ' primary' : ''); b.textContent = txt; b.addEventListener('click', fn); acts.appendChild(b); return b; };
   let first;
@@ -1780,7 +2063,7 @@ function showEnd(won, newBest) {
 }
 function toMenu() {
   recordEndless();
-  mode = 'menu'; game = null; $('endModal').hidden = true; $('pauseModal').hidden = true;
+  mode = 'menu'; game = null; $('endModal').hidden = true; $('pauseModal').hidden = true; $('helpModal').hidden = true;
   gameScreen.hidden = true; menuScreen.hidden = false; Sound.setIntense(false);
   document.body.classList.remove('playing');
   buildMenu(); window.scrollTo(0, 0);
@@ -1832,7 +2115,18 @@ $('pMenu').addEventListener('click', toMenu);
 $('mMusic').addEventListener('click', () => $('btnMusic').click());
 $('mSfx').addEventListener('click', () => $('btnSfx').click());
 $('btnPlay').addEventListener('click', () => startLevel(nextLevelIdx()));
+let curTab = 'gardens';
+function showTab(name) {
+  curTab = name;
+  for (const b of document.querySelectorAll('#tabs .tab')) b.setAttribute('aria-selected', String(b.dataset.tab === name));
+  for (const p of document.querySelectorAll('.tabpanel')) p.hidden = p.id !== 'tab-' + name;
+}
+for (const b of document.querySelectorAll('#tabs .tab')) b.addEventListener('click', () => showTab(b.dataset.tab));
 $('btnEndless').addEventListener('click', () => startLevel(LEVELS.findIndex(L => L.endless)));
+$('btnDaily').addEventListener('click', () => startLevel(LEVELS.findIndex(L => L.daily)));
+function closeHelp() { $('helpModal').hidden = true; if (mode === 'paused') mode = 'play'; }
+$('btnHelp').addEventListener('click', () => { if (!game || mode !== 'play') return; mode = 'paused'; $('helpModal').hidden = false; $('hClose').focus(); });
+$('hClose').addEventListener('click', closeHelp);
 let eraseT = 0;
 $('btnErase').addEventListener('click', () => {
   const b = $('btnErase');
@@ -1851,6 +2145,7 @@ window.addEventListener('keydown', e => {
     return;
   }
   if (!game) return;
+  if (!$('helpModal').hidden) { if (k === 'escape' || k === 'enter' || k === ' ') { e.preventDefault(); closeHelp(); } return; }
   if (k === 'escape') { if (mode === 'play' && (sel || pending)) { sel = null; pending = null; } else setPaused(mode !== 'paused'); return; }
   if (k === 'p') { setPaused(mode !== 'paused'); return; }
   if (mode !== 'play') return;
@@ -1863,7 +2158,7 @@ window.addEventListener('keydown', e => {
     sel = game.towerAt(kb.col, kb.row);
     return;
   }
-  if (k >= '1' && k <= '6') { setBuildType(TOWER_ORDER[Number(k) - 1]); return; }
+  if (k >= '1' && k <= '9') { setBuildType(TOWER_ORDER[Number(k) - 1]); return; }
   if (k === 'u') { doUpgrade(0); return; }
   if (k === 'i') { doUpgrade(1); return; }
   if (k === 'x' || k === 'delete' || k === 'backspace') { doSell(); return; }
@@ -1903,6 +2198,23 @@ function draw(t) {
   if (cell && !sel) { const th = g.towerAt(cell.col, cell.row); if (th) ring(c, th.x, th.y, g.stat(th).range, INK, 0.5); }
   if (sel) { ring(c, sel.x, sel.y, g.stat(sel).range, BERRY, 0.9); c.save(); c.strokeStyle = BERRY; c.lineWidth = 2.5; c.setLineDash([5, 4]); c.beginPath(); c.arc(sel.x, sel.y + 8, 26, 0, 7); c.stroke(); c.restore(); }
 
+  // moving arrows show which way the critters walk (first game only)
+  if (!save.tut) {
+  c.save(); c.strokeStyle = INK; c.globalAlpha = 0.3; c.lineWidth = 3; c.lineCap = 'round'; c.lineJoin = 'round';
+  for (let d = (t * 40) % 96; d < g.leakDist - 40; d += 96) {
+    const p = g.path.pointAt(d); c.save(); c.translate(p.x, p.y); c.rotate(Math.atan2(p.dy, p.dx));
+    c.beginPath(); c.moveTo(-5, -8); c.lineTo(4, 0); c.lineTo(-5, 8); c.stroke(); c.restore();
+  }
+  c.restore();
+  }
+  // glowing "plant here" spot for the very first buddy
+  if (mode === 'play' && !save.tut && !g.towers.length && g.hintCell) {
+    const hx0 = (g.hintCell.col + 0.5) * TILE, hy0 = (g.hintCell.row + 0.5) * TILE, pu = 0.5 + 0.5 * Math.sin(t * 4);
+    c.save(); c.globalAlpha = 0.35 + 0.3 * pu; c.fillStyle = '#fff3a0'; c.beginPath(); c.arc(hx0, hy0, 26 + 5 * pu, 0, 7); c.fill();
+    c.globalAlpha = 0.9; c.strokeStyle = INK; c.lineWidth = 2.5; c.setLineDash([6, 5]); c.beginPath(); c.arc(hx0, hy0, 27 + 4 * pu, 0, 7); c.stroke(); c.setLineDash([]);
+    c.font = '32px ' + FONT; c.textAlign = 'center'; c.lineWidth = 7; c.strokeStyle = '#eef4e0'; c.strokeText('Plant here', hx0, hy0 - 36 - 3 * pu); c.fillStyle = INK; c.fillText('Plant here', hx0, hy0 - 36 - 3 * pu);
+    c.restore();
+  }
   const ep = g.path.pointAt(g.leakDist), pxv = ep.x + 2 + (patchShake > 0 && !RM ? Math.sin(t * 70) * patchShake * 5 : 0);
   for (let i = 0; i < Math.min(10, g.hearts); i++) drawVeg(c, pxv, ep.y, i, t);
   const items = [];
@@ -1925,6 +2237,8 @@ function draw(t) {
       c.save(); c.globalAlpha = Math.min(1, a * 2.2); c.lineJoin = 'round'; c.lineCap = 'round';
       for (const [w, col] of [[6, INK], [3, '#fff6a0']]) { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); f.pts.forEach((p, i) => i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])); c.stroke(); }
       c.restore();
+    } else if (f.k === 'ring') {
+      c.save(); c.globalAlpha = a * 0.8; c.strokeStyle = '#8a6a4a'; c.lineWidth = 4; c.beginPath(); c.arc(f.x, f.y, f.r * (1.1 - a * 0.7), 0, 7); c.stroke(); c.restore();
     } else { c.globalAlpha = Math.min(1, a * 1.6); c.font = '20px ' + FONT; c.textAlign = 'center'; c.lineWidth = 4; c.strokeStyle = '#eef4e0'; c.strokeText(f.txt, f.x, f.y); c.fillStyle = f.col; c.fillText(f.txt, f.x, f.y); c.globalAlpha = 1; }
   }
 
@@ -1974,7 +2288,7 @@ function frame_(now) {
 buildTray(); buildPowers(); buildMenu(); buildGuide(); syncToggles();
 window.addEventListener('pointerdown', () => Sound.init(), { once: true });
 window.addEventListener('keydown', () => Sound.init(), { once: true });
-if (window.ResizeObserver) new ResizeObserver(() => { fit(); }).observe(stage);
+if (window.ResizeObserver) { const ro = new ResizeObserver(() => { fit(); }); ro.observe(stage); ro.observe($('dock')); ro.observe(document.querySelector('.main')); }
 window.addEventListener('resize', fit);
 requestAnimationFrame(t => { lastT = t; frame_(t); });
 })();

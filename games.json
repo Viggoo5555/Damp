@@ -43,5 +43,11 @@
     "file": "guessing-game.html",
     "category": "Guessing",
     "image": "guessing-game.png"
+  },
+  {
+    "title": "Hedgerow Hallow",
+    "file": "hedgerow-hallow.html",
+    "category": "Tower Defense",
+    "image": "hedgerow-hallow.png"
   }
 ]

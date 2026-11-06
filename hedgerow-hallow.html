@@ -149,7 +149,8 @@
 
   /* tower view with the two upgrade paths */
   #towerView { padding: 5px 8px 8px; display: flex; flex-direction: column; gap: 5px; }
-  .tv-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .tv-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 8px; }
+  .tv-btns .btn.poor { opacity: .55; }
   .tv-head strong { font-family: var(--f-display); font-weight: 400; font-size: 22px; line-height: 1.1; min-width: 0; }
   .tv-btns { display: flex; gap: 6px; flex: none; }
   .tv-btns .btn { min-height: 32px; padding: 0 10px; font-size: 17px; box-shadow: 2px 2px 0 var(--ink); }
@@ -239,7 +240,12 @@
   .uppanel .path .un { font-size: 15px; }
   .uppanel .path .ud { font-size: 13px; }
   .uppanel .tv-head strong { font-size: 20px; }
-  .tcard.locked { opacity: .55; filter: grayscale(.8); }
+  .tcard.locked { opacity: .55; filter: grayscale(1); }
+  .lockbadge { position: absolute; top: 18%; left: 50%; transform: translateX(-50%); width: 30px; height: 30px; pointer-events: none; }
+  .lockbadge svg { width: 100%; height: 100%; display: block; }
+  .gicon { position: relative; flex: none; width: 58px; height: 58px; }
+  .gicon.locked { opacity: .55; filter: grayscale(1); }
+  .gicon .lockbadge { top: 50%; transform: translate(-50%, -50%); width: 28px; height: 28px; }
   .tcard.nudge { animation: nudge 1.1s ease-in-out infinite; }
   @keyframes nudge { 50% { transform: translateY(-3px) scale(1.03); } }
   #btnWave.go:not([disabled]) { animation: nudge 1.3s ease-in-out infinite; }
@@ -491,9 +497,9 @@ const TOWERS = {
         { name: 'Keen eyes', cost: 100, desc: 'Faster, longer reach', fx: { rateMul: 0.8, rangeAdd: 30 } },
         { name: 'Twin talons', cost: 190, desc: 'Hits 2 critters at once', fx: { shotsAdd: 1 } },
         { name: 'Moon owl', cost: 420, desc: 'Much faster, hits 3', fx: { rateMul: 0.6, shotsAdd: 1 } } ] } ] },
-  mole: { key: 'mole', name: 'Mortar Mole', short: 'Mole', cost: 110, kind: 'shot', unlock: 2,
+  mole: { key: 'mole', name: 'Mortar Mole', short: 'Mole', cost: 110, kind: 'shot', unlock: 2, dig: true,
     base: { range: 150, dmg: 24, rate: 2.2, splash: 48, splashDmg: 0.7, groundOnly: true },
-    blurb: 'Lobs big dirt bombs that hurt every ground critter in the blast. Great against crowds. Cannot hit flyers.',
+    blurb: 'Lobs big dirt bombs that hurt every ground critter in the blast. Can dig under the ground and pop up somewhere else. Cannot hit flyers.',
     paths: [
       { name: 'Big Boom', tiers: [
         { name: 'Bigger boom', cost: 70, desc: 'Bigger blast, +50% damage', fx: { dmgMul: 1.5, splashAdd: 14 } },
@@ -516,13 +522,13 @@ const TOWERS = {
         { name: 'Light fingers', cost: 110, desc: '+2 seeds for every kill', fx: { bountyAdd: 2, dmgMul: 1.4 } },
         { name: 'Master thief', cost: 240, desc: 'Fast, +4 seeds per kill', fx: { bountyAdd: 4, rateMul: 0.6, dmgMul: 1.5, rangeAdd: 25 } } ] } ] },
   dragonfly: { key: 'dragonfly', name: 'Storm Dragonfly', short: 'Dragonfly', cost: 120, kind: 'chain', unlock: 7,
-    base: { range: 125, dmg: 22, rate: 1.1, chain: 2, chainRange: 75 },
-    blurb: 'Zaps a critter and the lightning jumps to 2 more nearby. Hits flyers too. Never misses.',
+    base: { range: 125, dmg: 20, rate: 1.1, chain: 2, chainRange: 75, roam: 230 },
+    blurb: 'Flies around the garden and follows the critters. Zaps one and the lightning jumps to 2 more. Hits flyers too.',
     paths: [
       { name: 'Long Chain', tiers: [
         { name: 'Longer chain', cost: 70, desc: 'Lightning jumps 3 times', fx: { chain: 3 } },
-        { name: 'Storm cell', cost: 140, desc: 'Jumps 5 times, more reach', fx: { chain: 5, rangeAdd: 20, chainRange: 85 } },
-        { name: 'Thunder swarm', cost: 320, desc: 'Jumps 8 times, stronger', fx: { chain: 8, dmgMul: 1.4, chainRange: 100 } } ] },
+        { name: 'Storm cell', cost: 140, desc: 'Jumps 5 times, flies farther', fx: { chain: 5, rangeAdd: 20, chainRange: 85, roam: 290 } },
+        { name: 'Thunder swarm', cost: 320, desc: 'Jumps 8 times, stronger', fx: { chain: 8, dmgMul: 1.4, chainRange: 100, roam: 350 } } ] },
       { name: 'Static Shock', tiers: [
         { name: 'Static', cost: 65, desc: 'Sometimes stuns critters', fx: { stunChance: 0.25, stunTime: 0.5 } },
         { name: 'Overcharge', cost: 130, desc: '+80% damage, more stuns', fx: { dmgMul: 1.8, stunChance: 0.3, stunTime: 0.7 } },
@@ -533,7 +539,7 @@ const TOWER_ORDER = ['squirrel', 'hive', 'bramble', 'frog', 'firefly', 'owl', 'm
 function computeStat(type, tiers) {
   const T = TOWERS[type];
   const s = Object.assign({ shots: 1, slow: 0, slowTime: 0, splash: 0, stunHit: 0, poisonDps: 0, poisonTime: 0, crit: 0, pierce: false,
-    stunChance: 0, stunTime: 0, exec: 0, aura: 0, dmgAura: 0, pulseEvery: 0, pulseStun: 0, pulseDmg: 0, splashDmg: 0, income: 0, chain: 0, chainRange: 0, bountyAdd: 0 }, T.base);
+    stunChance: 0, stunTime: 0, exec: 0, aura: 0, dmgAura: 0, pulseEvery: 0, pulseStun: 0, pulseDmg: 0, splashDmg: 0, income: 0, chain: 0, chainRange: 0, bountyAdd: 0, roam: 0 }, T.base);
   for (let p = 0; p < 2; p++) {
     for (let i = 0; i < tiers[p]; i++) {
       const f = T.paths[p].tiers[i].fx;
@@ -720,7 +726,7 @@ function createGame(L, onEvent) {
     g.seeds -= T.cost;
     const tiers = [0, 0];
     const t = { id: g.nid++, type, kind: T.kind, c, r, x: (c + 0.5) * TILE, y: (r + 0.5) * TILE, tiers, st: computeStat(type, tiers),
-      cd: 0.3, pcd: 0, invested: T.cost, flash: 0, aimX: 1, aimY: 0, pulse: 0, buff: 1, dbuff: 1 };
+      cd: 0.3, pcd: 0, invested: T.cost, flash: 0, aimX: 1, aimY: 0, pulse: 0, buff: 1, dbuff: 1, hx: (c + 0.5) * TILE, hy: (r + 0.5) * TILE, roam: type === 'dragonfly' };
     g.towers.push(t); emit('place', t);
     return { ok: true, tower: t };
   };
@@ -739,6 +745,18 @@ function createGame(L, onEvent) {
     return { ok: true };
   };
   g.sellValue = (t) => Math.floor(t.invested * 0.6);
+  g.canDig = (t) => !!TOWERS[t.type].dig && !t.dig && !(t.digCd > 0);
+  g.moveTower = (t, c, r) => {
+    if (!TOWERS[t.type].dig) return { ok: false, reason: 'cannot' };
+    if (t.dig) return { ok: false, reason: 'busy' };
+    if (t.digCd > 0) return { ok: false, reason: 'cooldown' };
+    if (!g.canBuild(c, r)) return { ok: false, reason: 'blocked' };
+    const tx = (c + 0.5) * TILE, ty = (r + 0.5) * TILE, dist = Math.hypot(tx - t.x, ty - t.y);
+    t.dig = { ph: 0, t: 0, fx: t.x, fy: t.y, tx, ty, len: Math.max(0.5, dist / 300) };
+    t.c = c; t.r = r;
+    emit('dig', { x: t.x, y: t.y });
+    return { ok: true };
+  };
   g.sell = (t) => {
     const i = g.towers.indexOf(t);
     if (i < 0) return { ok: false };
@@ -881,6 +899,33 @@ function createGame(L, onEvent) {
     for (const t of g.towers) {
       t.flash = Math.max(0, t.flash - dt); t.pulse = Math.max(0, t.pulse - dt);
       const st = t.st;
+      if (t.dig) {
+        const D = t.dig; D.t += dt;
+        if (D.ph === 0 && D.t >= 0.45) { D.ph = 1; D.t = 0; }
+        if (D.ph === 1) {
+          const p = Math.min(1, D.t / D.len); t.x = D.fx + (D.tx - D.fx) * p; t.y = D.fy + (D.ty - D.fy) * p;
+          if (p >= 1) { D.ph = 2; D.t = 0; t.x = D.tx; t.y = D.ty; emit('surface', { x: t.x, y: t.y }); }
+        } else if (D.ph === 2 && D.t >= 0.45) { t.dig = null; t.cd = 0.4; t.digCd = 5; t.pop = 0.4; }
+        continue;
+      }
+      if (t.digCd > 0) t.digCd -= dt;
+      if (t.roam) {
+        // the dragonfly flies after the critter furthest along the path, within its roaming circle
+        let tgt = null, bd = -1;
+        for (const e of g.enemies) {
+          if (e.gone || Math.hypot(e.x - t.hx, e.y - t.hy) > st.roam + st.range * 0.5) continue;
+          if (e.dist > bd) { bd = e.dist; tgt = e; }
+        }
+        let gx = t.hx, gy = t.hy;
+        if (tgt) {
+          const dx = tgt.x - t.x, dy = tgt.y - t.y, d = Math.hypot(dx, dy) || 1, keep = st.range * 0.5;
+          if (d > keep) { gx = t.x + dx / d * (d - keep); gy = t.y + dy / d * (d - keep); } else { gx = t.x; gy = t.y; }
+        }
+        const vx = gx - t.hx, vy = gy - t.hy, vd = Math.hypot(vx, vy);
+        if (vd > st.roam) { gx = t.hx + vx / vd * st.roam; gy = t.hy + vy / vd * st.roam; }
+        const mx = gx - t.x, my = gy - t.y, md = Math.hypot(mx, my), stp = 130 * dt;
+        if (md <= stp) { t.x = gx; t.y = gy; } else { t.x += mx / md * stp; t.y += my / md * stp; }
+      }
       if (st.pulseEvery) {
         t.pcd -= dt;
         if (t.pcd <= 0) {
@@ -1086,6 +1131,8 @@ const Sound = (() => {
     'fire-mole': n => { tone(110, n, 0.25, { type: 'sawtooth', gain: 0.18, to: 60 }); hiss(n, 0.12, 0.1, 500); },
     'fire-magpie': n => tone(1200, n, 0.08, { gain: 0.09, to: 1700 }),
     'fire-dragonfly': n => { hiss(n, 0.12, 0.1, 4000); tone(500, n, 0.1, { type: 'square', gain: 0.05, to: 1400 }); },
+    dig: n => { hiss(n, 0.3, 0.12, 350); tone(90, n, 0.3, { type: 'sawtooth', gain: 0.12, to: 55 }); },
+    surface: n => { tone(140, n, 0.12, { type: 'triangle', gain: 0.3, to: 400 }); hiss(n, 0.1, 0.12, 700); },
     boom: n => { hiss(n, 0.25, 0.18, 300); tone(80, n, 0.25, { type: 'sawtooth', gain: 0.16, to: 40 }); },
     coin: n => { tone(1320, n, 0.08, { gain: 0.1 }); tone(1760, n + 0.07, 0.12, { gain: 0.1 }); },
     'fire-frog': n => tone(240, n, 0.09, { type: 'triangle', gain: 0.18, to: 560 }),
@@ -1096,7 +1143,7 @@ const Sound = (() => {
     thunder: n => { hiss(n, 0.6, 0.3, 200); tone(90, n, 0.6, { type: 'sawtooth', gain: 0.2, to: 40 }); },
     sun: n => { [523, 659, 784, 988].forEach((f, i) => tone(f, n + i * 0.09, 0.3, { type: 'triangle', gain: 0.16 })); }
   };
-  const gap = { 'fire-mole': 0.08, 'fire-magpie': 0.06, 'fire-dragonfly': 0.08, boom: 0.06, coin: 0.12, heal: 0.3, pulse: 0.1, 'fire-frog': 0.05, hit: 0.06, 'fire-squirrel': 0.05, 'fire-hive': 0.06, 'fire-bramble': 0.08, pop: 0.05 };
+  const gap = { dig: 0.2, surface: 0.2, 'fire-mole': 0.08, 'fire-magpie': 0.06, 'fire-dragonfly': 0.08, boom: 0.06, coin: 0.12, heal: 0.3, pulse: 0.1, 'fire-frog': 0.05, hit: 0.06, 'fire-squirrel': 0.05, 'fire-hive': 0.06, 'fire-bramble': 0.08, pop: 0.05 };
   function play(name) {
     if (!ctx || !S.sfx || ctx.state !== 'running') return;
     const now = ctx.currentTime;
@@ -1381,9 +1428,8 @@ function drawTowerBody(c, t, time) {
     }
     case 'dragonfly': {
       const by = Math.sin(time * 3 + id) * 2.5, fl = 0.55 + 0.45 * Math.abs(Math.sin(time * 18 + id));
-      c.save(); c.strokeStyle = LEAF; c.lineWidth = 3; ln(c, -8, 25, -10, 6); ln(c, 6, 25, 8, 10); c.restore(); setInk(c, 2.4);
-      blob(c, 0, 25, 14, 4, '#a9773f', id);
-      c.translate(0, by);
+      if (!t.roam) { c.save(); c.strokeStyle = LEAF; c.lineWidth = 3; ln(c, -8, 25, -10, 6); ln(c, 6, 25, 8, 10); c.restore(); setInk(c, 2.4); blob(c, 0, 25, 14, 4, '#a9773f', id); }
+      c.translate(0, by - (t.roam ? 6 : 0));
       c.save(); c.globalAlpha = 0.75; c.lineWidth = 1.6;
       for (const s of [-1, 1]) {
         c.beginPath(); c.ellipse(s * 13, -9, 13, 4.5 * fl, -0.35 * s, 0, 7); c.fillStyle = '#dff1f7'; c.fill(); c.stroke();
@@ -1418,8 +1464,41 @@ function drawTowerBody(c, t, time) {
   }
   c.restore();
 }
+function drawDig(c, t, time) {
+  const D = t.dig, gy = 16;
+  c.save(); c.translate(t.x, t.y);
+  const mound = (w, h, a) => { c.save(); c.globalAlpha = a; setInk(c, 2.4); blob(c, 0, gy - 2, w, h, '#8a6a4a', t.id + 9, 0.08); dot(c, -w * 0.4, gy - 5, 1.8, '#b08a62'); dot(c, w * 0.35, gy - 4, 1.5, '#6b4f36'); c.restore(); };
+  const hole = (w) => { c.save(); c.fillStyle = '#4a3626'; setInk(c, 2.2); c.beginPath(); c.ellipse(0, gy, w, w * 0.38, 0, 0, 7); c.fill(); c.stroke(); c.restore(); };
+  if (D.ph === 0) {
+    const p = Math.min(1, D.t / 0.45);
+    hole(8 + 14 * p);
+    c.save(); c.beginPath(); c.rect(-40, -60, 80, 60 + gy); c.clip(); c.translate(0, p * 46); c.rotate(Math.sin(p * 20) * 0.08); drawTowerBody(c, t, time); c.restore();
+    mound(10 + 8 * p, 4 + 4 * p, p);
+  } else if (D.ph === 1) {
+    const w = Math.sin(time * 26) * 1.2;
+    // trail along the tunnel
+    c.save(); c.setLineDash([3, 6]); c.strokeStyle = '#6b4f36'; c.globalAlpha = 0.55; c.lineWidth = 3; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(D.fx - t.x, D.fy - t.y + gy); c.lineTo(0, gy); c.stroke(); c.restore();
+    c.save(); c.translate(0, w * 0.4); mound(16, 9, 1); c.restore();
+    c.save(); c.globalAlpha = 0.9; dot(c, -11, gy - 7 + Math.sin(time * 30) * 3, 2.2, '#8a6a4a'); dot(c, 12, gy - 6 + Math.cos(time * 27) * 3, 1.8, '#6b4f36'); c.restore();
+  } else {
+    const p = Math.min(1, D.t / 0.45), up = Math.sin(Math.PI * p) * 34, sq = p < 0.5 ? 1 + 0.12 * (1 - p * 2) : 1;
+    hole(22 * (1 - p) + 6);
+    c.save(); c.beginPath(); c.rect(-50, -90, 100, 90 + gy + (p > 0.55 ? 40 : 0)); c.clip();
+    c.translate(0, gy); c.scale(1 / sq, sq); c.translate(0, -gy);
+    c.translate(0, (1 - Math.min(1, p * 1.8)) * 46 - up * (p > 0.4 ? 1 : 0.4)); drawTowerBody(c, t, time); c.restore();
+    mound(14 * (1 - p) + 8, 7 * (1 - p) + 3, 1 - p * 0.5);
+  }
+  c.restore();
+}
 function drawTower(c, t, time, game) {
+  if (t.dig) { drawDig(c, t, time); return; }
   const top = t.tiers && Math.max(t.tiers[0], t.tiers[1]) >= 3;
+  if (t.roam) {
+    c.save(); c.translate(t.hx, t.hy); setInk(c, 2.4);
+    c.save(); c.strokeStyle = LEAF; c.lineWidth = 3; ln(c, -8, 25, -10, 6); ln(c, 6, 25, 8, 10); c.restore(); setInk(c, 2.4);
+    blob(c, 0, 25, 14, 4, '#a9773f', t.id); c.restore();
+  }
   c.save(); c.translate(t.x, t.y);
   c.save(); c.globalAlpha = 0.17; c.fillStyle = INK; c.beginPath(); c.ellipse(0, 17, 21, 7, 0, 0, 7); c.fill(); c.restore();
   if (t.pop > 0) { const p = 1 - t.pop / 0.4, sc = 1 + 0.25 * Math.sin(p * Math.PI * 1.6) * (1 - p); c.translate(0, 16); c.scale(2 - sc, sc); c.translate(0, -16); }
@@ -1574,7 +1653,7 @@ const menuScreen = $('menuScreen'), gameScreen = $('gameScreen');
 const trayEl = $('tray'), infoEl = $('info'), toastEl = $('toast'), btnWave = $('btnWave'), btnAuto = $('btnAuto'), powersEl = $('powers');
 const buyView = $('buyView'), towerView = $('towerView'), hintEl = $('hint');
 
-let game = null, levelIdx = 0, mode = 'menu', buildType = 'squirrel', sel = null, hover = null, pending = null;
+let game = null, levelIdx = 0, mode = 'menu', buildType = 'squirrel', sel = null, hover = null, pending = null, moving = null;
 let kb = { on: false, col: 4, row: 3 }, speed = 1, bg = null, fxs = [], shake = 0, flashT = 0, time = 0, lastT = 0, lastPointer = 'mouse';
 let infoKey = '', tvKey = '';
 let amb = [], banner = null, patchShake = 0, tutSel = false;
@@ -1664,7 +1743,9 @@ function buildGuide() {
     const T = TOWERS[type], d = document.createElement('div'); d.className = 'panel gcard';
     const ic = document.createElement('canvas'); ic.width = ic.height = 116; const c = ic.getContext('2d'); c.translate(58, 64); c.scale(1.75, 1.75);
     drawTowerBody(c, { type, lvl: 0, id: i + 1, aimX: 1, aimY: 0, flash: 0 }, 0);
-    d.appendChild(ic);
+    const gi = document.createElement('span'); gi.className = 'gicon' + (T.unlock && !isUnlocked(type) ? ' locked' : ''); gi.appendChild(ic);
+    if (gi.classList.contains('locked')) gi.insertAdjacentHTML('beforeend', LOCK_SVG);
+    d.appendChild(gi);
     const un = T.unlock ? '<br><span class="gc">' + (isUnlocked(type) ? 'Unlocked' : 'Unlocks at ' + T.unlock + ' stars') + '</span>' : '';
     d.insertAdjacentHTML('beforeend', '<div><strong>' + T.name + '</strong> <span class="gc">' + T.cost + ' seeds</span><br><span class="gs">' + T.blurb + '</span>' + un + '</div>');
     gb.appendChild(d);
@@ -1717,6 +1798,7 @@ function drawHero(t) {
 }
 
 /* ---------- tray, info, tower view ---------- */
+const LOCK_SVG = '<span class="lockbadge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3" fill="none" stroke="#26324d" stroke-width="5" stroke-linecap="round"/><path d="M7 11V8a5 5 0 0 1 10 0v3" fill="none" stroke="#c9ccd6" stroke-width="2.2" stroke-linecap="round"/><rect x="4" y="10.5" width="16" height="12" rx="3" fill="#9aa0ad" stroke="#26324d" stroke-width="2.2"/><circle cx="12" cy="15.5" r="1.8" fill="#26324d"/><rect x="11.2" y="16" width="1.6" height="3.4" rx=".8" fill="#26324d"/></svg></span>';
 const SEED_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 22c-4 0-7-4-7-9h14c0 5-3 9-7 9z" fill="#b57a3a" stroke="#26324d" stroke-width="2.4" stroke-linejoin="round"/><path d="M4 13c0-4 3-7 8-7s8 3 8 7z" fill="#7a4f26" stroke="#26324d" stroke-width="2.4" stroke-linejoin="round"/></svg>';
 function buildTray() {
   trayEl.innerHTML = '';
@@ -1731,7 +1813,7 @@ function buildTray() {
     const lock = !isUnlocked(type);
     b.classList.toggle('locked', lock); b.dataset.locked = lock ? '1' : '';
     b.insertAdjacentHTML('beforeend', '<span class="tn">' + T.short + '</span><span class="tc">' + (lock ? T.unlock + ' stars' : SEED_SVG + T.cost) + '</span><span class="kbd">' + (i + 1) + '</span>');
-    if (lock) b.setAttribute('aria-label', T.name + ', locked. Earn ' + T.unlock + ' stars to unlock');
+    if (lock) { b.setAttribute('aria-label', T.name + ', locked. Earn ' + T.unlock + ' stars to unlock'); b.insertAdjacentHTML('beforeend', LOCK_SVG); }
     b.addEventListener('click', () => { Sound.play('click'); setBuildType(type); });
     trayEl.appendChild(b);
   });
@@ -1749,7 +1831,7 @@ function buildPowers() {
 function setBuildType(type) {
   if (!game || mode !== 'play') return;
   if (!isUnlocked(type)) { toast('Earn ' + TOWERS[type].unlock + ' stars to unlock ' + TOWERS[type].name); Sound.play('error'); return; }
-  sel = null; pending = null; buildType = type;
+  sel = null; pending = null; moving = null; buildType = type;
 }
 function statLine(type, st) {
   if (type === 'firefly') {
@@ -1762,6 +1844,7 @@ function statLine(type, st) {
   if (st.income) s = 'Pays ' + st.income + ' seeds every wave &middot; ' + s;
   if (st.bountyAdd) s += ' &middot; +' + st.bountyAdd + ' seeds per kill';
   if (st.chain) s += ' &middot; Chains ' + st.chain + ' times';
+  if (st.roam) s += ' &middot; Flies ' + (st.roam / TILE).toFixed(1) + ' tiles from home';
   if (st.splash && st.splashDmg) s += ' &middot; Blast';
   if (st.shots > 1) s += ' &middot; ' + st.shots + ' targets';
   if (st.slow) s += ' &middot; Slows ' + Math.round(st.slow * 100) + '%';
@@ -1775,7 +1858,7 @@ function infoHTML() {
 }
 function towerViewHTML(t) {
   const T = TOWERS[t.type];
-  let h = '<div class="tv-head"><strong>' + T.name + '</strong><span class="tv-btns"><button class="btn" type="button" data-act="sell">Sell ' + game.sellValue(t) + '</button><button class="btn" type="button" data-act="close">Done</button></span></div>';
+  let h = '<div class="tv-head"><strong>' + T.name + '</strong><span class="tv-btns">' + (T.dig ? '<button class="btn' + (t.dig || t.digCd > 0 ? ' poor' : '') + '" type="button" data-act="dig">' + (t.dig ? 'Digging' : t.digCd > 0 ? 'Dig ' + Math.ceil(t.digCd) + 's' : 'Dig') + '</button>' : '') + '<button class="btn" type="button" data-act="sell">Sell ' + game.sellValue(t) + '</button><button class="btn" type="button" data-act="close">Done</button></span></div>';
   h += '<p class="stats-line">' + statLine(t.type, t.st) + '</p><div class="paths">';
   for (let p = 0; p < 2; p++) {
     const P = T.paths[p], n = game.nextTier(t, p);
@@ -1790,6 +1873,10 @@ function towerViewHTML(t) {
 towerView.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || !sel || mode !== 'play') return;
   if (b.dataset.act === 'sell') doSell();
+  else if (b.dataset.act === 'dig') {
+    if (!game.canDig(sel)) { toast(sel.dig ? 'Already digging' : 'The mole is resting for a moment'); Sound.play('error'); return; }
+    moving = sel; sel = null; pending = null; toast('Tap a grass spot to dig there'); Sound.play('click');
+  }
   else if (b.dataset.act === 'close') { sel = null; Sound.play('click'); }
   else if (b.dataset.path) doUpgrade(Number(b.dataset.path));
 });
@@ -1814,7 +1901,8 @@ function toggleAuto() {
 
 function placePanel(t) {
   const cell = cv.clientWidth / COLS;
-  const px = frame.offsetLeft + frame.clientLeft + t.x / W * cv.clientWidth, py = frame.offsetTop + frame.clientTop + t.y / H * cv.clientHeight;
+  const ax = t.roam ? t.hx : t.x, ay = t.roam ? t.hy : t.y;
+  const px = frame.offsetLeft + frame.clientLeft + ax / W * cv.clientWidth, py = frame.offsetTop + frame.clientTop + ay / H * cv.clientHeight;
   const pw = towerView.offsetWidth, ph = towerView.offsetHeight, sw = stage.clientWidth, sh = stage.clientHeight;
   const left = Math.max(6, Math.min(sw - pw - 6, px - pw / 2));
   let top = py - cell * 0.6 - ph - 4;
@@ -1825,10 +1913,11 @@ function placePanel(t) {
 function syncUI() {
   const g = game;
   if (sel && !g.towers.includes(sel)) sel = null;
+  if (moving && !g.towers.includes(moving)) moving = null;
   for (const tw of g.towers) tw.canUp = !save.tut && [0, 1].some(p => { const n = g.nextTier(tw, p); return !n.maxed && !n.locked && n.cost <= g.seeds; });
-  towerView.hidden = !sel;
+  towerView.hidden = !sel || !!moving;
   if (sel) {
-    const key = sel.id + ':' + sel.tiers.join('');
+    const key = sel.id + ':' + sel.tiers.join('') + (sel.dig ? 'd' : '') + (sel.digCd > 0 ? Math.ceil(sel.digCd) : '');
     if (key !== tvKey) { tvKey = key; towerView.innerHTML = towerViewHTML(sel); }
     for (const b of towerView.querySelectorAll('.path')) b.classList.toggle('poor', Number(b.dataset.cost) > g.seeds);
     placePanel(sel);
@@ -1939,6 +2028,8 @@ function drawBanner(c) {
 /* ---------- game events ---------- */
 function onGameEvent(k, d) {
   switch (k) {
+    case 'dig': Sound.play('dig'); puffs(d.x, d.y + 12, '#8a6a4a', 10, 70); break;
+    case 'surface': Sound.play('surface'); puffs(d.x, d.y + 12, '#8a6a4a', 12, 90); shake = Math.max(shake, 0.15); break;
     case 'place': Sound.play('place'); puffs(d.x, d.y + 12, '#e6d1a0', 9); d.pop = 0.4; break;
     case 'upgrade': Sound.play('upgrade'); puffs(d.x, d.y - 6, HONEY, 12, 70); d.pop = 0.4; break;
     case 'sell': Sound.play('sell'); puffs(d.x, d.y, '#e6d1a0', 8); if (sel === d) sel = null; break;
@@ -2007,7 +2098,7 @@ function startLevel(i) {
   Sound.init();
   levelIdx = i; game = createGame(LEVELS[i], onGameEvent);
   game.autoWave = !!save.auto; game.autoT = game.autoDelay;
-  fxs = []; sel = null; buildType = 'squirrel'; hover = null; pending = null; kb = { on: false, col: 4, row: 3 }; speed = 1; infoKey = ''; tvKey = ''; shake = 0; flashT = 0;
+  fxs = []; sel = null; moving = null; buildType = 'squirrel'; hover = null; pending = null; kb = { on: false, col: 4, row: 3 }; speed = 1; infoKey = ''; tvKey = ''; shake = 0; flashT = 0;
   for (const k in hudCache) delete hudCache[k];
   save.last = i; persist(); buildTray(); initAmb(); game.hintCell = bestCell(game); banner = null; patchShake = 0; tutSel = false;
   mode = 'play'; menuScreen.hidden = true; gameScreen.hidden = false; $('endModal').hidden = true; $('pauseModal').hidden = true; $('helpModal').hidden = true;
@@ -2083,7 +2174,18 @@ cv.addEventListener('pointerleave', e => { if ((e.pointerType || 'mouse') === 'm
 cv.addEventListener('pointerdown', e => { lastPointer = e.pointerType || 'mouse'; Sound.init(); });
 cv.addEventListener('click', e => {
   if (mode !== 'play') return;
-  const cell = cellOf(toWorld(e)); if (!cell) return;
+  if (moving) {
+    const mc = cellOf(toWorld(e)); kb.on = false;
+    if (!mc) return;
+    if (moving.dig || !game.towers.includes(moving)) { moving = null; return; }
+    if (mc.col === moving.c && mc.row === moving.r) { moving = null; toast('Dig cancelled'); Sound.play('click'); return; }
+    const r = game.moveTower(moving, mc.col, mc.row);
+    if (r.ok) { moving = null; hover = null; } else { toast('Moles can only dig up empty grass'); Sound.play('error'); }
+    return;
+  }
+  const wp = toWorld(e), fly = game.towers.find(t => t.roam && Math.hypot(t.x - wp.x, t.y - wp.y) < 28);
+  if (fly) { sel = fly; pending = null; Sound.play('click'); return; }
+  const cell = cellOf(wp); if (!cell) return;
   kb.on = false; hover = cell;
   activateCell(cell.col, cell.row, lastPointer === 'touch' || lastPointer === 'pen');
 });
@@ -2146,7 +2248,7 @@ window.addEventListener('keydown', e => {
   }
   if (!game) return;
   if (!$('helpModal').hidden) { if (k === 'escape' || k === 'enter' || k === ' ') { e.preventDefault(); closeHelp(); } return; }
-  if (k === 'escape') { if (mode === 'play' && (sel || pending)) { sel = null; pending = null; } else setPaused(mode !== 'paused'); return; }
+  if (k === 'escape') { if (mode === 'play' && (sel || pending || moving)) { sel = null; pending = null; moving = null; } else setPaused(mode !== 'paused'); return; }
   if (k === 'p') { setPaused(mode !== 'paused'); return; }
   if (mode !== 'play') return;
   const dirs = { arrowleft: [-1, 0], a: [-1, 0], arrowright: [1, 0], d: [1, 0], arrowup: [0, -1], w: [0, -1], arrowdown: [0, 1], s: [0, 1] };
@@ -2185,7 +2287,7 @@ function draw(t) {
   c.setTransform(S, 0, 0, S, sx * S, sy * S);
   setInk(c, 2.2);
   const g = game;
-  const placing = mode === 'play' && !sel;
+  const placing = mode === 'play' && !sel && !moving;
   if (placing) {
     c.save(); c.globalAlpha = 0.3; c.strokeStyle = INK; c.lineWidth = 2;
     for (let col = 0; col < COLS; col++) for (let row = 0; row < ROWS; row++) {
@@ -2196,6 +2298,7 @@ function draw(t) {
   }
   const cell = mode === 'play' ? (kb.on ? kb : pending || hover) : null;
   if (cell && !sel) { const th = g.towerAt(cell.col, cell.row); if (th) ring(c, th.x, th.y, g.stat(th).range, INK, 0.5); }
+  if (sel && sel.roam) ring(c, sel.hx, sel.hy, g.stat(sel).roam, HONEY, 0.5);
   if (sel) { ring(c, sel.x, sel.y, g.stat(sel).range, BERRY, 0.9); c.save(); c.strokeStyle = BERRY; c.lineWidth = 2.5; c.setLineDash([5, 4]); c.beginPath(); c.arc(sel.x, sel.y + 8, 26, 0, 7); c.stroke(); c.restore(); }
 
   // moving arrows show which way the critters walk (first game only)
@@ -2242,6 +2345,22 @@ function draw(t) {
     } else { c.globalAlpha = Math.min(1, a * 1.6); c.font = '20px ' + FONT; c.textAlign = 'center'; c.lineWidth = 4; c.strokeStyle = '#eef4e0'; c.strokeText(f.txt, f.x, f.y); c.fillStyle = f.col; c.fillText(f.txt, f.x, f.y); c.globalAlpha = 1; }
   }
 
+  if (moving && mode === 'play') {
+    const pu = 0.5 + 0.5 * Math.sin(t * 5);
+    c.save(); c.strokeStyle = INK; c.lineWidth = 2; c.setLineDash([4, 5]); c.globalAlpha = 0.5 + 0.3 * pu;
+    for (let col = 0; col < COLS; col++) for (let row = 0; row < ROWS; row++) {
+      if (!g.canBuild(col, row)) continue;
+      c.beginPath(); c.arc((col + 0.5) * TILE, (row + 0.5) * TILE, 17 + 2 * pu, 0, 7); c.stroke();
+    }
+    c.restore();
+    c.save(); c.font = '30px ' + FONT; c.textAlign = 'center'; c.lineWidth = 7; c.strokeStyle = '#eef4e0'; c.strokeText('Dig where?', W / 2, H - 14); c.fillStyle = INK; c.fillText('Dig where?', W / 2, H - 14); c.restore();
+    const mcell = hover;
+    if (mcell && g.canBuild(mcell.col, mcell.row)) {
+      const gx = (mcell.col + 0.5) * TILE, gy2 = (mcell.row + 0.5) * TILE;
+      ring(c, gx, gy2, g.stat(moving).range, INK, 0.7);
+      c.save(); c.translate(gx, gy2); c.globalAlpha = 0.7; drawTowerBody(c, { type: 'mole', lvl: Math.max(...moving.tiers) >= 3 ? 2 : Math.max(...moving.tiers) >= 1 ? 1 : 0, id: 1, aimX: 1, aimY: 0, flash: 0 }, t); c.restore();
+    }
+  }
   if (placing && cell) {
     const x = (cell.col + 0.5) * TILE, y = (cell.row + 0.5) * TILE, ok = g.canBuild(cell.col, cell.row), aff = g.seeds >= TOWERS[buildType].cost;
     if (ok) {

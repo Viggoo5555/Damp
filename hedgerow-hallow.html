@@ -521,7 +521,7 @@ const TOWERS = {
         { name: 'Sharp beak', cost: 55, desc: 'Triple damage', fx: { dmgMul: 3 } },
         { name: 'Light fingers', cost: 110, desc: '+2 seeds for every kill', fx: { bountyAdd: 2, dmgMul: 1.4 } },
         { name: 'Master thief', cost: 240, desc: 'Fast, +4 seeds per kill', fx: { bountyAdd: 4, rateMul: 0.6, dmgMul: 1.5, rangeAdd: 25 } } ] } ] },
-  dragonfly: { key: 'dragonfly', name: 'Storm Dragonfly', short: 'Dragonfly', cost: 120, kind: 'chain', unlock: 7,
+  dragonfly: { key: 'dragonfly', name: 'Golden Dragonfly', short: 'Dragonfly', cost: 120, kind: 'chain', unlock: 7,
     base: { range: 125, dmg: 20, rate: 1.1, chain: 2, chainRange: 75, roam: 230 },
     blurb: 'Flies around the garden and follows the critters. Zaps one and the lightning jumps to 2 more. Hits flyers too.',
     paths: [
@@ -726,7 +726,7 @@ function createGame(L, onEvent) {
     g.seeds -= T.cost;
     const tiers = [0, 0];
     const t = { id: g.nid++, type, kind: T.kind, c, r, x: (c + 0.5) * TILE, y: (r + 0.5) * TILE, tiers, st: computeStat(type, tiers),
-      cd: 0.3, pcd: 0, invested: T.cost, flash: 0, aimX: 1, aimY: 0, pulse: 0, buff: 1, dbuff: 1, hx: (c + 0.5) * TILE, hy: (r + 0.5) * TILE, roam: type === 'dragonfly' };
+      cd: 0.3, pcd: 0, invested: T.cost, flash: 0, aimX: 1, aimY: 0, pulse: 0, buff: 1, dbuff: 1, hx: (c + 0.5) * TILE, hy: (r + 0.5) * TILE, roam: type === 'dragonfly', ang: 0 };
     g.towers.push(t); emit('place', t);
     return { ok: true, tower: t };
   };
@@ -923,8 +923,17 @@ function createGame(L, onEvent) {
         }
         const vx = gx - t.hx, vy = gy - t.hy, vd = Math.hypot(vx, vy);
         if (vd > st.roam) { gx = t.hx + vx / vd * st.roam; gy = t.hy + vy / vd * st.roam; }
-        const mx = gx - t.x, my = gy - t.y, md = Math.hypot(mx, my), stp = 130 * dt;
-        if (md <= stp) { t.x = gx; t.y = gy; } else { t.x += mx / md * stp; t.y += my / md * stp; }
+        const mx = gx - t.x, my = gy - t.y, md = Math.hypot(mx, my), stp = Math.min(md, (70 + md * 4.5) * dt);
+        if (md > 0.01) { t.x += mx / md * stp; t.y += my / md * stp; }
+        // face the critter it is attacking, otherwise face where it is flying
+        const wa = t.flash > 0 ? Math.atan2(t.aimY, t.aimX) : tgt ? Math.atan2(tgt.y - t.y, tgt.x - t.x) : md > 3 ? Math.atan2(my, mx) : t.ang;
+        let da = wa - t.ang; da = Math.atan2(Math.sin(da), Math.cos(da)); const tr = 14 * dt;
+        t.ang += Math.abs(da) <= tr ? da : Math.sign(da) * tr;
+        if (!t.trail) t.trail = [];
+        for (const q of t.trail) q.a -= dt;
+        while (t.trail.length && t.trail[0].a <= 0) t.trail.shift();
+        t.trailT = (t.trailT || 0) - dt;
+        if (t.trailT <= 0 && md > 4) { t.trail.push({ x: t.x, y: t.y, a: 0.5 }); t.trailT = 0.04; }
       }
       if (st.pulseEvery) {
         t.pcd -= dt;
@@ -1427,23 +1436,46 @@ function drawTowerBody(c, t, time) {
       break;
     }
     case 'dragonfly': {
-      const by = Math.sin(time * 3 + id) * 2.5, fl = 0.55 + 0.45 * Math.abs(Math.sin(time * 18 + id));
+      const by = Math.sin(time * 3 + id) * 2.5, fl = 0.55 + 0.45 * Math.abs(Math.sin(time * 24 + id));
+      const ang = t.ang != null ? t.ang : Math.atan2(t.aimY || 0, t.aimX || 1);
       if (!t.roam) { c.save(); c.strokeStyle = LEAF; c.lineWidth = 3; ln(c, -8, 25, -10, 6); ln(c, 6, 25, 8, 10); c.restore(); setInk(c, 2.4); blob(c, 0, 25, 14, 4, '#a9773f', id); }
       c.translate(0, by - (t.roam ? 6 : 0));
-      c.save(); c.globalAlpha = 0.75; c.lineWidth = 1.6;
-      for (const s of [-1, 1]) {
-        c.beginPath(); c.ellipse(s * 13, -9, 13, 4.5 * fl, -0.35 * s, 0, 7); c.fillStyle = '#dff1f7'; c.fill(); c.stroke();
-        c.beginPath(); c.ellipse(s * 12, -1, 12, 4 * fl, 0.2 * s, 0, 7); c.fillStyle = '#cfe8f2'; c.fill(); c.stroke();
-      }
+      // golden glow and orbiting sparkles
+      c.save(); const gl = c.createRadialGradient(0, 0, 3, 0, 0, 36); gl.addColorStop(0, 'rgba(255,208,70,' + (lvl >= 1 ? 0.7 : 0.5) + ')'); gl.addColorStop(1, 'rgba(255,208,70,0)');
+      c.fillStyle = gl; c.beginPath(); c.arc(0, 0, 36, 0, 7); c.fill();
+      c.fillStyle = '#fff6b8'; for (let i = 0; i < 3; i++) { const a2 = time * 2.2 + i * 2.1; c.globalAlpha = 0.5 + 0.4 * Math.sin(time * 5 + i * 2); c.beginPath(); c.arc(Math.cos(a2) * 24, Math.sin(a2) * 11 - 2, 1.7, 0, 7); c.fill(); }
       c.restore();
-      tri(c, [-2.8, 12, 2.8, 12, 0, 24], '#3b82a6');
-      blob(c, 0, 0, 5.2, 14, '#4fa3c7', id + 1, 0.03);
-      c.lineWidth = 1.4; for (const y of [-6, 0, 6]) ln(c, -4.5, y, 4.5, y); setInk(c, 2.4);
-      blob(c, 0, -16, 7, 6.5, '#3b82a6', id + 2);
-      dot(c, -4.5, -18, 3.3, '#ffe27a'); dot(c, 4.5, -18, 3.3, '#ffe27a'); dot(c, -4.5, -18, 1.4, INK); dot(c, 4.5, -18, 1.4, INK);
-      if (lvl >= 1) { c.fillStyle = HONEY; for (const y of [-6, 0, 6]) c.fillRect(-3, y - 1.2, 6, 2.4); }
-      if (lvl >= 2) tri(c, [0, -31, -4, -22, 4, -22], HONEY);
-      if (t.flash > 0) { c.strokeStyle = '#fff6a0'; c.lineWidth = 2; ln(c, 0, -22, -6, -30); ln(c, 0, -22, 7, -29); }
+      c.rotate(ang);
+      // wings, rear pair then front pair
+      c.save(); c.lineWidth = 1.5;
+      for (const sd of [-1, 1]) {
+        const k = 0.62 + 0.38 * fl;
+        c.globalAlpha = 0.8; c.fillStyle = '#fff1b4';
+        c.beginPath(); c.ellipse(-4, sd * 13 * k, 5.2, 14 * k, sd * 0.5, 0, 7); c.fill(); c.stroke();
+        c.beginPath(); c.ellipse(3.5, sd * 12 * k, 4.6, 13 * k, sd * 0.3, 0, 7); c.fill(); c.stroke();
+        c.globalAlpha = 0.55; c.lineWidth = 1; ln(c, -2, sd * 3, -8, sd * 24 * k); ln(c, 4, sd * 3, 2, sd * 23 * k);
+      }
+      c.restore(); setInk(c, 2.4);
+      // golden abdomen, tapering to the tail
+      for (let i = 0; i < 6; i++) blob(c, -5 - i * 4.4, 0, 3.7, 3.7 - i * 0.38, i % 2 ? '#c98a10' : '#f2b61f', id + 1 + i, 0.03);
+      tri(c, [-31, 0, -26, -2.4, -26, 2.4], '#c98a10');
+      if (lvl >= 1) { c.save(); c.globalAlpha = 0.85; c.fillStyle = '#fff3b0'; for (let i = 0; i < 6; i += 2) c.fillRect(-5 - i * 4.4 - 0.9, -1.6, 1.8, 3.2); c.restore(); }
+      // legs
+      c.save(); c.lineWidth = 1.3; ln(c, 5, 3, 8, 7); ln(c, 3, 3.5, 5, 8); ln(c, 5, -3, 8, -7); ln(c, 3, -3.5, 5, -8); c.restore(); setInk(c, 2.4);
+      // thorax and head, facing the front
+      blob(c, 4, 0, 7.4, 5.8, '#f7c53d', id + 8, 0.03);
+      dot(c, 2.5, -1.8, 2, '#fff1a8');
+      blob(c, 13, 0, 5.4, 5.6, '#e9a812', id + 9, 0.03);
+      dot(c, 14, -4.4, 3.6, '#fff8cc'); dot(c, 14, 4.4, 3.6, '#fff8cc');
+      c.lineWidth = 1.6; c.beginPath(); c.arc(14, -4.4, 3.6, 0, 7); c.stroke(); c.beginPath(); c.arc(14, 4.4, 3.6, 0, 7); c.stroke(); setInk(c, 2.4);
+      dot(c, 15.6, -4.4, 1.7, INK); dot(c, 15.6, 4.4, 1.7, INK); dot(c, 16.1, -4.9, 0.7, '#fff'); dot(c, 16.1, 3.9, 0.7, '#fff');
+      c.save(); c.lineWidth = 1.3; ln(c, 17, -1.5, 22, -3.5); ln(c, 17, 1.5, 22, 3.5); c.restore(); setInk(c, 2.4);
+      if (lvl >= 2) tri(c, [9, -3.2, 10.5, -9, 12.6, -4.6, 14.8, -9.4, 16, -3.2], HONEY);
+      if (t.flash > 0) {
+        c.save(); c.strokeStyle = '#fff6a0'; c.lineWidth = 2.4; c.lineCap = 'round'; c.lineJoin = 'round';
+        c.beginPath(); c.moveTo(21, 0); c.lineTo(27, -4); c.lineTo(25, 1); c.lineTo(32, -2); c.stroke();
+        c.globalAlpha = 0.6; dot(c, 22, 0, 6, '#fff6a0'); c.restore();
+      }
       break;
     }
     case 'owl': {
@@ -1499,8 +1531,9 @@ function drawTower(c, t, time, game) {
     c.save(); c.strokeStyle = LEAF; c.lineWidth = 3; ln(c, -8, 25, -10, 6); ln(c, 6, 25, 8, 10); c.restore(); setInk(c, 2.4);
     blob(c, 0, 25, 14, 4, '#a9773f', t.id); c.restore();
   }
+  if (t.roam && t.trail) for (const q of t.trail) { const a = Math.max(0, q.a); c.save(); c.globalAlpha = Math.min(0.55, a * 1.4); dot(c, q.x, q.y - 6, 1.6 + 4 * a, '#ffd45a'); c.restore(); }
   c.save(); c.translate(t.x, t.y);
-  c.save(); c.globalAlpha = 0.17; c.fillStyle = INK; c.beginPath(); c.ellipse(0, 17, 21, 7, 0, 0, 7); c.fill(); c.restore();
+  c.save(); c.globalAlpha = 0.17; c.fillStyle = INK; c.beginPath(); c.ellipse(0, 17, t.roam ? 15 : 21, t.roam ? 5 : 7, 0, 0, 7); c.fill(); c.restore();
   if (t.pop > 0) { const p = 1 - t.pop / 0.4, sc = 1 + 0.25 * Math.sin(p * Math.PI * 1.6) * (1 - p); c.translate(0, 16); c.scale(2 - sc, sc); c.translate(0, -16); }
   if (top) { c.save(); c.strokeStyle = HONEY; c.lineWidth = 2.5; c.globalAlpha = 0.75; c.setLineDash([4, 6]); c.lineDashOffset = -time * 12; c.beginPath(); c.ellipse(0, 14, 30, 11, 0, 0, 7); c.stroke(); c.restore(); }
   drawTowerBody(c, t, time);

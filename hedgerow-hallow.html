@@ -522,7 +522,7 @@ const TOWERS = {
         { name: 'Light fingers', cost: 110, desc: '+2 seeds for every kill', fx: { bountyAdd: 2, dmgMul: 1.4 } },
         { name: 'Master thief', cost: 240, desc: 'Fast, +4 seeds per kill', fx: { bountyAdd: 4, rateMul: 0.6, dmgMul: 1.5, rangeAdd: 25 } } ] } ] },
   dragonfly: { key: 'dragonfly', name: 'Golden Dragonfly', short: 'Dragonfly', cost: 120, kind: 'chain', unlock: 7,
-    base: { range: 125, dmg: 20, rate: 1.1, chain: 2, chainRange: 75, roam: 230 },
+    base: { range: 120, dmg: 17, rate: 1.25, chain: 2, chainRange: 70, roam: 190 },
     blurb: 'Flies around the garden and follows the critters. Zaps one and the lightning jumps to 2 more. Hits flyers too.',
     paths: [
       { name: 'Long Chain', tiers: [
@@ -923,11 +923,11 @@ function createGame(L, onEvent) {
         }
         const vx = gx - t.hx, vy = gy - t.hy, vd = Math.hypot(vx, vy);
         if (vd > st.roam) { gx = t.hx + vx / vd * st.roam; gy = t.hy + vy / vd * st.roam; }
-        const mx = gx - t.x, my = gy - t.y, md = Math.hypot(mx, my), stp = Math.min(md, (70 + md * 4.5) * dt);
+        const mx = gx - t.x, my = gy - t.y, md = Math.hypot(mx, my), stp = Math.min(md, Math.min(80, 28 + md * 1.4) * dt);
         if (md > 0.01) { t.x += mx / md * stp; t.y += my / md * stp; }
         // face the critter it is attacking, otherwise face where it is flying
         const wa = t.flash > 0 ? Math.atan2(t.aimY, t.aimX) : tgt ? Math.atan2(tgt.y - t.y, tgt.x - t.x) : md > 3 ? Math.atan2(my, mx) : t.ang;
-        let da = wa - t.ang; da = Math.atan2(Math.sin(da), Math.cos(da)); const tr = 14 * dt;
+        let da = wa - t.ang; da = Math.atan2(Math.sin(da), Math.cos(da)); const tr = 7 * dt;
         t.ang += Math.abs(da) <= tr ? da : Math.sign(da) * tr;
         if (!t.trail) t.trail = [];
         for (const q of t.trail) q.a -= dt;

@@ -86,7 +86,7 @@ function makeCard(game) {
     letterTile();
   }
 
-  card.append(tile, el("h3", null, game.title), el("p", null, game.category || "Game"));
+  card.append(tile, el("h3", null, game.title), el("p", "d", game.description || ""), el("p", "cat", game.category || "Game"));
   item.appendChild(card);
 
   if (admin) {
@@ -114,6 +114,8 @@ function showGames() {
   }
 
   grid.replaceChildren(...list.map(makeCard));
+  // With no filter on, the first game gets the large window
+  grid.classList.toggle("has-lead", category === "All" && query === "" && $("sort").value === "default" && list.length >= 3);
   $("heading").textContent = category === "All" ? "All games" : category;
   $("count").textContent = list.length + (list.length === 1 ? " game" : " games");
 
@@ -150,6 +152,15 @@ function showChips() {
 }
 
 search.addEventListener("input", showGames);
+
+// The fog on each tile clears where the pointer is
+document.addEventListener("pointermove", function (event) {
+  const tile = event.target.closest && event.target.closest(".tile");
+  if (!tile) return;
+  const box = tile.getBoundingClientRect();
+  tile.style.setProperty("--x", (event.clientX - box.left) + "px");
+  tile.style.setProperty("--y", (event.clientY - box.top) + "px");
+});
 
 $("random").addEventListener("click", function () {
   if (games.length === 0) return;

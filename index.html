@@ -16,6 +16,7 @@
       <a class="logo" href="./">Damp</a>
       <input id="search" type="search" placeholder="Search games  (press / )" aria-label="Search games" autocomplete="off">
       <button id="random" type="button">Random game</button>
+      <button id="account" type="button" hidden>Log in</button>
       <button id="add-game" type="button" hidden>+ Add game</button>
     </div>
   </header>
@@ -125,6 +126,32 @@
     </form>
   </dialog>
 
+  <dialog id="account-dialog" aria-labelledby="acc-title">
+    <div class="dlg-head">
+      <h2 id="acc-title">Account</h2>
+      <button id="acc-close" type="button">Close</button>
+    </div>
+
+    <form id="acc-in">
+      <p class="note">Log in to keep your game progress on every device.</p>
+      <label>Email<input id="acc-email" type="email" autocomplete="email"></label>
+      <label>Password<input id="acc-pass" type="password" autocomplete="current-password"></label>
+      <button class="button" type="submit">Log in</button>
+      <button id="acc-create" type="button">Create account</button>
+      <button id="acc-google" type="button">Continue with Google</button>
+      <button id="acc-reset" type="button">Forgot password?</button>
+    </form>
+
+    <div id="acc-out" hidden>
+      <p>Logged in as <strong id="acc-who"></strong></p>
+      <p class="note">Your progress saves by itself while you play.</p>
+      <button id="acc-logout" type="button">Log out</button>
+    </div>
+
+    <p id="acc-msg" class="note" aria-live="polite"></p>
+  </dialog>
+
+  <script src="accounts.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

@@ -558,3 +558,55 @@ label input:focus, .inline input:focus { outline: none; border-color: var(--acce
   border: 1px solid var(--line);
   border-radius: 10px;
 }
+
+/* Accounts */
+#account {
+  height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#acc-close,
+#acc-create,
+#acc-google,
+#acc-logout {
+  padding: 8px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+#acc-close:hover,
+#acc-create:hover,
+#acc-google:hover,
+#acc-logout:hover { border-color: var(--accent); }
+
+#acc-in .button,
+#acc-create,
+#acc-google { margin: 12px 8px 0 0; }
+
+#acc-reset {
+  display: block;
+  margin-top: 14px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+#acc-out p { margin-bottom: 4px; }
+#acc-out button { margin-top: 12px; }

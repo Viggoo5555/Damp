@@ -211,9 +211,14 @@ frame.addEventListener("load", stopLoading);
 function openPlayer(game) {
   if (playing !== slug(game)) {
     playing = slug(game);
-    frame.src = encodeURI(game.file);
     startLoading();
     addRecent(game);
+    // Gets the saved progress from the account first, then starts the game
+    const id = playing;
+    const saved = window.dampSaves ? dampSaves.load(game) : Promise.resolve();
+    saved.then(function () {
+      if (playing === id) frame.src = encodeURI(game.file);
+    });
   }
   $("player-title").textContent = game.title;
   $("player-newtab").href = encodeURI(game.file);
@@ -224,6 +229,7 @@ function openPlayer(game) {
 function closePlayer() {
   if (player.hidden) return;
   if (document.fullscreenElement) document.exitFullscreen();
+  if (window.dampSaves) dampSaves.stop();
   frame.src = "about:blank";
   playing = "";
   stopLoading();

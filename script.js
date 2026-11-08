@@ -221,7 +221,10 @@ function openPlayer(game) {
     const id = playing;
     const saved = window.dampSaves ? dampSaves.load(game) : Promise.resolve();
     saved.then(function () {
-      if (playing === id) frame.src = encodeURI(game.file);
+      if (playing !== id) return;
+      frame.src = encodeURI(game.file);
+      // Slow fonts or ads inside a game can hold up the load signal, so never cover it for long
+      setTimeout(function () { if (playing === id) stopLoading(); }, 3000);
     });
   }
   $("player-title").textContent = game.title;

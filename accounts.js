@@ -141,12 +141,13 @@
   }
 
   const problems = {
-    "auth/invalid-email": "That email doesn't look right.",
+    "auth/invalid-email": "That username doesn't look right.",
     "auth/missing-password": "Type a password.",
-    "auth/invalid-credential": "Wrong email or password.",
-    "auth/wrong-password": "Wrong email or password.",
-    "auth/user-not-found": "Wrong email or password.",
-    "auth/email-already-in-use": "That email already has an account. Use Log in.",
+    "auth/invalid-credential": "Wrong username or password.",
+    "auth/wrong-password": "Wrong username or password.",
+    "auth/user-not-found": "Wrong username or password.",
+    "auth/email-already-in-use": "That username is taken. Pick another one, or use Log in.",
+    "auth/operation-not-allowed": "Turn on Email/Password in Firebase under Authentication, Sign-in method.",
     "auth/weak-password": "The password needs at least 6 characters.",
     "auth/too-many-requests": "Too many tries. Wait a bit and try again.",
     "auth/network-request-failed": "No connection. Try again.",
@@ -164,8 +165,23 @@
     }
   }
 
-  function email() { return byId("acc-email").value.trim(); }
+  // Accounts are username only. Firebase wants an email, so the username
+  // is turned into a made-up address that never receives mail.
+  const MAIL = "@damp.example";
+
+  function username() { return byId("acc-user").value.trim().toLowerCase(); }
   function password() { return byId("acc-pass").value; }
+
+  // A full email still works, so accounts made earlier can log in
+  function loginEmail() {
+    const name = username();
+    return name.indexOf("@") > -1 ? name : name + MAIL;
+  }
+
+  function shownName(who) {
+    const mail = who.email || "";
+    return mail.endsWith(MAIL) ? mail.slice(0, -MAIL.length) : (mail || who.displayName || "your account");
+  }
 
   byId("account").addEventListener("click", function () { dialog.showModal(); });
   byId("acc-close").addEventListener("click", function () { dialog.close(); });
@@ -175,23 +191,14 @@
 
   byId("acc-in").addEventListener("submit", function (event) {
     event.preventDefault();
-    run(function () { return fb.a.signInWithEmailAndPassword(fb.auth, email(), password()); });
+    run(function () { return fb.a.signInWithEmailAndPassword(fb.auth, loginEmail(), password()); });
   });
 
   byId("acc-create").addEventListener("click", function () {
-    run(function () { return fb.a.createUserWithEmailAndPassword(fb.auth, email(), password()); });
-  });
-
-  byId("acc-google").addEventListener("click", function () {
-    run(function () { return fb.a.signInWithPopup(fb.auth, new fb.a.GoogleAuthProvider()); });
-  });
-
-  byId("acc-reset").addEventListener("click", function () {
-    if (!email()) return tell("Type your email first.", true);
-    run(async function () {
-      await fb.a.sendPasswordResetEmail(fb.auth, email());
-      tell("Password reset email sent. Check your inbox and spam.");
-    });
+    if (!/^[a-z0-9_.-]{3,20}$/.test(username())) {
+      return tell("Username: 3 to 20 letters, numbers, dots, dashes or underscores.", true);
+    }
+    run(function () { return fb.a.createUserWithEmailAndPassword(fb.auth, loginEmail(), password()); });
   });
 
   byId("acc-logout").addEventListener("click", function () {
@@ -203,7 +210,7 @@
     byId("account").textContent = user ? "Account" : "Log in";
     byId("acc-in").hidden = !!user;
     byId("acc-out").hidden = !user;
-    if (user) byId("acc-who").textContent = user.email || user.displayName || "your account";
+    if (user) byId("acc-who").textContent = shownName(user);
     byId("acc-pass").value = "";
   }
 

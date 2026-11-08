@@ -206,6 +206,69 @@
     .kb-hint { display: block; }
   }
 
+  /* touch friendliness */
+  @media (pointer: coarse) {
+    .ctrls .btn, .stat { min-height: 40px; }
+    #btnAuto, #btnWave { min-height: 56px; }
+    .tcard { min-height: 58px; }
+    .tv-btns .btn { min-height: 40px; }
+    .path { min-height: 62px; }
+    .pw { min-height: 48px; }
+  }
+  #btnFs { width: 38px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+  #btnFs svg { width: 20px; height: 20px; }
+  @media (max-aspect-ratio: 5/4) and (min-height: 760px) {
+    .tray { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+    .tcard canvas { width: 44px; height: 44px; }
+    .tcard .tn { display: block; font-size: 16px; white-space: nowrap; }
+  }
+
+  /* full screen layout: thin top line, big map, scrolling buddy strip */
+  #btnMore, .fsbar { display: none; }
+  .game.fs { position: fixed; inset: 0; z-index: 10; height: auto; gap: 4px; background-color: var(--paper);
+    background-image: radial-gradient(circle at 1px 1px, rgba(38, 50, 77, .14) 1.2px, transparent 0); background-size: 20px 20px;
+    padding: max(6px, env(safe-area-inset-top, 0px)) max(8px, env(safe-area-inset-right, 0px)) max(6px, env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
+  .fs .hud { position: relative; flex-wrap: nowrap; gap: 6px; }
+  .fs .stats { flex-wrap: nowrap; gap: 4px; }
+  .fs .stat { min-height: 34px; padding: 0 6px; font-size: 16px; gap: 2px; }
+  .fs .stat svg { width: 17px; height: 17px; }
+  .fs .waverow { flex: 1; min-width: 0; gap: 4px; }
+  .fs #btnAuto { min-width: 0; min-height: 34px; padding: 0 8px; font-size: 16px; }
+  .fs #btnWave { min-height: 34px; padding: 0 8px; flex-direction: row; gap: 6px; }
+  .fs #btnWave .w1 { font-size: clamp(15px, 4.6vw, 20px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fs #btnWave .w2 { display: none; }
+  .fs #btnMore { display: inline-flex; align-items: center; justify-content: center; width: 38px; min-height: 34px; padding: 0; box-shadow: 2px 2px 0 var(--ink); }
+  .fs .ctrls { display: none; position: absolute; right: 0; top: calc(100% + 6px); z-index: 6; flex-direction: column; align-items: stretch; gap: 6px; padding: 8px; background: var(--paper-hi); border: 2.5px solid var(--ink); border-radius: var(--wob); box-shadow: 3px 3px 0 var(--ink); }
+  .fs.menuopen .ctrls { display: flex; }
+  .fs .ctrls .btn { min-height: 40px; width: auto; min-width: 150px; justify-content: flex-start; padding: 0 14px; font-size: 18px; text-align: left; }
+  .fs .ctrls #btnAuto { min-height: 40px; padding: 0 14px; }
+  .fs .main { flex: 1 1 0; min-height: 0; flex-direction: column; justify-content: flex-start; gap: 0; }
+  .fs .stage { flex: 1 1 0; }
+  .fs .dock { display: none; }
+  .fs .fsbar { display: block; flex: none; min-width: 0; }
+  .fs .stage .hint { bottom: auto; top: 8px; }
+  .fs .stage .toast { top: 46px; }
+  .fs .stage .powers { position: absolute; left: 4px; bottom: 4px; z-index: 2; display: flex; gap: 5px; }
+  .fs .stage .pw { min-width: 62px; min-height: 42px; opacity: .92; background: var(--paper-hi); }
+  .fs .stage .pw .pn { font-size: 17px; }
+  .fs .stage .pw.off { opacity: .6; }
+  .fs .stage .pw.on { opacity: 1; }
+  .fs .tray { display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 8px; scrollbar-width: none; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent); }
+  .fs .tray::-webkit-scrollbar { display: none; }
+  .fs .tcard { flex: 0 0 66px; min-height: 66px; padding: 3px 2px 2px; }
+  .fs .tcard canvas { width: 40px; height: 40px; }
+  .fs .tcard .tn { display: block; font-size: 15px; white-space: nowrap; }
+  .fs .tcard .kbd { display: none; }
+  @media (max-height: 460px) {
+    .fs .tray { padding-bottom: 4px; }
+    .fs .tcard { flex-basis: 54px; min-height: 48px; }
+    .fs .tcard canvas { width: 30px; height: 30px; }
+    .fs .tcard .tn { display: none; }
+    .fs .stage .pw { min-height: 34px; min-width: 54px; }
+    .fs .stage .pw .pt { display: none; }
+  }
+
   /* menu v2 */
   .cta { display: flex; flex-direction: column; gap: 10px; }
   .cta .big { width: 100%; min-height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; font-size: 38px; padding: 4px 22px; }
@@ -234,7 +297,15 @@
 
   .dock .hint { position: static; transform: none; max-width: none; pointer-events: none; padding: 4px 14px; font-size: 18px; }
   /* floating upgrade panel next to the tapped buddy */
-  .uppanel { position: absolute; z-index: 3; width: min(330px, calc(100% - 12px)); box-shadow: 4px 4px 0 var(--ink); }
+  .uppanel { position: absolute; z-index: 3; width: min(330px, calc(100% - 12px)); box-shadow: 4px 4px 0 var(--ink); overflow-y: auto; overscroll-behavior: contain; }
+  @media (max-width: 480px) {
+    .uppanel { width: calc(100vw - 16px); max-width: 340px; }
+    .uppanel .stats-line { font-size: 13px; }
+    .uppanel .path .pn { font-size: 16px; }
+    .uppanel .path .un { font-size: 14px; }
+    .uppanel .path .ud { font-size: 12.5px; }
+    .uppanel .path { padding: 3px 7px 4px; }
+  }
   .uppanel .stats-line { display: block; margin: 0; font-size: 14px; line-height: 1.1; }
   .uppanel .path .pn { font-size: 17px; }
   .uppanel .path .un { font-size: 15px; }
@@ -340,7 +411,9 @@
           <b id="hWave">0</b>
         </div>
       </div>
-      <div class="ctrls">
+      <button class="btn" id="btnMore" type="button" aria-label="More controls" aria-expanded="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="5" cy="12" r="2.2" fill="#26324d"/><circle cx="12" cy="12" r="2.2" fill="#26324d"/><circle cx="19" cy="12" r="2.2" fill="#26324d"/></svg></button>
+      <div class="ctrls" id="ctrls">
+        <button class="btn" id="btnFs" type="button" aria-label="Full screen" title="Full screen"></button>
         <button class="btn" id="btnHelp" type="button" title="How to play">?</button>
         <button class="btn" id="btnSpeed" type="button" title="Game speed (F)">1x</button>
         <button class="btn" id="btnPause" type="button" title="Pause (P)">Pause</button>
@@ -372,6 +445,7 @@
         <p class="kb-hint">Arrows move, 1-0 pick, Enter plants, U or I upgrade, X sells, N waves, Q E R powers</p>
       </aside>
     </div>
+    <div class="fsbar" id="fsBar"></div>
   </section>
 </main>
 
@@ -394,6 +468,7 @@
       <li>A green arrow over a buddy means you can afford an upgrade.</li>
       <li>Press Send wave. Critters follow the arrows to the veggie patch.</li>
       <li>Rain, Thunder and Sunshine help in a tight spot.</li>
+      <li>Tap the corner button for full screen: a bigger map with a buddy strip you can scroll.</li>
     </ol>
     <div class="acts"><button class="btn primary" id="hClose" type="button">Got it</button></div>
   </div>
@@ -2070,6 +2145,7 @@ function setBuildType(type) {
   if (!game || mode !== 'play') return;
   if (!isUnlocked(type)) { toast('Earn ' + TOWERS[type].unlock + ' stars to unlock ' + TOWERS[type].name); Sound.play('error'); return; }
   sel = null; pending = null; moving = null; buildType = type;
+  if (gameScreen.classList.contains('fs')) { const c = trayEl.querySelector('[data-type="' + type + '"]'); if (c && c.scrollIntoView) c.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' }); }
 }
 function statLine(type, st) {
   if (type === 'firefly') {
@@ -2146,11 +2222,15 @@ function placePanel(t) {
   const cell = cv.clientWidth / COLS;
   const ax = t.roam ? t.hx : t.x, ay = t.roam ? t.hy : t.y;
   const px = frame.offsetLeft + frame.clientLeft + ax / W * cv.clientWidth, py = frame.offsetTop + frame.clientTop + ay / H * cv.clientHeight;
-  const pw = towerView.offsetWidth, ph = towerView.offsetHeight, sw = stage.clientWidth, sh = stage.clientHeight;
-  const left = Math.max(6, Math.min(sw - pw - 6, px - pw / 2));
+  const sr = stage.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight, m = 6;
+  towerView.style.maxHeight = Math.max(120, vh - 2 * m) + 'px';
+  const pw = towerView.offsetWidth, ph = towerView.offsetHeight;
+  // the box may reach past the map, but never past the screen
+  const minL = m - sr.left, maxL = vw - sr.left - pw - m, minT = m - sr.top, maxT = vh - sr.top - ph - m;
+  const left = Math.max(minL, Math.min(maxL, px - pw / 2));
   let top = py - cell * 0.6 - ph - 4;
-  if (top < 6) top = py + cell * 0.6 + 4;
-  top = Math.max(6, Math.min(sh - ph - 6, top));
+  if (top < minT) { const below = py + cell * 0.6 + 4; top = below <= maxT ? below : Math.max(minT, Math.min(maxT, top)); }
+  top = Math.max(minT, Math.min(maxT, top));
   towerView.style.left = left + 'px'; towerView.style.top = top + 'px';
 }
 function syncUI() {
@@ -2325,7 +2405,7 @@ function onGameEvent(k, d) {
 /* ---------- start / end ---------- */
 function fit() {
   if (gameScreen.hidden || !game) return;
-  const land = window.matchMedia('(min-aspect-ratio: 5/4)').matches, mainEl = document.querySelector('.main');
+  const land = gameScreen.classList.contains('fs') || window.matchMedia('(min-aspect-ratio: 5/4)').matches, mainEl = document.querySelector('.main');
   if (land) { stage.style.flex = ''; stage.style.height = ''; }
   const aw = stage.clientWidth, ah = land ? stage.clientHeight : mainEl.clientHeight - $('dock').offsetHeight - 8;
   if (!aw || ah < 60) return;
@@ -2339,6 +2419,32 @@ function fit() {
   cv.width = Math.round(cw * dpr); cv.height = Math.round(cw * dpr * 0.7);
   bg = renderBg(game, cv.width, cv.height);
 }
+const FS_ICON_ON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="#26324d" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+let fsApi = false;
+function setFs(on) {
+  on = !!on; if (on === gameScreen.classList.contains('fs')) return;
+  const dock = $('dock'), wr = dock.querySelector('.waverow'), pw = $('powers'), tray = $('tray'), bar = $('fsBar'), hud = gameScreen.querySelector('.hud');
+  if (on) {
+    gameScreen.classList.add('fs');
+    hud.insertBefore(wr, $('btnMore')); $('ctrls').insertBefore($('btnAuto'), $('btnHelp')); stage.appendChild(pw); bar.appendChild(tray); stage.appendChild($('hint'));
+    $('btnFs').innerHTML = 'Exit full screen'; $('btnFs').style.width = 'auto'; $('btnFs').setAttribute('aria-label', 'Exit full screen');
+    try { const r = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen({ navigationUI: 'hide' }); if (r && r.then) r.then(() => { fsApi = true; }).catch(() => {}); } catch (e) {}
+  } else {
+    gameScreen.classList.remove('fs', 'menuopen'); $('btnMore').setAttribute('aria-expanded', 'false');
+    wr.insertBefore($('btnAuto'), $('btnWave')); dock.insertBefore(wr, dock.querySelector('.kb-hint')); dock.insertBefore(pw, wr); $('buyView').insertBefore(tray, $('info')); dock.insertBefore($('hint'), dock.firstChild);
+    $('btnFs').innerHTML = FS_ICON_ON; $('btnFs').style.width = ''; $('btnFs').setAttribute('aria-label', 'Full screen');
+    try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {}); } catch (e) {}
+    fsApi = false;
+  }
+  tvKey = ''; infoKey = '';
+  requestAnimationFrame(() => { fit(); requestAnimationFrame(fit); });
+}
+$('btnFs').innerHTML = FS_ICON_ON;
+$('btnFs').addEventListener('click', () => { Sound.play('click'); setFs(!gameScreen.classList.contains('fs')); gameScreen.classList.remove('menuopen'); $('btnMore').setAttribute('aria-expanded', 'false'); });
+$('btnMore').addEventListener('click', e => { e.stopPropagation(); const o = gameScreen.classList.toggle('menuopen'); $('btnMore').setAttribute('aria-expanded', String(o)); Sound.play('click'); });
+$('ctrls').addEventListener('click', ev => { if (!ev.target.closest('#btnFs')) { gameScreen.classList.remove('menuopen'); $('btnMore').setAttribute('aria-expanded', 'false'); } });
+document.addEventListener('pointerdown', e => { if (gameScreen.classList.contains('menuopen') && !e.target.closest('#ctrls, #btnMore')) { gameScreen.classList.remove('menuopen'); $('btnMore').setAttribute('aria-expanded', 'false'); } });
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && fsApi) { fsApi = false; setFs(false); } });
 function startLevel(i) {
   Sound.init();
   levelIdx = i; game = createGame(LEVELS[i], onGameEvent);
@@ -2398,6 +2504,7 @@ function showEnd(won, newBest) {
   $('endModal').hidden = false; (first || again).focus();
 }
 function toMenu() {
+  setFs(false);
   recordEndless();
   mode = 'menu'; game = null; $('endModal').hidden = true; $('pauseModal').hidden = true; $('helpModal').hidden = true;
   gameScreen.hidden = true; menuScreen.hidden = false; Sound.setIntense(false);

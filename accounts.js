@@ -39,7 +39,7 @@
   // Games never wait long for Firebase
   let markReady;
   const ready = new Promise(function (resolve) { markReady = resolve; });
-  setTimeout(markReady, 4000);
+  setTimeout(markReady, 2500);
 
   function gameName(game) {
     return game.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -70,7 +70,11 @@
 
     const name = gameName(game);
     try {
-      const snap = await fb.f.getDoc(docRef());
+      // If the account is slow to answer, start the game anyway
+      const snap = await Promise.race([
+        fb.f.getDoc(docRef()),
+        new Promise(function (resolve, reject) { setTimeout(function () { reject(new Error("slow")); }, 3000); })
+      ]);
       const all = snap.exists() ? snap.data().games : null;
       const cloud = all ? all[name] : null;
       const stamp = Number(localStorage.getItem("damp-sync-" + name)) || 0;

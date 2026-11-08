@@ -65,6 +65,8 @@
     stop();
     if (!SAVE_KEYS[game.file]) return;
     current = game;
+    // Known to be logged out on this device: start at once instead of waiting for Firebase
+    if (!user && localStorage.getItem("damp-in") === "0") return;
     await ready;
     if (!user || current !== game) return;
 
@@ -219,6 +221,7 @@
       fb = { a: parts[1], f: parts[2], auth: parts[1].getAuth(app), db: parts[2].getFirestore(app) };
       fb.a.onAuthStateChanged(fb.auth, function (who) {
         user = who;
+        try { localStorage.setItem("damp-in", who ? "1" : "0"); } catch (error) { /* storage off */ }
         if (!user) { clearInterval(autosave); current = null; synced = null; }
         showAccount();
         markReady();

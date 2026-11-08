@@ -133,7 +133,9 @@ function showChips() {
   chips.hidden = names.length < 3;
 
   names.forEach(function (name) {
-    const chip = el("button", "chip", name);
+    const chip = el("button", "chip");
+    const total = name === "All" ? games.length : games.filter(function (g) { return g.category === name; }).length;
+    chip.append(el("span", null, name), el("span", "n", String(total)));
     chip.type = "button";
     chip.setAttribute("aria-pressed", name === category);
     chip.addEventListener("click", function () {

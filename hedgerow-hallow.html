@@ -72,7 +72,7 @@
   .mtools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .mtools .btn { min-height: 34px; padding: 0 12px; box-shadow: 2px 2px 0 var(--ink); }
   .totals { display: inline-flex; align-items: center; gap: 6px; font-size: 19px; padding: 0 4px; }
-  .scene { display: block; width: 100%; max-width: 100%; aspect-ratio: 640 / 300; border: 3px solid var(--ink); border-radius: var(--wob); box-shadow: 4px 4px 0 var(--ink); background: #9fd3ec; }
+  .scene { touch-action: manipulation; -webkit-tap-highlight-color: transparent; display: block; width: 100%; max-width: 100%; aspect-ratio: 640 / 300; border: 3px solid var(--ink); border-radius: var(--wob); box-shadow: 4px 4px 0 var(--ink); background: #9fd3ec; }
   .cta { display: flex; flex-wrap: wrap; gap: 10px; }
   .cta .btn { font-family: var(--f-display); font-size: 27px; line-height: 1; min-height: 52px; padding: 0 22px; max-width: 100%; }
   .sec-h { font-family: var(--f-display); font-weight: 400; font-size: 30px; margin: 6px 0 -4px; line-height: 1; }
@@ -131,11 +131,11 @@
   .dock > * { flex: none; }
   .shop { min-height: 150px; display: flex; flex-direction: column; gap: 6px; }
   #buyView { display: flex; flex-direction: column; gap: 6px; }
-  .tray { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+  .tray { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
   .tcard { position: relative; display: flex; flex-direction: column; align-items: center; padding: 3px 2px; min-width: 0; min-height: 0; box-shadow: 2px 2px 0 var(--ink); }
   .tcard canvas { width: 38px; height: 38px; max-width: 100%; }
   .tcard .tn { display: none; font-size: 18px; line-height: 1.05; }
-  .tcard .tc { display: inline-flex; align-items: center; gap: 3px; font-size: 16px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .tcard .tc { display: inline-flex; align-items: center; gap: 2px; font-size: 15px; line-height: 1.1; font-variant-numeric: tabular-nums; }
   .tcard .kbd { display: none; position: absolute; top: 3px; left: 8px; font-size: 14px; color: var(--ink-soft); }
   .tcard[aria-pressed="true"] { background: var(--honey); }
   .tcard.poor { opacity: .6; }
@@ -194,10 +194,10 @@
     .main { flex-direction: row; justify-content: flex-start; }
     .dock { width: clamp(230px, 32vw, 310px); overflow-y: auto; scrollbar-width: thin; padding: 0 6px 6px 0; }
     .shop { min-height: 0; }
-    .tray { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .tray { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .tcard { padding: 4px 2px; }
     .tcard canvas { width: 46px; height: 46px; }
-    .tcard .tn { display: block; }
+    .tcard .tn { display: block; font-size: 15px; white-space: nowrap; }
     .stats-line { display: block; }
     .info .bl { -webkit-line-clamp: 3; }
   }
@@ -288,7 +288,7 @@
         <button class="btn toggle" id="mSfx" type="button" aria-pressed="true">Sfx</button>
       </div>
     </div>
-    <canvas class="scene" id="hero" role="img" aria-label="A sunny meadow where woodland buddies guard a garden path while critters crawl along it"></canvas>
+    <canvas class="scene" id="hero" role="img" aria-label="A sunny meadow where woodland buddies guard a garden path while critters crawl along it. Tap a buddy to make it shoot, tap a critter to startle it."></canvas>
     <div class="cta">
       <button class="btn primary big" id="btnPlay" type="button">Play</button>
       <div class="modes">
@@ -317,7 +317,7 @@
         <p>Pick a buddy, then tap a patch of grass to plant it. Tap a planted buddy and a box pops up right over it with two upgrade paths.</p>
         <p>Press Send wave when you are ready, or switch on Auto. Rain, Thunder and Sunshine help in a tight spot.</p>
         <p>Finish gardens to earn stars. Stars unlock new buddies. The Daily garden changes every day and keeps a streak. The Endless meadow never ends.</p>
-        <p class="kb-only">Keyboard: arrows or WASD move the cursor, 1 to 9 pick a buddy, Enter plants, U and I buy upgrades, X sells, N sends the wave, Q E R use powers, T toggles Auto, P pauses, F changes speed.</p>
+        <p class="kb-only">Keyboard: arrows or WASD move the cursor, 1 to 9, 0, - and = pick a buddy, Enter plants, U and I buy upgrades, X sells, N sends the wave, Q E R use powers, T toggles Auto, P pauses, F changes speed.</p>
       </div>
     </div>
     <p class="foot"><span>Sound starts after your first tap. Progress is saved in this browser.</span><button class="btn" id="btnErase" type="button">Erase progress</button></p>
@@ -369,7 +369,7 @@
           <button class="btn toggle" id="btnAuto" type="button" aria-pressed="false" title="Send waves by itself (T)">Auto</button>
           <button class="btn primary" id="btnWave" type="button"><span class="w1">Send wave 1</span><span class="w2"></span></button>
         </div>
-        <p class="kb-hint">Arrows move, 1-9 pick, Enter plants, U or I upgrade, X sells, N waves, Q E R powers</p>
+        <p class="kb-hint">Arrows move, 1-0 pick, Enter plants, U or I upgrade, X sells, N waves, Q E R powers</p>
       </aside>
     </div>
   </section>
@@ -533,13 +533,50 @@ const TOWERS = {
         { name: 'Static', cost: 65, desc: 'Sometimes stuns critters', fx: { stunChance: 0.25, stunTime: 0.5 } },
         { name: 'Overcharge', cost: 130, desc: '+80% damage, more stuns', fx: { dmgMul: 1.8, stunChance: 0.3, stunTime: 0.7 } },
         { name: 'Tempest', cost: 310, desc: 'Fast, strong, stuns often', fx: { dmgMul: 2, rateMul: 0.7, stunChance: 0.45, stunTime: 0.9 } } ] } ] }
+,
+  fox: { key: 'fox', name: 'Sly Fox', short: 'Fox', cost: 130, kind: 'shot', unlock: 5,
+    base: { range: 300, dmg: 44, rate: 2.2, pierce: true },
+    blurb: 'Sharp arrows from far away that ignore armor. Aims at the critter closest to the veggies. Upgrades can mark critters so everyone hurts them more.',
+    paths: [
+      { name: 'Deadeye', tiers: [
+        { name: 'Keen eye', cost: 70, desc: 'More reach, +40% damage', fx: { rangeAdd: 50, dmgMul: 1.4 } },
+        { name: 'Steady aim', cost: 140, desc: '+50% damage, sometimes triple', fx: { dmgMul: 1.5, crit: 0.2 } },
+        { name: 'Legend shot', cost: 320, desc: 'Huge reach, big crits', fx: { dmgMul: 1.6, crit: 0.35, rangeAdd: 60 } } ] },
+      { name: 'Tracker', tiers: [
+        { name: "Hunter's mark", cost: 80, desc: 'Marked critters take 20% more from everyone', fx: { mark: 0.2, markTime: 4 } },
+        { name: 'Wide mark', cost: 150, desc: 'Marks for 5s, +30%, shoots faster', fx: { mark: 0.3, markTime: 5, rateMul: 0.85 } },
+        { name: 'Apex hunter', cost: 330, desc: 'Marks +45%, finishes weak critters', fx: { mark: 0.45, markTime: 6, rateMul: 0.75, exec: 0.2 } } ] } ] },
+  beaver: { key: 'beaver', name: 'Beaver Engineer', short: 'Beaver', cost: 120, kind: 'flood', unlock: 8,
+    base: { range: 105, dmg: 0, rate: 0, pushEvery: 8, pushDist: 90, pushSlow: 0.35 },
+    blurb: 'Does not shoot. Opens its dam now and then and a flood shoves every ground critter back along the path and slows it. Great at buying time.',
+    paths: [
+      { name: 'Flood Gates', tiers: [
+        { name: 'Wider flood', cost: 80, desc: 'More reach, pushes farther', fx: { rangeAdd: 20, pushDist: 130 } },
+        { name: 'Big dam', cost: 150, desc: 'Pushes much farther, slows more', fx: { rangeAdd: 15, pushDist: 180, pushSlow: 0.5 } },
+        { name: 'Great flood', cost: 330, desc: 'Washes critters far back and hurts them', fx: { rangeAdd: 20, pushDist: 250, pushSlow: 0.6, pushDmg: 30 } } ] },
+      { name: 'Quick Release', tiers: [
+        { name: 'Quick sluice', cost: 70, desc: 'Floods every 6 seconds', fx: { pushEvery: 6 } },
+        { name: 'Fast sluice', cost: 140, desc: 'Every 4.5 seconds, some damage', fx: { pushEvery: 4.5, pushDmg: 12 } },
+        { name: 'Torrent', cost: 310, desc: 'Every 3 seconds, more damage', fx: { pushEvery: 3, pushDmg: 25 } } ] } ] },
+  hen: { key: 'hen', name: 'Mother Hen', short: 'Hen', cost: 110, kind: 'shot', unlock: 10,
+    base: { range: 85, dmg: 7, rate: 1.0, healEvery: 3, healAmt: 1 },
+    blurb: 'Lays a healing egg and brings back a lost veggie every 3 waves. Pecks critters that get close. Place her near the patch.',
+    paths: [
+      { name: 'Warm Nest', tiers: [
+        { name: 'Cozy nest', cost: 70, desc: 'Brings back a veggie every 2 waves', fx: { healEvery: 2 } },
+        { name: 'Golden egg', cost: 140, desc: 'Brings back 2 veggies every 2 waves', fx: { healEvery: 2, healAmt: 2 } },
+        { name: 'Phoenix hen', cost: 340, desc: 'Brings back 2 veggies every wave', fx: { healEvery: 1, healAmt: 2 } } ] },
+      { name: 'Fierce Rooster', tiers: [
+        { name: 'Sharp spurs', cost: 60, desc: 'Triple damage', fx: { dmgMul: 3 } },
+        { name: 'Morning crow', cost: 120, desc: 'Buddies nearby shoot 20% faster', fx: { aura: 0.2, rangeAdd: 25 } },
+        { name: 'Rooster king', cost: 300, desc: 'Big boost for buddies nearby', fx: { aura: 0.3, dmgAura: 0.2, dmgMul: 1.5, rangeAdd: 25 } } ] } ] }
 };
-const TOWER_ORDER = ['squirrel', 'hive', 'bramble', 'frog', 'firefly', 'owl', 'mole', 'magpie', 'dragonfly'];
+const TOWER_ORDER = ['squirrel', 'hive', 'bramble', 'frog', 'firefly', 'owl', 'mole', 'magpie', 'dragonfly', 'fox', 'beaver', 'hen'];
 
 function computeStat(type, tiers) {
   const T = TOWERS[type];
   const s = Object.assign({ shots: 1, slow: 0, slowTime: 0, splash: 0, stunHit: 0, poisonDps: 0, poisonTime: 0, crit: 0, pierce: false,
-    stunChance: 0, stunTime: 0, exec: 0, aura: 0, dmgAura: 0, pulseEvery: 0, pulseStun: 0, pulseDmg: 0, splashDmg: 0, income: 0, chain: 0, chainRange: 0, bountyAdd: 0, roam: 0 }, T.base);
+    stunChance: 0, stunTime: 0, exec: 0, aura: 0, dmgAura: 0, pulseEvery: 0, pulseStun: 0, pulseDmg: 0, splashDmg: 0, income: 0, chain: 0, chainRange: 0, bountyAdd: 0, roam: 0, mark: 0, markTime: 0, pushEvery: 0, pushDist: 0, pushSlow: 0, pushDmg: 0, healEvery: 0, healAmt: 0 }, T.base);
   for (let p = 0; p < 2; p++) {
     for (let i = 0; i < tiers[p]; i++) {
       const f = T.paths[p].tiers[i].fx;
@@ -551,7 +588,7 @@ function computeStat(type, tiers) {
         else if (k === 'shotsAdd') s.shots += v;
         else if (k === 'slowTimeAdd') s.slowTime += v;
         else if (k === 'splashAdd') s.splash += v;
-        else if (k === 'pulseEvery') s.pulseEvery = s.pulseEvery ? Math.min(s.pulseEvery, v) : v;
+        else if (k === 'pulseEvery' || k === 'pushEvery' || k === 'healEvery') s[k] = s[k] ? Math.min(s[k], v) : v;
         else if (typeof v === 'boolean') s[k] = s[k] || v;
         else s[k] = Math.max(s[k] || 0, v);
       }
@@ -808,6 +845,7 @@ function createGame(L, onEvent) {
   function damage(e, amount, o) {
     if (e.gone) return;
     o = o || {};
+    if (e.markT > 0) amount *= e.markMul;
     if (!o.pierce && e.armor) amount = Math.max(amount - e.armor, amount * 0.3);
     e.hp -= amount;
     if (!o.quiet) { e.flash = 0.12; emit('hit', e); }
@@ -816,6 +854,7 @@ function createGame(L, onEvent) {
   function stun(e, s) { e.stunT = Math.max(e.stunT, s * (e.boss ? 0.4 : 1)); }
   function effects(e, st) {
     if (st.slow) { e.slowT = Math.max(e.slowT, st.slowTime); e.slowAmt = Math.max(e.slowAmt, st.slow); }
+    if (st.mark) { e.markT = Math.max(e.markT || 0, st.markTime); e.markMul = Math.max(e.markMul || 1, 1 + st.mark); }
     if (st.stunHit) stun(e, st.stunHit);
     if (st.stunChance && Math.random() < st.stunChance) stun(e, st.stunTime);
     if (st.poisonDps) { e.poisonT = Math.max(e.poisonT, st.poisonTime); e.poisonDps = Math.max(e.poisonDps, st.poisonDps); }
@@ -852,6 +891,7 @@ function createGame(L, onEvent) {
     for (const e of g.enemies) {
       if (e.gone) continue;
       e.flash = Math.max(0, e.flash - dt);
+      if (e.markT > 0) e.markT -= dt;
       if (e.poisonT > 0) {
         e.poisonT -= dt;
         damage(e, e.poisonDps * dt, { pierce: true, quiet: true });
@@ -947,6 +987,22 @@ function createGame(L, onEvent) {
           if (any) { t.pulse = 0.35; t.pcd = st.pulseEvery; emit('pulse', t); }
         }
       }
+      t.pushFx = Math.max(0, (t.pushFx || 0) - dt);
+      if (st.pushEvery) {
+        t.pshcd = (t.pshcd === undefined ? st.pushEvery * 0.4 : t.pshcd) - dt * t.buff * sun;
+        if (t.pshcd <= 0) {
+          let any = false;
+          for (const e of g.enemies) {
+            if (e.gone || e.fly || Math.hypot(e.x - t.x, e.y - t.y) > st.range + e.r * 0.5) continue;
+            any = true;
+            const room = Math.max(0, 700 - (e.pushed || 0)), push = Math.min(e.dist, st.pushDist * (e.boss ? 0.4 : 1), room);
+            e.dist -= push; e.pushed = (e.pushed || 0) + push;
+            e.slowT = Math.max(e.slowT, 1.8); e.slowAmt = Math.max(e.slowAmt, st.pushSlow);
+            if (st.pushDmg) damage(e, st.pushDmg, { pierce: true });
+          }
+          if (any) { t.pushFx = 0.6; t.pshcd = st.pushEvery; emit('flood', { x: t.x, y: t.y, r: st.range }); }
+        }
+      }
       if (!st.rate) continue;
       t.cd -= dt * t.buff * sun;
       if (t.cd > 0) continue;
@@ -991,7 +1047,7 @@ function createGame(L, onEvent) {
             emit('tongue', { x1: t.x, y1: t.y - 8, x2: e.x, y2: e.y });
             hit(e, st, dmg);
           } else {
-            const sp = { owl: 540, hive: 270, mole: 230, magpie: 380 }[t.type] || 330;
+            const sp = { owl: 540, hive: 270, mole: 230, magpie: 380, fox: 720, hen: 300 }[t.type] || 330;
             g.shots.push({ x: t.x, y: t.y - 6, tx: e.x, ty: e.y, target: e, kind: t.type, dmg, st, speed: sp, d0: Math.hypot(e.x - t.x, e.y - t.y + 6) || 1, rem: 1 });
           }
         }
@@ -1030,6 +1086,12 @@ function createGame(L, onEvent) {
     if (g.state === 'wave' && !g.queue.length && !g.enemies.length) {
       let bonus = 20 + 4 * g.wave;
       for (const t of g.towers) if (t.st.income) { bonus += t.st.income; emit('income', { x: t.x, y: t.y, n: t.st.income }); }
+      for (const t of g.towers) if (t.st.healEvery) {
+        t.eggs = Math.min(t.st.healEvery, (t.eggs || 0) + 1);
+        if (t.eggs >= t.st.healEvery && g.hearts < L.hearts) {
+          const n = Math.min(t.st.healAmt, L.hearts - g.hearts); g.hearts += n; t.eggs = 0; emit('eggheal', { x: t.x, y: t.y, n });
+        }
+      }
       g.seeds += bonus; g.cleared = g.wave; g.score += 50 * g.wave; g.autoT = g.autoDelay;
       emit('waveClear', { wave: g.wave, bonus });
       if (g.wave >= L.waves) {
@@ -1142,6 +1204,11 @@ const Sound = (() => {
     'fire-dragonfly': n => { hiss(n, 0.12, 0.1, 4000); tone(500, n, 0.1, { type: 'square', gain: 0.05, to: 1400 }); },
     dig: n => { hiss(n, 0.3, 0.12, 350); tone(90, n, 0.3, { type: 'sawtooth', gain: 0.12, to: 55 }); },
     surface: n => { tone(140, n, 0.12, { type: 'triangle', gain: 0.3, to: 400 }); hiss(n, 0.1, 0.12, 700); },
+    'fire-fox': n => { tone(1100, n, 0.1, { type: 'square', gain: 0.07, to: 260 }); hiss(n, 0.08, 0.07, 3500); },
+    'fire-hen': n => { tone(760, n, 0.05, { gain: 0.1, to: 980 }); tone(980, n + 0.05, 0.06, { gain: 0.08, to: 700 }); },
+    flood: n => { hiss(n, 0.5, 0.2, 900); tone(190, n, 0.45, { type: 'sine', gain: 0.18, to: 90 }); },
+    'fire-beaver': n => { hiss(n, 0.4, 0.15, 800); tone(190, n, 0.35, { type: 'sine', gain: 0.15, to: 90 }); },
+    egg: n => { tone(660, n, 0.1, { type: 'triangle', gain: 0.16 }); tone(880, n + 0.1, 0.1, { type: 'triangle', gain: 0.16 }); tone(1320, n + 0.2, 0.2, { type: 'triangle', gain: 0.16 }); },
     boom: n => { hiss(n, 0.25, 0.18, 300); tone(80, n, 0.25, { type: 'sawtooth', gain: 0.16, to: 40 }); },
     coin: n => { tone(1320, n, 0.08, { gain: 0.1 }); tone(1760, n + 0.07, 0.12, { gain: 0.1 }); },
     'fire-frog': n => tone(240, n, 0.09, { type: 'triangle', gain: 0.18, to: 560 }),
@@ -1152,7 +1219,7 @@ const Sound = (() => {
     thunder: n => { hiss(n, 0.6, 0.3, 200); tone(90, n, 0.6, { type: 'sawtooth', gain: 0.2, to: 40 }); },
     sun: n => { [523, 659, 784, 988].forEach((f, i) => tone(f, n + i * 0.09, 0.3, { type: 'triangle', gain: 0.16 })); }
   };
-  const gap = { dig: 0.2, surface: 0.2, 'fire-mole': 0.08, 'fire-magpie': 0.06, 'fire-dragonfly': 0.08, boom: 0.06, coin: 0.12, heal: 0.3, pulse: 0.1, 'fire-frog': 0.05, hit: 0.06, 'fire-squirrel': 0.05, 'fire-hive': 0.06, 'fire-bramble': 0.08, pop: 0.05 };
+  const gap = { flood: 0.3, egg: 0.3, 'fire-fox': 0.08, 'fire-hen': 0.06, dig: 0.2, surface: 0.2, 'fire-mole': 0.08, 'fire-magpie': 0.06, 'fire-dragonfly': 0.08, boom: 0.06, coin: 0.12, heal: 0.3, pulse: 0.1, 'fire-frog': 0.05, hit: 0.06, 'fire-squirrel': 0.05, 'fire-hive': 0.06, 'fire-bramble': 0.08, pop: 0.05 };
   function play(name) {
     if (!ctx || !S.sfx || ctx.state !== 'running') return;
     const now = ctx.currentTime;
@@ -1478,6 +1545,61 @@ function drawTowerBody(c, t, time) {
       }
       break;
     }
+    case 'fox': {
+      blob(c, 0, 16, 23, 8, '#8a5d33', id, 0.06);
+      c.scale(fx, 1);
+      c.save(); c.translate(-15, 5); c.rotate(-0.55); blob(c, 0, 0, 8, 14, '#e8833a', id + 1, 0.05); blob(c, 0, -11, 6, 5, '#fff6e6', id + 2, 0.03); c.restore();
+      blob(c, 0, 5, 12, 13, '#e8833a', id + 3, 0.03);
+      blob(c, 4, 8, 6, 9, '#fff6e6', id + 4, 0.03);
+      blob(c, 5, -10, 10, 8.5, '#e8833a', id + 5);
+      tri(c, [9, -11, 20, -6.5, 9, -2.5], '#fff6e6'); dot(c, 20, -6.5, 1.9, INK);
+      tri(c, [-1, -15, -2, -27, 5, -17], '#e8833a'); tri(c, [7, -17, 11, -28, 14, -14], '#e8833a');
+      tri(c, [0.4, -17, -0.2, -23, 3.4, -18], '#4a3a30'); tri(c, [8.6, -18, 11, -24, 12.4, -16], '#4a3a30');
+      dot(c, 9, -11.5, 2.2, '#fff'); dot(c, 9.7, -11.5, 1.1, INK);
+      if (lvl >= 1) tri(c, [-5, -2, 10, -2, 2.5, 8], BERRY);
+      if (lvl >= 2) { tri(c, [-3, -16, 6, -30, 17, -16], LEAF); tri(c, [8, -24, 15, -33, 12, -22], HONEY); }
+      c.save(); c.translate(11, 3); c.rotate(Math.atan2(t.aimY || 0, Math.abs(t.aimX || 1)));
+      c.strokeStyle = '#7d5628'; c.lineWidth = 3.2; c.lineCap = 'round'; c.beginPath(); c.arc(0, 0, 13, -1.15, 1.15); c.stroke();
+      const bx = Math.cos(1.15) * 13, by = Math.sin(1.15) * 13, pull = t.flash > 0 ? 0 : -5;
+      c.strokeStyle = INK; c.lineWidth = 1.2; c.beginPath(); c.moveTo(bx, -by); c.lineTo(pull, 0); c.lineTo(bx, by); c.stroke();
+      if (!(t.flash > 0)) { c.lineWidth = 1.8; ln(c, pull, 0, 17, 0); tri(c, [17, -2.4, 22, 0, 17, 2.4], '#cfd6e6'); }
+      c.restore(); setInk(c, 2.4);
+      blob(c, 9, 4, 3.4, 3, '#4a3a30', id + 6);
+      break;
+    }
+    case 'beaver': {
+      blob(c, 0, 20, 27, 6, '#8ec8e8', id + 9, 0.04);
+      c.save(); c.lineWidth = 1.2; c.strokeStyle = '#fff'; c.globalAlpha = 0.8; c.beginPath(); c.ellipse(-12, 20, 5, 1.6, 0, 0, 7); c.stroke(); c.beginPath(); c.ellipse(13, 21, 4, 1.3, 0, 0, 7); c.stroke(); c.restore(); setInk(c, 2.4);
+      blob(c, -9, 16, 12, 4.6, '#a9773f', id, 0.05); blob(c, 9, 16, 12, 4.6, '#9a6b36', id + 1, 0.05); blob(c, 0, 12, 12, 4.4, '#b88445', id + 2, 0.05);
+      dot(c, -20, 16, 3.4, '#d9b27a'); dot(c, 20, 16, 3.4, '#d9b27a');
+      c.scale(fx, 1);
+      c.save(); c.translate(-14, 7); c.rotate(0.55); blob(c, 0, 0, 10, 5, '#6b4a2b', id + 3, 0.04); c.lineWidth = 1; c.beginPath(); c.moveTo(-5, -2.5); c.lineTo(3, 2.5); c.moveTo(0, -3); c.lineTo(7, 1); c.stroke(); c.restore(); setInk(c, 2.4);
+      blob(c, 0, 3, 12, 12, '#8a5d33', id + 4, 0.03); blob(c, 3, 6, 6, 8, '#c99a62', id + 5, 0.03);
+      blob(c, 5, -9, 9.5, 8.5, '#8a5d33', id + 6);
+      blob(c, 12, -6, 4.8, 3.8, '#c99a62', id + 7); dot(c, 15.6, -8, 1.9, INK);
+      c.fillStyle = '#fff'; c.fillRect(11, -3, 2.8, 4.4); c.strokeRect(11, -3, 2.8, 4.4);
+      dot(c, 6.5, -11, 2.2, '#fff'); dot(c, 7.1, -11, 1.1, INK);
+      blob(c, -1, -15.5, 3, 3, '#6b4a2b', id + 8);
+      if (lvl >= 1) { c.beginPath(); c.arc(4.5, -13, 9.8, Math.PI, 0); c.closePath(); c.fillStyle = '#f2c14a'; c.fill(); c.stroke(); c.fillStyle = '#e0a82e'; c.fillRect(2.5, -23, 4, 10); c.strokeRect(2.5, -23, 4, 10); }
+      if (lvl >= 2) { c.fillStyle = '#5aa8d8'; for (let i = 0; i < 3; i++) { const a2 = time * 2 + i * 2.1; c.globalAlpha = 0.8; c.beginPath(); c.arc(Math.cos(a2) * 22, Math.sin(a2) * 8 - 6, 2.2, 0, 7); c.fill(); } c.globalAlpha = 1; }
+      break;
+    }
+    case 'hen': {
+      blob(c, 0, 15, 22, 8, '#d9b05a', id, 0.06);
+      c.save(); c.strokeStyle = '#b8893a'; c.lineWidth = 1.4; for (const x of [-14, -6, 4, 13]) ln(c, x, 12, x + 4, 19); c.restore(); setInk(c, 2.4);
+      c.scale(fx, 1);
+      tri(c, [-12, 0, -23, -12, -9, -9], '#f0dfc0'); tri(c, [-12, 4, -24, -2, -11, 0], '#e6d1a8');
+      blob(c, 0, 3, 15, 13, '#fff6e6', id + 1, 0.03);
+      blob(c, -3, 5, 8.5, 6, '#f0dfc0', id + 2, 0.03);
+      blob(c, 10, -9, 6.8, 6.8, '#fff6e6', id + 3);
+      tri(c, [15.5, -10, 23, -7.5, 15.5, -5.5], '#f2a03a');
+      blob(c, 8.5, -16, 3, 3.2, BERRY, id + 4); blob(c, 12.5, -15.4, 2.6, 2.8, BERRY, id + 5); blob(c, 14.5, -3, 2.2, 3.2, BERRY, id + 6);
+      dot(c, 12.5, -10.5, 1.9, INK); dot(c, 13, -11, 0.7, '#fff');
+      blob(c, -12, 15, 4, 5, '#fff1c9', id + 7, 0.03); blob(c, 12, 15, 4, 5, lvl >= 2 ? HONEY : '#fff1c9', id + 8, 0.03);
+      if (lvl >= 1) tri(c, [4, -2.5, 10, -2.5, 7, 3.5], '#5aa8d8');
+      if (lvl >= 2) tri(c, [5, -17, 6.5, -26, 9.5, -19, 12.5, -26, 14, -17], HONEY);
+      break;
+    }
     case 'owl': {
       c.save(); c.strokeStyle = '#7d5628'; c.lineWidth = 6; ln(c, -20, 15, 20, 15); c.restore(); setInk(c, 2.4);
       blob(c, -13, 0, 4, 11, '#7d5b3b', id + 1); blob(c, 13, 0, 4, 11, '#7d5b3b', id + 2);
@@ -1545,6 +1667,11 @@ function drawTower(c, t, time, game) {
   if (t.canUp) { const by = -37 + Math.sin(time * 5 + t.id) * 2; c.fillStyle = '#7ac45a'; c.strokeStyle = INK; c.lineWidth = 1.8; c.beginPath(); c.moveTo(0, by - 7); c.lineTo(7, by + 1); c.lineTo(3, by + 1); c.lineTo(3, by + 7); c.lineTo(-3, by + 7); c.lineTo(-3, by + 1); c.lineTo(-7, by + 1); c.closePath(); c.fill(); c.stroke(); }
   if (t.buff > 1) { c.globalAlpha = 0.6 + 0.4 * Math.sin(time * 6 + t.id); dot(c, 16, -26, 2.4, '#fff3a0'); dot(c, 22, -20, 1.6, '#fff3a0'); c.globalAlpha = 1; }
   c.restore();
+  if (t.pushFx > 0) {
+    const st = game.stat(t), p = 1 - t.pushFx / 0.6;
+    c.save(); c.globalAlpha = (1 - p) * 0.9; c.strokeStyle = '#5aa8d8'; c.lineWidth = 5; c.fillStyle = 'rgba(142,200,232,.25)';
+    c.beginPath(); c.arc(t.x, t.y, 14 + (st.range - 14) * p, 0, 7); c.fill(); c.stroke(); c.restore();
+  }
   if (t.pulse > 0 && (t.type === 'bramble' || t.type === 'firefly')) {
     const st = game.stat(t), p = 1 - t.pulse / 0.35;
     c.save(); c.globalAlpha = 1 - p; c.strokeStyle = t.type === 'bramble' ? LEAF : '#f4d35e'; c.lineWidth = 3.5;
@@ -1562,6 +1689,10 @@ function drawShot(c, s) {
     const pr = 1 - Math.min(1, (s.rem || 0) / (s.d0 || 1)), lift = Math.sin(Math.PI * pr) * 34;
     c.save(); c.globalAlpha = 0.2; c.fillStyle = INK; c.beginPath(); c.ellipse(s.x, s.y, 5, 2.5, 0, 0, 7); c.fill(); c.restore();
     blob(c, s.x, s.y - lift, 6, 6, '#6b5a4a', 2, 0.08); dot(c, s.x - 2, s.y - lift - 2, 1.6, '#b8a58f');
+  } else if (s.kind === 'fox') {
+    const a = Math.atan2(s.vy || 0, s.vx || 1); c.save(); c.translate(s.x, s.y); c.rotate(a); c.strokeStyle = '#7d5628'; c.lineWidth = 2.2; ln(c, -9, 0, 7, 0); tri(c, [7, -3, 12, 0, 7, 3], '#cfd6e6'); tri(c, [-9, 0, -12, -3, -11, 0], BERRY); tri(c, [-9, 0, -12, 3, -11, 0], BERRY); c.restore();
+  } else if (s.kind === 'hen') {
+    blob(c, s.x, s.y, 3.4, 4.2, '#fff1c9', 4, 0.04);
   } else if (s.kind === 'magpie') {
     blob(c, s.x, s.y, 4.2, 4.2, HONEY, 3, 0.04); dot(c, s.x - 1.3, s.y - 1.3, 1.3, '#fff');
   } else {
@@ -1795,7 +1926,57 @@ function buildGuide() {
 const hero = $('hero'), hx = hero.getContext('2d');
 const CLOUDS = [[40, 38, 1], [300, 24, 1.3], [520, 56, 0.9]];
 const HERO_CRITTERS = ['snail', 'beetle', 'mouse', 'caterpillar', 'hedgehog', 'ladybug', 'crow', 'badger'];
+const heroS = {
+  last: 0, fx: [], hover: null, tapped: false, sun: 0, sunA: 0,
+  b: TOWER_ORDER.map(() => ({ hop: 0, flash: 0, say: '', sayT: 0, ax: 1, ay: 0.4 })),
+  e: HERO_CRITTERS.map((type, i) => ({ x: (i * 92) % 780 - 70, hop: 0, boost: 0, say: '', sayT: 0 }))
+};
+const HERO_DX = 568 / (TOWER_ORDER.length - 1), heroX = i => 36 + i * HERO_DX;
+const HERO_SAY = ['Hey!', 'Eep!', 'Oof!', 'Whoa!', 'Hehe!'];
+const HERO_SHOT = { mole: '#6b5a4a', magpie: '#efb23a', frog: '#7ac45a', bramble: '#5a9a4b', hive: '#f4c14f', owl: '#c9b48a' };
+function heroPt(ev) { const r = hero.getBoundingClientRect(); return { x: (ev.clientX - r.left) / r.width * 640, y: (ev.clientY - r.top) / r.height * 300 }; }
+function heroHit(p) {
+  const i = Math.round((p.x - 36) / HERO_DX);
+  const bud = i >= 0 && i < TOWER_ORDER.length && Math.abs(p.x - heroX(i)) < HERO_DX / 2 && p.y > 138 && p.y < 218;
+  let ci = -1; heroS.e.forEach((e, k) => { if (Math.abs(p.x - e.x) < 26 && p.y > 226 && p.y < 292) ci = k; });
+  if (bud && (p.y < 222 || ci < 0)) return { k: 'b', i };
+  if (ci >= 0) return { k: 'e', i: ci };
+  if (Math.hypot(p.x - 548, p.y - 62) < 40) return { k: 's', i: 0 };
+  return null;
+}
+function heroBurst(x, y, col, n) {
+  for (let i = 0; i < n; i++) { const a = Math.random() * 7, v = 40 + Math.random() * 80; heroS.fx.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 30, life: 0.5, max: 0.5, col, r: 2 + Math.random() * 2 }); }
+}
+function heroStartle(k, snd) {
+  const e = heroS.e[k]; e.hop = 0.45; e.boost = 1; e.say = HERO_SAY[Math.floor(Math.random() * HERO_SAY.length)]; e.sayT = 0.9;
+  heroBurst(e.x, 246, '#fff3a0', 9); Sound.play(snd);
+}
+function heroTap(h) {
+  Sound.init(); heroS.tapped = true;
+  if (h.k === 'b') {
+    const b = heroS.b[h.i], type = TOWER_ORDER[h.i], bx = heroX(h.i);
+    b.hop = 0.5; b.flash = 0.3; b.say = TOWERS[type].name; b.sayT = 1.4;
+    let best = -1, bd = 1e9;
+    heroS.e.forEach((e, k) => { const d = Math.abs(e.x - bx); if (e.x > -10 && e.x < 650 && d < bd) { bd = d; best = k; } });
+    if (best >= 0) { const e = heroS.e[best]; b.ax = Math.sign(e.x - bx) || 1; b.ay = 0.6; heroS.fx.push({ proj: true, x: bx, y: 170, tx: e.x, ty: 252, t: 0, dur: 0.28, k: best, type }); }
+    Sound.play('fire-' + type); heroBurst(bx, 168, '#fff3a0', 5);
+  } else if (h.k === 'e') heroStartle(h.i, 'pop');
+  else { heroS.sun = 1; Sound.play('coin'); heroBurst(548, 62, '#ffd76a', 14); }
+}
+function heroBubble(c, x, y, text, a) {
+  c.save(); c.globalAlpha = Math.min(1, a); c.font = '17px ' + FONT; c.textAlign = 'center';
+  const w = c.measureText(text).width + 18, bx = Math.max(w / 2 + 4, Math.min(628 - w / 2, x));
+  setInk(c, 2); c.fillStyle = '#fffdf0'; c.beginPath();
+  if (c.roundRect) c.roundRect(bx - w / 2, y - 22, w, 24, 9); else c.rect(bx - w / 2, y - 22, w, 24);
+  c.fill(); c.stroke(); c.fillStyle = INK; c.fillText(text, bx, y - 5); c.restore();
+}
+hero.addEventListener('pointerdown', ev => { const h = heroHit(heroPt(ev)); if (h) { ev.preventDefault(); heroTap(h); } });
+hero.addEventListener('pointermove', ev => { if (ev.pointerType === 'touch') return; heroS.hover = heroHit(heroPt(ev)); hero.style.cursor = heroS.hover ? 'pointer' : ''; });
+hero.addEventListener('pointerleave', () => { heroS.hover = null; hero.style.cursor = ''; });
+
 function drawHero(t) {
+  const dt = Math.min(0.1, Math.max(0, t - heroS.last)); heroS.last = t;
+  heroS.sunA += dt * (0.15 + heroS.sun * 6); heroS.sun = Math.max(0, heroS.sun - dt * 1.2);
   const cw = Math.round(hero.clientWidth * Math.min(2, window.devicePixelRatio || 1));
   if (!cw) return;
   if (hero.width !== cw) { hero.width = cw; hero.height = Math.round(cw * 300 / 640); }
@@ -1804,7 +1985,7 @@ function drawHero(t) {
   const sky = c.createLinearGradient(0, 0, 0, 210); sky.addColorStop(0, '#9fd3ec'); sky.addColorStop(1, '#eef6dc');
   c.fillStyle = sky; c.fillRect(0, 0, 640, 300);
   c.save(); c.strokeStyle = HONEY; c.lineWidth = 4; c.lineCap = 'round';
-  for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6 + t * 0.15; ln(c, 548 + Math.cos(a) * 36, 62 + Math.sin(a) * 36, 548 + Math.cos(a) * 48, 62 + Math.sin(a) * 48); }
+  for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6 + heroS.sunA; ln(c, 548 + Math.cos(a) * 36, 62 + Math.sin(a) * 36, 548 + Math.cos(a) * 48, 62 + Math.sin(a) * 48); }
   c.restore(); setInk(c, 2.6); blob(c, 548, 62, 28, 28, '#ffd76a', 2, 0.04);
   c.strokeStyle = 'rgba(38,50,77,.4)'; c.lineWidth = 2;
   for (const [x0, y0, k] of CLOUDS) { const x = ((x0 + t * 8 * k) % 760) - 70; blob(c, x, y0, 36 * k, 13 * k, '#fff', x0, 0.08); blob(c, x + 20 * k, y0 - 9 * k, 22 * k, 11 * k, '#fff', x0 + 1, 0.08); }
@@ -1813,14 +1994,38 @@ function drawHero(t) {
   blob(c, 320, 300, 420, 110, '#c4dba3', 7, 0.02);
   c.lineCap = 'round'; c.strokeStyle = INK; c.lineWidth = 54; c.beginPath(); c.moveTo(-20, 262); c.lineTo(660, 262); c.stroke();
   c.strokeStyle = '#e6d1a0'; c.lineWidth = 48; c.beginPath(); c.moveTo(-20, 262); c.lineTo(660, 262); c.stroke();
+  const hv = heroS.hover;
   TOWER_ORDER.forEach((type, i) => {
-    c.save(); c.translate(46 + i * 68, 184 + Math.sin(t * 1.6 + i) * 1.6); c.scale(1.02, 1.02);
-    drawTowerBody(c, { type, lvl: i % 3, id: i + 3, aimX: 1, aimY: 0.4, flash: 0 }, t); c.restore();
+    const b = heroS.b[i]; b.hop = Math.max(0, b.hop - dt); b.flash = Math.max(0, b.flash - dt); b.sayT -= dt;
+    const hp = b.hop > 0 ? Math.sin(Math.PI * (1 - b.hop / 0.5)) : 0, on = hv && hv.k === 'b' && hv.i === i, sc = 0.88 * (on ? 1.1 : 1);
+    c.save(); c.translate(heroX(i), 184 + Math.sin(t * 1.6 + i) * 1.6 - hp * 28 - (on ? 3 : 0)); c.scale(sc * (1 - hp * 0.05), sc * (1 + hp * 0.08));
+    drawTowerBody(c, { type, lvl: i % 3, id: i + 3, aimX: b.ax, aimY: b.ay, flash: b.flash }, t); c.restore();
   });
   HERO_CRITTERS.forEach((type, i) => {
-    const sp = ENEMIES[type].speed * 0.55, x = ((t * sp + i * 92) % 780) - 70;
-    drawEnemy(c, { type, id: i + 5, x, y: 262, r: ENEMIES[type].r, face: 1, flash: 0, slowT: 0, hp: 1, maxHp: 1 }, t);
+    const e = heroS.e[i];
+    e.x += ENEMIES[type].speed * 0.55 * (1 + e.boost * 2.2) * dt; if (e.x > 710) e.x = -70;
+    e.boost = Math.max(0, e.boost - dt * 0.9); e.hop = Math.max(0, e.hop - dt); e.sayT -= dt;
+    const hy = e.hop > 0 ? Math.sin(Math.PI * (1 - e.hop / 0.45)) * 24 : 0;
+    drawEnemy(c, { type, id: i + 5, x: e.x, y: 262 - hy, r: ENEMIES[type].r, face: 1, flash: 0, slowT: 0, hp: 1, maxHp: 1 }, t);
   });
+  for (const f of heroS.fx) {
+    if (f.proj) {
+      f.t += dt; const e = heroS.e[f.k], p = Math.min(1, f.t / f.dur); f.tx = e.x;
+      const px = f.x + (f.tx - f.x) * p, py = f.y + (f.ty - f.y) * p - Math.sin(Math.PI * p) * (f.type === 'mole' ? 50 : 12);
+      if (p >= 1) { f.done = true; heroStartle(f.k, 'hit'); }
+      else if (f.type === 'dragonfly' || f.type === 'firefly') { c.save(); c.strokeStyle = '#fff6a0'; c.lineWidth = 3; c.lineCap = 'round'; ln(c, f.x, f.y, px, py); c.restore(); }
+      else { setInk(c, 2); blob(c, px, py, 5, 5, HERO_SHOT[f.type] || '#f4c14f', 1, 0.05); }
+    } else {
+      f.life -= dt; f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 160 * dt;
+      if (f.life > 0) { c.save(); c.globalAlpha = f.life / f.max; dot(c, f.x, f.y, f.r, f.col); c.restore(); }
+    }
+  }
+  heroS.fx = heroS.fx.filter(f => !f.done && (f.proj || f.life > 0));
+  heroS.b.forEach((b, i) => { if (b.sayT > 0) heroBubble(c, heroX(i), 138 - (i % 2) * 28, b.say, b.sayT * 2); });
+  heroS.e.forEach(e => { if (e.sayT > 0) heroBubble(c, e.x, 226, e.say, e.sayT * 2.5); });
+  if (!heroS.tapped) {
+    c.save(); c.font = '24px ' + FONT; c.textAlign = 'center'; c.globalAlpha = 0.65 + 0.35 * Math.sin(t * 3); c.lineWidth = 6; c.strokeStyle = '#eef6dc'; c.strokeText('Tap a buddy or a critter!', 320, 30); c.fillStyle = INK; c.fillText('Tap a buddy or a critter!', 320, 30); c.restore();
+  }
   for (let i = 0; i < 3; i++) {
     const ph = i * 2.1, x = 320 + Math.sin(t * 0.35 + ph) * 280, y = 118 + Math.sin(t * 1.1 + ph * 2) * 26, f = 0.3 + 0.7 * Math.abs(Math.sin(t * 12 + ph));
     c.save(); c.translate(x, y); c.fillStyle = ['#e9739a', '#7ab6d8', '#f7c04a'][i]; c.strokeStyle = INK; c.lineWidth = 1.3;
@@ -1845,7 +2050,7 @@ function buildTray() {
     b.appendChild(ic);
     const lock = !isUnlocked(type);
     b.classList.toggle('locked', lock); b.dataset.locked = lock ? '1' : '';
-    b.insertAdjacentHTML('beforeend', '<span class="tn">' + T.short + '</span><span class="tc">' + (lock ? T.unlock + ' stars' : SEED_SVG + T.cost) + '</span><span class="kbd">' + (i + 1) + '</span>');
+    b.insertAdjacentHTML('beforeend', '<span class="tn">' + T.short + '</span><span class="tc">' + (lock ? T.unlock + ' stars' : SEED_SVG + T.cost) + '</span><span class="kbd">' + '1234567890-='[i] + '</span>');
     if (lock) { b.setAttribute('aria-label', T.name + ', locked. Earn ' + T.unlock + ' stars to unlock'); b.insertAdjacentHTML('beforeend', LOCK_SVG); }
     b.addEventListener('click', () => { Sound.play('click'); setBuildType(type); });
     trayEl.appendChild(b);
@@ -1873,6 +2078,7 @@ function statLine(type, st) {
     if (st.pulseEvery) s += ' &middot; Flash every ' + st.pulseEvery + 's';
     return s;
   }
+  if (type === 'beaver') return 'Flood every ' + st.pushEvery + 's &middot; Shoves critters back ' + (st.pushDist / TILE).toFixed(1) + ' tiles &middot; Slows ' + Math.round(st.pushSlow * 100) + '%' + (st.pushDmg ? ' &middot; ' + st.pushDmg + ' damage' : '');
   let s = 'Damage ' + st.dmg + ' &middot; Reach ' + (st.range / TILE).toFixed(1) + ' tiles &middot; Every ' + st.rate + 's';
   if (st.income) s = 'Pays ' + st.income + ' seeds every wave &middot; ' + s;
   if (st.bountyAdd) s += ' &middot; +' + st.bountyAdd + ' seeds per kill';
@@ -1883,6 +2089,10 @@ function statLine(type, st) {
   if (st.slow) s += ' &middot; Slows ' + Math.round(st.slow * 100) + '%';
   if (st.poisonDps) s += ' &middot; Poison';
   if (st.stunChance) s += ' &middot; Stuns';
+  if (st.mark) s += ' &middot; Marks +' + Math.round(st.mark * 100) + '%';
+  if (st.healEvery) s += ' &middot; Heals ' + st.healAmt + (st.healAmt > 1 ? ' veggies' : ' veggie') + (st.healEvery > 1 ? ' every ' + st.healEvery + ' waves' : ' every wave');
+  if (st.aura) s += ' &middot; Buddies nearby +' + Math.round(st.aura * 100) + '% speed';
+  if (st.pierce) s += ' &middot; Ignores armor';
   return s;
 }
 function infoHTML() {
@@ -2061,6 +2271,8 @@ function drawBanner(c) {
 /* ---------- game events ---------- */
 function onGameEvent(k, d) {
   switch (k) {
+    case 'flood': Sound.play('flood'); shake = Math.max(shake, 0.12); puffs(d.x, d.y + 6, '#8ec8e8', 16, 140); fxs.push({ k: 'ring', x: d.x, y: d.y, r: d.r, vx: 0, vy: 0, life: 0.45, max: 0.45, col: '#5aa8d8' }); break;
+    case 'eggheal': Sound.play('egg'); floatText(d.x, d.y - 24, '+' + d.n + (d.n > 1 ? ' veggies' : ' veggie'), '#7ac45a'); puffs(d.x, d.y - 10, '#ffd1dc', 10, 70); break;
     case 'dig': Sound.play('dig'); puffs(d.x, d.y + 12, '#8a6a4a', 10, 70); break;
     case 'surface': Sound.play('surface'); puffs(d.x, d.y + 12, '#8a6a4a', 12, 90); shake = Math.max(shake, 0.15); break;
     case 'place': Sound.play('place'); puffs(d.x, d.y + 12, '#e6d1a0', 9); d.pop = 0.4; break;
@@ -2293,7 +2505,8 @@ window.addEventListener('keydown', e => {
     sel = game.towerAt(kb.col, kb.row);
     return;
   }
-  if (k >= '1' && k <= '9') { setBuildType(TOWER_ORDER[Number(k) - 1]); return; }
+  const bi = '1234567890-='.indexOf(k);
+  if (bi >= 0 && bi < TOWER_ORDER.length) { setBuildType(TOWER_ORDER[bi]); return; }
   if (k === 'u') { doUpgrade(0); return; }
   if (k === 'i') { doUpgrade(1); return; }
   if (k === 'x' || k === 'delete' || k === 'backspace') { doSell(); return; }
@@ -2355,7 +2568,7 @@ function draw(t) {
   for (let i = 0; i < Math.min(10, g.hearts); i++) drawVeg(c, pxv, ep.y, i, t);
   const items = [];
   for (const tw of g.towers) items.push([tw.y + 14, () => drawTower(c, tw, t, g)]);
-  for (const e of g.enemies) { if (Math.abs(e.dx) > 0.1) e.face = Math.sign(e.dx); items.push([e.y, () => drawEnemy(c, e, t)]); }
+  for (const e of g.enemies) { if (Math.abs(e.dx) > 0.1) e.face = Math.sign(e.dx); items.push([e.y, () => { drawEnemy(c, e, t); if (e.markT > 0) { const my = e.y - e.r - 16 + Math.sin(t * 6) * 1.5; c.save(); c.strokeStyle = BERRY; c.lineWidth = 2.4; c.lineCap = 'round'; c.beginPath(); c.arc(e.x, my, 6, 0, 7); c.moveTo(e.x - 10, my); c.lineTo(e.x - 3, my); c.moveTo(e.x + 3, my); c.lineTo(e.x + 10, my); c.moveTo(e.x, my - 10); c.lineTo(e.x, my - 3); c.moveTo(e.x, my + 3); c.lineTo(e.x, my + 10); c.stroke(); c.restore(); } }]); }
   items.sort((a, b) => a[0] - b[0]);
   for (const it of items) it[1]();
   for (const s of g.shots) drawShot(c, s);
@@ -2374,7 +2587,7 @@ function draw(t) {
       for (const [w, col] of [[6, INK], [3, '#fff6a0']]) { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); f.pts.forEach((p, i) => i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])); c.stroke(); }
       c.restore();
     } else if (f.k === 'ring') {
-      c.save(); c.globalAlpha = a * 0.8; c.strokeStyle = '#8a6a4a'; c.lineWidth = 4; c.beginPath(); c.arc(f.x, f.y, f.r * (1.1 - a * 0.7), 0, 7); c.stroke(); c.restore();
+      c.save(); c.globalAlpha = a * 0.8; c.strokeStyle = f.col || '#8a6a4a'; c.lineWidth = 4; c.beginPath(); c.arc(f.x, f.y, f.r * (1.1 - a * 0.7), 0, 7); c.stroke(); c.restore();
     } else { c.globalAlpha = Math.min(1, a * 1.6); c.font = '20px ' + FONT; c.textAlign = 'center'; c.lineWidth = 4; c.strokeStyle = '#eef4e0'; c.strokeText(f.txt, f.x, f.y); c.fillStyle = f.col; c.fillText(f.txt, f.x, f.y); c.globalAlpha = 1; }
   }
 

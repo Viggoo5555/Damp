@@ -2,14 +2,7 @@
    Damp: a window on a wet night.
    Cold slate for the glass, pale mist for the type, and one
    sodium-lamp amber that marks what is selected or what to press.
-   Game art sits behind a film of condensation until you wipe it.
    --------------------------------------------------------------- */
-@property --r {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 1px;
-}
-
 :root {
   --night: #16222b;
   --deep: #0e171d;
@@ -286,31 +279,6 @@ h1 {
   height: 100%;
   object-fit: cover;
 }
-
-/* Condensation: a thin fog over the art with a few beads of water.
-   Hover wipes a clear circle that follows the pointer. */
-.tile::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 14% 24%, rgba(223, 232, 232, 0.30) 0 1.5px, transparent 2.5px),
-    radial-gradient(circle at 71% 18%, rgba(223, 232, 232, 0.24) 0 2px, transparent 3px),
-    radial-gradient(circle at 86% 64%, rgba(223, 232, 232, 0.28) 0 1.5px, transparent 2.5px),
-    radial-gradient(circle at 33% 79%, rgba(223, 232, 232, 0.22) 0 2.5px, transparent 3.5px),
-    radial-gradient(circle at 52% 46%, rgba(223, 232, 232, 0.18) 0 1px, transparent 2px),
-    rgba(30, 46, 58, 0.26);
-  -webkit-backdrop-filter: saturate(0.65) brightness(0.9) blur(1px);
-  backdrop-filter: saturate(0.65) brightness(0.9) blur(1px);
-  -webkit-mask-image: radial-gradient(circle var(--r) at var(--x, 50%) var(--y, 50%), transparent 55%, #000 100%);
-  mask-image: radial-gradient(circle var(--r) at var(--x, 50%) var(--y, 50%), transparent 55%, #000 100%);
-  transition: --r 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-
-.game:hover .tile::after { --r: 130px; }
-
-.game:focus-visible .tile::after { display: none; }
 
 .game:focus-visible .tile {
   outline: 2px solid var(--lamp);
@@ -776,11 +744,6 @@ label input[type="file"] { height: auto; padding: 8px 12px; }
 #acc-out p { margin-bottom: 4px; }
 #acc-out button { margin-top: 12px; }
 
-/* ----- Touch screens have no hover, so no fog ----- */
-@media (hover: none) {
-  .tile::after { display: none; }
-}
-
 /* ----- Small screens: categories become a row you can swipe ----- */
 @media (max-width: 900px) {
   main.wrap { grid-template-columns: minmax(0, 1fr); padding-top: 20px; }
@@ -823,5 +786,4 @@ label input[type="file"] { height: auto; padding: 8px 12px; }
 
 @media (prefers-reduced-motion: reduce) {
   .spinner { animation-duration: 3s; }
-  .tile::after { transition: none; }
 }

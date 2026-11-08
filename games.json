@@ -46,8 +46,10 @@
   },
   {
     "title": "Hedgerow Hallow",
+    "description": "Guard the veggie patch from snails, beetles and one very rude badger.",
     "file": "hedgerow-hallow.html",
     "category": "Tower Defense",
-    "image": "hedgerow-hallow.jpg"
+    "image": "hedgerow-hallow-thumb.jpg",
+    "featured": true
   }
 ]

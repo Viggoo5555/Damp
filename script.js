@@ -113,9 +113,14 @@ function showGames() {
     list.sort(function (a, b) { return a.title.localeCompare(b.title); });
   }
 
+  // With no filter on, the featured game (or else the first one) gets the large window
+  const lead = category === "All" && query === "" && $("sort").value === "default" && list.length >= 3;
+  if (lead) {
+    const star = list.findIndex(function (game) { return game.featured; });
+    if (star > 0) list.unshift(list.splice(star, 1)[0]);
+  }
   grid.replaceChildren(...list.map(makeCard));
-  // With no filter on, the first game gets the large window
-  grid.classList.toggle("has-lead", category === "All" && query === "" && $("sort").value === "default" && list.length >= 3);
+  grid.classList.toggle("has-lead", lead);
   $("heading").textContent = category === "All" ? "All games" : category;
   $("count").textContent = list.length + (list.length === 1 ? " game" : " games");
 
@@ -152,20 +157,6 @@ function showChips() {
 }
 
 search.addEventListener("input", showGames);
-
-// The fog on each tile clears where the pointer is
-document.addEventListener("pointermove", function (event) {
-  const tile = event.target.closest && event.target.closest(".tile");
-  if (!tile) return;
-  const box = tile.getBoundingClientRect();
-  tile.style.setProperty("--x", (event.clientX - box.left) + "px");
-  tile.style.setProperty("--y", (event.clientY - box.top) + "px");
-});
-
-$("random").addEventListener("click", function () {
-  if (games.length === 0) return;
-  location.hash = "play=" + slug(games[Math.floor(Math.random() * games.length)]);
-});
 
 // ----- Recently played (remembered on this device) -----
 function getRecent() {
@@ -592,6 +583,7 @@ $("editor-form").addEventListener("submit", async function (event) {
     category: $("f-category").value.trim(),
     image: iconFile ? base + "." + iconType : (editing ? editing.image || "" : "")
   };
+  if (editing && editing.featured) entry.featured = true;
 
   $("save").disabled = true;
   try {

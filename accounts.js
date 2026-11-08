@@ -8,10 +8,10 @@
 // ---------------------------------------------------------------
 (function () {
   const firebaseConfig = {
-    apiKey: "PASTE-HERE",
-    authDomain: "PASTE-HERE",
-    projectId: "PASTE-HERE",
-    appId: "PASTE-HERE"
+    apiKey: "AIzaSyDJhWSi7QZKXtOPYwKHPF7zPg_klh1If7w",
+    authDomain: "damp-2406a.firebaseapp.com",
+    projectId: "damp-2406a",
+    appId: "1:940989851976:web:f8fd07c258afa71fd22b7d"
   };
 
   const SAVE_KEYS = {

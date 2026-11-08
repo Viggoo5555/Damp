@@ -69,6 +69,9 @@ function makeCard(game) {
   const card = el("a", "game");
   card.href = "#play=" + slug(game);
   card.title = game.description || "";
+  ["pointerenter", "focus", "touchstart"].forEach(function (name) {
+    card.addEventListener(name, function () { warm(game); }, { passive: true });
+  });
 
   const tile = el("div", "tile");
   function letterTile() {
@@ -189,33 +192,57 @@ $("sort").addEventListener("change", function () {
   showGames();
 });
 
-// ----- Loading screen (only appears if the game is slow) -----
-let slowTimer, hintTimer;
+// ----- Loading screen (shows at once, so the player never sits on black) -----
+let hintTimer, fadeTimer;
 
-function startLoading() {
+function startLoading(game) {
   stopLoading();
-  slowTimer = setTimeout(function () {
-    $("loading-text").textContent = "Loading game...";
-    $("loading").hidden = false;
-  }, 700);
+  const art = $("loading-art");
+  art.hidden = !game.image;
+  if (game.image) art.src = encodeURI(game.image);
+  $("loading-title").textContent = game.title;
+  $("loading-text").textContent = "";
+  $("loading").classList.remove("done");
+  $("loading").hidden = false;
   hintTimer = setTimeout(function () {
     $("loading-text").textContent = "Still loading. If it stays stuck, try Open in new tab at the top.";
-  }, 10000);
+  }, 8000);
 }
 
 function stopLoading() {
-  clearTimeout(slowTimer);
   clearTimeout(hintTimer);
+  clearTimeout(fadeTimer);
   $("loading").hidden = true;
 }
 
-frame.addEventListener("load", stopLoading);
+// Fades the loading screen out instead of cutting to the game
+function finishLoading() {
+  if ($("loading").hidden) return;
+  clearTimeout(hintTimer);
+  $("loading").classList.add("done");
+  fadeTimer = setTimeout(stopLoading, 250);
+}
+
+frame.addEventListener("load", function () {
+  if (frame.src && frame.src !== "about:blank") finishLoading();
+});
+
+// Starts fetching a game's file as soon as someone points at its tile
+const warmed = new Set();
+function warm(game) {
+  if (warmed.has(game.file)) return;
+  warmed.add(game.file);
+  const link = document.createElement("link");
+  link.rel = "prefetch";
+  link.href = encodeURI(game.file);
+  document.head.appendChild(link);
+}
 
 // ----- Game player -----
 function openPlayer(game) {
   if (playing !== slug(game)) {
     playing = slug(game);
-    startLoading();
+    startLoading(game);
     addRecent(game);
     // Gets the saved progress from the account first, then starts the game
     const id = playing;
@@ -224,7 +251,7 @@ function openPlayer(game) {
       if (playing !== id) return;
       frame.src = encodeURI(game.file);
       // Slow fonts or ads inside a game can hold up the load signal, so never cover it for long
-      setTimeout(function () { if (playing === id) stopLoading(); }, 3000);
+      setTimeout(function () { if (playing === id) finishLoading(); }, 3000);
     });
   }
   $("player-title").textContent = game.title;

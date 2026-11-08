@@ -596,19 +596,6 @@ const TOWERS = {
         { name: 'Sharp beak', cost: 55, desc: 'Triple damage', fx: { dmgMul: 3 } },
         { name: 'Light fingers', cost: 110, desc: '+2 seeds for every kill', fx: { bountyAdd: 2, dmgMul: 1.4 } },
         { name: 'Master thief', cost: 240, desc: 'Fast, +4 seeds per kill', fx: { bountyAdd: 4, rateMul: 0.6, dmgMul: 1.5, rangeAdd: 25 } } ] } ] },
-  dragonfly: { key: 'dragonfly', name: 'Golden Dragonfly', short: 'Dragonfly', cost: 120, kind: 'chain', unlock: 7,
-    base: { range: 120, dmg: 17, rate: 1.25, chain: 2, chainRange: 70, roam: 190 },
-    blurb: 'Flies around the garden and follows the critters. Zaps one and the lightning jumps to 2 more. Hits flyers too.',
-    paths: [
-      { name: 'Long Chain', tiers: [
-        { name: 'Longer chain', cost: 70, desc: 'Lightning jumps 3 times', fx: { chain: 3 } },
-        { name: 'Storm cell', cost: 140, desc: 'Jumps 5 times, flies farther', fx: { chain: 5, rangeAdd: 20, chainRange: 85, roam: 290 } },
-        { name: 'Thunder swarm', cost: 320, desc: 'Jumps 8 times, stronger', fx: { chain: 8, dmgMul: 1.4, chainRange: 100, roam: 350 } } ] },
-      { name: 'Static Shock', tiers: [
-        { name: 'Static', cost: 65, desc: 'Sometimes stuns critters', fx: { stunChance: 0.25, stunTime: 0.5 } },
-        { name: 'Overcharge', cost: 130, desc: '+80% damage, more stuns', fx: { dmgMul: 1.8, stunChance: 0.3, stunTime: 0.7 } },
-        { name: 'Tempest', cost: 310, desc: 'Fast, strong, stuns often', fx: { dmgMul: 2, rateMul: 0.7, stunChance: 0.45, stunTime: 0.9 } } ] } ] }
-,
   fox: { key: 'fox', name: 'Sly Fox', short: 'Fox', cost: 130, kind: 'shot', unlock: 5,
     base: { range: 300, dmg: 44, rate: 2.2, pierce: true },
     blurb: 'Sharp arrows from far away that ignore armor. Aims at the critter closest to the veggies. Upgrades can mark critters so everyone hurts them more.',
@@ -644,7 +631,19 @@ const TOWERS = {
       { name: 'Fierce Rooster', tiers: [
         { name: 'Sharp spurs', cost: 60, desc: 'Triple damage', fx: { dmgMul: 3 } },
         { name: 'Morning crow', cost: 120, desc: 'Buddies nearby shoot 20% faster', fx: { aura: 0.2, rangeAdd: 25 } },
-        { name: 'Rooster king', cost: 300, desc: 'Big boost for buddies nearby', fx: { aura: 0.3, dmgAura: 0.2, dmgMul: 1.5, rangeAdd: 25 } } ] } ] }
+        { name: 'Rooster king', cost: 300, desc: 'Big boost for buddies nearby', fx: { aura: 0.3, dmgAura: 0.2, dmgMul: 1.5, rangeAdd: 25 } } ] } ] },
+   dragonfly: { key: 'dragonfly', name: 'Golden Dragonfly', short: 'Dragonfly', cost: 120, kind: 'chain', unlock: 12,
+    base: { range: 120, dmg: 17, rate: 1.25, chain: 2, chainRange: 70, roam: 190 },
+    blurb: 'Flies around the garden and follows the critters. Zaps one and the lightning jumps to 2 more. Hits flyers too.',
+    paths: [
+      { name: 'Long Chain', tiers: [
+        { name: 'Longer chain', cost: 70, desc: 'Lightning jumps 3 times', fx: { chain: 3 } },
+        { name: 'Storm cell', cost: 140, desc: 'Jumps 5 times, flies farther', fx: { chain: 5, rangeAdd: 20, chainRange: 85, roam: 290 } },
+        { name: 'Thunder swarm', cost: 320, desc: 'Jumps 8 times, stronger', fx: { chain: 8, dmgMul: 1.4, chainRange: 100, roam: 350 } } ] },
+      { name: 'Static Shock', tiers: [
+        { name: 'Static', cost: 65, desc: 'Sometimes stuns critters', fx: { stunChance: 0.25, stunTime: 0.5 } },
+        { name: 'Overcharge', cost: 130, desc: '+80% damage, more stuns', fx: { dmgMul: 1.8, stunChance: 0.3, stunTime: 0.7 } },
+        { name: 'Tempest', cost: 310, desc: 'Fast, strong, stuns often', fx: { dmgMul: 2, rateMul: 0.7, stunChance: 0.45, stunTime: 0.9 } } ] } ] }
 };
 const TOWER_ORDER = ['squirrel', 'hive', 'bramble', 'frog', 'firefly', 'owl', 'mole', 'magpie', 'dragonfly', 'fox', 'beaver', 'hen'];
 

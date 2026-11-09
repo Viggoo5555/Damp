@@ -269,6 +269,38 @@
     .fs .stage .pw .pt { display: none; }
   }
 
+  /* golden seeds, shop and skins */
+  .gold { display: inline-flex; align-items: center; gap: 3px; vertical-align: middle; }
+  .gold svg { width: 17px; height: 17px; }
+  .shop-h { margin: 14px 0 6px; font-family: var(--f-display); font-weight: 400; font-size: 24px; }
+  .shop-h:first-child { margin-top: 0; }
+  .shopbal { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 14px; font-size: 20px; margin-bottom: 4px; }
+  .shopbal b { font-family: var(--f-display); font-weight: 400; font-size: 28px; }
+  .buylist { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 10px; }
+  .buycard { display: flex; gap: 10px; align-items: center; padding: 6px 10px; min-width: 0; }
+  .buycard canvas { width: 54px; height: 54px; flex: none; }
+  .buycard > div { flex: 1; min-width: 0; font-size: 15px; line-height: 1.12; }
+  .buycard strong { font-family: var(--f-display); font-weight: 400; font-size: 20px; }
+  .buybtn { flex: none; min-height: 40px; padding: 0 12px; font-size: 18px; display: inline-flex; align-items: center; gap: 4px; }
+  .buybtn:disabled { opacity: .5; }
+  .gamble { padding: 10px 14px; display: grid; gap: 8px; }
+  .gamble p { margin: 0; font-size: 16px; }
+  .gamble .odds { color: var(--ink-soft); font-size: 15px; }
+  .pullres { min-height: 4px; }
+  .pullcard { --rc: var(--ink); display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 3px solid var(--rc); border-radius: var(--wob); background: var(--paper-hi); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rc) 30%, transparent), 3px 3px 0 var(--ink); animation: pullpop .5s cubic-bezier(.2,1.4,.4,1); }
+  .pullcard canvas { width: 76px; height: 76px; flex: none; }
+  .pullcard strong { font-family: var(--f-display); font-weight: 400; font-size: 26px; }
+  .pullcard .rar { color: var(--rc); font-size: 17px; text-transform: uppercase; letter-spacing: .06em; }
+  @keyframes pullpop { 0% { transform: scale(.4) rotate(-6deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
+  .skins { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+  .skin { --rc: var(--ink); display: flex; flex-direction: column; align-items: center; gap: 0; padding: 6px 4px 6px; min-width: 0; border-color: var(--rc); }
+  .skin canvas { width: 62px; height: 62px; }
+  .skin .sn { font-family: var(--f-display); font-size: 18px; line-height: 1.05; }
+  .skin .sr { font-size: 13px; color: var(--rc); text-transform: uppercase; letter-spacing: .05em; }
+  .skin[aria-pressed="true"] { background: var(--honey); }
+  .skin.unk { opacity: .55; }
+  @media (prefers-reduced-motion: reduce) { .pullcard { animation: none; } }
+
   /* menu v2 */
   .cta { display: flex; flex-direction: column; gap: 10px; }
   .cta .big { width: 100%; min-height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; font-size: 38px; padding: 4px 22px; }
@@ -370,6 +402,7 @@
     <div class="tabs" role="tablist" id="tabs" aria-label="Menu sections">
       <button class="btn tab" role="tab" type="button" data-tab="gardens" aria-selected="true">Gardens</button>
       <button class="btn tab" role="tab" type="button" data-tab="buddies" aria-selected="false">Buddies</button>
+      <button class="btn tab" role="tab" type="button" data-tab="shop" aria-selected="false">Shop</button>
       <button class="btn tab" role="tab" type="button" data-tab="critters" aria-selected="false">Critters</button>
       <button class="btn tab" role="tab" type="button" data-tab="how" aria-selected="false">How to play</button>
     </div>
@@ -378,6 +411,7 @@
       <p class="tabnote" id="buddyNote"></p>
       <div class="guide" id="guideB"></div>
     </div>
+    <div class="tabpanel" id="tab-shop" role="tabpanel" hidden><div id="shopBox"></div></div>
     <div class="tabpanel" id="tab-critters" role="tabpanel" hidden>
       <p class="tabnote">These are the critters that walk the path. Every one that reaches the patch eats a veggie.</p>
       <div class="guide" id="guideC"></div>
@@ -387,7 +421,7 @@
         <h2>How to play</h2>
         <p>Pick a buddy, then tap a patch of grass to plant it. Tap a planted buddy and a box pops up right over it with two upgrade paths.</p>
         <p>Press Send wave when you are ready, or switch on Auto. Rain, Thunder and Sunshine help in a tight spot.</p>
-        <p>Finish gardens to earn stars. Stars unlock new buddies. The Daily garden changes every day and keeps a streak. The Endless meadow never ends.</p>
+        <p>Win rounds to earn golden seeds. Spend them in the Shop on locked buddies, or gamble them for skins. The Daily garden changes every day and keeps a streak. The Endless meadow never ends.</p>
         <p class="kb-only">Keyboard: arrows or WASD move the cursor, 1 to 9, 0, - and = pick a buddy, Enter plants, U and I buy upgrades, X sells, N sends the wave, Q E R use powers, T toggles Auto, P pauses, F changes speed.</p>
       </div>
     </div>
@@ -596,6 +630,19 @@ const TOWERS = {
         { name: 'Sharp beak', cost: 55, desc: 'Triple damage', fx: { dmgMul: 3 } },
         { name: 'Light fingers', cost: 110, desc: '+2 seeds for every kill', fx: { bountyAdd: 2, dmgMul: 1.4 } },
         { name: 'Master thief', cost: 240, desc: 'Fast, +4 seeds per kill', fx: { bountyAdd: 4, rateMul: 0.6, dmgMul: 1.5, rangeAdd: 25 } } ] } ] },
+  dragonfly: { key: 'dragonfly', name: 'Golden Dragonfly', short: 'Dragonfly', cost: 120, kind: 'chain', unlock: 7,
+    base: { range: 120, dmg: 17, rate: 1.25, chain: 2, chainRange: 70, roam: 190 },
+    blurb: 'Flies around the garden and follows the critters. Zaps one and the lightning jumps to 2 more. Hits flyers too.',
+    paths: [
+      { name: 'Long Chain', tiers: [
+        { name: 'Longer chain', cost: 70, desc: 'Lightning jumps 3 times', fx: { chain: 3 } },
+        { name: 'Storm cell', cost: 140, desc: 'Jumps 5 times, flies farther', fx: { chain: 5, rangeAdd: 20, chainRange: 85, roam: 290 } },
+        { name: 'Thunder swarm', cost: 320, desc: 'Jumps 8 times, stronger', fx: { chain: 8, dmgMul: 1.4, chainRange: 100, roam: 350 } } ] },
+      { name: 'Static Shock', tiers: [
+        { name: 'Static', cost: 65, desc: 'Sometimes stuns critters', fx: { stunChance: 0.25, stunTime: 0.5 } },
+        { name: 'Overcharge', cost: 130, desc: '+80% damage, more stuns', fx: { dmgMul: 1.8, stunChance: 0.3, stunTime: 0.7 } },
+        { name: 'Tempest', cost: 310, desc: 'Fast, strong, stuns often', fx: { dmgMul: 2, rateMul: 0.7, stunChance: 0.45, stunTime: 0.9 } } ] } ] }
+,
   fox: { key: 'fox', name: 'Sly Fox', short: 'Fox', cost: 130, kind: 'shot', unlock: 5,
     base: { range: 300, dmg: 44, rate: 2.2, pierce: true },
     blurb: 'Sharp arrows from far away that ignore armor. Aims at the critter closest to the veggies. Upgrades can mark critters so everyone hurts them more.',
@@ -631,19 +678,7 @@ const TOWERS = {
       { name: 'Fierce Rooster', tiers: [
         { name: 'Sharp spurs', cost: 60, desc: 'Triple damage', fx: { dmgMul: 3 } },
         { name: 'Morning crow', cost: 120, desc: 'Buddies nearby shoot 20% faster', fx: { aura: 0.2, rangeAdd: 25 } },
-        { name: 'Rooster king', cost: 300, desc: 'Big boost for buddies nearby', fx: { aura: 0.3, dmgAura: 0.2, dmgMul: 1.5, rangeAdd: 25 } } ] } ] },
-   dragonfly: { key: 'dragonfly', name: 'Golden Dragonfly', short: 'Dragonfly', cost: 200, kind: 'chain', unlock: 12,
-    base: { range: 120, dmg: 17, rate: 1.25, chain: 2, chainRange: 70, roam: 190 },
-    blurb: 'Flies around the garden and follows the critters. Zaps one and the lightning jumps to 2 more. Hits flyers too.',
-    paths: [
-      { name: 'Long Chain', tiers: [
-        { name: 'Longer chain', cost: 70, desc: 'Lightning jumps 3 times', fx: { chain: 3 } },
-        { name: 'Storm cell', cost: 140, desc: 'Jumps 5 times, flies farther', fx: { chain: 5, rangeAdd: 20, chainRange: 85, roam: 290 } },
-        { name: 'Thunder swarm', cost: 320, desc: 'Jumps 8 times, stronger', fx: { chain: 8, dmgMul: 1.4, chainRange: 100, roam: 350 } } ] },
-      { name: 'Static Shock', tiers: [
-        { name: 'Static', cost: 65, desc: 'Sometimes stuns critters', fx: { stunChance: 0.25, stunTime: 0.5 } },
-        { name: 'Overcharge', cost: 130, desc: '+80% damage, more stuns', fx: { dmgMul: 1.8, stunChance: 0.3, stunTime: 0.7 } },
-        { name: 'Tempest', cost: 310, desc: 'Fast, strong, stuns often', fx: { dmgMul: 2, rateMul: 0.7, stunChance: 0.45, stunTime: 0.9 } } ] } ] }
+        { name: 'Rooster king', cost: 300, desc: 'Big boost for buddies nearby', fx: { aura: 0.3, dmgAura: 0.2, dmgMul: 1.5, rangeAdd: 25 } } ] } ] }
 };
 const TOWER_ORDER = ['squirrel', 'hive', 'bramble', 'frog', 'firefly', 'owl', 'mole', 'magpie', 'dragonfly', 'fox', 'beaver', 'hen'];
 
@@ -1182,7 +1217,7 @@ function createGame(L, onEvent) {
 
 /* ===================== SAVE ===================== */
 const SAVE_KEY = 'hedgerow-hollow-v1';
-const defaultSave = () => ({ stars: {}, best: {}, endless: { wave: 0, score: 0 }, daily: { date: '', best: 0, streak: 0, lastWin: '' }, music: true, sfx: true, auto: false, tut: false, last: 0 });
+const defaultSave = () => ({ stars: {}, best: {}, endless: { wave: 0, score: 0 }, daily: { date: '', best: 0, streak: 0, lastWin: '' }, music: true, sfx: true, auto: false, tut: false, last: 0, gold: 0, owned: {}, skins: {}, skin: '', pulls: 0, pity: 0, migrated: false });
 function loadSave() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
@@ -1732,7 +1767,9 @@ function drawTower(c, t, time, game) {
   c.save(); c.globalAlpha = 0.17; c.fillStyle = INK; c.beginPath(); c.ellipse(0, 17, t.roam ? 15 : 21, t.roam ? 5 : 7, 0, 0, 7); c.fill(); c.restore();
   if (t.pop > 0) { const p = 1 - t.pop / 0.4, sc = 1 + 0.25 * Math.sin(p * Math.PI * 1.6) * (1 - p); c.translate(0, 16); c.scale(2 - sc, sc); c.translate(0, -16); }
   if (top) { c.save(); c.strokeStyle = HONEY; c.lineWidth = 2.5; c.globalAlpha = 0.75; c.setLineDash([4, 6]); c.lineDashOffset = -time * 12; c.beginPath(); c.ellipse(0, 14, 30, 11, 0, 0, 7); c.stroke(); c.restore(); }
+  const sk = activeSkin(); skinGlow(c, sk, time, t.id || 0); if (sk) c.filter = skinFilter(sk, time);
   drawTowerBody(c, t, time);
+  c.filter = 'none';
   setInk(c, 1.6);
   if (t.tiers) {
     for (let i = 0; i < t.tiers[0]; i++) blob(c, -20 + i * 8, 27, 3.2, 3.2, HONEY, i, 0);
@@ -1902,7 +1939,39 @@ const set = (el, k, v) => { if (hudCache[k] !== v) { hudCache[k] = v; el.textCon
 const DISPLAY = "'Caveat Brush', 'Chalkboard SE', 'Comic Sans MS', cursive";
 function starsHTML(n) { let h = '<span class="star-row" aria-label="' + n + ' of 3 stars">'; for (let i = 0; i < 3; i++) h += '<i class="star' + (i < n ? ' on' : '') + '"></i>'; return h + '</span>'; }
 function totalStars() { let s = 0; for (const L of LEVELS) if (!L.endless && !L.daily) s += save.stars[L.id] || 0; return s; }
-const isUnlocked = (type, stars) => (stars == null ? totalStars() : stars) >= (TOWERS[type].unlock || 0);
+const PRICES = { mole: 30, magpie: 50, fox: 80, dragonfly: 100, beaver: 120, hen: 150 };
+const PULL_COST = 20;
+const GOLD_SVG = '<span class="gold"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c-4 0-7-4-7-9h14c0 5-3 9-7 9z" fill="#ffd84d" stroke="#26324d" stroke-width="2.4" stroke-linejoin="round"/><path d="M4 13c0-4 3-7 8-7s8 3 8 7z" fill="#f6c231" stroke="#26324d" stroke-width="2.4" stroke-linejoin="round"/><path d="M8 17c.4 1.4 1.3 2.4 2.5 2.9M8 10c.8-1.4 2-2.2 3.5-2.5" fill="none" stroke="#fff6c2" stroke-width="1.8" stroke-linecap="round"/></svg></span>';
+const isUnlocked = type => !TOWERS[type].unlock || !!save.owned[type];
+function migrateSave() {
+  if (save.migrated) return;
+  const ts = totalStars();
+  for (const k of TOWER_ORDER) if (TOWERS[k].unlock && TOWERS[k].unlock <= ts) save.owned[k] = true;
+  save.migrated = true; persist();
+}
+const RAR = [
+  { name: 'Common', col: '#4f7fb0', w: 60, refund: 5 }, { name: 'Rare', col: '#2f9a6a', w: 28, refund: 10 },
+  { name: 'Epic', col: '#9a4fd8', w: 10, refund: 20 }, { name: 'Legendary', col: '#d99a12', w: 2, refund: 50 }
+];
+const SKINS = [
+  { id: 'frost', name: 'Frosty', rar: 0, f: 'hue-rotate(165deg) saturate(1.1)', glow: '#9fd8ff' },
+  { id: 'sunset', name: 'Sunset', rar: 0, f: 'hue-rotate(-35deg) saturate(1.25)', glow: '#ff9a6a' },
+  { id: 'mint', name: 'Minty', rar: 0, f: 'hue-rotate(85deg)', glow: '#8ee8b0' },
+  { id: 'candy', name: 'Candy', rar: 1, f: 'hue-rotate(290deg) saturate(1.6) brightness(1.08)', glow: '#ff8ad0' },
+  { id: 'midnight', name: 'Midnight', rar: 1, f: 'hue-rotate(215deg) saturate(1.5) brightness(.8)', glow: '#6a7bff' },
+  { id: 'ember', name: 'Ember', rar: 1, f: 'hue-rotate(-12deg) saturate(2) contrast(1.1)', glow: '#ff6a3a' },
+  { id: 'shadow', name: 'Shadow', rar: 2, f: 'grayscale(1) brightness(.5) contrast(1.5)', glow: '#8a5cff', sparks: '#c9b3ff' },
+  { id: 'rainbow', name: 'Rainbow', rar: 2, f: tm => 'hue-rotate(' + ((tm * 80) % 360) + 'deg) saturate(1.5)', glow: '#ffffff', sparks: '#ffffff' },
+  { id: 'golden', name: 'Golden', rar: 3, f: 'sepia(1) saturate(4) hue-rotate(-8deg) brightness(1.2)', glow: '#ffd24a', sparks: '#fff1a0' }
+];
+const CANVAS_FILTER = (() => { try { return typeof document.createElement('canvas').getContext('2d').filter === 'string'; } catch (e) { return false; } })();
+const activeSkin = () => SKINS.find(k => k.id === save.skin && save.skins[k.id]) || null;
+const skinFilter = (k, tm) => (k && CANVAS_FILTER ? (typeof k.f === 'function' ? k.f(tm) : k.f) : 'none');
+function skinGlow(c, k, tm, id) {
+  if (!k) return;
+  c.save(); c.globalAlpha = 0.4; c.fillStyle = k.glow; c.beginPath(); c.ellipse(0, 14, 26, 9, 0, 0, 7); c.fill(); c.restore();
+  if (k.sparks) { c.save(); c.fillStyle = k.sparks; for (let i = 0; i < 3; i++) { const a = tm * 1.8 + i * 2.1 + id; c.globalAlpha = 0.5 + 0.4 * Math.sin(tm * 4 + i * 2); c.beginPath(); c.arc(Math.cos(a) * 24, Math.sin(a) * 9 + 2, 1.7, 0, 7); c.fill(); } c.restore(); }
+}
 function nextLevelIdx() {
   for (let i = 0; i < LEVELS.length; i++) if (!LEVELS[i].endless && !LEVELS[i].daily && !(save.stars[LEVELS[i].id] > 0)) return i;
   const l = save.last || 0;
@@ -1961,15 +2030,84 @@ function buildMenu() {
     b.addEventListener('click', () => startLevel(i));
     box.appendChild(b);
   });
+  migrateSave();
   const mx = LEVELS.filter(L => !L.endless && !L.daily).length * 3, ts = totalStars();
-  $('totals').textContent = 'Stars ' + ts + ' of ' + mx;
+  $('totals').innerHTML = 'Stars ' + ts + ' of ' + mx + ' &middot; ' + GOLD_SVG + ' <b>' + save.gold + '</b>';
   const nl = LEVELS[nextLevelIdx()];
   $('btnPlay').innerHTML = (ts || save.last ? 'Continue' : 'Play') + '<small>' + nl.name + ' &middot; ' + nl.waves + ' waves</small>';
   const di = dailyInfo(), dl = LEVELS.find(q => q.daily);
   $('dailySub').textContent = dl.modName + ' \u00b7 ' + (di.doneToday ? 'done today' : di.streak ? 'streak ' + di.streak : 'new today');
   $('endlessSub').textContent = save.endless.wave ? 'Best ' + save.endless.wave + ' waves' : 'No finish line';
-  $('buddyNote').textContent = 'You have ' + ts + ' of ' + mx + ' stars. Earn stars in the gardens to unlock more buddies.';
-  buildGuide();
+  $('buddyNote').innerHTML = 'You have ' + GOLD_SVG + ' ' + save.gold + ' golden seeds. Buy locked buddies in the Shop tab.';
+  buildGuide(); buildShop();
+}
+let lastPull = null;
+function drawSkinPreview(cv2, k, locked) {
+  const c = cv2.getContext('2d'); c.clearRect(0, 0, cv2.width, cv2.height); c.save(); c.translate(cv2.width / 2, cv2.height * 0.58); const sc = cv2.width / 64; c.scale(sc * 1.15, sc * 1.15);
+  if (k && !locked) { c.save(); c.globalAlpha = 0.4; c.fillStyle = k.glow; c.beginPath(); c.ellipse(0, 14, 24, 8, 0, 0, 7); c.fill(); c.restore(); }
+  if (k && !locked && CANVAS_FILTER) c.filter = skinFilter(k, 0.6);
+  if (locked) c.filter = CANVAS_FILTER ? 'grayscale(1) brightness(.2)' : 'none';
+  drawTowerBody(c, { type: 'squirrel', lvl: 1, id: 2, aimX: 1, aimY: 0, flash: 0 }, 0); c.restore();
+}
+function buildShop() {
+  const box = $('shopBox'); if (!box) return; box.innerHTML = '';
+  box.insertAdjacentHTML('beforeend', '<div class="panel shopbal"><span>Golden seeds</span><b>' + GOLD_SVG + ' ' + save.gold + '</b></div>');
+  box.insertAdjacentHTML('beforeend', '<h3 class="shop-h">Buddies</h3>');
+  const list = document.createElement('div'); list.className = 'buylist'; box.appendChild(list);
+  TOWER_ORDER.filter(k => TOWERS[k].unlock).forEach(type => {
+    const T = TOWERS[type], own = isUnlocked(type), d = document.createElement('div'); d.className = 'panel buycard';
+    const ic = document.createElement('canvas'); ic.width = ic.height = 108; const c = ic.getContext('2d'); c.translate(54, 62); c.scale(1.65, 1.65);
+    drawTowerBody(c, { type, lvl: 0, id: 1, aimX: 1, aimY: 0, flash: 0 }, 0); d.appendChild(ic);
+    d.insertAdjacentHTML('beforeend', '<div><strong>' + T.name + '</strong><br><span class="gs">' + T.blurb.split('. ')[0] + '.</span></div>');
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn buybtn' + (own ? '' : ' primary');
+    if (own) { b.textContent = 'Owned'; b.disabled = true; } else {
+      b.innerHTML = GOLD_SVG + ' ' + PRICES[type]; b.disabled = save.gold < PRICES[type];
+      b.addEventListener('click', () => { if (save.gold < PRICES[type]) return; save.gold -= PRICES[type]; save.owned[type] = true; persist(); Sound.init(); Sound.play('egg'); buildTray(); buildMenu(); });
+    }
+    d.appendChild(b); list.appendChild(d);
+  });
+  box.insertAdjacentHTML('beforeend', '<h3 class="shop-h">Skin gamble</h3>');
+  const g = document.createElement('div'); g.className = 'panel gamble'; box.appendChild(g);
+  g.insertAdjacentHTML('beforeend', '<p>Spend ' + PULL_COST + ' golden seeds to win a skin. Skins change how all your buddies look.' + (CANVAS_FILTER ? '' : ' This browser shows skins as glows only.') + '</p><p class="odds">Common 60% &middot; Rare 28% &middot; Epic 10% &middot; Legendary 2%. Epic or better is guaranteed within ' + Math.max(1, 10 - (save.pity || 0)) + ' pulls. A skin you already own gives some seeds back.</p>');
+  const pb = document.createElement('button'); pb.type = 'button'; pb.className = 'btn primary'; pb.innerHTML = 'Gamble ' + GOLD_SVG + ' ' + PULL_COST; pb.disabled = save.gold < PULL_COST;
+  pb.addEventListener('click', pullSkin); g.appendChild(pb);
+  const pr = document.createElement('div'); pr.className = 'pullres'; pr.id = 'pullRes'; g.appendChild(pr);
+  if (lastPull) renderPull(pr, lastPull);
+  const owned = SKINS.filter(k => save.skins[k.id]).length;
+  box.insertAdjacentHTML('beforeend', '<h3 class="shop-h">Your skins (' + owned + ' of ' + SKINS.length + ')</h3>');
+  const grid = document.createElement('div'); grid.className = 'skins'; box.appendChild(grid);
+  const mk = (k) => {
+    const has = !k || !!save.skins[k.id], b = document.createElement('button'); b.type = 'button'; b.className = 'btn skin' + (has ? '' : ' unk');
+    const rc = k ? RAR[k.rar].col : '#26324d'; b.style.setProperty('--rc', rc);
+    b.setAttribute('aria-pressed', String(has && (k ? save.skin === k.id : !save.skin)));
+    const cvs = document.createElement('canvas'); cvs.width = cvs.height = 124; b.appendChild(cvs); drawSkinPreview(cvs, k, !has);
+    b.insertAdjacentHTML('beforeend', '<span class="sn">' + (has ? (k ? k.name : 'Original') : '???') + '</span><span class="sr">' + (k ? RAR[k.rar].name : 'Default') + '</span>');
+    if (has) b.addEventListener('click', () => { save.skin = k ? k.id : ''; persist(); Sound.init(); Sound.play('click'); buildShop(); });
+    else b.disabled = true;
+    grid.appendChild(b);
+  };
+  mk(null); SKINS.forEach(mk);
+}
+function renderPull(el, r) {
+  const k = r.skin, rc = RAR[k.rar].col; el.innerHTML = '';
+  const d = document.createElement('div'); d.className = 'pullcard'; d.style.setProperty('--rc', rc);
+  const cvs = document.createElement('canvas'); cvs.width = cvs.height = 152; d.appendChild(cvs); drawSkinPreview(cvs, k, false);
+  d.insertAdjacentHTML('beforeend', '<div><span class="rar">' + RAR[k.rar].name + '</span><br><strong>' + k.name + '</strong><br><span>' + (r.dup ? 'Already owned. +' + r.refund + ' ' + GOLD_SVG + ' back' : 'New skin! Tap it below to wear it.') + '</span></div>');
+  el.appendChild(d);
+}
+function pullSkin() {
+  if (save.gold < PULL_COST) return;
+  Sound.init(); save.gold -= PULL_COST; save.pulls = (save.pulls || 0) + 1;
+  const pity = save.pity || 0; let r = 0;
+  if (pity >= 9) r = Math.random() < 0.8 ? 2 : 3;
+  else { const x = Math.random() * 100; let acc = 0; for (let i = 0; i < RAR.length; i++) { acc += RAR[i].w; if (x < acc) { r = i; break; } } }
+  save.pity = r >= 2 ? 0 : pity + 1;
+  const pool = SKINS.filter(k => k.rar === r), k = pool[Math.floor(Math.random() * pool.length)], dup = !!save.skins[k.id];
+  let refund = 0;
+  if (dup) { refund = RAR[r].refund; save.gold += refund; } else { save.skins[k.id] = true; if (!save.skin) save.skin = k.id; }
+  persist(); lastPull = { skin: k, dup, refund };
+  Sound.play(r >= 2 ? 'win' : 'coin');
+  buildShop(); buildMenu();
 }
 const ENEMY_NOTE = {
   snail: 'Slow and sturdy.', beetle: 'Quick on its feet.', mouse: 'Very fast, very soft.', caterpillar: 'Splits into two grubs when it falls.',
@@ -1984,7 +2122,7 @@ function buildGuide() {
     const gi = document.createElement('span'); gi.className = 'gicon' + (T.unlock && !isUnlocked(type) ? ' locked' : ''); gi.appendChild(ic);
     if (gi.classList.contains('locked')) gi.insertAdjacentHTML('beforeend', LOCK_SVG);
     d.appendChild(gi);
-    const un = T.unlock ? '<br><span class="gc">' + (isUnlocked(type) ? 'Unlocked' : 'Unlocks at ' + T.unlock + ' stars') + '</span>' : '';
+    const un = T.unlock ? '<br><span class="gc">' + (isUnlocked(type) ? 'Unlocked' : 'Costs ' + PRICES[type] + ' ' + GOLD_SVG + ' in the Shop') + '</span>' : '';
     d.insertAdjacentHTML('beforeend', '<div><strong>' + T.name + '</strong> <span class="gc">' + T.cost + ' seeds</span><br><span class="gs">' + T.blurb + '</span>' + un + '</div>');
     gb.appendChild(d);
   });
@@ -2073,6 +2211,7 @@ function drawHero(t) {
     const b = heroS.b[i]; b.hop = Math.max(0, b.hop - dt); b.flash = Math.max(0, b.flash - dt); b.sayT -= dt;
     const hp = b.hop > 0 ? Math.sin(Math.PI * (1 - b.hop / 0.5)) : 0, on = hv && hv.k === 'b' && hv.i === i, sc = 0.88 * (on ? 1.1 : 1);
     c.save(); c.translate(heroX(i), 184 + Math.sin(t * 1.6 + i) * 1.6 - hp * 28 - (on ? 3 : 0)); c.scale(sc * (1 - hp * 0.05), sc * (1 + hp * 0.08));
+    const hs = activeSkin(); if (hs) { skinGlow(c, hs, t, i); c.filter = skinFilter(hs, t); }
     drawTowerBody(c, { type, lvl: i % 3, id: i + 3, aimX: b.ax, aimY: b.ay, flash: b.flash }, t); c.restore();
   });
   HERO_CRITTERS.forEach((type, i) => {
@@ -2124,8 +2263,8 @@ function buildTray() {
     b.appendChild(ic);
     const lock = !isUnlocked(type);
     b.classList.toggle('locked', lock); b.dataset.locked = lock ? '1' : '';
-    b.insertAdjacentHTML('beforeend', '<span class="tn">' + T.short + '</span><span class="tc">' + (lock ? T.unlock + ' stars' : SEED_SVG + T.cost) + '</span><span class="kbd">' + '1234567890-='[i] + '</span>');
-    if (lock) { b.setAttribute('aria-label', T.name + ', locked. Earn ' + T.unlock + ' stars to unlock'); b.insertAdjacentHTML('beforeend', LOCK_SVG); }
+    b.insertAdjacentHTML('beforeend', '<span class="tn">' + T.short + '</span><span class="tc">' + (lock ? GOLD_SVG + PRICES[type] : SEED_SVG + T.cost) + '</span><span class="kbd">' + '1234567890-='[i] + '</span>');
+    if (lock) { b.setAttribute('aria-label', T.name + ', locked. Costs ' + PRICES[type] + ' golden seeds'); b.insertAdjacentHTML('beforeend', LOCK_SVG); }
     b.addEventListener('click', () => { Sound.play('click'); setBuildType(type); });
     trayEl.appendChild(b);
   });
@@ -2140,9 +2279,15 @@ function buildPowers() {
     powersEl.appendChild(b);
   });
 }
+let buyPending = null, buyT = 0;
 function setBuildType(type) {
   if (!game || mode !== 'play') return;
-  if (!isUnlocked(type)) { toast('Earn ' + TOWERS[type].unlock + ' stars to unlock ' + TOWERS[type].name); Sound.play('error'); return; }
+  if (!isUnlocked(type)) {
+    const T = TOWERS[type], price = PRICES[type];
+    if (save.gold < price) { toast(T.name + ' costs ' + price + ' golden seeds. You have ' + save.gold + '. Win rounds to earn more.'); Sound.play('error'); return; }
+    if (buyPending !== type) { buyPending = type; clearTimeout(buyT); buyT = setTimeout(() => { buyPending = null; }, 3000); toast('Tap again to buy ' + T.name + ' for ' + price + ' golden seeds'); Sound.play('click'); return; }
+    save.gold -= price; save.owned[type] = true; buyPending = null; persist(); buildTray(); Sound.play('egg'); toast(T.name + ' is yours!');
+  }
   sel = null; pending = null; moving = null; buildType = type;
   if (gameScreen.classList.contains('fs')) { const c = trayEl.querySelector('[data-type="' + type + '"]'); if (c && c.scrollIntoView) c.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' }); }
 }
@@ -2467,21 +2612,21 @@ function recordEndless() {
 function endGame(won) {
   mode = 'ended'; Sound.setIntense(false); Sound.play(won ? 'win' : 'lose');
   const g = game, L = g.L; let newBest = false;
-  const before = totalStars();
+  const prevStars = save.stars[L.id] || 0; let goldGain = 0;
   if (won && L.daily) {
     const d = save.daily, key = L.dkey;
     if (d.date !== key) { d.date = key; d.best = 0; }
     if (g.score > d.best) { d.best = g.score; newBest = true; }
-    if (d.lastWin !== key) { d.streak = d.lastWin === dateKey(new Date(Date.now() - 864e5)) ? d.streak + 1 : 1; d.lastWin = key; }
+    if (d.lastWin !== key) { d.streak = d.lastWin === dateKey(new Date(Date.now() - 864e5)) ? d.streak + 1 : 1; d.lastWin = key; goldGain = 15 + Math.min(10, 2 * d.streak); }
   } else if (won) {
+    goldGain = 10 + 6 * g.stars + (prevStars === 0 ? 20 : 0) + 10 * Math.max(0, g.stars - prevStars);
     save.stars[L.id] = Math.max(save.stars[L.id] || 0, g.stars);
     if (g.score > (save.best[L.id] || 0)) { save.best[L.id] = g.score; newBest = true; }
   } else if (L.endless) {
     newBest = g.cleared > save.endless.wave || (g.cleared === save.endless.wave && g.score > save.endless.score);
-    recordEndless();
+    recordEndless(); goldGain = Math.floor(g.cleared / 5) * 3;
   }
-  const after = totalStars();
-  g.unlocked = TOWER_ORDER.filter(k => TOWERS[k].unlock && TOWERS[k].unlock > before && TOWERS[k].unlock <= after).map(k => TOWERS[k].name);
+  g.goldGain = goldGain; save.gold += goldGain;
   persist();
   setTimeout(() => { if (mode === 'ended' && game === g) showEnd(won, newBest); }, 1100);
 }
@@ -2493,7 +2638,7 @@ function showEnd(won, newBest) {
     : L.endless ? 'You stopped ' + g.cleared + (g.cleared === 1 ? ' wave.' : ' waves.') : 'You reached wave ' + g.wave + ' of ' + L.waves + '.';
   $('endScore').textContent = 'Score ' + g.score;
   const best = L.endless ? 'Best: ' + save.endless.wave + ' waves, score ' + save.endless.score : L.daily ? (won ? 'Daily streak: ' + save.daily.streak + (save.daily.streak === 1 ? ' day' : ' days') : 'Try again, today is still open') : save.best[L.id] ? 'Best score ' + save.best[L.id] : '';
-  $('endBest').innerHTML = '<span class="eb-line">' + (newBest ? '<span class="new-best">New best!</span>' : '') + (best ? '<span>' + best + '</span>' : '') + '</span>' + (g.unlocked && g.unlocked.length ? '<span class="new-best">New buddy: ' + g.unlocked.join(', ') + '!</span>' : '');
+  $('endBest').innerHTML = '<span class="eb-line">' + (newBest ? '<span class="new-best">New best!</span>' : '') + (best ? '<span>' + best + '</span>' : '') + '</span>' + (g.goldGain ? '<span class="new-best">+' + g.goldGain + ' ' + GOLD_SVG + ' golden seeds</span>' : '');
   const acts = $('endActs'); acts.innerHTML = '';
   const add = (txt, fn, primary) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (primary ? ' primary' : ''); b.textContent = txt; b.addEventListener('click', fn); acts.appendChild(b); return b; };
   let first;

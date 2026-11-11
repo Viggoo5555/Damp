@@ -682,6 +682,7 @@ function lbSpinner(box,text){
 function lbNote(box,text){
   const d=document.createElement('div');d.className='lbmsg';d.textContent=text;box.append(d);
 }
+function deviceBest(){return Math.max(best,save.lb[0]?save.lb[0].s:0)}
 function lbStats(){
   const box=$('lbs');box.textContent='';
   if(fbUser){
@@ -692,7 +693,7 @@ function lbStats(){
   }
   const d=document.createElement('div');d.className='lbstat';
   const ld=document.createElement('span');ld.textContent='This device';
-  const vd=document.createElement('b');vd.textContent=Math.max(best,save.lb[0]?save.lb[0].s:0);
+  const vd=document.createElement('b');vd.textContent=deviceBest();
   d.append(ld,vd);box.append(d);
 }
 function lbLogIn(box){
@@ -757,21 +758,38 @@ function lbRender(){
   else if(lbWriteFail)lbNote(box,"Your last score couldn't be saved. Check the Firestore rules.");
   else if(lbOwn===null&&fbState==='ok')lbNote(box,'Finish a run to get your first score on the board.');
 }
-async function submitLb(){
-  if(!fbUser||!fbDb||!score)return;
+// Writes a score to the all-time board and, if asked, to this week's board too
+async function pushScore(value,week){
+  if(!fbUser||!fbDb||!value)return false;
   const name=lbName(fbUser),at=F.serverTimestamp();
   let failed=false;
   const send=async ref=>{
     try{
       const old=await F.getDoc(ref);
-      if(old.exists()&&old.data().score>=score)return;
-      await F.setDoc(ref,{name:name,score:score,at:at},{merge:true});
+      if(old.exists()&&old.data().score>=value)return;
+      await F.setDoc(ref,{name:name,score:value,at:at},{merge:true});
     }catch(e){failed=true;}
   };
   await send(F.doc(fbDb,LB,fbUser.uid));
-  await send(F.doc(fbDb,'flappy_week',lbWeek(new Date()),'scores',fbUser.uid));
-  lbWriteFail=failed;
+  if(week)await send(F.doc(fbDb,'flappy_week',lbWeek(new Date()),'scores',fbUser.uid));
+  return failed;
+}
+async function submitLb(){
+  if(!fbUser||!fbDb||!score)return;
+  lbWriteFail=await pushScore(score,true);
   lbRender();
+}
+// Runs played before signing in live only on this device, so send that best up once
+async function syncDeviceBest(){
+  if(!fbUser||!fbDb)return;
+  const local=deviceBest();
+  if(!local)return;
+  let mark=null;
+  try{mark=JSON.parse(localStorage.getItem('fb-lb-up'))}catch(e){}
+  if(mark&&mark.uid===fbUser.uid&&local<=(mark.score||0))return;
+  // All-time only: a score from an earlier week must not appear in this week's board
+  if(await pushScore(local,false))return;
+  try{localStorage.setItem('fb-lb-up',JSON.stringify({uid:fbUser.uid,score:local}))}catch(e){}
 }
 function lbWatchOwn(){
   if(ownUnsub){ownUnsub();ownUnsub=null;}
@@ -791,7 +809,7 @@ async function initLb(){
     fbState='ok';lbTabs();
     // Started at load, not when the panel opens, so the first look is instant and always current
     lbWatch();
-    mods[1].onAuthStateChanged(fbAuth,u=>{fbUser=u;lbWatchOwn();lbRender();if(u)submitLb();});
+    mods[1].onAuthStateChanged(fbAuth,u=>{fbUser=u;lbWatchOwn();lbRender();if(u){submitLb();syncDeviceBest();}});
   }catch(e){
     fbState='off';lbRender();
   }

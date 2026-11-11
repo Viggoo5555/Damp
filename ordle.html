@@ -233,7 +233,7 @@ const LB={da:{t:"Ranglise",all:"Alle tider",week:"Denne uge",none:"Ingen resulta
 const FBC={apiKey:"AIzaSyDJhWSi7QZKXtOPYwKHPF7zPg_klh1If7w",authDomain:"damp-2406a.firebaseapp.com",projectId:"damp-2406a",appId:"1:940989851976:web:f8fd07c258afa71fd22b7d"};
 const SDK="https://www.gstatic.com/firebasejs/10.14.1/";
 let stat={streak:0,best:0,wins:0};
-try{const s=JSON.parse(localStorage.getItem("ordle-stat")||"{}");if(typeof s.best==="number")stat={streak:+s.streak||0,best:+s.best||0,wins:+s.wins||0}}catch(e){}
+try{const s=JSON.parse(localStorage.getItem("ordle-stat")||"{}");if(typeof s.best==="number")stat={streak:+s.streak||0,best:+s.best||0,wins:+s.wins||0,w:s.w||"",wbest:+s.wbest||0}}catch(e){}
 function saveStat(){try{localStorage.setItem("ordle-stat",JSON.stringify(stat))}catch(e){}}
 let lbTab="all",lbF=null,lbDb=null,lbUser=null,fbP=null;
 const lbT_=()=>LB[lang]||LB.en;
@@ -300,15 +300,28 @@ async function submitScore(){
   if(!stat.best)return;
   if(localStorage.getItem("damp-in")!=="1")return;
   if(!await ensureFb()||!lbF||!lbUser)return;
-  try{
-    const ref=lbF.doc(lbDb,"ordle",lbUser.uid);
+  const me=playerName(lbUser);
+  const higher=async(ref,val)=>{
     const old=await lbF.getDoc(ref);
-    if(old.exists()&&old.data().score>=stat.best)return;
-    await lbF.setDoc(ref,{name:playerName(lbUser),score:stat.best,at:lbF.serverTimestamp()},{merge:true});
+    if(old.exists()&&(old.data().score||0)>=val)return false;
+    await lbF.setDoc(ref,{name:me,score:val,at:lbF.serverTimestamp()},{merge:true});
+    return true;
+  };
+  try{
+    await higher(lbF.doc(lbDb,"ordle",lbUser.uid),stat.best);
+    const w=weekId(new Date());
+    if(stat.w===w&&stat.wbest)await higher(lbF.doc(lbDb,"ordle_week",w,"scores",lbUser.uid),stat.wbest);
     if($("lb").style.display==="flex")lbDraw();
   }catch(e){}
 }
-function won(){stat.streak=(stat.streak||0)+1;stat.wins=(stat.wins||0)+1;stat.best=Math.max(stat.best||0,stat.streak);saveStat();submitScore()}
+function won(){
+  stat.streak=(stat.streak||0)+1;stat.wins=(stat.wins||0)+1;
+  stat.best=Math.max(stat.best||0,stat.streak);
+  const w=weekId(new Date());
+  if(stat.w!==w){stat.w=w;stat.wbest=0}
+  stat.wbest=Math.max(stat.wbest||0,stat.streak);
+  saveStat();submitScore();
+}
 function lost(){stat.streak=0;saveStat()}
 $("lbb").onclick=()=>{$("lb").style.display="flex";lbDraw()};
 $("lb").onclick=e=>{if(e.target===$("lb"))$("lb").style.display="none"};

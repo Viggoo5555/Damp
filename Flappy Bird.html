@@ -5,7 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Flappy Bird</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js" crossorigin>
 <style>
 :root{--bg:#bfe3ea;--panel:#ded895;--ink:#543847;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10262c}}
@@ -806,15 +811,21 @@ function lbWatchOwn(){
 }
 async function initLb(){
   lbRows=lbReadCache();
+  // All three downloads start together; the board only waits for app + firestore, not auth
+  const appP=import(FBSDK+'firebase-app.js'),fsP=import(FBSDK+'firebase-firestore.js'),authP=import(FBSDK+'firebase-auth.js');
   try{
-    const mods=await Promise.all([import(FBSDK+'firebase-app.js'),import(FBSDK+'firebase-auth.js'),import(FBSDK+'firebase-firestore.js')]);
-    F=mods[2];
-    const app=mods[0].initializeApp(FB);
-    fbAuth=mods[1].getAuth(app);fbDb=F.getFirestore(app);
+    const appM=await appP,fsM=await fsP;
+    F=fsM;
+    const app=appM.initializeApp(FB);
+    fbDb=F.getFirestore(app);
     fbState='ok';lbTabs();
     // Started at load, not when the panel opens, so the first look is instant and always current
     lbWatch();
-    mods[1].onAuthStateChanged(fbAuth,u=>{fbUser=u;lbWatchOwn();lbRender();if(u){submitLb();syncDeviceBest();}});
+    try{
+      const authM=await authP;
+      fbAuth=authM.getAuth(app);
+      authM.onAuthStateChanged(fbAuth,u=>{fbUser=u;lbWatchOwn();lbRender();if(u){submitLb();syncDeviceBest();}});
+    }catch(e){}
   }catch(e){
     fbState='off';lbRender();
   }

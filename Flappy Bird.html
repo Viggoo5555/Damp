@@ -100,6 +100,8 @@ h2{font-size:calc(var(--s)*22px);color:var(--hd,#ffa72b)}
 #lbl{display:flex;flex-direction:column;gap:calc(var(--s)*8px)}
 #lbl .it b{font-weight:400;font-size:calc(var(--s)*10px);color:var(--hd,#ffa72b)}
 #lbl .it.me{background:rgba(255,167,43,.28);box-shadow:inset 0 0 0 calc(var(--s)*2px) #ffa72b}
+@keyframes spin{to{transform:rotate(360deg)}}
+#lbl .sp{width:calc(var(--s)*10px);height:calc(var(--s)*10px);flex:none;border-radius:50%;border:calc(var(--s)*2px) solid rgba(255,255,255,.3);border-top-color:#ffa72b;animation:spin .8s linear infinite}
 #tree{position:relative;width:calc(var(--s)*288px);height:calc(var(--s)*270px);margin:0 calc(var(--s)*-12px);flex:none}
 #tree svg{position:absolute;inset:0;width:100%;height:100%}
 #tree line{stroke:#5a6a72;stroke-width:3}#tree line.on{stroke:#74c02c}
@@ -639,6 +641,12 @@ function lbRow(box,text,right,me){
   if(right!=null){const sc=document.createElement('b');sc.textContent=right;row.append(sc);}
   box.append(row);
 }
+function lbSpinner(box,text){
+  const row=document.createElement('div');row.className='it';
+  const sp=document.createElement('i');sp.className='sp';
+  const nm=document.createElement('span');nm.textContent=text;
+  row.append(sp,nm);box.append(row);
+}
 function lbLogIn(){
   const box=$('lbl');
   const row=document.createElement('div');row.className='it';
@@ -666,7 +674,11 @@ function lbRender(){
   lbRows.forEach((it,i)=>lbRow(box,'#'+(i+1)+'  '+(it.name||'player'),it.score,!!fbUser&&it.id===fbUser.uid));
   if(fbState==='off')lbRow(box,'The leaderboard is offline right now.');
   else if(fbState==='error')lbRow(box,'Could not refresh scores. Check the Firestore rules.');
-  else if(!lbRows.length)lbRow(box,lbLoaded?'No scores yet. Be the first!':'Loading scores...');
+  else if(!lbRows.length&&!lbLoaded){
+    lbSpinner(box,'Connecting to the leaderboard...');
+    lbRow(box,'Your best on this device: '+Math.max(best,save.lb[0]?save.lb[0].s:0));
+  }
+  else if(!lbRows.length)lbRow(box,'No scores yet. Be the first!');
   if(!fbUser){
     lbLogIn();
     $('lbs').textContent='Anyone can look. Log in to add your own score.';

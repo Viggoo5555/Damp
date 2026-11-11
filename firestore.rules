@@ -61,6 +61,18 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Online fighting rooms: only used to connect two players (the game itself
+    // runs directly between the two browsers, so almost nothing is stored here).
+    match /rooms/{code} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.host == request.auth.uid;
+      allow update: if request.auth != null
+        && (resource.data.host == request.auth.uid
+            || (!('guest' in resource.data) && request.resource.data.guest == request.auth.uid));
+      allow delete: if request.auth != null && resource.data.host == request.auth.uid;
+    }
+
     // Everything else stays closed.
     match /{document=**} {
       allow read, write: if false;

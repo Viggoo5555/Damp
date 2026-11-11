@@ -232,6 +232,17 @@
     byId("people-msg").className = bad ? "note bad" : "note";
   }
 
+  // Turns a Firestore failure into the reason Firestore actually gave, instead
+  // of guessing that the rules were never published.
+  function fbProblem(error) {
+    const code = error && error.code ? String(error.code).replace("firestore/", "") : "";
+    const detail = (error && error.message) || "";
+    if (code === "permission-denied") return "Firestore refused that (permission-denied). The published rules do not allow it.";
+    if (code === "failed-precondition") return "Firestore needs an index for that (failed-precondition). " + detail;
+    if (code === "unavailable") return "Firestore is unreachable right now (unavailable). Try again.";
+    return "Firestore error" + (code ? " (" + code + ")" : "") + (detail ? ": " + detail : ".");
+  }
+
   // Publishes this account in the people list
   function publishMe() {
     if (!fb || !user) return;
@@ -292,8 +303,8 @@
         if (doc.id !== user.uid) directory.push({ id: doc.id, name: doc.data().name || "player" });
       });
       drawPeople();
-    }, function () {
-      peopleMsg("Could not load people. Publish the Firestore rules for people and chats.", true);
+    }, function (error) {
+      peopleMsg(fbProblem(error), true);
     });
   }
 
@@ -312,7 +323,7 @@
     names[user.uid] = shownName(user);
     names[uid] = name;
     fb.f.setDoc(chatRef, { ids: [user.uid, uid].sort(), names: names }, { merge: true })
-      .catch(function () { peopleMsg("Could not start the chat. Publish the Firestore rules for chats.", true); });
+      .catch(function (error) { peopleMsg(fbProblem(error), true); });
 
     if (chatUnsub) chatUnsub();
     chatUnsub = fb.f.onSnapshot(
@@ -335,7 +346,7 @@
         });
         log.scrollTop = log.scrollHeight;
       },
-      function () { peopleMsg("Could not load this chat. Publish the Firestore rules for chats.", true); }
+      function (error) { peopleMsg(fbProblem(error), true); }
     );
   }
 
@@ -371,7 +382,7 @@
     const id = pairId(user.uid, chatWith);
     const at = Date.now();
     fb.f.addDoc(fb.f.collection(fb.db, "chats", id, "messages"), { from: user.uid, text: text, at: at })
-      .catch(function () { peopleMsg("Message not sent. Publish the Firestore rules for chats.", true); });
+      .catch(function (error) { peopleMsg(fbProblem(error), true); });
     // Keeps the summary on the chat fresh, so the other player can be notified
     fb.f.setDoc(fb.f.doc(fb.db, "chats", id),
       { ids: [user.uid, chatWith].sort(), last: text.slice(0, 120), lastAt: at, lastFrom: user.uid },

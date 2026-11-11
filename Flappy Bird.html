@@ -729,13 +729,25 @@ function lbSaveCache(){
 function lbReadCache(){
   try{const d=JSON.parse(localStorage.getItem(lbCacheKey()));return Array.isArray(d)?d:[]}catch(e){return []}
 }
-// All time lives in flappy/{uid}; each week gets its own subcollection, so no composite index is needed
-function lbWatch(){
-  if(lbUnsub){lbUnsub();lbUnsub=null;}
-  lbLoaded=false;
-  lbRows=lbReadCache();
-  lbRender();
+// Fast path: one small JSON request to the Pages Function, no Firebase SDK needed
+let lbApiOk=false;
+async function lbApi(){
+  try{
+    const res=await fetch('/api/leaderboard?mode='+lbMode,{cache:'no-store'});
+    if(!res.ok)throw new Error('http '+res.status);
+    const data=await res.json();
+    if(!data||!Array.isArray(data.rows))throw new Error('shape');
+    lbRows=data.rows;lbLoaded=true;fbState='ok';lbApiOk=true;lbSaveCache();lbRender();
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+// Fallback: talk to Firestore directly. All time lives in flappy/{uid};
+// each week gets its own subcollection, so no composite index is needed
+function lbListen(){
   if(!F||!fbDb)return;
+  if(lbUnsub){lbUnsub();lbUnsub=null;}
   const ref=lbMode==='week'?F.collection(fbDb,'flappy_week',lbWeek(new Date()),'scores'):F.collection(fbDb,LB);
   lbUnsub=F.onSnapshot(
     F.query(ref,F.orderBy('score','desc'),F.limit(10)),
@@ -745,6 +757,14 @@ function lbWatch(){
     },
     ()=>{fbState='error';lbRender();}
   );
+}
+async function lbWatch(){
+  if(lbUnsub){lbUnsub();lbUnsub=null;}
+  lbLoaded=false;
+  lbRows=lbReadCache();
+  lbRender();
+  if(await lbApi())return;
+  lbListen();
 }
 // Draws whatever is known right now, so the panel never waits on the network
 function lbRender(){
@@ -811,6 +831,9 @@ function lbWatchOwn(){
 }
 async function initLb(){
   lbRows=lbReadCache();
+  lbTabs();
+  // Fastest path first: the Pages Function needs no SDK at all
+  lbWatch();
   // All three downloads start together; the board only waits for app + firestore, not auth
   const appP=import(FBSDK+'firebase-app.js'),fsP=import(FBSDK+'firebase-firestore.js'),authP=import(FBSDK+'firebase-auth.js');
   try{
@@ -818,16 +841,16 @@ async function initLb(){
     F=fsM;
     const app=appM.initializeApp(FB);
     fbDb=F.getFirestore(app);
-    fbState='ok';lbTabs();
-    // Started at load, not when the panel opens, so the first look is instant and always current
-    lbWatch();
+    fbState='ok';
+    // No function deployed (or it is not working yet): go straight to Firestore
+    if(!lbApiOk)lbListen();
     try{
       const authM=await authP;
       fbAuth=authM.getAuth(app);
       authM.onAuthStateChanged(fbAuth,u=>{fbUser=u;lbWatchOwn();lbRender();if(u){submitLb();syncDeviceBest();}});
     }catch(e){}
   }catch(e){
-    fbState='off';lbRender();
+    if(!lbApiOk){fbState='off';lbRender();}
   }
 }
 function lbTabs(){

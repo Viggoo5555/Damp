@@ -787,6 +787,11 @@ async function syncDeviceBest(){
   let mark=null;
   try{mark=JSON.parse(localStorage.getItem('fb-lb-up'))}catch(e){}
   if(mark&&mark.uid===fbUser.uid&&local<=(mark.score||0))return;
+  // Another account has played on this device, so ask before handing its score over
+  if(mark&&mark.uid!==fbUser.uid&&!confirm('This browser has a Flappy best of '+local+' from another account. Add it to your account?')){
+    try{localStorage.setItem('fb-lb-up',JSON.stringify({uid:fbUser.uid,score:local}))}catch(e){}
+    return;
+  }
   // All-time only: a score from an earlier week must not appear in this week's board
   if(await pushScore(local,false))return;
   try{localStorage.setItem('fb-lb-up',JSON.stringify({uid:fbUser.uid,score:local}))}catch(e){}

@@ -43,7 +43,7 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;justify-conten
 .k.ok{background:var(--ok)}.k.mid{background:var(--mid)}.k.no{background:var(--no)}
 #toasts{position:fixed;top:calc(70px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;z-index:5;pointer-events:none}
 .toast{background:var(--toast);color:var(--toastfg);padding:12px 16px;border-radius:4px;font-weight:700;font-size:14px}
-#help,#set{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:6;padding:16px}
+#help,#set,#lb{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:6;padding:16px}
 .card{background:var(--bg);color:var(--fg);width:100%;max-width:400px;border-radius:8px;padding:22px 24px;line-height:1.45;font-size:15px}
 .card h2{margin:0 0 8px;font-size:20px}
 .card p{margin:8px 0}
@@ -53,13 +53,26 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;justify-conten
 .seg button.on{background:var(--ok);border-color:var(--ok);color:#fff}
 .seg button:disabled{opacity:.45;cursor:not-allowed}
 .note{font-size:13px;opacity:.7;margin-bottom:0!important}
+#lb .card{width:100%;max-width:420px}
+.lbrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px}
+.lbrow:last-child{border-bottom:0}
+.lbrank{width:20px;text-align:center;font-weight:700;opacity:.5}
+.lbrow.p1 .lbrank{opacity:1;color:var(--ok)}
+.lbrow.p2 .lbrank,.lbrow.p3 .lbrank{opacity:1;color:var(--mid)}
+.lbname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbname em{font-style:normal;font-size:11px;font-weight:700;color:#fff;background:var(--ok);padding:2px 5px;border-radius:3px;margin-left:6px;vertical-align:middle}
+.lbscore{font-weight:700}
+.lbrow.me{outline:2px solid var(--ok);outline-offset:-2px;border-radius:4px}
+.lbmsg{text-align:center;padding:16px 0;opacity:.7;font-size:14px}
+#lbtabs{margin-bottom:6px}
+@media (max-width:400px){header h1{font-size:24px}header .ib{width:34px}}
 </style>
 </head>
 <body>
 <header>
   <button class="ib" id="hb" aria-label="Help">?</button>
   <h1>ORDLE</h1>
-  <span><button class="ib" id="sb" aria-label="Settings">⚙</button><button class="ib" id="tb" aria-label="Theme">◐</button></span>
+  <span><button class="ib" id="lbb" aria-label="Leaderboard" title="Leaderboard">🏆</button><button class="ib" id="sb" aria-label="Settings">⚙</button><button class="ib" id="tb" aria-label="Theme">◐</button></span>
 </header>
 <main>
   <div id="board"></div>
@@ -68,6 +81,12 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;justify-conten
 <div id="kb"></div>
 <div id="toasts"></div>
 <div id="help"><div class="card" id="helpc"></div></div>
+<div id="lb"><div class="card">
+  <h2 id="lbt"></h2>
+  <div class="seg" id="lbtabs"><button type="button" data-m="all"></button><button type="button" data-m="week"></button></div>
+  <div id="lbrows"></div>
+  <p class="note" id="lbnote"></p>
+</div></div>
 <div id="set"><div class="card">
   <h2 id="st"></h2>
   <p><b id="sl"></b></p><div class="seg" id="langs"></div>
@@ -165,15 +184,15 @@ function submit(){
     if(g===target){
       over=true;
       for(let i=0;i<N;i++){ts[i].classList.remove("flip");ts[i].style.animationDelay=i*100+"ms";void ts[i].offsetWidth;ts[i].classList.add("win")}
-      toast(T_().win[r],2500);again.style.display="block";
+      toast(T_().win[r],2500);won();again.style.display="block";
     }else if(r===5){
-      over=true;toast(T_().was+target.toUpperCase(),0);again.style.display="block";
+      over=true;toast(T_().was+target.toUpperCase(),0);lost();again.style.display="block";
     }else{row++;cur=[]}
     busy=false;
   },N*300+250);
 }
 again.onclick=()=>{daily=false;$("toasts").innerHTML="";start()};
-const open_=()=>$("help").style.display==="flex"||$("set").style.display==="flex";
+const open_=()=>($("help").style.display==="flex"||$("set").style.display==="flex")||$("lb").style.display==="flex";
 addEventListener("keydown",e=>{
   if(e.ctrlKey||e.metaKey||e.altKey||open_())return;
   if(e.key==="Enter"||e.key==="Backspace")press(e.key);
@@ -208,6 +227,93 @@ $("tb").onclick=()=>{
   const el=document.documentElement,dark=el.dataset.theme?el.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
   el.dataset.theme=dark?"light":"dark";
 };
+/* ---------- leaderboard: longest run of won games ---------- */
+const LB={da:{t:"Ranglise",all:"Alle tider",week:"Denne uge",none:"Ingen resultater endnu. Vær den første.",off:"Ranglisten kan ikke hentes lige nu.",me:"dig",what:"Længste række vundne spil."},
+         en:{t:"Leaderboard",all:"All time",week:"This week",none:"No scores yet. Be the first.",off:"Could not load the leaderboard.",me:"you",what:"Longest run of won games."}};
+const FBC={apiKey:"AIzaSyDJhWSi7QZKXtOPYwKHPF7zPg_klh1If7w",authDomain:"damp-2406a.firebaseapp.com",projectId:"damp-2406a",appId:"1:940989851976:web:f8fd07c258afa71fd22b7d"};
+const SDK="https://www.gstatic.com/firebasejs/10.14.1/";
+let stat={streak:0,best:0,wins:0};
+try{const s=JSON.parse(localStorage.getItem("ordle-stat")||"{}");if(typeof s.best==="number")stat={streak:+s.streak||0,best:+s.best||0,wins:+s.wins||0}}catch(e){}
+function saveStat(){try{localStorage.setItem("ordle-stat",JSON.stringify(stat))}catch(e){}}
+let lbTab="all",lbF=null,lbDb=null,lbUser=null,fbP=null;
+const lbT_=()=>LB[lang]||LB.en;
+function playerName(u){
+  const mail=u.email||"";
+  return mail.endsWith("@damp.example")?mail.slice(0,-13):(mail.split("@")[0]||u.displayName||"player");
+}
+function ensureFb(){
+  if(fbP)return fbP;
+  fbP=(async()=>{
+    const [APP,AU,FSDK]=await Promise.all([import(SDK+"firebase-app.js"),import(SDK+"firebase-auth.js"),import(SDK+"firebase-firestore.js")]);
+    const app=APP.initializeApp(FBC,"ordle");
+    lbF=FSDK;lbDb=FSDK.getFirestore(app);
+    const auth=AU.getAuth(app);
+    lbUser=await new Promise(res=>{
+      let done=false;
+      const stop=AU.onAuthStateChanged(auth,u=>{done=true;stop();res(u)});
+      setTimeout(()=>{if(!done)res(auth.currentUser)},4000);
+    });
+    return true;
+  })().catch(()=>{lbF=null;return false});
+  return fbP;
+}
+function weekId(d){
+  const t=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()));
+  const day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);
+  const y=t.getUTCFullYear();
+  return y+"-W"+String(Math.ceil(((t-Date.UTC(y,0,1))/864e5+1)/7)).padStart(2,"0");
+}
+async function lbGet(){
+  try{
+    const res=await fetch("/api/leaderboard?game=ordle&mode="+lbTab,{cache:"no-store"});
+    if(res.ok){const d=await res.json();if(Array.isArray(d.rows))return d.rows}
+  }catch(e){}
+  if(!await ensureFb()||!lbF)return null;
+  try{
+    const col=lbTab==="week"?lbF.collection(lbDb,"ordle_week",weekId(new Date()),"scores"):lbF.collection(lbDb,"ordle");
+    const snap=await lbF.getDocs(lbF.query(col,lbF.orderBy("score","desc"),lbF.limit(10)));
+    return snap.docs.map(d=>({id:d.id,name:d.data().name,score:d.data().score}));
+  }catch(e){return null}
+}
+async function lbDraw(){
+  const t=lbT_(),box=$("lbrows");
+  $("lbt").textContent=t.t;$("lbnote").textContent=t.what;
+  $("lbtabs").children[0].textContent=t.all;$("lbtabs").children[1].textContent=t.week;
+  [...$("lbtabs").children].forEach(b=>b.classList.toggle("on",b.dataset.m===lbTab));
+  box.innerHTML="";const wait=document.createElement("div");wait.className="lbmsg";wait.textContent="…";box.appendChild(wait);
+  const rows=await lbGet();
+  if($("lb").style.display!=="flex")return;
+  box.innerHTML="";
+  if(!rows){const p=document.createElement("div");p.className="lbmsg";p.textContent=t.off;box.appendChild(p);return}
+  if(!rows.length){const p=document.createElement("div");p.className="lbmsg";p.textContent=t.none;box.appendChild(p);return}
+  rows.forEach((r,i)=>{
+    const row=document.createElement("div");
+    row.className="lbrow"+(i<3?" p"+(i+1):"")+(lbUser&&r.id===lbUser.uid?" me":"");
+    const rk=document.createElement("span");rk.className="lbrank";rk.textContent=i+1;
+    const nm=document.createElement("span");nm.className="lbname";nm.textContent=r.name||"player";
+    if(lbUser&&r.id===lbUser.uid){const em=document.createElement("em");em.textContent=t.me;nm.appendChild(em)}
+    const sc=document.createElement("span");sc.className="lbscore";sc.textContent=r.score;
+    row.append(rk,nm,sc);box.appendChild(row);
+  });
+}
+async function submitScore(){
+  if(!stat.best)return;
+  if(localStorage.getItem("damp-in")!=="1")return;
+  if(!await ensureFb()||!lbF||!lbUser)return;
+  try{
+    const ref=lbF.doc(lbDb,"ordle",lbUser.uid);
+    const old=await lbF.getDoc(ref);
+    if(old.exists()&&old.data().score>=stat.best)return;
+    await lbF.setDoc(ref,{name:playerName(lbUser),score:stat.best,at:lbF.serverTimestamp()},{merge:true});
+    if($("lb").style.display==="flex")lbDraw();
+  }catch(e){}
+}
+function won(){stat.streak=(stat.streak||0)+1;stat.wins=(stat.wins||0)+1;stat.best=Math.max(stat.best||0,stat.streak);saveStat();submitScore()}
+function lost(){stat.streak=0;saveStat()}
+$("lbb").onclick=()=>{$("lb").style.display="flex";lbDraw()};
+$("lb").onclick=e=>{if(e.target===$("lb"))$("lb").style.display="none"};
+$("lbtabs").onclick=e=>{const b=e.target.closest("[data-m]");if(!b||lbTab===b.dataset.m)return;lbTab=b.dataset.m;lbDraw()};
+
 start();
 </script>
 </body>

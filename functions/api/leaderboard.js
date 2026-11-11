@@ -1,11 +1,13 @@
-// GET /api/leaderboard?mode=all|week
-// Returns { mode, week, rows:[{id,name,score}], at }
+// GET /api/leaderboard?game=flappy|ordle&mode=all|week
+// Returns { game, mode, week, rows:[{id,name,score}], at }
 //
 // Reads the top 10 through the Firestore REST API, so the game can get the board
 // as one small JSON request instead of loading the whole Firebase JS SDK.
 // If a KV namespace is bound as LEADERBOARD it is used as a 60 second cache.
 
 const PROJECT = 'damp-2406a';
+// Games allowed through this route, and the collection each one reads
+const GAMES = { flappy: 'flappy', ordle: 'ordle' };
 // The public web API key. It already ships inside the site's own JavaScript,
 // and env.FIREBASE_API_KEY overrides it if you set one.
 const DEFAULT_KEY = 'AIzaSyDJhWSi7QZKXtOPYwKHPF7zPg_klh1If7w';
@@ -37,9 +39,11 @@ function reply(body, maxAge, status) {
 }
 
 export async function onRequestGet({ request, env, waitUntil }) {
-  const mode = new URL(request.url).searchParams.get('mode') === 'week' ? 'week' : 'all';
+  const params = new URL(request.url).searchParams;
+  const mode = params.get('mode') === 'week' ? 'week' : 'all';
+  const game = GAMES[params.get('game')] || 'flappy';
   const week = weekKey(new Date());
-  const cacheKey = 'lb:' + mode + ':' + week;
+  const cacheKey = 'lb:' + game + ':' + mode + ':' + week;
   const kv = env.LEADERBOARD;
 
   if (kv) {
@@ -48,7 +52,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
   }
 
   const key = env.FIREBASE_API_KEY || DEFAULT_KEY;
-  const path = mode === 'week' ? 'flappy_week/' + week + '/scores' : 'flappy';
+  const path = mode === 'week' ? game + '_week/' + week + '/scores' : game;
   const url = 'https://firestore.googleapis.com/v1/projects/' + PROJECT + '/databases/(default)/documents/' + path +
     '?pageSize=10&orderBy=' + encodeURIComponent('score desc') + '&key=' + key;
 
@@ -81,7 +85,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
     };
   });
 
-  const body = JSON.stringify({ mode: mode, week: week, rows: rows, at: Date.now() });
+  const body = JSON.stringify({ game: game, mode: mode, week: week, rows: rows, at: Date.now() });
   if (kv && waitUntil) waitUntil(kv.put(cacheKey, body, { expirationTtl: 60 }));
   return reply(body, 15);
 }

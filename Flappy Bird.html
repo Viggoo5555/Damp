@@ -624,10 +624,10 @@ const OVS=['shop','lbp','setp','skp'];
 function overlayOpen(){return OVS.some(i=>!$(i).classList.contains('hide'));}
 function closeAll(){OVS.forEach(i=>$(i).classList.add('hide'));}
 function openTree(o){$('skp').classList.toggle('hide',!o);if(o)renderSkills();}
-/* ---------- leaderboard: only for players who are logged in ---------- */
+/* ---------- leaderboard: anyone can look, logging in adds your score ---------- */
 const FB={apiKey:"AIzaSyDJhWSi7QZKXtOPYwKHPF7zPg_klh1If7w",authDomain:"damp-2406a.firebaseapp.com",projectId:"damp-2406a",appId:"1:940989851976:web:f8fd07c258afa71fd22b7d"};
 const FBSDK='https://www.gstatic.com/firebasejs/10.14.1/',LB='flappy';
-let fbAuth=null,fbDb=null,F=null,fbUser=null,fbState='loading',lbBusy=false;
+let fbAuth=null,fbDb=null,F=null,fbUser=null,fbState='loading',lbRows=[],lbOwn=0,lbLoaded=false,ownUnsub=null;
 function lbName(u){
   const mail=u.email||'';
   return mail.endsWith('@damp.example')?mail.slice(0,-13):(mail.split('@')[0]||u.displayName||'player');
@@ -653,34 +653,26 @@ function lbLogIn(){
   };
   row.append(msg,btn);box.append(row);
 }
-async function drawLb(){
+function lbSaveCache(){
+  try{localStorage.setItem('fb-lb',JSON.stringify(lbRows))}catch(e){}
+}
+function lbReadCache(){
+  try{const d=JSON.parse(localStorage.getItem('fb-lb'));return Array.isArray(d)?d:[]}catch(e){return []}
+}
+// Draws whatever is known right now, so the panel never waits on the network
+function lbRender(){
   if($('lbp').classList.contains('hide'))return;
-  const box=$('lbl');
-  if(fbState==='loading'){box.textContent='';lbRow(box,'Loading scores...');return;}
-  if(fbState==='off'){box.textContent='';lbRow(box,'The leaderboard is offline right now.');return;}
-  if(lbBusy)return;lbBusy=true;
-  box.textContent='';lbRow(box,'Loading scores...');
-  try{
-    const snap=await F.getDocs(F.query(F.collection(fbDb,LB),F.orderBy('score','desc'),F.limit(10)));
-    box.textContent='';
-    if(snap.empty)lbRow(box,'No scores yet. Be the first!');
-    let rank=0;
-    snap.forEach(d=>{
-      const it=d.data();rank++;
-      lbRow(box,'#'+rank+'  '+(it.name||'player'),it.score,!!fbUser&&d.id===fbUser.uid);
-    });
-    if(!fbUser){
-      lbLogIn();
-      $('lbs').textContent='Anyone can look. Log in to add your own score.';
-    }else{
-      const mine=await F.getDoc(F.doc(fbDb,LB,fbUser.uid));
-      $('lbs').textContent='Your best: '+(mine.exists()?mine.data().score:0)+'  |  This device: '+(save.lb[0]?save.lb[0].s:0);
-    }
-  }catch(e){
-    box.textContent='';
-    lbRow(box,'Could not load scores. Check the Firestore rules.');
+  const box=$('lbl');box.textContent='';
+  lbRows.forEach((it,i)=>lbRow(box,'#'+(i+1)+'  '+(it.name||'player'),it.score,!!fbUser&&it.id===fbUser.uid));
+  if(fbState==='off')lbRow(box,'The leaderboard is offline right now.');
+  else if(fbState==='error')lbRow(box,'Could not refresh scores. Check the Firestore rules.');
+  else if(!lbRows.length)lbRow(box,lbLoaded?'No scores yet. Be the first!':'Loading scores...');
+  if(!fbUser){
+    lbLogIn();
+    $('lbs').textContent='Anyone can look. Log in to add your own score.';
+  }else{
+    $('lbs').textContent='Your best: '+lbOwn+'  |  This device: '+(save.lb[0]?save.lb[0].s:0);
   }
-  lbBusy=false;
 }
 async function submitLb(){
   if(!fbUser||!fbDb||!score)return;
@@ -689,30 +681,41 @@ async function submitLb(){
     const old=await F.getDoc(ref);
     if(old.exists()&&old.data().score>=score)return;
     await F.setDoc(ref,{name:lbName(fbUser),score:score,at:F.serverTimestamp()},{merge:true});
-    drawLb();
   }catch(e){}
 }
+function lbWatchOwn(){
+  if(ownUnsub){ownUnsub();ownUnsub=null;}
+  lbOwn=0;
+  if(!fbUser)return;
+  ownUnsub=F.onSnapshot(F.doc(fbDb,LB,fbUser.uid),
+    d=>{lbOwn=d.exists()?d.data().score:0;lbRender();},
+    ()=>{});
+}
 async function initLb(){
+  lbRows=lbReadCache();
   try{
     const mods=await Promise.all([import(FBSDK+'firebase-app.js'),import(FBSDK+'firebase-auth.js'),import(FBSDK+'firebase-firestore.js')]);
     F=mods[2];
     const app=mods[0].initializeApp(FB);
     fbAuth=mods[1].getAuth(app);fbDb=F.getFirestore(app);
-    mods[1].onAuthStateChanged(fbAuth,u=>{
-      fbUser=u;fbState='ok';
-      if(!$('lbp').classList.contains('hide'))drawLb();
-      if(u)submitLb();
-    });
+    fbState='ok';
+    // Started at load, not when the panel opens, so the first look is instant and always current
+    F.onSnapshot(
+      F.query(F.collection(fbDb,LB),F.orderBy('score','desc'),F.limit(10)),
+      snap=>{
+        lbRows=snap.docs.map(d=>({id:d.id,name:d.data().name,score:d.data().score}));
+        lbLoaded=true;fbState='ok';lbSaveCache();lbRender();
+      },
+      ()=>{fbState='error';lbRender();}
+    );
+    mods[1].onAuthStateChanged(fbAuth,u=>{fbUser=u;lbWatchOwn();lbRender();if(u)submitLb();});
   }catch(e){
-    fbState='off';
-    if(!$('lbp').classList.contains('hide'))drawLb();
+    fbState='off';lbRender();
   }
 }
 function openLb(o){
   $('lbp').classList.toggle('hide',!o);if(!o)return;
-  $('lbs').textContent='Best score '+(save.lb[0]?save.lb[0].s:0)+'  |  Longest run '+(save.longest||0)+'s';
-  $('lbl').textContent='';
-  drawLb();
+  lbRender();
 }
 
 /* ---------- one interactive cinematic tutorial per skill ---------- */

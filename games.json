@@ -51,5 +51,11 @@
     "category": "Tower Defense",
     "image": "hedgerow-hallow-thumb.jpg",
     "featured": true
+  },
+  {
+    "title": "Ordle",
+    "file": "ordle.html",
+    "category": "Guessing",
+    "image": "ordle.png"
   }
 ]

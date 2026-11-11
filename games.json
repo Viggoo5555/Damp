@@ -2,67 +2,67 @@
   {
     "title": "Flappy Bird",
     "description": "Classic arcade bird game with custom skins and worlds shop.",
-    "file": "Flappy Bird.html",
+    "file": "games/Flappy Bird.html",
     "category": "Arcade",
-    "image": "flappy-bird.png"
+    "image": "img/flappy-bird.png"
   },
   {
-  "title": "Knockout Night",
-  "description": "3D boxing with combos, parry, super and online 1v1 with friends.",
-  "file": "knockout-night.html",
-  "category": "Fighting",
-  "image": "knockout-night.png"
+    "title": "Knockout Night",
+    "description": "3D boxing with combos, parry, super and online 1v1 with friends.",
+    "file": "games/knockout-night.html",
+    "category": "Fighting",
+    "image": "img/knockout-night.png"
   },
   {
     "title": "Star Clicker",
     "description": "Click your star, grow it and add orbiting planets.",
-    "file": "Starclicker.html",
+    "file": "games/Starclicker.html",
     "category": "Clicker",
-    "image": "starclicker.png"
+    "image": "img/starclicker.png"
   },
   {
     "title": "Verity Clicker",
     "description": "Click On Verity",
-    "file": "verity-clicker.html",
+    "file": "games/verity-clicker.html",
     "category": "Clicker",
-    "image": "verity-clicker.png"
+    "image": "img/verity-clicker.png"
   },
   {
     "title": "10-Minute Dungeon",
-    "file": "10-minute-dungeon.html",
+    "file": "games/10-minute-dungeon.html",
     "category": "Dungeon",
-    "image": "10-minute-dungeon.png"
+    "image": "img/10-minute-dungeon.png"
   },
   {
     "title": "Guess the Color!",
-    "file": "guess-the-color.html",
+    "file": "games/guess-the-color.html",
     "category": "Guessing",
-    "image": "guess-the-color.png"
+    "image": "img/guess-the-color.png"
   },
   {
     "title": "Slope",
-    "file": "slope.html",
+    "file": "games/slope.html",
     "category": "Racing",
-    "image": "slope.jpg"
+    "image": "img/slope.jpg"
   },
   {
     "title": "Guessing Game",
-    "file": "guessing-game.html",
+    "file": "games/guessing-game.html",
     "category": "Guessing",
-    "image": "guessing-game.png"
+    "image": "img/guessing-game.png"
   },
   {
     "title": "Hedgerow Hallow",
     "description": "Guard the veggie patch from snails, beetles and one very rude badger.",
-    "file": "hedgerow-hallow.html",
+    "file": "games/hedgerow-hallow.html",
     "category": "Tower Defense",
-    "image": "hedgerow-hallow-thumb.jpg",
+    "image": "img/hedgerow-hallow-thumb.jpg",
     "featured": true
   },
   {
     "title": "Ordle",
-    "file": "ordle.html",
+    "file": "games/ordle.html",
     "category": "Guessing",
-    "image": "ordle.jpg"
+    "image": "img/ordle.jpg"
   }
 ]

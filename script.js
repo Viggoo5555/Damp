@@ -6,8 +6,8 @@
 // The file must match the zip name in the repository exactly.
 // ---------------------------------------------------------------
 const extensions = [
-  { name: "Emat Hjælper", description: "Chrome extension for emat.", file: "emat-svar.zip" },
-  { name: "Grammatik Hjælper", description: "Chrome extension for grammatip.", file: "grammatik-hjaelper.zip" },
+  { name: "Emat Hjælper", description: "Chrome extension for emat.", file: "files/emat-svar.zip" },
+  { name: "Grammatik Hjælper", description: "Chrome extension for grammatip.", file: "files/grammatik-hjaelper.zip" },
 ];
 
 const ADMIN_CODE = "1203";
@@ -560,7 +560,7 @@ $("remove").addEventListener("click", async function () {
     showGames();
 
     // Delete the game's own files, but never the site's files or a picture another game still uses
-    const keep = ["index.html", "404.html", "style.css", "script.js", "games.json"];
+    const keep = ["index.html", "404.html", "style.css", "script.js", "accounts.js", "games.json"];
     const paths = [gone.file, gone.image].filter(function (path) {
       return path && !path.includes("..") && !keep.includes(path.toLowerCase()) &&
         !list.some(function (g) { return g.file === path || g.image === path; });
@@ -609,9 +609,9 @@ $("editor-form").addEventListener("submit", async function (event) {
   const entry = {
     title: title,
     description: $("f-desc").value.trim(),
-    file: editing ? editing.file : base + ".html",
+    file: editing ? editing.file : "games/" + base + ".html",
     category: $("f-category").value.trim(),
-    image: iconFile ? base + "." + iconType : (editing ? editing.image || "" : "")
+    image: iconFile ? "img/" + base + "." + iconType : (editing ? editing.image || "" : "")
   };
   if (editing && editing.featured) entry.featured = true;
 

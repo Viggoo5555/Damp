@@ -161,6 +161,19 @@
     <p id="acc-msg" class="note" aria-live="polite"></p>
   </dialog>
 
+  <dialog id="save-dialog" aria-labelledby="save-title">
+    <div class="dlg-head">
+      <h2 id="save-title">Two saved games</h2>
+    </div>
+    <p class="note">This device already has progress for <strong id="save-game"></strong>, and your account has a different save.</p>
+    <p class="note" id="save-when"></p>
+    <div class="save-actions">
+      <button id="save-load" class="button" type="button">Load account save</button>
+      <button id="save-keep" type="button">Keep this device's progress</button>
+    </div>
+    <p class="note">Loading replaces what is on this device. Keeping replaces what is in your account. Close this to decide later.</p>
+  </dialog>
+
   <div id="toast" role="status" aria-live="polite" hidden></div>
 
   <dialog id="people-dialog" aria-labelledby="people-title">

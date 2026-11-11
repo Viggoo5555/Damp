@@ -83,19 +83,30 @@
       lastSent = cloud ? cloud.data : "";
 
       // The account has a newer save than this device has seen
+      let keepDevice = false;
       if (cloud && cloud.updated !== stamp) {
         const mine = snapshot(game);
         const askFirst = stamp === 0 && mine !== "{}" && mine !== cloud.data;
-        if (!askFirst || confirm("Your account has a saved game. OK uses it. Cancel keeps the progress on this device.")) {
+        const choice = askFirst ? await askSaveChoice(game, cloud) : "load";
+        if (current !== game) return;
+
+        if (choice === "load") {
           const data = JSON.parse(cloud.data);
           Object.keys(data).forEach(function (key) { localStorage.setItem(key, data[key]); });
           localStorage.setItem("damp-sync-" + name, cloud.updated);
+        } else if (choice === "device") {
+          keepDevice = true;
+        } else {
+          // The question was closed: play with what is on this device and leave
+          // the account alone instead of quietly overwriting either side.
+          return;
         }
       }
 
       if (current !== game) return;
       synced = game;
       autosave = setInterval(save, 30000);
+      if (keepDevice) save();
     } catch (error) { /* offline or blocked: the game just plays without cloud saves */ }
   }
 
@@ -131,6 +142,37 @@
   window.addEventListener("pagehide", save);
 
   window.dampSaves = { load: load, stop: stop };
+
+  // ----- Which save wins? -----
+  // A new device can already have progress and an account can have its own.
+  // Resolves "load" (use the account), "device" (overwrite the account with
+  // this device) or "later" (leave both alone for now).
+  let saveChoice = null;
+
+  function askSaveChoice(game, cloud) {
+    return new Promise(function (resolve) {
+      const dialog = byId("save-dialog");
+      byId("save-game").textContent = game.title;
+      byId("save-when").textContent = cloud.updated ? "Account save from " + new Date(cloud.updated).toLocaleString() : "";
+      saveChoice = resolve;
+      dialog.showModal();
+    });
+  }
+
+  function answerSave(choice) {
+    const dialog = byId("save-dialog");
+    const resolve = saveChoice;
+    saveChoice = null;
+    if (dialog.open) dialog.close();
+    if (resolve) resolve(choice);
+  }
+
+  byId("save-load").addEventListener("click", function () { answerSave("load"); });
+  byId("save-keep").addEventListener("click", function () { answerSave("device"); });
+  byId("save-dialog").addEventListener("close", function () { if (saveChoice) answerSave("later"); });
+  byId("save-dialog").addEventListener("click", function (event) {
+    if (event.target === byId("save-dialog")) answerSave("later");
+  });
 
   // ----- Log in window -----
   const dialog = byId("account-dialog");

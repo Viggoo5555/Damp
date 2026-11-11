@@ -981,3 +981,13 @@ label input[type="file"] { height: auto; padding: 8px 12px; }
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(8px); }
 }
+
+/* ----- Which save wins? ----- */
+#save-dialog { width: min(470px, calc(100% - 32px)); }
+
+.save-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0 10px;
+}

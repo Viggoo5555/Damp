@@ -167,6 +167,7 @@ function drag(el,fn){
   el.addEventListener('pointermove',move);
   el.addEventListener('pointerup',end);
   el.addEventListener('pointercancel',end);
+  el.addEventListener('lostpointercapture',end);
 }
 
 /* picker */

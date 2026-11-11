@@ -89,8 +89,8 @@ h2{font-size:calc(var(--s)*22px);color:var(--hd,#ffa72b)}
 .skr{grid-column:1/-1}
 #skp .det{background:var(--panel);color:var(--ct,var(--ink));border:calc(var(--s)*3px) solid var(--ink);border-radius:calc(var(--s)*5px);box-shadow:0 calc(var(--s)*4px) 0 rgba(0,0,0,.28)}
 #hud{position:absolute;inset:0;pointer-events:none}
-#lbb{position:absolute;top:calc(var(--s)*8px);left:calc(var(--s)*8px)}
-#setb{position:absolute;top:calc(var(--s)*8px);right:calc(var(--s)*8px)}
+#lbb{position:absolute;top:calc(var(--s)*8px);right:calc(var(--s)*8px)}
+#setb{position:absolute;top:calc(var(--s)*8px);left:calc(var(--s)*8px)}
 #lbb.ic,#setb.ic{width:calc(var(--s)*26px);height:calc(var(--s)*26px);padding:0;display:flex;align-items:center;justify-content:center;border-radius:calc(var(--s)*6px)}
 .ic svg{width:calc(var(--s)*16px);height:calc(var(--s)*16px);fill:currentColor}
 #lbb,#setb,#mute{font-size:calc(var(--s)*7px);padding:calc(var(--s)*6px) calc(var(--s)*8px);box-shadow:none;-webkit-text-stroke:0}
@@ -98,6 +98,8 @@ h2{font-size:calc(var(--s)*22px);color:var(--hd,#ffa72b)}
 #lbp,#setp{position:absolute;inset:0;background:rgba(10,20,25,.94);color:#fff;font-size:calc(var(--s)*8px);padding:calc(var(--s)*12px);box-sizing:border-box;overflow:auto;touch-action:pan-y;pointer-events:auto;cursor:default;display:flex;flex-direction:column;gap:calc(var(--s)*10px)}
 #lbp.hide,#setp.hide{display:none}
 #lbl{display:flex;flex-direction:column;gap:calc(var(--s)*8px)}
+#lbl .it b{font-weight:400;font-size:calc(var(--s)*10px);color:var(--hd,#ffa72b)}
+#lbl .it.me{background:rgba(255,167,43,.28);box-shadow:inset 0 0 0 calc(var(--s)*2px) #ffa72b}
 #tree{position:relative;width:calc(var(--s)*288px);height:calc(var(--s)*270px);margin:0 calc(var(--s)*-12px);flex:none}
 #tree svg{position:absolute;inset:0;width:100%;height:100%}
 #tree line{stroke:#5a6a72;stroke-width:3}#tree line.on{stroke:#74c02c}
@@ -616,23 +618,101 @@ function renderShop(){
 function addRun(){
   lastEarn=Math.round(score*(hasSk('treasure')?1.5:1));save.pts+=lastEarn;
   if(score>0){save.lb.push({s:score,t:+runT.toFixed(1),d:Date.now()});save.lb.sort((a,b)=>b.s-a.s||b.t-a.t);save.lb=save.lb.slice(0,10);}
-  save.longest=Math.max(save.longest||0,+runT.toFixed(1));persist();
+  save.longest=Math.max(save.longest||0,+runT.toFixed(1));persist();submitLb();
 }
 const OVS=['shop','lbp','setp','skp'];
 function overlayOpen(){return OVS.some(i=>!$(i).classList.contains('hide'));}
 function closeAll(){OVS.forEach(i=>$(i).classList.add('hide'));}
 function openTree(o){$('skp').classList.toggle('hide',!o);if(o)renderSkills();}
+/* ---------- leaderboard: only for players who are logged in ---------- */
+const FB={apiKey:"AIzaSyDJhWSi7QZKXtOPYwKHPF7zPg_klh1If7w",authDomain:"damp-2406a.firebaseapp.com",projectId:"damp-2406a",appId:"1:940989851976:web:f8fd07c258afa71fd22b7d"};
+const FBSDK='https://www.gstatic.com/firebasejs/10.14.1/',LB='flappy';
+let fbAuth=null,fbDb=null,F=null,fbUser=null,fbState='loading',lbBusy=false;
+function lbName(u){
+  const mail=u.email||'';
+  return mail.endsWith('@damp.example')?mail.slice(0,-13):(mail.split('@')[0]||u.displayName||'player');
+}
+function lbRow(box,text,right,me){
+  const row=document.createElement('div');row.className='it'+(me?' me':'');
+  const nm=document.createElement('span');nm.textContent=text;
+  row.append(nm);
+  if(right!=null){const sc=document.createElement('b');sc.textContent=right;row.append(sc);}
+  box.append(row);
+}
+function lbLogIn(){
+  const box=$('lbl');
+  const row=document.createElement('div');row.className='it';
+  const msg=document.createElement('span');msg.textContent='Log in to put your score on the board.';
+  const btn=document.createElement('button');btn.type='button';btn.className='btn sm';btn.textContent='Log in';
+  btn.onclick=()=>{
+    let opened=false;
+    try{
+      if(parent!==window){const acc=parent.document.getElementById('account');if(acc&&!acc.hidden){acc.click();opened=true;}}
+    }catch(e){}
+    if(!opened)msg.textContent='Open Damp and press Log in at the top, then come back.';
+  };
+  row.append(msg,btn);box.append(row);
+}
+async function drawLb(){
+  if($('lbp').classList.contains('hide'))return;
+  const box=$('lbl');
+  if(fbState==='loading'){box.textContent='';lbRow(box,'Loading scores...');return;}
+  if(fbState==='off'){box.textContent='';lbRow(box,'The leaderboard is offline right now.');return;}
+  if(lbBusy)return;lbBusy=true;
+  box.textContent='';lbRow(box,'Loading scores...');
+  try{
+    const snap=await F.getDocs(F.query(F.collection(fbDb,LB),F.orderBy('score','desc'),F.limit(10)));
+    box.textContent='';
+    if(snap.empty)lbRow(box,'No scores yet. Be the first!');
+    let rank=0;
+    snap.forEach(d=>{
+      const it=d.data();rank++;
+      lbRow(box,'#'+rank+'  '+(it.name||'player'),it.score,!!fbUser&&d.id===fbUser.uid);
+    });
+    if(!fbUser){
+      lbLogIn();
+      $('lbs').textContent='Anyone can look. Log in to add your own score.';
+    }else{
+      const mine=await F.getDoc(F.doc(fbDb,LB,fbUser.uid));
+      $('lbs').textContent='Your best: '+(mine.exists()?mine.data().score:0)+'  |  This device: '+(save.lb[0]?save.lb[0].s:0);
+    }
+  }catch(e){
+    box.textContent='';
+    lbRow(box,'Could not load scores. Check the Firestore rules.');
+  }
+  lbBusy=false;
+}
+async function submitLb(){
+  if(!fbUser||!fbDb||!score)return;
+  try{
+    const ref=F.doc(fbDb,LB,fbUser.uid);
+    const old=await F.getDoc(ref);
+    if(old.exists()&&old.data().score>=score)return;
+    await F.setDoc(ref,{name:lbName(fbUser),score:score,at:F.serverTimestamp()},{merge:true});
+    drawLb();
+  }catch(e){}
+}
+async function initLb(){
+  try{
+    const mods=await Promise.all([import(FBSDK+'firebase-app.js'),import(FBSDK+'firebase-auth.js'),import(FBSDK+'firebase-firestore.js')]);
+    F=mods[2];
+    const app=mods[0].initializeApp(FB);
+    fbAuth=mods[1].getAuth(app);fbDb=F.getFirestore(app);
+    mods[1].onAuthStateChanged(fbAuth,u=>{
+      fbUser=u;fbState='ok';
+      if(!$('lbp').classList.contains('hide'))drawLb();
+      if(u)submitLb();
+    });
+  }catch(e){
+    fbState='off';
+    if(!$('lbp').classList.contains('hide'))drawLb();
+  }
+}
 function openLb(o){
   $('lbp').classList.toggle('hide',!o);if(!o)return;
   $('lbs').textContent='Best score '+(save.lb[0]?save.lb[0].s:0)+'  |  Longest run '+(save.longest||0)+'s';
-  const b=$('lbl');b.textContent='';
-  if(!save.lb.length){const e=document.createElement('div');e.className='it';e.textContent='No runs yet. Go fly!';b.append(e);}
-  save.lb.forEach((r,i)=>{
-    const row=document.createElement('div');row.className='it';
-    const nm=document.createElement('span');nm.textContent='#'+(i+1)+'  '+r.s+' pts';
-    const sm=document.createElement('small');sm.textContent=r.t+'s  -  '+new Date(r.d).toLocaleDateString();
-    nm.append(document.createElement('br'),sm);row.append(nm);b.append(row);
-  });
+  $('lbl').textContent='';
+  drawLb();
 }
 
 /* ---------- one interactive cinematic tutorial per skill ---------- */
@@ -857,7 +937,7 @@ $('skc').addEventListener('click',e=>{e.currentTarget.blur();openTree(false);});
 const db=$('dbtn');
 db.addEventListener('pointerdown',e=>{e.preventDefault();holding=true;});
 ['pointerup','pointercancel','pointerleave'].forEach(t=>db.addEventListener(t,()=>{holding=false;}));
-apply();reset();fit();if(!save.tuts.jump)startTut('jump','');requestAnimationFrame(frame);
+apply();reset();fit();if(!save.tuts.jump)startTut('jump','');initLb();requestAnimationFrame(frame);
 })();
 </script>
 </body>

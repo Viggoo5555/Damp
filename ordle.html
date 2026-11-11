@@ -17,6 +17,7 @@ header{position:relative;width:100%;max-width:500px;height:52px;flex:none;border
 header h1{position:absolute;left:50%;transform:translateX(-50%);margin:0;font:700 30px Georgia,"Times New Roman",serif;letter-spacing:.04em}
 .ib{background:none;border:0;color:var(--fg);font-weight:700;font-size:20px;font-family:inherit;width:40px;height:40px;cursor:pointer;border-radius:50%}
 .ib:hover{background:var(--line)}
+.ib svg{width:22px;height:22px;display:block;margin:0 auto;pointer-events:none}
 main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;width:100%;min-height:0}
 #board{--cols:5;--bw:max(170px,min(calc(var(--cols)*66px),92vw,calc((100dvh - 340px)*var(--cols)/6)));display:grid;grid-template-rows:repeat(6,1fr);gap:5px;width:var(--bw)}
 .row{display:grid;grid-template-columns:repeat(var(--cols),1fr);gap:5px}
@@ -65,14 +66,13 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;justify-conten
 .lbrow.me{outline:2px solid var(--ok);outline-offset:-2px;border-radius:4px}
 .lbmsg{text-align:center;padding:16px 0;opacity:.7;font-size:14px}
 #lbtabs{margin-bottom:6px}
-@media (max-width:400px){header h1{font-size:24px}header .ib{width:34px}}
 </style>
 </head>
 <body>
 <header>
   <button class="ib" id="hb" aria-label="Help">?</button>
   <h1>ORDLE</h1>
-  <span><button class="ib" id="lbb" aria-label="Leaderboard" title="Leaderboard">🏆</button><button class="ib" id="sb" aria-label="Settings">⚙</button><button class="ib" id="tb" aria-label="Theme">◐</button></span>
+  <span><button class="ib" id="lbb" aria-label="Leaderboard" title="Leaderboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M17 5.5h2.2a2.3 2.3 0 0 1 0 4.6H17"/><path d="M7 5.5H4.8a2.3 2.3 0 0 0 0 4.6H7"/><path d="M12 13v4"/><path d="M8.5 20h7"/></svg></button><button class="ib" id="sb" aria-label="Settings">⚙</button></span>
 </header>
 <main>
   <div id="board"></div>
@@ -91,6 +91,7 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;justify-conten
   <h2 id="st"></h2>
   <p><b id="sl"></b></p><div class="seg" id="langs"></div>
   <p><b id="sn"></b></p><div class="seg" id="lens"></div>
+  <p><b id="sth"></b></p><div class="seg" id="themes"></div>
   <p class="note" id="sm"></p>
 </div></div>
 <script>
@@ -218,15 +219,24 @@ function renderSet(){
     const b=document.createElement("button");b.textContent=n;b.className=+n===N?"on":"";
     b.onclick=()=>change(lang,+n);M.appendChild(b);
   });
+  renderTheme();
 }
 $("hb").onclick=()=>$("help").style.display="flex";
 $("help").onclick=()=>$("help").style.display="none";
 $("sb").onclick=()=>{renderSet();$("set").style.display="flex"};
 $("set").onclick=e=>{if(e.target===$("set"))$("set").style.display="none"};
-$("tb").onclick=()=>{
-  const el=document.documentElement,dark=el.dataset.theme?el.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
-  el.dataset.theme=dark?"light":"dark";
-};
+const themeNow=()=>{const el=document.documentElement;return el.dataset.theme||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light")};
+function renderTheme(){
+  const da=lang==="da",cur=themeNow(),box=$("themes");
+  $("sth").textContent=da?"Tema":"Theme";
+  box.innerHTML="";
+  [["light",da?"Lys":"Light"],["dark",da?"Mørk":"Dark"]].forEach(([k,label])=>{
+    const b=document.createElement("button");
+    b.textContent=label;b.className=cur===k?"on":"";
+    b.onclick=()=>{document.documentElement.dataset.theme=k;renderTheme()};
+    box.appendChild(b);
+  });
+}
 /* ---------- leaderboard: longest run of won games ---------- */
 const LB={da:{t:"Ranglise",all:"Alle tider",week:"Denne uge",none:"Ingen resultater endnu. Vær den første.",off:"Ranglisten kan ikke hentes lige nu.",me:"dig",what:"Længste række vundne spil."},
          en:{t:"Leaderboard",all:"All time",week:"This week",none:"No scores yet. Be the first.",off:"Could not load the leaderboard.",me:"you",what:"Longest run of won games."}};

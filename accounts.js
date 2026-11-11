@@ -208,11 +208,146 @@
   function showAccount() {
     byId("account").hidden = false;
     byId("account").textContent = user ? "Account" : "Log in";
+    byId("people").hidden = !user;
     byId("acc-in").hidden = !!user;
     byId("acc-out").hidden = !user;
     if (user) byId("acc-who").textContent = shownName(user);
     byId("acc-pass").value = "";
   }
+
+  // ----- People and messages -----
+  // Every account gets one public entry in "people" so others can find it,
+  // and each pair of players shares one chat document.
+  const peopleDialog = byId("people-dialog");
+  let peopleUnsub = null;
+  let chatUnsub = null;
+  let chatWith = null;
+
+  function pairId(one, two) {
+    return one < two ? one + "_" + two : two + "_" + one;
+  }
+
+  function peopleMsg(text, bad) {
+    byId("people-msg").textContent = text;
+    byId("people-msg").className = bad ? "note bad" : "note";
+  }
+
+  // Publishes this account in the people list
+  function publishMe() {
+    if (!fb || !user) return;
+    try {
+      fb.f.setDoc(fb.f.doc(fb.db, "people", user.uid), { name: shownName(user), at: Date.now() }, { merge: true })
+        .catch(function () { /* the people rules are not published yet */ });
+    } catch (error) { /* not connected */ }
+  }
+
+  function showPeople() {
+    byId("people-list-view").hidden = false;
+    byId("chat-view").hidden = true;
+    peopleMsg("");
+    if (peopleUnsub) return;
+    peopleUnsub = fb.f.onSnapshot(fb.f.collection(fb.db, "people"), function (snap) {
+      const list = [];
+      snap.forEach(function (doc) {
+        if (doc.id !== user.uid) list.push({ id: doc.id, name: doc.data().name || "player" });
+      });
+      list.sort(function (x, y) { return x.name.localeCompare(y.name); });
+      const box = byId("people-list");
+      box.textContent = "";
+      if (!list.length) {
+        const empty = document.createElement("p");
+        empty.className = "note";
+        empty.textContent = "No one else has an account yet. Ask a friend to sign up.";
+        box.appendChild(empty);
+        return;
+      }
+      list.forEach(function (person) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "person";
+        button.textContent = person.name;
+        button.addEventListener("click", function () { openChat(person.id, person.name); });
+        box.appendChild(button);
+      });
+    }, function () {
+      peopleMsg("Could not load people. Publish the Firestore rules for people and chats.", true);
+    });
+  }
+
+  function openChat(uid, name) {
+    chatWith = uid;
+    byId("people-list-view").hidden = true;
+    byId("chat-view").hidden = false;
+    byId("chat-who").textContent = name;
+    byId("chat-log").textContent = "";
+    peopleMsg("");
+
+    const id = pairId(user.uid, uid);
+    const chatRef = fb.f.doc(fb.db, "chats", id);
+    const names = {};
+    names[user.uid] = shownName(user);
+    names[uid] = name;
+    fb.f.setDoc(chatRef, { ids: [user.uid, uid].sort(), names: names }, { merge: true })
+      .catch(function () { peopleMsg("Could not start the chat. Publish the Firestore rules for chats.", true); });
+
+    if (chatUnsub) chatUnsub();
+    chatUnsub = fb.f.onSnapshot(
+      fb.f.query(fb.f.collection(chatRef, "messages"), fb.f.orderBy("at"), fb.f.limitToLast(100)),
+      function (snap) {
+        const log = byId("chat-log");
+        log.textContent = "";
+        snap.forEach(function (doc) {
+          const data = doc.data();
+          const bubble = document.createElement("div");
+          bubble.className = "msg" + (data.from === user.uid ? " me" : "");
+          bubble.textContent = data.text || "";
+          if (data.at) {
+            const time = document.createElement("span");
+            time.className = "t";
+            time.textContent = new Date(data.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            bubble.appendChild(time);
+          }
+          log.appendChild(bubble);
+        });
+        log.scrollTop = log.scrollHeight;
+      },
+      function () { peopleMsg("Could not load this chat. Publish the Firestore rules for chats.", true); }
+    );
+  }
+
+  byId("people").addEventListener("click", function () {
+    if (!fb || !user) return;
+    peopleDialog.showModal();
+    showPeople();
+  });
+  byId("people-close").addEventListener("click", function () { peopleDialog.close(); });
+  peopleDialog.addEventListener("click", function (event) {
+    if (event.target === peopleDialog) peopleDialog.close();
+  });
+  peopleDialog.addEventListener("close", function () {
+    if (peopleUnsub) { peopleUnsub(); peopleUnsub = null; }
+    if (chatUnsub) { chatUnsub(); chatUnsub = null; }
+    chatWith = null;
+  });
+
+  byId("chat-back").addEventListener("click", function () {
+    if (chatUnsub) { chatUnsub(); chatUnsub = null; }
+    chatWith = null;
+    byId("chat-view").hidden = true;
+    byId("people-list-view").hidden = false;
+    peopleMsg("");
+  });
+
+  byId("chat-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    const input = byId("chat-text");
+    const text = input.value.trim();
+    if (!text || !chatWith || !user) return;
+    input.value = "";
+    fb.f.addDoc(fb.f.collection(fb.db, "chats", pairId(user.uid, chatWith), "messages"),
+      { from: user.uid, text: text, at: Date.now() })
+      .catch(function () { peopleMsg("Message not sent. Publish the Firestore rules for chats.", true); });
+  });
 
   // ----- Start -----
   async function init() {
@@ -230,6 +365,7 @@
         user = who;
         try { localStorage.setItem("damp-in", who ? "1" : "0"); } catch (error) { /* storage off */ }
         if (!user) { clearInterval(autosave); current = null; synced = null; }
+        if (who) publishMe();
         showAccount();
         markReady();
       });

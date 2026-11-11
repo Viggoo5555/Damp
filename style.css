@@ -822,3 +822,130 @@ label input[type="file"] { height: auto; padding: 8px 12px; }
 @media (prefers-reduced-motion: reduce) {
   .load-bar::after { animation-duration: 3s; }
 }
+
+/* ----- People and messages ----- */
+#people {
+  height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--mist);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#people:hover { border-color: var(--fog); background: var(--pane); }
+
+#people-dialog { width: min(520px, calc(100% - 32px)); }
+
+#people-close {
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--mist);
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+#people-close:hover { border-color: var(--fog); background: var(--pane-hi); }
+
+.people-list {
+  max-height: min(46vh, 360px);
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+  overflow-y: auto;
+}
+
+.person {
+  display: block;
+  width: 100%;
+  padding: 12px 2px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--mist);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.person:hover { color: var(--lamp); }
+
+.chat-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+#chat-back {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--mist);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+#chat-back:hover { border-color: var(--fog); background: var(--pane-hi); }
+
+.chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: min(46vh, 340px);
+  padding: 4px 2px;
+  overflow-y: auto;
+}
+
+.msg {
+  max-width: 82%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--pane-hi);
+  font-size: 0.95rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.msg.me {
+  align-self: flex-end;
+  background: var(--lamp);
+  color: var(--lamp-ink);
+  font-weight: 600;
+}
+
+.msg .t {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.7rem;
+  font-weight: 400;
+  opacity: 0.65;
+}
+
+#chat-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+#chat-text {
+  flex: 1;
+  min-width: 0;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--deep);
+  color: var(--mist);
+  font: inherit;
+}
+
+#chat-text:focus-visible { outline-offset: 0; border-color: var(--lamp); }
+#chat-form .button { padding: 8px 18px; }

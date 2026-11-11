@@ -26,6 +26,7 @@
       <input id="search" type="search" placeholder="Search games  (press / )" aria-label="Search games" autocomplete="off">
       <button id="random" type="button">Random game</button>
       <button id="account" type="button" hidden>Log in</button>
+      <button id="people" type="button" hidden>People</button>
       <button id="add-game" type="button" hidden>+ Add game</button>
     </div>
   </header>
@@ -158,6 +159,32 @@
     </div>
 
     <p id="acc-msg" class="note" aria-live="polite"></p>
+  </dialog>
+
+  <dialog id="people-dialog" aria-labelledby="people-title">
+    <div class="dlg-head">
+      <h2 id="people-title">People</h2>
+      <button id="people-close" type="button">Close</button>
+    </div>
+
+    <div id="people-list-view">
+      <p class="note">Everyone with a Damp account. Pick someone to message.</p>
+      <div id="people-list" class="people-list"></div>
+    </div>
+
+    <div id="chat-view" hidden>
+      <div class="chat-head">
+        <button id="chat-back" type="button">&larr; People</button>
+        <strong id="chat-who"></strong>
+      </div>
+      <div id="chat-log" class="chat-log" aria-live="polite"></div>
+      <form id="chat-form">
+        <input id="chat-text" maxlength="500" autocomplete="off" placeholder="Write a message" aria-label="Message">
+        <button class="button" type="submit">Send</button>
+      </form>
+    </div>
+
+    <p id="people-msg" class="note" aria-live="polite"></p>
   </dialog>
 
   <script src="accounts.js"></script>

@@ -7,6 +7,13 @@
     "image": "flappy-bird.png"
   },
   {
+  "title": "Knockout Night",
+  "description": "3D boxing with combos, parry, super and online 1v1 with friends.",
+  "file": "knockout-night.html",
+  "category": "Fighting",
+  "image": "knockout-night.png"
+  },
+  {
     "title": "Star Clicker",
     "description": "Click your star, grow it and add orbiting planets.",
     "file": "Starclicker.html",

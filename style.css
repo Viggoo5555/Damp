@@ -955,3 +955,29 @@ label input[type="file"] { height: auto; padding: 8px 12px; }
 
 #chat-text:focus-visible { outline-offset: 0; border-color: var(--lamp); }
 #chat-form .button { padding: 8px 18px; }
+
+/* A small note when a message arrives, even mid-game */
+#toast {
+  position: fixed;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+  max-width: min(300px, calc(100vw - 32px));
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--lamp);
+  border-radius: 6px;
+  background: var(--pane);
+  color: var(--mist);
+  font-size: 0.9rem;
+  line-height: 1.3;
+  box-shadow: 0 10px 30px rgba(8, 14, 18, 0.45);
+  cursor: pointer;
+  animation: toast-in 0.18s ease-out;
+}
+
+#toast b { color: var(--lamp); font-weight: 600; }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+}

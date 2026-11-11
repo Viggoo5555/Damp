@@ -276,6 +276,7 @@
 
   function openChat(uid, name) {
     chatWith = uid;
+    markSeen(pairId(user.uid, uid), Date.now());
     byId("people-list-view").hidden = true;
     byId("chat-view").hidden = false;
     byId("chat-who").textContent = name;
@@ -344,9 +345,75 @@
     const text = input.value.trim();
     if (!text || !chatWith || !user) return;
     input.value = "";
-    fb.f.addDoc(fb.f.collection(fb.db, "chats", pairId(user.uid, chatWith), "messages"),
-      { from: user.uid, text: text, at: Date.now() })
+    const id = pairId(user.uid, chatWith);
+    const at = Date.now();
+    fb.f.addDoc(fb.f.collection(fb.db, "chats", id, "messages"), { from: user.uid, text: text, at: at })
       .catch(function () { peopleMsg("Message not sent. Publish the Firestore rules for chats.", true); });
+    // Keeps the summary on the chat fresh, so the other player can be notified
+    fb.f.setDoc(fb.f.doc(fb.db, "chats", id),
+      { ids: [user.uid, chatWith].sort(), last: text.slice(0, 120), lastAt: at, lastFrom: user.uid },
+      { merge: true }).catch(function () { /* the chat rules are not published yet */ });
+  });
+
+  // ----- Little message notification -----
+  // One listener on this player's chats; a corner toast that never blocks the page.
+  let notifyUnsub = null;
+  let notifyFirst = true;
+  let toastTimer = null;
+  let seen = {};
+  try { seen = JSON.parse(localStorage.getItem("damp-seen") || "{}") || {}; } catch (error) { seen = {}; }
+
+  function markSeen(id, at) {
+    seen[id] = at;
+    try { localStorage.setItem("damp-seen", JSON.stringify(seen)); } catch (error) { /* storage off */ }
+  }
+
+  function toast(who, text, chatId, uid) {
+    const box = byId("toast");
+    box.textContent = "";
+    const name = document.createElement("b");
+    name.textContent = who;
+    box.append(name, document.createTextNode(": " + String(text || "New message").slice(0, 70)));
+    box.dataset.uid = uid;
+    box.dataset.name = who;
+    box.dataset.chat = chatId;
+    box.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { box.hidden = true; }, 5000);
+  }
+
+  function watchMessages() {
+    if (notifyUnsub || !fb || !user) return;
+    notifyUnsub = fb.f.onSnapshot(
+      fb.f.query(fb.f.collection(fb.db, "chats"), fb.f.where("ids", "array-contains", user.uid)),
+      function (snap) {
+        // The first answer only sets the starting point, so old messages stay quiet
+        if (notifyFirst) {
+          snap.forEach(function (doc) { if (doc.data().lastAt) markSeen(doc.id, doc.data().lastAt); });
+          notifyFirst = false;
+          return;
+        }
+        snap.forEach(function (doc) {
+          const data = doc.data() || {};
+          if (!data.lastAt || data.lastFrom === user.uid) return;
+          if (chatWith === data.lastFrom) return;
+          if (seen[doc.id] && data.lastAt <= seen[doc.id]) return;
+          markSeen(doc.id, data.lastAt);
+          const names = data.names || {};
+          toast(names[data.lastFrom] || "Someone", data.last, doc.id, data.lastFrom);
+        });
+      },
+      function () { /* the chat rules are not published yet */ }
+    );
+  }
+
+  byId("toast").addEventListener("click", function () {
+    const box = byId("toast");
+    if (!box.dataset.uid) return;
+    box.hidden = true;
+    peopleDialog.showModal();
+    showPeople();
+    openChat(box.dataset.uid, box.dataset.name);
   });
 
   // ----- Start -----
@@ -365,7 +432,8 @@
         user = who;
         try { localStorage.setItem("damp-in", who ? "1" : "0"); } catch (error) { /* storage off */ }
         if (!user) { clearInterval(autosave); current = null; synced = null; }
-        if (who) publishMe();
+        if (who) { publishMe(); watchMessages(); }
+        else if (notifyUnsub) { notifyUnsub(); notifyUnsub = null; notifyFirst = true; }
         showAccount();
         markReady();
       });

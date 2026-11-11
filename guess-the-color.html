@@ -69,6 +69,42 @@ input[type=range]::-moz-range-thumb{width:8px;height:28px;background:#fff;border
 #res .pts{font-size:clamp(44px,11vw,64px);font-weight:700;line-height:.9;letter-spacing:-.04em}
 #res .s{font-size:15px;margin-top:6px}
 #res .s.d{color:var(--mute);font-size:14px}
+/* phones: bigger tap targets, and the controls never squeeze the playfield */
+html{-webkit-text-size-adjust:100%}
+body{overscroll-behavior:none}
+#ctl{max-height:min(480px,58dvh)}
+#sheet .opt{flex-wrap:wrap;gap:12px}
+#res{min-width:0}
+#act{flex:none}
+@media (max-width:520px){
+  #hud{padding:8px 12px;gap:8px}
+  #hud .r b{font-size:18px;margin-left:6px}
+  #strip{gap:4px}
+  #strip i{width:17px;height:17px}
+  #ctl{padding:10px 12px}
+  #ctl .in{max-width:none}
+  #pad{height:clamp(120px,24vh,190px)}
+  .seg{gap:8px}
+  .seg button{min-height:40px;padding:8px 12px;border:1px solid var(--line);border-bottom:2px solid var(--line);border-radius:6px}
+  .seg button[aria-pressed="true"]{background:var(--ink);color:var(--frame);border-color:var(--ink)}
+  .row{grid-template-columns:52px 1fr 34px;gap:8px;font-size:14px;margin:10px 0}
+  input[type=range]{height:28px}
+  input[type=range]::-webkit-slider-thumb{width:16px;height:34px}
+  input[type=range]::-moz-range-thumb{width:16px;height:32px}
+  .foot{min-height:46px;gap:10px;margin-top:10px}
+  #act{padding:14px 20px}
+  #tags span{padding:5px 9px;font-size:13px}
+  #sheet{padding:18px 16px}
+  #sheet h2{margin-bottom:10px}
+  #sheet li{gap:8px;padding:8px 0}
+}
+@media (max-height:560px){
+  #hud{padding:6px 12px}
+  #pad{height:clamp(92px,22vh,140px)}
+  #ctl{padding:8px 12px}
+  #sheet{padding:14px 16px}
+  .foot{min-height:42px;margin-top:8px}
+}
 </style>
 </head>
 <body>

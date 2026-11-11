@@ -97,9 +97,30 @@ h2{font-size:calc(var(--s)*22px);color:var(--hd,#ffa72b)}
 #skip{position:absolute;top:calc(var(--s)*14px);right:calc(var(--s)*8px);z-index:3}
 #lbp,#setp{position:absolute;inset:0;background:rgba(10,20,25,.94);color:#fff;font-size:calc(var(--s)*8px);padding:calc(var(--s)*12px);box-sizing:border-box;overflow:auto;touch-action:pan-y;pointer-events:auto;cursor:default;display:flex;flex-direction:column;gap:calc(var(--s)*10px)}
 #lbp.hide,#setp.hide{display:none}
-#lbl{display:flex;flex-direction:column;gap:calc(var(--s)*8px)}
-#lbl .it b{font-weight:400;font-size:calc(var(--s)*10px);color:var(--hd,#ffa72b)}
-#lbl .it.me{background:rgba(255,167,43,.28);box-shadow:inset 0 0 0 calc(var(--s)*2px) #ffa72b}
+#lbl{display:flex;flex-direction:column;gap:calc(var(--s)*6px)}
+.lbtitle{display:flex;flex-direction:column;gap:calc(var(--s)*4px)}
+.lbtitle small{font-size:calc(var(--s)*5.5px);opacity:.7}
+#lbs{display:flex;gap:calc(var(--s)*8px);padding:0;background:none;border:0;box-shadow:none;align-items:stretch}
+.lbstat{flex:1;display:flex;flex-direction:column;gap:calc(var(--s)*3px);background:rgba(255,255,255,.08);border:calc(var(--s)*2px) solid rgba(255,255,255,.12);border-radius:calc(var(--s)*4px);padding:calc(var(--s)*7px) calc(var(--s)*8px);font-size:calc(var(--s)*6px);line-height:1.4}
+.lbstat b{font-weight:400;font-size:calc(var(--s)*12px);color:var(--hd,#ffa72b)}
+.lbh,.lbr{display:grid;grid-template-columns:calc(var(--s)*22px) minmax(0,1fr) auto;align-items:center;gap:calc(var(--s)*7px)}
+.lbh{font-size:calc(var(--s)*5.5px);opacity:.55;padding:0 calc(var(--s)*8px) calc(var(--s)*2px)}
+.lbh span:last-child{text-align:right}
+.lbr{background:rgba(255,255,255,.08);border:calc(var(--s)*2px) solid rgba(255,255,255,.12);border-radius:calc(var(--s)*4px);padding:calc(var(--s)*6px) calc(var(--s)*8px);font-size:calc(var(--s)*8px)}
+.lbr .rk{display:flex;align-items:center;justify-content:center;width:calc(var(--s)*16px);height:calc(var(--s)*16px);border-radius:calc(var(--s)*3px);background:rgba(255,255,255,.14);font-weight:400;font-size:calc(var(--s)*6px)}
+.lbr.t1{border-color:#f5c542;background:rgba(245,197,66,.16)}
+.lbr.t1 .rk{background:#f5c542;color:#3a2a00}
+.lbr.t2{border-color:#c8d2da;background:rgba(200,210,218,.12)}
+.lbr.t2 .rk{background:#c8d2da;color:#22303a}
+.lbr.t3{border-color:#c9803f;background:rgba(201,128,63,.14)}
+.lbr.t3 .rk{background:#c9803f;color:#2a1600}
+.lbr.me{box-shadow:inset 0 0 0 calc(var(--s)*2px) #ffa72b;border-color:#ffa72b}
+.lbr .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbr .sc{font-weight:400;font-size:calc(var(--s)*10px);color:var(--hd,#ffa72b);text-align:right}
+.you{font-style:normal;margin-left:calc(var(--s)*5px);font-size:calc(var(--s)*5px);background:#ffa72b;color:#3a2400;padding:calc(var(--s)*2px) calc(var(--s)*4px);border-radius:calc(var(--s)*2px);vertical-align:middle}
+.lbmsg{text-align:center;font-size:calc(var(--s)*7px);line-height:1.8;opacity:.8;padding:calc(var(--s)*12px) 0}
+.lblogin{display:flex;align-items:center;gap:calc(var(--s)*8px);background:rgba(255,167,43,.14);border:calc(var(--s)*2px) dashed rgba(255,167,43,.65);border-radius:calc(var(--s)*4px);padding:calc(var(--s)*7px) calc(var(--s)*8px);font-size:calc(var(--s)*6px);line-height:1.6}
+.lblogin span{flex:1}
 @keyframes spin{to{transform:rotate(360deg)}}
 #lbl .sp{width:calc(var(--s)*10px);height:calc(var(--s)*10px);flex:none;border-radius:50%;border:calc(var(--s)*2px) solid rgba(255,255,255,.3);border-top-color:#ffa72b;animation:spin .8s linear infinite}
 #tree{position:relative;width:calc(var(--s)*288px);height:calc(var(--s)*270px);margin:0 calc(var(--s)*-12px);flex:none}
@@ -140,7 +161,7 @@ h2{font-size:calc(var(--s)*22px);color:var(--hd,#ffa72b)}
 <div id="skp" class="ov hide"><div class="skh"><h2>SKILL TREE</h2><div class="chip"><i class="coin"></i><span id="skpts">0</span></div><button id="skc" class="btn sm">Back</button></div><div id="skbody"></div></div>
 <div id="tutsw" class="hide"></div>
 <button id="dbtn" class="btn hide">DASH</button>
-<div id="lbp" class="ov hide"><div class="sh"><b>Leaderboard</b><button id="lbc" class="btn sm">Back</button></div><div id="lbs" class="det"></div><div id="lbl"></div></div>
+<div id="lbp" class="ov hide"><div class="sh"><div class="lbtitle"><b>Leaderboard</b><small>Top 10 · everyone can look</small></div><button id="lbc" class="btn sm">Back</button></div><div id="lbs" class="det"></div><div id="lbl"></div></div>
 <div id="setp" class="ov hide"><div class="sh"><b>Settings</b><button id="setc" class="btn sm">Back</button></div>
 <div class="det"><p>Flap: left click, tap or Space<br>Dash: right click or Shift<br>(touch: the DASH button)</p></div>
 <div class="it"><span>Sound</span><button id="mute2" class="btn sm">On</button></div>
@@ -634,22 +655,44 @@ function lbName(u){
   const mail=u.email||'';
   return mail.endsWith('@damp.example')?mail.slice(0,-13):(mail.split('@')[0]||u.displayName||'player');
 }
-function lbRow(box,text,right,me){
-  const row=document.createElement('div');row.className='it'+(me?' me':'');
-  const nm=document.createElement('span');nm.textContent=text;
-  row.append(nm);
-  if(right!=null){const sc=document.createElement('b');sc.textContent=right;row.append(sc);}
-  box.append(row);
+function lbHead(box){
+  const h=document.createElement('div');h.className='lbh';
+  ['#','Player','Score'].forEach(t=>{const c=document.createElement('span');c.textContent=t;h.append(c);});
+  box.append(h);
+}
+function lbScoreRow(box,rank,name,score,me){
+  const row=document.createElement('div');
+  row.className='lbr'+(rank<=3?' t'+rank:'')+(me?' me':'');
+  const rk=document.createElement('b');rk.className='rk';rk.textContent=rank;
+  const nm=document.createElement('span');nm.className='nm';nm.textContent=name;
+  if(me){const y=document.createElement('i');y.className='you';y.textContent='you';nm.append(y);}
+  const sc=document.createElement('b');sc.className='sc';sc.textContent=score;
+  row.append(rk,nm,sc);box.append(row);
 }
 function lbSpinner(box,text){
-  const row=document.createElement('div');row.className='it';
+  const row=document.createElement('div');row.className='lbr';
   const sp=document.createElement('i');sp.className='sp';
-  const nm=document.createElement('span');nm.textContent=text;
+  const nm=document.createElement('span');nm.className='nm';nm.textContent=text;
   row.append(sp,nm);box.append(row);
 }
-function lbLogIn(){
-  const box=$('lbl');
-  const row=document.createElement('div');row.className='it';
+function lbNote(box,text){
+  const d=document.createElement('div');d.className='lbmsg';d.textContent=text;box.append(d);
+}
+function lbStats(){
+  const box=$('lbs');box.textContent='';
+  if(fbUser){
+    const a=document.createElement('div');a.className='lbstat';
+    const la=document.createElement('span');la.textContent='Your best';
+    const va=document.createElement('b');va.textContent=lbOwn;
+    a.append(la,va);box.append(a);
+  }
+  const d=document.createElement('div');d.className='lbstat';
+  const ld=document.createElement('span');ld.textContent='This device';
+  const vd=document.createElement('b');vd.textContent=Math.max(best,save.lb[0]?save.lb[0].s:0);
+  d.append(ld,vd);box.append(d);
+}
+function lbLogIn(box){
+  const row=document.createElement('div');row.className='lblogin';
   const msg=document.createElement('span');msg.textContent='Log in to put your score on the board.';
   const btn=document.createElement('button');btn.type='button';btn.className='btn sm';btn.textContent='Log in';
   btn.onclick=()=>{
@@ -671,20 +714,16 @@ function lbReadCache(){
 function lbRender(){
   if($('lbp').classList.contains('hide'))return;
   const box=$('lbl');box.textContent='';
-  lbRows.forEach((it,i)=>lbRow(box,'#'+(i+1)+'  '+(it.name||'player'),it.score,!!fbUser&&it.id===fbUser.uid));
-  if(fbState==='off')lbRow(box,'The leaderboard is offline right now.');
-  else if(fbState==='error')lbRow(box,'Could not refresh scores. Check the Firestore rules.');
-  else if(!lbRows.length&&!lbLoaded){
-    lbSpinner(box,'Connecting to the leaderboard...');
-    lbRow(box,'Your best on this device: '+Math.max(best,save.lb[0]?save.lb[0].s:0));
+  lbStats();
+  if(fbState==='off')lbNote(box,'The leaderboard is offline right now.');
+  else if(fbState==='error')lbNote(box,'Could not refresh scores. Check the Firestore rules.');
+  else if(!lbRows.length&&!lbLoaded)lbSpinner(box,'Connecting to the leaderboard...');
+  else if(!lbRows.length)lbNote(box,'No scores yet. Be the first to fly.');
+  else{
+    lbHead(box);
+    lbRows.forEach((it,i)=>lbScoreRow(box,i+1,it.name||'player',it.score,!!fbUser&&it.id===fbUser.uid));
   }
-  else if(!lbRows.length)lbRow(box,'No scores yet. Be the first!');
-  if(!fbUser){
-    lbLogIn();
-    $('lbs').textContent='Anyone can look. Log in to add your own score.';
-  }else{
-    $('lbs').textContent='Your best: '+lbOwn+'  |  This device: '+(save.lb[0]?save.lb[0].s:0);
-  }
+  if(!fbUser)lbLogIn(box);
 }
 async function submitLb(){
   if(!fbUser||!fbDb||!score)return;

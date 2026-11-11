@@ -825,8 +825,12 @@ label input[type="file"] { height: auto; padding: 8px 12px; }
 
 /* ----- People and messages ----- */
 #people {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
   height: 42px;
-  padding: 0 16px;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: 4px;
   background: transparent;
@@ -837,6 +841,8 @@ label input[type="file"] { height: auto; padding: 8px 12px; }
 }
 
 #people:hover { border-color: var(--fog); background: var(--pane); }
+
+#people svg { width: 22px; height: 22px; }
 
 #people-dialog { width: min(520px, calc(100% - 32px)); }
 

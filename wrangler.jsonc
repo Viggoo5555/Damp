@@ -1,0 +1,15 @@
+{
+  // The Worker that serves dampgames.dk. `npx wrangler deploy` uses this file,
+  // which is what stops Wrangler from refusing the repo over the old
+  // Pages-style layout.
+  "name": "damp",
+  "compatibility_date": "2026-11-11",
+  "main": "worker.js",
+  "assets": {
+    // The site itself lives in this folder; everything not listed in
+    // .assetsignore is uploaded as a public file.
+    "directory": ".",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true }
+}

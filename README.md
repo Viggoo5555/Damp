@@ -14,7 +14,9 @@ Free browser games, served as plain static files.
 | `games/` | one HTML file per game |
 | `img/` | thumbnails shown on the catalogue tiles |
 | `files/` | downloadable extensions (secret window) |
-| `functions/api/leaderboard.js` | Cloudflare Pages Function for the Flappy board |
+| `worker.js` | the Worker: serves `/api/leaderboard`, hands the rest to the static files |
+| `wrangler.jsonc` | Worker config: name, entry point, assets folder |
+| `.assetsignore` | keeps source files out of the public assets |
 | `firestore.rules` | the rules to paste into Firebase |
 
 ## Adding a game

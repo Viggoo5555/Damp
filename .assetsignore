@@ -1,0 +1,13 @@
+# Not part of the public site
+worker.js
+wrangler.jsonc
+.assetsignore
+firestore.rules
+README.md
+artifacts/
+.git
+.gitignore
+.github
+node_modules/
+package.json
+package-lock.json

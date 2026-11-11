@@ -1,3 +1,8 @@
+// Entry point for the Cloudflare Worker behind dampgames.dk.
+// Static files come from this folder (see wrangler.jsonc). Requests that do
+// not match a file fall through to the Worker, which only handles the
+// leaderboard API; everything else is handed back to the asset server.
+//
 // GET /api/leaderboard?mode=all|week
 // Returns { mode, week, rows:[{id,name,score}], at }
 //
@@ -36,7 +41,7 @@ function reply(body, maxAge, status) {
   });
 }
 
-export async function onRequestGet({ request, env, waitUntil }) {
+async function leaderboard(request, env, waitUntil) {
   const mode = new URL(request.url).searchParams.get('mode') === 'week' ? 'week' : 'all';
   const week = weekKey(new Date());
   const cacheKey = 'lb:' + mode + ':' + week;
@@ -85,3 +90,16 @@ export async function onRequestGet({ request, env, waitUntil }) {
   if (kv && waitUntil) waitUntil(kv.put(cacheKey, body, { expirationTtl: 60 }));
   return reply(body, 15);
 }
+
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    if (url.pathname === '/api/leaderboard' || url.pathname === '/api/leaderboard/') {
+      if (request.method !== 'GET' && request.method !== 'HEAD') {
+        return new Response('Method not allowed', { status: 405, headers: { allow: 'GET' } });
+      }
+      return leaderboard(request, env, ctx.waitUntil.bind(ctx));
+    }
+    return env.ASSETS.fetch(request);
+  }
+};

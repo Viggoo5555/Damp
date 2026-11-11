@@ -103,6 +103,9 @@ h2{font-size:calc(var(--s)*22px);color:var(--hd,#ffa72b)}
 #lbs{display:flex;gap:calc(var(--s)*8px);padding:0;background:none;border:0;box-shadow:none;align-items:stretch}
 .lbstat{flex:1;display:flex;flex-direction:column;gap:calc(var(--s)*3px);background:rgba(255,255,255,.08);border:calc(var(--s)*2px) solid rgba(255,255,255,.12);border-radius:calc(var(--s)*4px);padding:calc(var(--s)*7px) calc(var(--s)*8px);font-size:calc(var(--s)*6px);line-height:1.4}
 .lbstat b{font-weight:400;font-size:calc(var(--s)*12px);color:var(--hd,#ffa72b)}
+.lbtabs{display:flex;gap:calc(var(--s)*6px)}
+.lbtabs button{flex:1;font:inherit;font-size:calc(var(--s)*7px);padding:calc(var(--s)*6px) 0;color:#fff;background:rgba(255,255,255,.08);border:calc(var(--s)*2px) solid rgba(255,255,255,.16);border-radius:calc(var(--s)*4px);cursor:pointer}
+.lbtabs button.on{background:var(--b4,#74c02c);border-color:#fff}
 .lbh,.lbr{display:grid;grid-template-columns:calc(var(--s)*22px) minmax(0,1fr) auto;align-items:center;gap:calc(var(--s)*7px)}
 .lbh{font-size:calc(var(--s)*5.5px);opacity:.55;padding:0 calc(var(--s)*8px) calc(var(--s)*2px)}
 .lbh span:last-child{text-align:right}
@@ -161,7 +164,7 @@ h2{font-size:calc(var(--s)*22px);color:var(--hd,#ffa72b)}
 <div id="skp" class="ov hide"><div class="skh"><h2>SKILL TREE</h2><div class="chip"><i class="coin"></i><span id="skpts">0</span></div><button id="skc" class="btn sm">Back</button></div><div id="skbody"></div></div>
 <div id="tutsw" class="hide"></div>
 <button id="dbtn" class="btn hide">DASH</button>
-<div id="lbp" class="ov hide"><div class="sh"><div class="lbtitle"><b>Leaderboard</b><small>Top 10 · everyone can look</small></div><button id="lbc" class="btn sm">Back</button></div><div id="lbs" class="det"></div><div id="lbl"></div></div>
+<div id="lbp" class="ov hide"><div class="sh"><div class="lbtitle"><b>Leaderboard</b><small>Top 10 · everyone can look</small></div><button id="lbc" class="btn sm">Back</button></div><div id="lbtabs" class="lbtabs"><button type="button" data-m="all">All time</button><button type="button" data-m="week">This week</button></div><div id="lbs" class="det"></div><div id="lbl"></div></div>
 <div id="setp" class="ov hide"><div class="sh"><b>Settings</b><button id="setc" class="btn sm">Back</button></div>
 <div class="det"><p>Flap: left click, tap or Space<br>Dash: right click or Shift<br>(touch: the DASH button)</p></div>
 <div class="it"><span>Sound</span><button id="mute2" class="btn sm">On</button></div>
@@ -650,7 +653,8 @@ function openTree(o){$('skp').classList.toggle('hide',!o);if(o)renderSkills();}
 /* ---------- leaderboard: anyone can look, logging in adds your score ---------- */
 const FB={apiKey:"AIzaSyDJhWSi7QZKXtOPYwKHPF7zPg_klh1If7w",authDomain:"damp-2406a.firebaseapp.com",projectId:"damp-2406a",appId:"1:940989851976:web:f8fd07c258afa71fd22b7d"};
 const FBSDK='https://www.gstatic.com/firebasejs/10.14.1/',LB='flappy';
-let fbAuth=null,fbDb=null,F=null,fbUser=null,fbState='loading',lbRows=[],lbOwn=0,lbLoaded=false,ownUnsub=null;
+let fbAuth=null,fbDb=null,F=null,fbUser=null,fbState='loading',lbRows=[],lbOwn=0,lbLoaded=false,ownUnsub=null,lbUnsub=null,lbMode='all';
+try{lbMode=localStorage.getItem('fb-lbmode')==='week'?'week':'all'}catch(e){}
 function lbName(u){
   const mail=u.email||'';
   return mail.endsWith('@damp.example')?mail.slice(0,-13):(mail.split('@')[0]||u.displayName||'player');
@@ -704,11 +708,37 @@ function lbLogIn(box){
   };
   row.append(msg,btn);box.append(row);
 }
+// Monday-based week id, so "this week" resets on Monday
+function lbWeek(d){
+  const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  const day=t.getUTCDay()||7;
+  t.setUTCDate(t.getUTCDate()+4-day);
+  const y=t.getUTCFullYear();
+  return y+'-W'+String(Math.ceil(((t-Date.UTC(y,0,1))/864e5+1)/7)).padStart(2,'0');
+}
+function lbCacheKey(){return lbMode==='week'?'fb-lb-w':'fb-lb'}
 function lbSaveCache(){
-  try{localStorage.setItem('fb-lb',JSON.stringify(lbRows))}catch(e){}
+  try{localStorage.setItem(lbCacheKey(),JSON.stringify(lbRows))}catch(e){}
 }
 function lbReadCache(){
-  try{const d=JSON.parse(localStorage.getItem('fb-lb'));return Array.isArray(d)?d:[]}catch(e){return []}
+  try{const d=JSON.parse(localStorage.getItem(lbCacheKey()));return Array.isArray(d)?d:[]}catch(e){return []}
+}
+// All time lives in flappy/{uid}; each week gets its own subcollection, so no composite index is needed
+function lbWatch(){
+  if(lbUnsub){lbUnsub();lbUnsub=null;}
+  lbLoaded=false;
+  lbRows=lbReadCache();
+  lbRender();
+  if(!F||!fbDb)return;
+  const ref=lbMode==='week'?F.collection(fbDb,'flappy_week',lbWeek(new Date()),'scores'):F.collection(fbDb,LB);
+  lbUnsub=F.onSnapshot(
+    F.query(ref,F.orderBy('score','desc'),F.limit(10)),
+    snap=>{
+      lbRows=snap.docs.map(d=>({id:d.id,name:d.data().name,score:d.data().score}));
+      lbLoaded=true;fbState='ok';lbSaveCache();lbRender();
+    },
+    ()=>{fbState='error';lbRender();}
+  );
 }
 // Draws whatever is known right now, so the panel never waits on the network
 function lbRender(){
@@ -718,7 +748,7 @@ function lbRender(){
   if(fbState==='off')lbNote(box,'The leaderboard is offline right now.');
   else if(fbState==='error')lbNote(box,'Could not refresh scores. Check the Firestore rules.');
   else if(!lbRows.length&&!lbLoaded)lbSpinner(box,'Connecting to the leaderboard...');
-  else if(!lbRows.length)lbNote(box,'No scores yet. Be the first to fly.');
+  else if(!lbRows.length)lbNote(box,lbMode==='week'?'No scores yet this week. Be the first to fly.':'No scores yet. Be the first to fly.');
   else{
     lbHead(box);
     lbRows.forEach((it,i)=>lbScoreRow(box,i+1,it.name||'player',it.score,!!fbUser&&it.id===fbUser.uid));
@@ -727,12 +757,16 @@ function lbRender(){
 }
 async function submitLb(){
   if(!fbUser||!fbDb||!score)return;
-  try{
-    const ref=F.doc(fbDb,LB,fbUser.uid);
-    const old=await F.getDoc(ref);
-    if(old.exists()&&old.data().score>=score)return;
-    await F.setDoc(ref,{name:lbName(fbUser),score:score,at:F.serverTimestamp()},{merge:true});
-  }catch(e){}
+  const name=lbName(fbUser),at=F.serverTimestamp();
+  const send=async ref=>{
+    try{
+      const old=await F.getDoc(ref);
+      if(old.exists()&&old.data().score>=score)return;
+      await F.setDoc(ref,{name:name,score:score,at:at},{merge:true});
+    }catch(e){}
+  };
+  await send(F.doc(fbDb,LB,fbUser.uid));
+  await send(F.doc(fbDb,'flappy_week',lbWeek(new Date()),'scores',fbUser.uid));
 }
 function lbWatchOwn(){
   if(ownUnsub){ownUnsub();ownUnsub=null;}
@@ -749,25 +783,28 @@ async function initLb(){
     F=mods[2];
     const app=mods[0].initializeApp(FB);
     fbAuth=mods[1].getAuth(app);fbDb=F.getFirestore(app);
-    fbState='ok';
+    fbState='ok';lbTabs();
     // Started at load, not when the panel opens, so the first look is instant and always current
-    F.onSnapshot(
-      F.query(F.collection(fbDb,LB),F.orderBy('score','desc'),F.limit(10)),
-      snap=>{
-        lbRows=snap.docs.map(d=>({id:d.id,name:d.data().name,score:d.data().score}));
-        lbLoaded=true;fbState='ok';lbSaveCache();lbRender();
-      },
-      ()=>{fbState='error';lbRender();}
-    );
+    lbWatch();
     mods[1].onAuthStateChanged(fbAuth,u=>{fbUser=u;lbWatchOwn();lbRender();if(u)submitLb();});
   }catch(e){
     fbState='off';lbRender();
   }
 }
+function lbTabs(){
+  [...$('lbtabs').children].forEach(x=>x.classList.toggle('on',x.dataset.m===lbMode));
+}
 function openLb(o){
   $('lbp').classList.toggle('hide',!o);if(!o)return;
   lbRender();
 }
+$('lbtabs').addEventListener('click',e=>{
+  const b=e.target.closest('[data-m]');if(!b||lbMode===b.dataset.m)return;
+  lbMode=b.dataset.m;
+  try{localStorage.setItem('fb-lbmode',lbMode)}catch(err){}
+  lbTabs();
+  lbWatch();
+});
 
 /* ---------- one interactive cinematic tutorial per skill ---------- */
 const TUTS={

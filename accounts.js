@@ -246,18 +246,26 @@
     byId("chat-view").hidden = true;
     peopleMsg("");
     if (peopleUnsub) return;
-    peopleUnsub = fb.f.onSnapshot(fb.f.collection(fb.db, "people"), function (snap) {
-      const list = [];
-      snap.forEach(function (doc) {
-        if (doc.id !== user.uid) list.push({ id: doc.id, name: doc.data().name || "player" });
+    // Names come from two places: the "people" directory, and the public
+    // Flappy board, which already has a row for everyone who has played.
+    // Someone who has not opened the site since the directory was added has
+    // no people entry yet, so the board keeps them visible anyway.
+    const directory = [];
+    const board = [];
+
+    function drawPeople() {
+      if (!peopleDialog.open) return;
+      const people = new Map();
+      directory.concat(board).forEach(function (person) {
+        if (!people.has(person.id)) people.set(person.id, person);
       });
-      list.sort(function (x, y) { return x.name.localeCompare(y.name); });
+      const list = Array.from(people.values()).sort(function (x, y) { return x.name.localeCompare(y.name); });
       const box = byId("people-list");
       box.textContent = "";
       if (!list.length) {
         const empty = document.createElement("p");
         empty.className = "note";
-        empty.textContent = "No one else has an account yet. Ask a friend to sign up.";
+        empty.textContent = "No one else yet. Friends show up here after they play a game or open the site while signed in.";
         box.appendChild(empty);
         return;
       }
@@ -269,6 +277,21 @@
         button.addEventListener("click", function () { openChat(person.id, person.name); });
         box.appendChild(button);
       });
+    }
+
+    fb.f.getDocs(fb.f.query(fb.f.collection(fb.db, "flappy"), fb.f.limit(50))).then(function (snap) {
+      snap.forEach(function (doc) {
+        if (doc.id !== user.uid) board.push({ id: doc.id, name: doc.data().name || "player" });
+      });
+      drawPeople();
+    }, function () { /* the board is only a fallback */ });
+
+    peopleUnsub = fb.f.onSnapshot(fb.f.collection(fb.db, "people"), function (snap) {
+      directory.length = 0;
+      snap.forEach(function (doc) {
+        if (doc.id !== user.uid) directory.push({ id: doc.id, name: doc.data().name || "player" });
+      });
+      drawPeople();
     }, function () {
       peopleMsg("Could not load people. Publish the Firestore rules for people and chats.", true);
     });

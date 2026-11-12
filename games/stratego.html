@@ -390,16 +390,20 @@ function pieceMesh(p,hidden){
   if(towerGeo){
     const body=new THREE.Mesh(towerGeo,sideMat[p.side]);
     body.castShadow=true;body.receiveShadow=true;g.add(body);
-    const band=new THREE.Mesh(bandGeo,bandMat(p.rank,p.side,hidden));
-    band.position.y=TOWER_H*.52;
-    if(G.side==='b')band.rotation.y=Math.PI;
-    band.castShadow=false;
-    g.add(band);
+    if(p.side===G.side||!hidden){
+      const band=new THREE.Mesh(bandGeo,bandMat(p.rank,p.side,hidden));
+      band.position.y=TOWER_H*.52;
+      if(G.side==='b')band.rotation.y=Math.PI;
+      band.castShadow=false;
+      g.add(band);
+    }
   }else{
     const body=new THREE.Mesh(cylGeo,sideMat[p.side]);
     body.castShadow=true;body.receiveShadow=true;g.add(body);
-    const top=new THREE.Mesh(topGeo,capMat(p.rank,p.side,hidden));
-    top.rotation.x=-Math.PI/2;top.position.y=.106;g.add(top);
+    if(p.side===G.side||!hidden){
+      const top=new THREE.Mesh(topGeo,capMat(p.rank,p.side,hidden));
+      top.rotation.x=-Math.PI/2;top.position.y=.106;g.add(top);
+    }
     const ring=new THREE.Mesh(ringGeo,brassMat);
     ring.rotation.x=Math.PI/2;ring.position.y=.104;g.add(ring);
   }

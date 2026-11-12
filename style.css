@@ -997,3 +997,16 @@ label input[type="file"] { height: auto; padding: 8px 12px; }
   gap: 10px;
   margin: 16px 0 10px;
 }
+
+/* A game invite in chat: one clear Join button instead of a long link */
+.chat-join {
+  display: inline-block;
+  margin: 4px 0 2px;
+  padding: 7px 16px;
+  border-radius: 4px;
+  background: var(--lamp);
+  color: #191307;
+  font-weight: 700;
+  text-decoration: none;
+}
+.chat-join:hover { filter: brightness(1.08); }

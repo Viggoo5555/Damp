@@ -634,7 +634,7 @@ const I18N = {
     oppLeft: 'Your opponent left the game.', cheat: 'Warning: the opponent’s fleet did not match their answers.', youGo: 'You fire first', theyGo: 'Enemy fires first',
     lbLogin: 'Log in on the front page first (the Account button), then open this game again.', lbPrep: 'Preparing room…', lbWait: 'Room ready. Invite a friend, or share the link.',
     lbSent: 'Invite sent to {n}. Waiting for them to join…', lbJoining: 'Connecting…', lbNoRoom: 'No room with that code.', lbOld: 'That invite has expired.',
-    lbFail: 'Could not connect. Try again.', lbNoPeople: 'No friends found yet. Share the link instead.', invite: 'Invite', sent: 'Sent', inviteMsg: 'Battleship? Join me:',
+    lbFail: 'Could not connect. Try again.', lbFailNet: 'Could not connect directly. A strict network (school, work or mobile data) can block this — try another Wi-Fi or hotspot.', lbNoPeople: 'No friends found yet. Share the link instead.', invite: 'Invite', sent: 'Sent', inviteMsg: 'Battleship? Join me:',
     linkCopied: 'Link copied', result: 'Result', connected: 'Connected to {n}', lbFull: 'That room is already taken.', lbErr: 'Something went wrong ({e}).', open: 'Open front page'
   },
   da: {
@@ -651,7 +651,7 @@ const I18N = {
     oppLeft: 'Din modstander forlod spillet.', cheat: 'Advarsel: modstanderens flåde passede ikke med deres svar.', youGo: 'Du skyder først', theyGo: 'Fjenden skyder først',
     lbLogin: 'Log ind på forsiden først (knappen Account), og åbn så spillet igen.', lbPrep: 'Gør rummet klar…', lbWait: 'Rummet er klar. Inviter en ven, eller del linket.',
     lbSent: 'Invitation sendt til {n}. Venter på at de joiner…', lbJoining: 'Forbinder…', lbNoRoom: 'Der er intet rum med den kode.', lbOld: 'Den invitation er udløbet.',
-    lbFail: 'Kunne ikke forbinde. Prøv igen.', lbNoPeople: 'Ingen venner fundet endnu. Del linket i stedet.', invite: 'Inviter', sent: 'Sendt', inviteMsg: 'Slagskib? Join mig:',
+    lbFail: 'Kunne ikke forbinde. Prøv igen.', lbFailNet: 'Kunne ikke forbinde direkte. Et strengt netværk (skole, arbejde eller mobildata) kan blokere det — prøv et andet Wi-Fi eller hotspot.', lbNoPeople: 'Ingen venner fundet endnu. Del linket i stedet.', invite: 'Inviter', sent: 'Sendt', inviteMsg: 'Slagskib? Join mig:',
     linkCopied: 'Link kopieret', result: 'Resultat', connected: 'Forbundet til {n}', lbFull: 'Det rum er allerede optaget.', lbErr: 'Noget gik galt ({e}).', open: 'Åbn forsiden'
   }
 };
@@ -1444,7 +1444,7 @@ function connected(role, oppName) {
 function armTimeout() { clearTimeout(LB.timer); LB.timer = setTimeout(() => { lbStatus(t('lbFail'), 'bad'); $('lbRetry').classList.remove('hide'); }, 25000); }
 function newPc() {
   const pc = new RTCPeerConnection(ICE);
-  pc.onconnectionstatechange = () => { if (pc.connectionState === 'failed' && G.phase === 'menu') { lbStatus(t('lbFail'), 'bad'); $('lbRetry').classList.remove('hide'); } };
+  pc.onconnectionstatechange = () => { if (pc.connectionState === 'failed' && G.phase === 'menu') { lbStatus(t('lbFailNet'), 'bad'); $('lbRetry').classList.remove('hide'); } };
   return pc;
 }
 async function hostRoom() {

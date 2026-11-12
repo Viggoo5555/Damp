@@ -361,7 +361,15 @@
         link.href = part;
         link.target = "_blank";
         link.rel = "noopener";
-        link.textContent = part;
+        // A game invite is just a room link: show one clear button for it.
+        let room = "";
+        try { room = new URL(part).searchParams.get("room") || ""; } catch (error) { room = ""; }
+        if (room) {
+          link.className = "chat-join";
+          link.textContent = "Join";
+        } else {
+          link.textContent = part;
+        }
         box.appendChild(link);
       } else if (part) {
         box.appendChild(document.createTextNode(part));

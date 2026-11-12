@@ -285,13 +285,66 @@
     return "Firestore error" + (code ? " (" + code + ")" : "") + (detail ? ": " + detail : ".");
   }
 
-  // Publishes this account in the people list
-  function publishMe() {
-    if (!fb || !user) return;
-    try {
-      fb.f.setDoc(fb.f.doc(fb.db, "people", user.uid), { name: shownName(user), at: Date.now() }, { merge: true })
-        .catch(function () { /* the people rules are not published yet */ });
-    } catch (error) { /* not connected */ }
+  // ----- People list: who is online, and who has unread messages -----
+  const peopleDir = [];
+  const peopleBoard = [];
+  let chatSummaries = new Map();
+
+  // Somebody is "online" when their last heartbeat is less than two minutes old
+  function presenceOn(at) {
+    return !!at && Date.now() - at < 120000;
+  }
+
+  function unreadBy(uid) {
+    const chat = chatSummaries.get(uid);
+    if (!chat || !user || chat.lastFrom === user.uid) return false;
+    return chat.lastAt > (seen[chat.id] || 0);
+  }
+
+  function refreshUnread() {
+    const dot = byId("people-dot");
+    if (!dot) return;
+    dot.hidden = !user || !Array.from(chatSummaries.values()).some(function (chat) {
+      return chat.lastFrom !== user.uid && chat.lastAt > (seen[chat.id] || 0);
+    });
+  }
+
+  function drawPeople() {
+    if (!peopleDialog.open || !user) return;
+    const people = new Map();
+    peopleDir.concat(peopleBoard).forEach(function (person) {
+      if (!people.has(person.id)) people.set(person.id, person);
+    });
+    const list = Array.from(people.values()).sort(function (x, y) { return x.name.localeCompare(y.name); });
+    const box = byId("people-list");
+    box.textContent = "";
+    if (!list.length) {
+      const empty = document.createElement("p");
+      empty.className = "note";
+      empty.textContent = "No one else yet. Friends show up here after they play a game or open the site while signed in.";
+      box.appendChild(empty);
+      return;
+    }
+    list.forEach(function (person) {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "person";
+      row.title = presenceOn(person.at) ? "Online now" : "Offline";
+      const dot = document.createElement("span");
+      dot.className = "presence" + (presenceOn(person.at) ? " on" : "");
+      const label = document.createElement("span");
+      label.className = "person-name";
+      label.textContent = person.name;
+      row.append(dot, label);
+      if (unreadBy(person.id)) {
+        const badge = document.createElement("span");
+        badge.className = "unread";
+        badge.title = "New message";
+        row.appendChild(badge);
+      }
+      row.addEventListener("click", function () { openChat(person.id, person.name); });
+      box.appendChild(row);
+    });
   }
 
   function showPeople() {
@@ -299,50 +352,23 @@
     byId("chat-view").hidden = true;
     peopleMsg("");
     if (peopleUnsub) return;
-    // Names come from two places: the "people" directory, and the public
-    // Flappy board, which already has a row for everyone who has played.
-    // Someone who has not opened the site since the directory was added has
-    // no people entry yet, so the board keeps them visible anyway.
-    const directory = [];
-    const board = [];
-
-    function drawPeople() {
-      if (!peopleDialog.open) return;
-      const people = new Map();
-      directory.concat(board).forEach(function (person) {
-        if (!people.has(person.id)) people.set(person.id, person);
-      });
-      const list = Array.from(people.values()).sort(function (x, y) { return x.name.localeCompare(y.name); });
-      const box = byId("people-list");
-      box.textContent = "";
-      if (!list.length) {
-        const empty = document.createElement("p");
-        empty.className = "note";
-        empty.textContent = "No one else yet. Friends show up here after they play a game or open the site while signed in.";
-        box.appendChild(empty);
-        return;
-      }
-      list.forEach(function (person) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "person";
-        button.textContent = person.name;
-        button.addEventListener("click", function () { openChat(person.id, person.name); });
-        box.appendChild(button);
-      });
-    }
-
+    drawPeople();
+    // Names come from the "people" directory and, as a fallback, the public
+    // Flappy board, so someone who has not opened the site since the directory
+    // was added still shows up.
     fb.f.getDocs(fb.f.query(fb.f.collection(fb.db, "flappy"), fb.f.limit(50))).then(function (snap) {
+      peopleBoard.length = 0;
       snap.forEach(function (doc) {
-        if (doc.id !== user.uid) board.push({ id: doc.id, name: doc.data().name || "player" });
+        if (doc.id !== user.uid) peopleBoard.push({ id: doc.id, name: doc.data().name || "player" });
       });
       drawPeople();
     }, function () { /* the board is only a fallback */ });
 
     peopleUnsub = fb.f.onSnapshot(fb.f.collection(fb.db, "people"), function (snap) {
-      directory.length = 0;
+      peopleDir.length = 0;
       snap.forEach(function (doc) {
-        if (doc.id !== user.uid) directory.push({ id: doc.id, name: doc.data().name || "player" });
+        const data = doc.data() || {};
+        if (doc.id !== user.uid) peopleDir.push({ id: doc.id, name: data.name || "player", at: data.at || 0 });
       });
       drawPeople();
     }, function (error) {
@@ -414,6 +440,7 @@
           log.appendChild(bubble);
         });
         log.scrollTop = log.scrollHeight;
+        markSeen(pairId(user.uid, uid), Date.now());
       },
       function (error) { peopleMsg(fbProblem(error), true); }
     );
@@ -462,6 +489,7 @@
   // One listener on this player's chats; a corner toast that never blocks the page.
   let notifyUnsub = null;
   let notifyFirst = true;
+  let notified = {};
   let toastTimer = null;
   let seen = {};
   try { seen = JSON.parse(localStorage.getItem("damp-seen") || "{}") || {}; } catch (error) { seen = {}; }
@@ -469,6 +497,35 @@
   function markSeen(id, at) {
     seen[id] = at;
     try { localStorage.setItem("damp-seen", JSON.stringify(seen)); } catch (error) { /* storage off */ }
+    refreshUnread();
+    if (peopleDialog.open) drawPeople();
+  }
+
+  // ----- Presence: a small heartbeat so friends can see you are online -----
+  let presenceTimer = null;
+
+  function pingPresence() {
+    if (!fb || !user || document.hidden) return;
+    try {
+      fb.f.setDoc(fb.f.doc(fb.db, "people", user.uid), { name: shownName(user), at: Date.now() }, { merge: true })
+        .catch(function () { /* offline or the people rules are not published */ });
+    } catch (error) { /* not connected */ }
+  }
+
+  function presenceVisible() { if (!document.hidden) pingPresence(); }
+
+  function startPresence() {
+    clearInterval(presenceTimer);
+    document.removeEventListener("visibilitychange", presenceVisible);
+    pingPresence();
+    presenceTimer = setInterval(pingPresence, 45000);
+    document.addEventListener("visibilitychange", presenceVisible);
+  }
+
+  function stopPresence() {
+    clearInterval(presenceTimer);
+    presenceTimer = null;
+    document.removeEventListener("visibilitychange", presenceVisible);
   }
 
   function toast(who, text, chatId, uid) {
@@ -490,9 +547,22 @@
     notifyUnsub = fb.f.onSnapshot(
       fb.f.query(fb.f.collection(fb.db, "chats"), fb.f.where("ids", "array-contains", user.uid)),
       function (snap) {
+        // Chat summaries drive both the toast and the unread dots in People
+        chatSummaries = new Map();
+        snap.forEach(function (doc) {
+          const data = doc.data() || {};
+          const other = (data.ids || []).filter(function (id) { return id !== user.uid; })[0];
+          if (other) chatSummaries.set(other, { id: doc.id, lastAt: data.lastAt || 0, lastFrom: data.lastFrom || "" });
+        });
+        refreshUnread();
+        if (peopleDialog.open) drawPeople();
+
         // The first answer only sets the starting point, so old messages stay quiet
         if (notifyFirst) {
-          snap.forEach(function (doc) { if (doc.data().lastAt) markSeen(doc.id, doc.data().lastAt); });
+          snap.forEach(function (doc) {
+            const data = doc.data() || {};
+            if (data.lastAt) notified[doc.id] = data.lastAt;
+          });
           notifyFirst = false;
           return;
         }
@@ -500,8 +570,8 @@
           const data = doc.data() || {};
           if (!data.lastAt || data.lastFrom === user.uid) return;
           if (chatWith === data.lastFrom) return;
-          if (seen[doc.id] && data.lastAt <= seen[doc.id]) return;
-          markSeen(doc.id, data.lastAt);
+          if (notified[doc.id] && data.lastAt <= notified[doc.id]) return;
+          notified[doc.id] = data.lastAt;
           const names = data.names || {};
           toast(names[data.lastFrom] || "Someone", data.last, doc.id, data.lastFrom);
         });
@@ -535,8 +605,15 @@
         user = who;
         try { localStorage.setItem("damp-in", who ? "1" : "0"); } catch (error) { /* storage off */ }
         if (!user) { clearInterval(autosave); current = null; synced = null; }
-        if (who) { publishMe(); watchMessages(); }
-        else if (notifyUnsub) { notifyUnsub(); notifyUnsub = null; notifyFirst = true; }
+        if (who) { startPresence(); watchMessages(); }
+        else {
+          stopPresence();
+          clearInterval(presenceTimer);
+          if (notifyUnsub) { notifyUnsub(); notifyUnsub = null; notifyFirst = true; }
+          notified = {};
+          chatSummaries = new Map();
+          refreshUnread();
+        }
         showAccount();
         markReady();
       });

@@ -867,7 +867,9 @@ label input[type="file"] { height: auto; padding: 8px 12px; }
 }
 
 .person {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
   padding: 12px 2px;
   border: 0;
@@ -1010,3 +1012,37 @@ label input[type="file"] { height: auto; padding: 8px 12px; }
   text-decoration: none;
 }
 .chat-join:hover { filter: brightness(1.08); }
+
+/* Online + unread marks in the People list */
+.presence {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: rgba(223, 232, 232, 0.22);
+}
+.presence.on {
+  background: #57d38c;
+  box-shadow: 0 0 6px rgba(87, 211, 140, 0.55);
+}
+.person-name { flex: 1; min-width: 0; }
+.unread {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--lamp);
+}
+
+/* The same yellow dot, on the People button in the header */
+#people { position: relative; }
+.header-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--lamp);
+  box-shadow: 0 0 0 2px var(--deep);
+}

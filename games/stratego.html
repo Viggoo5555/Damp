@@ -111,6 +111,8 @@ input[type=text]:focus,input[type=password]:focus{border-color:var(--brass)}
    <a class="chip" id="bHome" href="../index.html">&larr; Menu</a>
    <div class="sp"></div>
    <span class="chip" id="sideChip">You: Red</span>
+   <button class="chip" id="bRotL" title="Turn the board left" aria-label="Turn the board left">&#10226;</button>
+   <button class="chip" id="bRotR" title="Turn the board right" aria-label="Turn the board right">&#10227;</button>
    <button class="chip" id="bView" title="Reset the view">&#8635; View</button>
    <button class="chip" id="bSnd" aria-label="Sound">&#9835;</button>
   </div>
@@ -885,6 +887,8 @@ $('bResign').onclick=()=>{
   if(NET.on)netSend(stateMsg());
 };
 $('bView').onclick=()=>{resetCam();toast('View reset.')};
+$('bRotL').onclick=()=>{cam.az+=Math.PI/2};
+$('bRotR').onclick=()=>{cam.az-=Math.PI/2};
 $('bSnd').onclick=()=>{sound=!sound;$('bSnd').style.opacity=sound?1:.4;toast(sound?'Sound on':'Sound off')};
 $('bAgain').onclick=()=>{$('end').classList.add('hide');if(NET.on||NET.role){toast('Leave this game to start a new one.')}else{newGame(G.ai)}};
 $('bLeave').onclick=()=>{$('end').classList.add('hide');$('bBack').onclick()};

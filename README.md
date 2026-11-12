@@ -13,7 +13,6 @@ Free browser games, served as plain static files.
 | `games.json` | the list of games: title, file, image, category |
 | `games/` | one HTML file per game |
 | `img/` | thumbnails shown on the catalogue tiles |
-| `img/thumbs/` | pre-scaled copies of those thumbnails (480, 960, 1280 px) |
 | `files/` | downloadable extensions (secret window) |
 | `worker.js` | the Worker: serves `/api/leaderboard`, hands the rest to the static files |
 | `wrangler.jsonc` | Worker config: name, entry point, assets folder |

@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Battleship</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+:root{--ink:#06121b;--panel:#0b1f2d;--panel2:#12304a;--line:#2d5878;--brass:#f0b84a;--brass2:#b9801d;--red:#ff5a47;--ok:#46e08a;--fg:#e8f1f6;--dim:#8fa9ba;
+ --d:Anton,Impact,"Arial Narrow",sans-serif;--b:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--ink);color:var(--fg);font-family:var(--b);font-weight:600;font-size:18px;overflow:hidden;
+ user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+#app{position:fixed;inset:0;padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0)}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+#vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,transparent 55%,#000a 100%)}
+button{font:inherit;color:inherit;cursor:pointer}
+.hide{display:none!important}
+
+/* buttons */
+.btn{--c:var(--brass);position:relative;border:0;padding:11px 22px 10px;background:linear-gradient(#ffd877,var(--c) 55%,var(--brass2));color:#2a1900;
+ font:700 20px/1 var(--b);letter-spacing:.08em;text-transform:uppercase;
+ clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);transition:filter .12s,transform .12s}
+.btn:hover{filter:brightness(1.12)}.btn:active{transform:translateY(1px)}
+.btn[disabled]{filter:grayscale(1) brightness(.55);cursor:default;transform:none}
+.btn.alt{--c:#6fc3ee;background:linear-gradient(#bfe8ff,var(--c) 55%,#2a78a8);color:#04202f}
+.btn.ghost{background:#12304acc;color:var(--fg);box-shadow:inset 0 0 0 2px var(--line)}
+.btn.sm{padding:8px 14px 7px;font-size:16px}
+.btn.pulse:not([disabled]){animation:pu 1s infinite alternate}@keyframes pu{to{filter:brightness(1.3)}}
+.chip{background:#0b1f2de6;border:2px solid var(--line);color:var(--fg);padding:6px 12px;font:700 16px/1 var(--b);letter-spacing:.08em;text-transform:uppercase}
+.chip.on{border-color:var(--brass);color:var(--brass)}
+
+/* HUD */
+#hud{position:absolute;inset:0;pointer-events:none;padding:max(10px,env(safe-area-inset-top)) 12px 10px}
+#hud>*{pointer-events:auto}
+#top{position:absolute;top:10px;left:12px;right:12px;display:flex;align-items:flex-start;gap:8px;pointer-events:none}
+#top>*{pointer-events:auto}
+#top .sp{flex:1;pointer-events:none}
+#turn{position:absolute;left:50%;top:0;transform:translateX(-50%);min-width:200px;max-width:56vw;text-align:center;pointer-events:none;
+ background:linear-gradient(#0d2a40f2,#081a28f2);border:2px solid var(--line);border-top:0;padding:6px 18px 8px;
+ clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,14px 100%)}
+#turn b{display:block;font:400 26px/1.05 var(--d);letter-spacing:.07em;color:var(--brass);text-transform:uppercase}
+#turn span{display:block;font-size:15px;color:var(--dim);letter-spacing:.05em;margin-top:1px}
+#turn.enemy b{color:var(--red)}
+#fleets{position:absolute;top:62px;left:12px;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.fl{background:#07141fcc;border:2px solid var(--line);padding:6px 10px 8px;min-width:126px}
+.fl h4{margin:0 0 4px;font:600 13px/1 var(--b);letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
+.fl .row{display:flex;align-items:center;gap:7px;margin-top:5px;min-height:15px}
+.fl .row i{display:block;height:7px;width:calc(var(--n)*9px);background:#9db3c2;transform:skewX(-24deg);border-radius:1px}
+.fl .row.dead i{background:var(--red);opacity:.5}
+.fl .row.dead{text-decoration:line-through}
+#views{display:flex;gap:6px}
+#bottom{position:absolute;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0));display:flex;justify-content:center;align-items:flex-end;gap:10px;flex-wrap:wrap;pointer-events:none}
+#bottom>*{pointer-events:auto}
+#hint{position:absolute;left:12px;right:12px;bottom:calc(74px + env(safe-area-inset-bottom,0));text-align:center;color:var(--fg);font-size:17px;letter-spacing:.05em;
+ text-shadow:0 1px 3px #000,0 0 12px #000;pointer-events:none}
+#log{position:absolute;right:12px;top:62px;width:min(260px,44vw);display:flex;flex-direction:column;gap:3px;align-items:flex-end;pointer-events:none}
+#log div{background:#07141fcc;border-right:3px solid var(--brass);padding:3px 9px;font-size:15px;letter-spacing:.04em;animation:lg 6s forwards}
+#log div.bad{border-color:var(--red)}#log div.good{border-color:var(--ok)}
+@keyframes lg{0%{opacity:0;transform:translateX(14px)}6%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
+#banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;text-align:center;
+ font:400 clamp(44px,12vw,120px)/1 var(--d);font-style:italic;letter-spacing:.04em;color:var(--brass);-webkit-text-stroke:3px #5a2a00;paint-order:stroke fill;
+ filter:drop-shadow(0 6px 0 #000a) drop-shadow(0 0 22px #1b6fd0);opacity:0}
+#banner.on{animation:bn 1.5s ease-out forwards}#banner.red{color:#ff6a55;-webkit-text-stroke-color:#400}
+@keyframes bn{0%{opacity:0;transform:scale(1.7)}12%{opacity:1;transform:scale(1)}78%{opacity:1}100%{opacity:0;transform:scale(.96)}}
+#banner.stay{animation:bs .6s ease-out forwards}@keyframes bs{from{opacity:0;transform:scale(1.5)}to{opacity:1;transform:none}}
+#flash{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 40%,#e6141fbb 100%);opacity:0}
+#flash.on{animation:hu .5s}@keyframes hu{from{opacity:1}to{opacity:0}}
+
+/* screens */
+.screen{position:absolute;inset:0;display:flex;align-items:center;padding:0 clamp(16px,6vw,90px);z-index:5;
+ background:linear-gradient(90deg,#040c13f0 0,#040c13c2 42%,#040c1300 78%);pointer-events:none}
+.screen>*{pointer-events:auto}
+.screen.mid{justify-content:center;background:radial-gradient(ellipse at center,#040c13dd,#040c13aa 70%,#040c1355)}
+.col{display:flex;flex-direction:column;gap:12px;width:min(460px,100%);max-height:100%;overflow:visible;padding:12px 8px 12px 0}
+#lobby .col{overflow-y:auto;padding-right:8px}
+.logo{white-space:nowrap;font:400 clamp(38px,6.6vw,80px)/.9 var(--d);font-style:italic;letter-spacing:.02em;color:var(--brass);-webkit-text-stroke:3px #5a2a00;paint-order:stroke fill;
+ filter:drop-shadow(0 5px 0 #000a) drop-shadow(0 0 24px #1b6fd0);transform:skewX(-6deg)}
+.logo small{display:block;font:700 clamp(13px,2vw,18px)/1 var(--b);font-style:normal;letter-spacing:.34em;color:#fff;-webkit-text-stroke:0;margin-top:10px;filter:none;opacity:.9}
+.panel{background:#0b1f2df2;border:2px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:10px}
+.panel h2{margin:0;font:400 28px/1 var(--d);letter-spacing:.05em;color:var(--brass);text-transform:uppercase}
+.panel h3{margin:6px 0 0;font:700 14px/1 var(--b);letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
+.panel p{margin:0;color:var(--dim);line-height:1.3;font-size:17px}
+.panel p.bad{color:var(--red)}.panel p.ok{color:var(--ok)}
+.seg{display:flex;gap:6px}.seg .chip{flex:1;cursor:pointer;text-align:center}
+.code{font:400 clamp(40px,8vw,56px)/1 var(--d);letter-spacing:.22em;color:var(--brass);text-align:center;min-height:1.1em}
+input[type=text]{width:100%;background:#06121b;border:2px solid var(--line);color:var(--fg);padding:9px 11px;font:700 18px/1 var(--b);letter-spacing:.05em;outline:none;user-select:text;-webkit-user-select:text}
+input[type=text]:focus{border-color:var(--brass)}
+.irow{display:flex;gap:8px}
+.people{display:flex;flex-direction:column;gap:5px;max-height:min(30vh,220px);overflow:auto}
+.pp{display:flex;align-items:center;gap:8px;background:#06121b;border:2px solid #1b3a52;padding:5px 5px 5px 11px}
+.pp span{flex:1;font-size:19px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pp.sent{border-color:var(--ok)}
+.lang{position:absolute;top:calc(10px + env(safe-area-inset-top,0));right:12px;z-index:6;display:flex;gap:6px}
+#end .col{align-items:center;text-align:center;width:min(480px,100%)}
+#end h1{margin:0;font:400 clamp(48px,11vw,104px)/1 var(--d);font-style:italic;color:var(--brass);-webkit-text-stroke:3px #5a2a00;paint-order:stroke fill;filter:drop-shadow(0 0 24px #1b6fd0)}
+#end.lose h1{color:#ff6a55;-webkit-text-stroke-color:#400}
+.stats{display:flex;gap:18px;justify-content:center;color:var(--dim);font-size:18px;letter-spacing:.06em}.stats b{color:var(--fg);font-size:24px;display:block}
+.btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+#toast{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);z-index:9;background:#0b1f2def;border:2px solid var(--brass);padding:9px 16px;letter-spacing:.05em;max-width:88vw;text-align:center;pointer-events:none}
+#shot{position:absolute;pointer-events:none}
+@media (max-width:640px){
+ .screen{background:linear-gradient(0deg,#040c13f5 0,#040c13d0 62%,#040c1320 100%);align-items:flex-end}
+ .screen.mid{align-items:center}
+ #top .chip{padding:5px 8px;font-size:13px;white-space:nowrap}
+ #views{gap:4px}
+ #bMenu span{display:none}
+ #turn{top:54px;min-width:150px;max-width:94vw;padding:4px 14px 6px}
+ #turn b{font-size:20px}#turn span{display:none}
+ #fleets{top:auto;bottom:calc(88px + env(safe-area-inset-bottom,0));left:10px;right:10px;flex-direction:row;justify-content:center;gap:8px}
+ .fl{display:flex;flex-wrap:wrap;gap:3px 7px;align-items:center;padding:5px 8px;min-width:0;flex:1;max-width:200px}
+ .fl h4{display:block;flex:0 0 100%;margin:0;font-size:11px}
+ .fl .row{margin:0;min-height:0}.fl .row span{display:none}
+ .fl .row i{width:calc(var(--n)*5px)}
+ #log{display:none}
+ #bottom{gap:6px}
+ .btn{padding:10px 14px 9px;font-size:17px}
+}
+@media (max-height:520px){#fleets{display:none}}
+</style></head>
+<body>
+<div id="app">
+ <canvas id="gl" tabindex="0"></canvas>
+ <div id="vig"></div>
+
+ <div id="hud" class="hide">
+  <div id="top">
+   <button class="chip" id="bMenu">&larr; <span data-t="menu">Menu</span></button>
+   <div class="sp"></div>
+   <button class="chip hide" id="bResult" data-t="result">Result</button>
+   <div id="views" class="hide">
+    <button class="chip" id="vMine" data-t="vMine">My fleet</button>
+    <button class="chip" id="vEnemy" data-t="vEnemy">Enemy waters</button>
+   </div>
+   <button class="chip" id="bSnd" aria-label="Sound">&#9835;</button>
+  </div>
+  <div id="turn"><b id="turnT"></b><span id="turnS"></span></div>
+  <div id="fleets" class="hide">
+   <div class="fl" id="flMine"><h4 data-t="yourFleet">Your fleet</h4></div>
+   <div class="fl" id="flEnemy"><h4 data-t="enemyFleet">Enemy fleet</h4></div>
+  </div>
+  <div id="log"></div>
+  <div id="hint"></div>
+  <div id="bottom">
+   <div id="bPlace" class="btns hide">
+    <button class="btn alt sm" id="bRotate" data-t="rotate">Rotate (R)</button>
+    <button class="btn alt sm" id="bRandom" data-t="random">Random</button>
+    <button class="btn ghost sm" id="bReset" data-t="reset">Reset</button>
+    <button class="btn pulse" id="bReady" data-t="ready" disabled>Ready!</button>
+   </div>
+   <div id="bBattle" class="btns hide">
+    <button class="btn pulse" id="bFire" data-t="fire" disabled>Fire!</button>
+   </div>
+  </div>
+  <div id="banner"></div>
+  <div id="flash"></div>
+ </div>
+
+ <div class="lang" id="lang"><button class="chip" id="lDa">DA</button><button class="chip" id="lEn">EN</button></div>
+
+ <!-- main menu -->
+ <div id="menu" class="screen">
+  <div class="col">
+   <div class="logo"><span data-t="title">BATTLESHIP</span><small data-t="sub">SINK THE FLEET</small></div>
+   <div class="panel">
+    <h3 data-t="level">Computer level</h3>
+    <div class="seg"><button class="chip on" id="lvEasy" data-t="easy">Rookie</button><button class="chip" id="lvHard" data-t="hard">Admiral</button></div>
+    <button class="btn" id="bAI" data-t="vsAI">Play vs computer</button>
+    <button class="btn alt" id="bOnline" data-t="vsFriend">Play online with a friend</button>
+   </div>
+  </div>
+ </div>
+
+ <!-- online lobby -->
+ <div id="lobby" class="screen hide">
+  <div class="col">
+   <div class="panel">
+    <h2 data-t="onlineT">Play online</h2>
+    <p id="lbStatus"></p>
+    <div id="lbMain">
+     <h3 data-t="inviteT">Invite a friend by message</h3>
+     <input type="text" id="lbFilter" data-ph="search" placeholder="Search…" autocomplete="off">
+     <div class="people" id="lbPeople"></div>
+     <h3 data-t="linkT">Or share the link / code</h3>
+     <div class="code" id="lbCode"></div>
+     <div class="irow"><input type="text" id="lbLink" readonly><button class="btn sm" id="lbCopy" data-t="copy">Copy</button></div>
+     <h3 data-t="haveCode">Got a code?</h3>
+     <div class="irow"><input type="text" id="lbJoin" maxlength="8" data-ph="codePh" placeholder="CODE" autocomplete="off" autocapitalize="characters"><button class="btn alt sm" id="lbJoinBtn" data-t="join">Join</button></div>
+    </div>
+    <div class="btns"><button class="btn ghost sm" id="lbRetry" data-t="retry">Try again</button><button class="btn ghost sm" id="lbCancel" data-t="cancel">Cancel</button></div>
+   </div>
+  </div>
+ </div>
+
+ <!-- game over -->
+ <div id="end" class="screen mid hide">
+  <div class="col">
+   <h1 id="endT"></h1>
+   <p id="endS" style="margin:0;color:var(--dim);font-size:19px"></p>
+   <div class="stats" id="endStats"></div>
+   <div class="btns"><button class="btn" id="bAgain" data-t="again">Play again</button><button class="btn ghost" id="bBoard" data-t="board">Show boards</button><button class="btn ghost" id="bEndMenu" data-t="menu">Menu</button></div>
+  </div>
+ </div>
+ <div id="toast" class="hide"></div>
+</div>
+<script>
+'use strict';
+/* =====================================================================
+   Tiny WebGL engine (no libraries): meshes, water, decals, particles
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const rnd = (a, b) => a + Math.random() * (b - a);
+const damp = (k, dt) => 1 - Math.exp(-k * dt);
+
+/* ---------- vector / matrix (column-major) ---------- */
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const norm = a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+const Mx = {
+  ident() { const m = new Float32Array(16); m[0] = m[5] = m[10] = m[15] = 1; return m; },
+  mul(a, b) {
+    const o = new Float32Array(16);
+    for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) {
+      let s = 0; for (let k = 0; k < 4; k++) s += a[k * 4 + r] * b[c * 4 + k];
+      o[c * 4 + r] = s;
+    }
+    return o;
+  },
+  persp(f, asp, n, fa) {
+    const t = 1 / Math.tan(f / 2), m = new Float32Array(16);
+    m[0] = t / asp; m[5] = t; m[10] = (fa + n) / (n - fa); m[11] = -1; m[14] = 2 * fa * n / (n - fa);
+    return m;
+  },
+  lookAt(e, c, u) {
+    const z = norm(sub(e, c)), x = norm(cross(u, z)), y = cross(z, x);
+    return Float32Array.of(x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0, -dot(x, e), -dot(y, e), -dot(z, e), 1);
+  },
+  trans(x, y, z) { const m = Mx.ident(); m[12] = x; m[13] = y; m[14] = z; return m; },
+  scale(x, y, z) { const m = Mx.ident(); m[0] = x; m[5] = y; m[10] = z; return m; },
+  rotY(a) { const m = Mx.ident(), c = Math.cos(a), s = Math.sin(a); m[0] = c; m[2] = -s; m[8] = s; m[10] = c; return m; },
+  rotX(a) { const m = Mx.ident(), c = Math.cos(a), s = Math.sin(a); m[5] = c; m[6] = s; m[9] = -s; m[10] = c; return m; },
+  rotZ(a) { const m = Mx.ident(), c = Math.cos(a), s = Math.sin(a); m[0] = c; m[1] = s; m[4] = -s; m[5] = c; return m; },
+  // T * Ry(yaw) * Rz(pitch) * Rx(roll) * S
+  compose(x, y, z, yaw, pitch, roll, s) {
+    let m = Mx.mul(Mx.trans(x, y, z), Mx.rotY(yaw));
+    if (pitch) m = Mx.mul(m, Mx.rotZ(pitch));
+    if (roll) m = Mx.mul(m, Mx.rotX(roll));
+    if (s !== undefined && s !== 1) m = Mx.mul(m, Mx.scale(s, s, s));
+    return m;
+  }
+};
+
+/* ---------- geometry builder ---------- */
+class Geo {
+  constructor() { this.v = []; }
+  vert(p, n, c) { this.v.push(p[0], p[1], p[2], n[0], n[1], n[2], c[0], c[1], c[2]); }
+  // convex polygon; flat normal (Newell), pointing away from `ref` when given
+  poly(pts, c, ref) {
+    let n = [0, 0, 0];
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i], b = pts[(i + 1) % pts.length];
+      n[0] += (a[1] - b[1]) * (a[2] + b[2]); n[1] += (a[2] - b[2]) * (a[0] + b[0]); n[2] += (a[0] - b[0]) * (a[1] + b[1]);
+    }
+    n = norm(n);
+    if (ref) {
+      const m = [0, 0, 0]; pts.forEach(p => { m[0] += p[0] / pts.length; m[1] += p[1] / pts.length; m[2] += p[2] / pts.length; });
+      if (dot(n, sub(m, ref)) < 0) n = [-n[0], -n[1], -n[2]];
+    }
+    for (let i = 1; i < pts.length - 1; i++) { this.vert(pts[0], n, c); this.vert(pts[i], n, c); this.vert(pts[i + 1], n, c); }
+  }
+  box(cx, cy, cz, w, h, d, c, top) {
+    top = top === undefined ? 1 : top;
+    const x = w / 2, y = h / 2, z = d / 2, tx = x * top, tz = z * top;
+    const b = [[-x, -y, -z], [x, -y, -z], [x, -y, z], [-x, -y, z]], t = [[-tx, y, -tz], [tx, y, -tz], [tx, y, tz], [-tx, y, tz]];
+    const P = p => [p[0] + cx, p[1] + cy, p[2] + cz], ref = [cx, cy, cz];
+    this.poly(t.map(P), c, ref);
+    this.poly(b.map(P), c, ref);
+    for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; this.poly([b[i], b[j], t[j], t[i]].map(P), c, ref); }
+  }
+  // smooth cylinder / cone. axis: 'y' | 'x' | 'z'
+  cyl(cx, cy, cz, rt, rb, h, c, seg, axis) {
+    seg = seg || 14; axis = axis || 'y';
+    const T = (p) => axis === 'x' ? [p[1], -p[0], p[2]] : axis === 'z' ? [p[0], -p[2], p[1]] : p;
+    const O = p => { const q = T(p); return [q[0] + cx, q[1] + cy, q[2] + cz]; };
+    const slope = (rb - rt) / h;
+    for (let i = 0; i < seg; i++) {
+      const a0 = i / seg * Math.PI * 2, a1 = (i + 1) / seg * Math.PI * 2;
+      const p = [[Math.cos(a0) * rb, -h / 2, Math.sin(a0) * rb], [Math.cos(a1) * rb, -h / 2, Math.sin(a1) * rb],
+        [Math.cos(a1) * rt, h / 2, Math.sin(a1) * rt], [Math.cos(a0) * rt, h / 2, Math.sin(a0) * rt]];
+      const n0 = norm(T([Math.cos(a0), slope, Math.sin(a0)])), n1 = norm(T([Math.cos(a1), slope, Math.sin(a1)]));
+      const nn = [n0, n1, n1, n0];
+      [0, 1, 2, 0, 2, 3].forEach(k => this.vert(O(p[k]), nn[k], c));
+      if (rt > 0) { const up = T([0, 1, 0]); this.vert(O([0, h / 2, 0]), up, c); this.vert(O(p[3]), up, c); this.vert(O(p[2]), up, c); }
+      if (rb > 0) { const dn = T([0, -1, 0]); this.vert(O([0, -h / 2, 0]), dn, c); this.vert(O(p[1]), dn, c); this.vert(O(p[0]), dn, c); }
+    }
+  }
+  ellipsoid(cx, cy, cz, a, b, c, col, su, sv) {
+    su = su || 18; sv = sv || 9;
+    const P = (u, v) => { const th = u / su * Math.PI * 2, ph = v / sv * Math.PI - Math.PI / 2;
+      const x = Math.cos(ph) * Math.cos(th), y = Math.sin(ph), z = Math.cos(ph) * Math.sin(th);
+      return { p: [cx + x * a, cy + y * b, cz + z * c], n: norm([x / a, y / b, z / c]) }; };
+    for (let u = 0; u < su; u++) for (let v = 0; v < sv; v++) {
+      const q = [P(u, v), P(u + 1, v), P(u + 1, v + 1), P(u, v + 1)];
+      [0, 1, 2, 0, 2, 3].forEach(k => this.vert(q[k].p, q[k].n, col));
+    }
+  }
+  // ship hull, bow towards +x. Returns nothing; adds deck + sides + boot-topping
+  hull(len, W, H, cHull, cDeck, cBoot) {
+    const N = 10, st = [];
+    for (let i = 0; i <= N; i++) {
+      const t = i / N, x = -len / 2 + len * t;
+      let hw = W;
+      if (t < 0.1) hw = W * (0.8 + 0.2 * t / 0.1);
+      else if (t > 0.66) hw = W * Math.pow(Math.max(0, 1 - (t - 0.66) / 0.34), 0.62);
+      const yd = H + 0.07 * t * t;
+      st.push({ x, yd, hw, c: [x, 0.08, 0] });
+    }
+    for (let i = 0; i < N; i++) {
+      const a = st[i], b = st[i + 1], ref = [(a.x + b.x) / 2, 0.06, 0];
+      const top = s => [[s.x, s.yd, -s.hw], [s.x, s.yd, s.hw]];
+      const wl = s => [[s.x, 0, -s.hw * 0.97], [s.x, 0, s.hw * 0.97]];
+      const kl = s => [[s.x, -0.15, -s.hw * 0.55], [s.x, -0.15, s.hw * 0.55]];
+      this.poly([top(a)[0], top(a)[1], top(b)[1], top(b)[0]], cDeck, ref);
+      for (const sd of [0, 1]) {
+        this.poly([top(a)[sd], top(b)[sd], wl(b)[sd], wl(a)[sd]], cHull, ref);
+        this.poly([wl(a)[sd], wl(b)[sd], kl(b)[sd], kl(a)[sd]], cBoot, ref);
+      }
+    }
+    const a = st[0], ref = [a.x + 0.2, 0.06, 0];
+    this.poly([[a.x, a.yd, -a.hw], [a.x, a.yd, a.hw], [a.x, 0, a.hw * 0.97], [a.x, 0, -a.hw * 0.97]], cHull, ref);
+    this.poly([[a.x, 0, -a.hw * 0.97], [a.x, 0, a.hw * 0.97], [a.x, -0.15, a.hw * 0.55], [a.x, -0.15, -a.hw * 0.55]], cBoot, ref);
+  }
+}
+
+/* ---------- ship models (1 cell = 1 unit, bow = +x) ---------- */
+const COL = {
+  hull: [0.50, 0.57, 0.63], deck: [0.63, 0.68, 0.72], dark: [0.30, 0.34, 0.38], boot: [0.52, 0.15, 0.13],
+  white: [0.93, 0.94, 0.95], yellow: [0.96, 0.78, 0.25], black: [0.10, 0.11, 0.13], olive: [0.20, 0.30, 0.31],
+  steel: [0.42, 0.47, 0.52], red: [0.85, 0.15, 0.12], brass: [0.94, 0.72, 0.29], tan: [0.55, 0.52, 0.42]
+};
+function turret(g, x, y, z, s, dir) { // dir: 1 faces +x, -1 faces -x
+  g.cyl(x, y + 0.04 * s, z, 0.17 * s, 0.2 * s, 0.09 * s, COL.dark, 14);
+  g.box(x, y + 0.13 * s, z, 0.3 * s, 0.1 * s, 0.26 * s, COL.steel, 0.82);
+  for (const k of [-1, 1]) g.cyl(x + dir * 0.3 * s, y + 0.14 * s, z + k * 0.065 * s, 0.028 * s, 0.032 * s, 0.4 * s, COL.black, 8, 'x');
+}
+function buildShip(type, L) {
+  const g = new Geo(), len = L * 0.94;
+  if (type === 'carrier') {
+    g.hull(len, 0.42, 0.28, COL.hull, COL.dark, COL.boot);
+    g.box(-0.1, 0.285, 0, len * 0.78, 0.012, 0.5, [0.22, 0.25, 0.28]);           // flight deck
+    for (let i = 0; i < 7; i++) g.box(-len * 0.3 + i * 0.5, 0.296, 0, 0.26, 0.008, 0.035, COL.white);
+    g.box(0.15, 0.297, 0.0, len * 0.6, 0.006, 0.02, COL.yellow);
+    g.box(-0.5, 0.52, 0.34, 0.62, 0.46, 0.2, COL.hull, 0.8);                      // island
+    g.box(-0.5, 0.78, 0.34, 0.4, 0.07, 0.24, COL.dark);
+    g.cyl(-0.28, 0.9, 0.34, 0.015, 0.02, 0.28, COL.black, 6);
+    g.cyl(-0.78, 0.66, 0.34, 0.07, 0.08, 0.2, COL.black, 10);
+    for (const [px, pz, a] of [[1.45, -0.12, 0], [0.9, 0.1, 0], [-1.3, -0.14, 0]]) { // parked planes
+      g.box(px, 0.325, pz, 0.26, 0.04, 0.05, COL.white); g.box(px - 0.02, 0.325, pz, 0.07, 0.025, 0.28, COL.tan);
+    }
+  } else if (type === 'battleship') {
+    g.hull(len, 0.37, 0.27, COL.hull, COL.deck, COL.boot);
+    turret(g, 1.0, 0.27, 0, 1, 1); turret(g, 0.55, 0.3, 0, 1, 1); turret(g, -1.05, 0.28, 0, 1, -1);
+    g.box(-0.12, 0.5, 0, 0.3, 0.42, 0.2, COL.hull, 0.8); g.box(-0.12, 0.78, 0, 0.2, 0.14, 0.16, COL.dark);
+    g.cyl(-0.12, 0.98, 0, 0.012, 0.02, 0.28, COL.black, 6);
+    g.cyl(-0.5, 0.42, 0, 0.1, 0.12, 0.28, COL.black, 12);
+    g.box(0.12, 0.34, 0.2, 0.18, 0.1, 0.07, COL.steel); g.box(0.12, 0.34, -0.2, 0.18, 0.1, 0.07, COL.steel);
+  } else if (type === 'cruiser') {
+    g.hull(len, 0.31, 0.26, COL.hull, COL.deck, COL.boot);
+    turret(g, 0.78, 0.27, 0, 0.9, 1); turret(g, -0.72, 0.27, 0, 0.8, -1);
+    g.box(0.05, 0.46, 0, 0.3, 0.34, 0.2, COL.hull, 0.8); g.box(0.05, 0.68, 0, 0.18, 0.12, 0.16, COL.dark);
+    g.cyl(0.05, 0.86, 0, 0.01, 0.018, 0.25, COL.black, 6);
+    g.cyl(-0.3, 0.42, 0, 0.08, 0.1, 0.26, COL.black, 12);
+  } else if (type === 'submarine') {
+    g.ellipsoid(0, 0.0, 0, len / 2, 0.21, 0.24, COL.olive, 22, 10);
+    g.box(0.1, 0.27, 0, 0.42, 0.22, 0.14, COL.olive, 0.7);
+    g.cyl(0.2, 0.5, 0, 0.012, 0.012, 0.3, COL.black, 6); g.box(0.22, 0.64, 0, 0.1, 0.02, 0.02, COL.black);
+    g.box(-len / 2 + 0.12, 0.12, 0, 0.12, 0.02, 0.42, COL.olive); g.box(-len / 2 + 0.12, 0.12 + 0.12, 0, 0.12, 0.2, 0.03, COL.olive);
+    g.box(0.45, 0.17, 0.0, 0.5, 0.012, 0.05, COL.yellow);
+  } else { // destroyer
+    g.hull(len, 0.27, 0.25, COL.hull, COL.deck, COL.boot);
+    turret(g, 0.5, 0.26, 0, 0.78, 1);
+    g.box(-0.08, 0.42, 0, 0.26, 0.3, 0.17, COL.hull, 0.8);
+    g.cyl(-0.08, 0.72, 0, 0.01, 0.016, 0.3, COL.black, 6);
+    g.cyl(-0.42, 0.38, 0, 0.065, 0.08, 0.2, COL.black, 10);
+  }
+  return g;
+}
+const PEG_GEO = (col) => { const g = new Geo(); g.cyl(0, 0.19, 0, 0.1, 0.1, 0.38, col, 12); g.cyl(0, 0.42, 0, 0.16, 0.14, 0.09, col, 12); return g; };
+
+/* ---------- GL setup ---------- */
+const canvas = $('gl');
+const gl = canvas.getContext('webgl', { antialias: true, alpha: false, powerPreference: 'high-performance' }) ||
+  canvas.getContext('experimental-webgl');
+if (!gl) { document.body.insertAdjacentHTML('beforeend', '<p style="position:fixed;inset:0;display:grid;place-items:center;margin:0;padding:20px;text-align:center;z-index:99;background:#06121b">WebGL is not available in this browser.</p>'); throw new Error('no webgl'); }
+
+function program(vs, fs) {
+  const mk = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
+  const p = gl.createProgram(); gl.attachShader(p, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(p, mk(gl.FRAGMENT_SHADER, fs));
+  gl.bindAttribLocation(p, 0, 'aPos'); gl.bindAttribLocation(p, 1, 'aNor'); gl.bindAttribLocation(p, 2, 'aCol');
+  gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  const u = {}; const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+  for (let i = 0; i < n; i++) { const nm = gl.getActiveUniform(p, i).name; u[nm] = gl.getUniformLocation(p, nm); }
+  return { p, u };
+}
+const SUN = norm([-0.45, 0.8, 0.4]);
+
+/* 3D meshes: vertex colour, sun + hemisphere light, tint */
+const P3 = program(`
+attribute vec3 aPos;attribute vec3 aNor;attribute vec3 aCol;
+uniform mat4 uVP,uM;varying vec3 vN,vC,vW;
+void main(){vec4 w=uM*vec4(aPos,1.);vW=w.xyz;vN=mat3(uM)*aNor;vC=aCol;gl_Position=uVP*w;}`, `
+precision mediump float;varying vec3 vN,vC,vW;
+uniform vec3 uSun,uCam;uniform vec4 uTint;uniform float uAlpha,uEmis;
+void main(){vec3 n=normalize(vN);float d=max(dot(n,uSun),0.);
+ vec3 amb=mix(vec3(.30,.34,.40),vec3(.62,.70,.78),n.y*.5+.5);
+ vec3 c=vC*(amb*.82+vec3(1.,.95,.84)*d*.62);
+ vec3 v=normalize(uCam-vW),h=normalize(uSun+v);c+=pow(max(dot(n,h),0.),36.)*.22;
+ c=mix(c,uTint.rgb,uTint.a);c+=uEmis;gl_FragColor=vec4(c,uAlpha);}`);
+
+/* flat decals on the water (shadows, grid highlights, rings, labels) */
+const PD = program(`
+attribute vec3 aPos;uniform mat4 uVP,uM;varying vec2 vP;
+void main(){vP=aPos.xz;gl_Position=uVP*(uM*vec4(aPos.x,0.,aPos.z,1.));}`, `
+precision mediump float;varying vec2 vP;uniform vec4 uC,uUV;uniform float uMode,uA,uB;uniform sampler2D uTex;
+void main(){vec2 p=vP;float a=1.;
+ if(uMode<.5){vec2 q=abs(p)*2.;float d=max(q.x,q.y);a=1.-smoothstep(1.-uA*2.,1.,d);}
+ else if(uMode<1.5){float r=length(p)*2.;a=smoothstep(uA-uB,uA,r)*(1.-smoothstep(uA,uA+uB,r));}
+ else if(uMode<2.5){vec2 q=abs(p)*2.;float d=max(q.x,q.y);a=1.-smoothstep(1.-.03,1.,d);}
+ else if(uMode<3.5){float r=length(p)*2.;a=1.-smoothstep(1.-uA,1.,r);}
+ else if(uMode<4.5){a=texture2D(uTex,uUV.xy+(p+.5)*uUV.zw).a;}
+ else{float r=length(p)*2.;float ring=smoothstep(.58,.62,r)*(1.-smoothstep(.68,.72,r));vec2 q=abs(p)*2.;
+  float lv=(1.-smoothstep(.015,.045,q.x))*step(.38,q.y)*step(q.y,.98);float lh=(1.-smoothstep(.015,.045,q.y))*step(.38,q.x)*step(q.x,.98);a=max(ring,max(lv,lh));}
+ gl_FragColor=vec4(uC.rgb,uC.a*a);}`);
+
+/* animated sea with the two boards' grids painted into it */
+const PW = program(`
+attribute vec3 aPos;uniform mat4 uVP,uM;varying vec2 vXZ;
+void main(){vec4 w=uM*vec4(aPos.x,0.,aPos.z,1.);vXZ=w.xz;gl_Position=uVP*w;}`, `
+precision mediump float;varying vec2 vXZ;uniform float uT;uniform vec2 uB0,uB1;uniform vec3 uSun,uCam;
+vec2 wv(vec2 p,vec2 d,float k,float w,float a,float t){return d*k*a*cos(dot(d,p)*k+t*w);}
+void main(){vec2 p=vXZ;float t=uT;
+ vec2 g=wv(p,vec2(.8,.6),.9,1.3,.05,t)+wv(p,vec2(-.5,.86),1.7,1.8,.03,t)+wv(p,vec2(.2,-.98),3.1,2.4,.008,t)+wv(p,vec2(-.9,-.4),5.2,3.1,.003,t);
+ vec3 n=normalize(vec3(-g.x,1.,-g.y));
+ float pat=.5+.5*sin(p.x*.35+sin(p.y*.4+t*.2)*1.5)*sin(p.y*.3+t*.15);
+ vec3 col=mix(vec3(.02,.13,.22),vec3(.04,.30,.42),pat*.8+.1);
+ float dl=max(dot(n,uSun),0.);col*=.7+.5*dl;
+ vec3 v=normalize(uCam-vec3(p.x,0.,p.y));vec3 h=normalize(uSun+v);col+=pow(max(dot(n,h),0.),90.)*.28*vec3(1.,.95,.85);
+ float caus=pow(abs(sin(p.x*1.9+t*.7+sin(p.y*1.3+t*.5)*1.4)*sin(p.y*2.1-t*.6+sin(p.x*1.1)*1.2)),6.);col+=caus*.04;
+ // boards
+ vec2 l0=p-uB0,l1=p-uB1;
+ float in0=1.-step(5.,max(abs(l0.x),abs(l0.y))),in1=1.-step(5.,max(abs(l1.x),abs(l1.y)));
+ vec2 lq=in0>.5?l0:l1;float inb=max(in0,in1);
+ vec2 fr=abs(fract(lq)-.5);float ln=smoothstep(.462,.488,max(fr.x,fr.y));
+ vec3 bc0=mix(col,vec3(.05,.22,.36),.55)+vec3(.0,.03,.05)*dl;
+ vec3 bc1=mix(col,vec3(.02,.17,.15),.7);
+ float ang=atan(l1.y,l1.x)/6.2832;float sw=fract(ang-t*.12);float sweep=pow(1.-sw,5.)*.35*(1.-smoothstep(0.,7.,length(l1)));
+ float rings=(1.-smoothstep(0.,.02,abs(fract(length(l1)/2.5+.5)-.5)))*.12;
+ bc1+=vec3(.1,.9,.45)*(sweep+rings);
+ vec3 gc0=vec3(.55,.8,1.)*.30,gc1=vec3(.35,1.,.6)*.28;
+ vec3 bc=in0>.5?bc0+gc0*ln:bc1+gc1*ln;
+ col=mix(col,bc,inb);
+ gl_FragColor=vec4(col,1.);}`);
+
+/* particles: camera-facing soft discs */
+const PP = program(`
+attribute vec3 aPos;attribute vec3 aNor;attribute vec3 aCol;uniform mat4 uVP;varying vec2 vUV;varying vec4 vC;
+void main(){vUV=aNor.xy;vC=vec4(aCol,aNor.z);gl_Position=uVP*vec4(aPos,1.);}`, `
+precision mediump float;varying vec2 vUV;varying vec4 vC;
+void main(){float r=length(vUV);float a=1.-smoothstep(.2,1.,r);gl_FragColor=vec4(vC.rgb,vC.a*a);}`);
+
+/* ---------- buffers ---------- */
+const QUAD = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, QUAD);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-.5, 0, -.5, .5, 0, -.5, .5, 0, .5, -.5, 0, -.5, .5, 0, .5, -.5, 0, .5]), gl.STATIC_DRAW);
+function mesh(geo) {
+  const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geo.v), gl.STATIC_DRAW);
+  return { b, n: geo.v.length / 9 };
+}
+const PMAX = 2400;
+const pBuf = gl.createBuffer(), pArr = new Float32Array(PMAX * 4 * 9);
+const pIdx = gl.createBuffer(); {
+  const ix = new Uint16Array(PMAX * 6);
+  for (let i = 0; i < PMAX; i++) ix.set([i * 4, i * 4 + 1, i * 4 + 2, i * 4, i * 4 + 2, i * 4 + 3], i * 6);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pIdx); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, ix, gl.STATIC_DRAW);
+}
+
+/* label atlas (A–J, 1–10) */
+const LABELS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+const labelTex = gl.createTexture(); {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 256; const x = c.getContext('2d');
+  x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = '#fff';
+  LABELS.forEach((s, i) => { x.font = '700 ' + (s.length > 1 ? 40 : 48) + 'px "Barlow Condensed","Arial Narrow",Arial,sans-serif'; x.fillText(s, (i % 8) * 64 + 32, ((i / 8) | 0) * 64 + 34); });
+  gl.bindTexture(gl.TEXTURE_2D, labelTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+}
+
+/* ---------- render helpers ---------- */
+let VP = Mx.ident(), EYE = [0, 10, 10];
+function setAttrib3d(m) {
+  gl.bindBuffer(gl.ARRAY_BUFFER, m.b);
+  gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 36, 0);
+  gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 36, 12);
+  gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 3, gl.FLOAT, false, 36, 24);
+}
+function use3d() {
+  gl.useProgram(P3.p); gl.uniformMatrix4fv(P3.u.uVP, false, VP); gl.uniform3fv(P3.u.uSun, SUN); gl.uniform3fv(P3.u.uCam, EYE);
+}
+function drawMesh(m, M, tint, alpha, emis) {
+  setAttrib3d(m);
+  gl.uniformMatrix4fv(P3.u.uM, false, M);
+  gl.uniform4fv(P3.u.uTint, tint || [0, 0, 0, 0]); gl.uniform1f(P3.u.uAlpha, alpha === undefined ? 1 : alpha); gl.uniform1f(P3.u.uEmis, emis || 0);
+  gl.drawArrays(gl.TRIANGLES, 0, m.n);
+}
+function useDecal() {
+  gl.useProgram(PD.p); gl.uniformMatrix4fv(PD.u.uVP, false, VP);
+  gl.bindBuffer(gl.ARRAY_BUFFER, QUAD);
+  gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 12, 0);
+  gl.disableVertexAttribArray(1); gl.disableVertexAttribArray(2);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, labelTex); gl.uniform1i(PD.u.uTex, 0);
+}
+// mode 0 soft rect (A=softness), 1 ring (A=radius,B=width), 2 solid rect, 3 soft disc (A=softness), 4 label, 5 reticle
+function decal(x, y, z, sx, sz, yaw, mode, col, A, B, uv) {
+  let M = Mx.mul(Mx.trans(x, y, z), Mx.rotY(yaw || 0)); M = Mx.mul(M, Mx.scale(sx, 1, sz));
+  gl.uniformMatrix4fv(PD.u.uM, false, M);
+  gl.uniform4fv(PD.u.uC, col); gl.uniform1f(PD.u.uMode, mode); gl.uniform1f(PD.u.uA, A || 0); gl.uniform1f(PD.u.uB, B || 0);
+  gl.uniform4fv(PD.u.uUV, uv || [0, 0, 1, 1]);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+function labelDecal(idx, x, z, size, col) {
+  decal(x, 0.15, z, size, size, 0, 4, col, 0, 0, [(idx % 8) / 8, ((idx / 8) | 0) / 4, 1 / 8, 1 / 4]);
+}
+
+/* ---------- particles ---------- */
+const parts = [];
+function spawn(o) { if (parts.length < PMAX - 20) parts.push(Object.assign({ x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, age: 0, life: 1, s0: .3, s1: .3, c0: [1, 1, 1, 1], c1: [1, 1, 1, 0], g: 0, drag: 0, add: false }, o)); }
+function stepParts(dt) {
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.age += dt;
+    if (p.age >= p.life) { parts.splice(i, 1); continue; }
+    const k = Math.exp(-p.drag * dt); p.vx *= k; p.vy = p.vy * k - p.g * dt; p.vz *= k;
+    p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+    if (p.y < 0.02 && p.g > 0) { p.y = 0.02; p.vy = 0; p.vx *= .5; p.vz *= .5; }
+  }
+}
+let CAM_R = [1, 0, 0], CAM_U = [0, 1, 0];
+function drawParts(additive) {
+  let n = 0;
+  for (const p of parts) {
+    if (p.add !== additive) continue;
+    const t = p.age / p.life, s = lerp(p.s0, p.s1, t);
+    const r = lerp(p.c0[0], p.c1[0], t), g = lerp(p.c0[1], p.c1[1], t), b = lerp(p.c0[2], p.c1[2], t), a = lerp(p.c0[3], p.c1[3], t);
+    const rx = CAM_R[0] * s, ry = CAM_R[1] * s, rz = CAM_R[2] * s, ux = CAM_U[0] * s, uy = CAM_U[1] * s, uz = CAM_U[2] * s;
+    const q = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+    for (let k = 0; k < 4; k++) {
+      const o = (n * 4 + k) * 9, sx = q[k][0], sy = q[k][1];
+      pArr[o] = p.x + rx * sx + ux * sy; pArr[o + 1] = p.y + ry * sx + uy * sy; pArr[o + 2] = p.z + rz * sx + uz * sy;
+      pArr[o + 3] = sx; pArr[o + 4] = sy; pArr[o + 5] = a; pArr[o + 6] = r; pArr[o + 7] = g; pArr[o + 8] = b;
+    }
+    if (++n >= PMAX) break;
+  }
+  if (!n) return;
+  gl.useProgram(PP.p); gl.uniformMatrix4fv(PP.u.uVP, false, VP);
+  gl.bindBuffer(gl.ARRAY_BUFFER, pBuf); gl.bufferData(gl.ARRAY_BUFFER, pArr.subarray(0, n * 36), gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 36, 0);
+  gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 36, 12);
+  gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 3, gl.FLOAT, false, 36, 24);
+  gl.blendFunc(gl.SRC_ALPHA, additive ? gl.ONE : gl.ONE_MINUS_SRC_ALPHA);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pIdx);
+  gl.drawElements(gl.TRIANGLES, n * 6, gl.UNSIGNED_SHORT, 0);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+}
+
+/* ---------- camera ---------- */
+const cam = { tx: 0, tz: 0, dist: 20, pitch: 1.2, yaw: 0, fov: 0.7, shake: 0 };
+const camT = { tx: 0, tz: 0, dist: 20, pitch: 1.2, yaw: 0 };
+function camEye(c) {
+  const cp = Math.cos(c.pitch), sp = Math.sin(c.pitch);
+  return [c.tx + c.dist * cp * Math.sin(c.yaw), c.dist * sp, c.tz + c.dist * cp * Math.cos(c.yaw)];
+}
+function viewProj(c, asp) {
+  const e = camEye(c);
+  return { e, V: Mx.lookAt(e, [c.tx, 0, c.tz], [0, 1, 0]), P: Mx.persp(c.fov, asp, 0.5, 140) };
+}
+function projectPt(vp, p) {
+  const m = Mx.mul(vp.P, vp.V), x = p[0], y = p[1], z = p[2];
+  const w = m[3] * x + m[7] * y + m[11] * z + m[15];
+  return [(m[0] * x + m[4] * y + m[8] * z + m[12]) / w, (m[1] * x + m[5] * y + m[9] * z + m[13]) / w, w];
+}
+// distance at which every point lands inside the margins (in NDC)
+function fitDist(pts, tx, tz, pitch, yaw, asp, mx, myTop, myBot) {
+  let lo = 6, hi = 90;
+  for (let i = 0; i < 26; i++) {
+    const d = (lo + hi) / 2, vp = viewProj({ tx, tz, dist: d, pitch, yaw, fov: cam.fov }, asp);
+    let ok = true;
+    for (const p of pts) { const q = projectPt(vp, p); if (q[2] <= 0 || Math.abs(q[0]) > 1 - mx || q[1] > 1 - myTop || q[1] < -1 + myBot) { ok = false; break; } }
+    if (ok) hi = d; else lo = d;
+  }
+  return hi;
+}
+// pixel -> ray -> point on plane y = h
+function rayHit(px, py, h) {
+  const w = canvas.clientWidth, hh = canvas.clientHeight, asp = w / hh;
+  const e = camEye(cam), f = norm(sub([cam.tx, 0, cam.tz], e)), r = norm(cross(f, [0, 1, 0])), u = cross(r, f);
+  const th = Math.tan(cam.fov / 2), nx = (px / w * 2 - 1) * th * asp, ny = (1 - py / hh * 2) * th;
+  const d = norm([f[0] + r[0] * nx + u[0] * ny, f[1] + r[1] * nx + u[1] * ny, f[2] + r[2] * nx + u[2] * ny]);
+  if (d[1] >= -1e-4) return null;
+  const t = (h - e[1]) / d[1];
+  return [e[0] + d[0] * t, h, e[2] + d[2] * t];
+}
+function toScreen(x, y, z) {
+  const asp = canvas.clientWidth / canvas.clientHeight, vp = viewProj(cam, asp), q = projectPt(vp, [x, y, z]);
+  return [(q[0] * .5 + .5) * canvas.clientWidth, (1 - (q[1] * .5 + .5)) * canvas.clientHeight];
+}
+
+/* =====================================================================
+   Language
+   ===================================================================== */
+const I18N = {
+  en: {
+    menu: 'Menu', title: 'BATTLESHIP', sub: 'SINK THE FLEET', level: 'Computer level', easy: 'Rookie', hard: 'Admiral', vsAI: 'Play vs computer', vsFriend: 'Play online with a friend',
+    vMine: 'My fleet', vEnemy: 'Enemy waters', yourFleet: 'Your fleet', enemyFleet: 'Enemy fleet', rotate: 'Rotate (R)', random: 'Random', reset: 'Reset', ready: 'Ready!', fire: 'Fire!',
+    onlineT: 'Play online', inviteT: 'Invite a friend by message', linkT: 'Or share the link / code', copy: 'Copy', haveCode: 'Got a code?', join: 'Join', retry: 'Try again', cancel: 'Cancel',
+    again: 'Play again', board: 'Show boards', search: 'Search…', codePh: 'CODE',
+    placeT: 'Place your fleet', placeS: 'Drag ships onto the grid · tap a ship or press R to rotate', waitOpp: 'Waiting for opponent…', waitOppS: 'Your fleet is ready',
+    yourTurn: 'Your turn', yourTurnS: 'Pick a target on the radar', tapAim: 'Tap a cell, then press Fire', enemyTurn: 'Enemy turn', enemyTurnS: 'Brace for impact…',
+    hit: 'DIRECT HIT!', miss: 'SPLASH!', sunkB: 'SHIP SUNK!', victory: 'VICTORY!', defeat: 'DEFEAT',
+    logHit: 'You hit a ship at {x}', logMiss: 'You missed at {x}', logSunk: 'You sank their {s}!', logHitMe: 'They hit you at {x}', logMissMe: 'They missed at {x}', logSunkMe: 'Your {s} was sunk!',
+    n_carrier: 'Carrier', n_battleship: 'Battleship', n_cruiser: 'Cruiser', n_submarine: 'Submarine', n_destroyer: 'Destroyer',
+    endWin: 'You sank the whole enemy fleet.', endLose: 'Your fleet is on the bottom of the sea.', sShots: 'Shots', sHits: 'Hits', sAcc: 'Accuracy',
+    oppLeft: 'Your opponent left the game.', cheat: 'Warning: the opponent’s fleet did not match their answers.', youGo: 'You fire first', theyGo: 'Enemy fires first',
+    lbLogin: 'Log in on the front page first (the Account button), then open this game again.', lbPrep: 'Preparing room…', lbWait: 'Room ready. Invite a friend, or share the link.',
+    lbSent: 'Invite sent to {n}. Waiting for them to join…', lbJoining: 'Connecting…', lbNoRoom: 'No room with that code.', lbOld: 'That invite has expired.',
+    lbFail: 'Could not connect. Try again.', lbNoPeople: 'No friends found yet. Share the link instead.', invite: 'Invite', sent: 'Sent', inviteMsg: 'Battleship? Join me:',
+    linkCopied: 'Link copied', result: 'Result', connected: 'Connected to {n}', lbFull: 'That room is already taken.', lbErr: 'Something went wrong ({e}).', open: 'Open front page'
+  },
+  da: {
+    menu: 'Menu', title: 'SLAGSKIB', sub: 'SÆNK HELE FLÅDEN', level: 'Computerens niveau', easy: 'Rekrut', hard: 'Admiral', vsAI: 'Spil mod computer', vsFriend: 'Spil online mod en ven',
+    vMine: 'Min flåde', vEnemy: 'Fjendens farvand', yourFleet: 'Din flåde', enemyFleet: 'Fjendens flåde', rotate: 'Drej (R)', random: 'Tilfældig', reset: 'Nulstil', ready: 'Klar!', fire: 'Affyr!',
+    onlineT: 'Spil online', inviteT: 'Inviter en ven med en besked', linkT: 'Eller del linket / koden', copy: 'Kopiér', haveCode: 'Har du en kode?', join: 'Join', retry: 'Prøv igen', cancel: 'Annullér',
+    again: 'Spil igen', board: 'Vis brættet', search: 'Søg…', codePh: 'KODE',
+    placeT: 'Placér din flåde', placeS: 'Træk skibene ind på brættet · tryk på et skib eller R for at dreje', waitOpp: 'Venter på modstanderen…', waitOppS: 'Din flåde er klar',
+    yourTurn: 'Din tur', yourTurnS: 'Vælg et mål på radaren', tapAim: 'Tryk på et felt, og tryk så Affyr', enemyTurn: 'Fjendens tur', enemyTurnS: 'Gør dig klar…',
+    hit: 'DIREKTE TRÆF!', miss: 'PLASK!', sunkB: 'SKIB SÆNKET!', victory: 'SEJR!', defeat: 'NEDERLAG',
+    logHit: 'Du ramte et skib på {x}', logMiss: 'Du ramte vand på {x}', logSunk: 'Du sænkede deres {s}!', logHitMe: 'De ramte dig på {x}', logMissMe: 'De missede på {x}', logSunkMe: 'Din {s} blev sænket!',
+    n_carrier: 'Hangarskib', n_battleship: 'Slagskib', n_cruiser: 'Krydser', n_submarine: 'Ubåd', n_destroyer: 'Jager',
+    endWin: 'Du sænkede hele fjendens flåde.', endLose: 'Din flåde ligger på havets bund.', sShots: 'Skud', sHits: 'Træf', sAcc: 'Træfprocent',
+    oppLeft: 'Din modstander forlod spillet.', cheat: 'Advarsel: modstanderens flåde passede ikke med deres svar.', youGo: 'Du skyder først', theyGo: 'Fjenden skyder først',
+    lbLogin: 'Log ind på forsiden først (knappen Account), og åbn så spillet igen.', lbPrep: 'Gør rummet klar…', lbWait: 'Rummet er klar. Inviter en ven, eller del linket.',
+    lbSent: 'Invitation sendt til {n}. Venter på at de joiner…', lbJoining: 'Forbinder…', lbNoRoom: 'Der er intet rum med den kode.', lbOld: 'Den invitation er udløbet.',
+    lbFail: 'Kunne ikke forbinde. Prøv igen.', lbNoPeople: 'Ingen venner fundet endnu. Del linket i stedet.', invite: 'Inviter', sent: 'Sendt', inviteMsg: 'Slagskib? Join mig:',
+    linkCopied: 'Link kopieret', result: 'Resultat', connected: 'Forbundet til {n}', lbFull: 'Det rum er allerede optaget.', lbErr: 'Noget gik galt ({e}).', open: 'Åbn forsiden'
+  }
+};
+let LANG = 'en';
+try { LANG = localStorage.getItem('bs-lang') || ((navigator.language || 'en').toLowerCase().indexOf('da') === 0 ? 'da' : 'en'); } catch (e) { }
+const t = (k, v) => { let s = (I18N[LANG] && I18N[LANG][k]) || I18N.en[k] || k; if (v) for (const x in v) s = s.replace('{' + x + '}', v[x]); return s; };
+function applyLang() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('[data-t]').forEach(e => { e.textContent = t(e.dataset.t); });
+  document.querySelectorAll('[data-ph]').forEach(e => { e.placeholder = t(e.dataset.ph); });
+  $('lDa').classList.toggle('on', LANG === 'da'); $('lEn').classList.toggle('on', LANG === 'en');
+  try { refreshHud(); } catch (e) { }
+}
+function setLang(l) { LANG = l; try { localStorage.setItem('bs-lang', l); } catch (e) { } applyLang(); }
+
+/* =====================================================================
+   Sound (all synthesised)
+   ===================================================================== */
+const SND = {
+  ctx: null, muted: false,
+  init() {
+    if (!this.ctx) { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); this.master = this.ctx.createGain(); this.master.gain.value = this.muted ? 0 : .55; this.master.connect(this.ctx.destination); } catch (e) { } }
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+  },
+  setMute(m) { this.muted = m; if (this.master) this.master.gain.value = m ? 0 : .55; try { localStorage.setItem('bs-mute', m ? '1' : '0'); } catch (e) { } },
+  noise(dur, type, f0, f1, vol, delay) {
+    const c = this.ctx; if (!c) return; delay = delay || 0;
+    const n = (c.sampleRate * dur) | 0, b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+    const s = c.createBufferSource(); s.buffer = b;
+    const f = c.createBiquadFilter(); f.type = type; f.frequency.setValueAtTime(f0, c.currentTime + delay); f.frequency.exponentialRampToValueAtTime(f1, c.currentTime + delay + dur);
+    const g = c.createGain(); g.gain.value = vol; s.connect(f); f.connect(g); g.connect(this.master); s.start(c.currentTime + delay);
+  },
+  tone(type, f0, f1, dur, vol, delay) {
+    const c = this.ctx; if (!c) return; delay = delay || 0; const t0 = c.currentTime + delay;
+    const o = c.createOscillator(), g = c.createGain(); o.type = type;
+    o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + Math.min(.03, dur / 3)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(this.master); o.start(t0); o.stop(t0 + dur + .05);
+  },
+  fire() { this.noise(.7, 'lowpass', 1200, 90, .7); this.tone('sine', 120, 40, .5, .6); },
+  whistle(d) { this.tone('sine', 1500, 380, d, .09); },
+  boom() { this.noise(1.1, 'lowpass', 1600, 70, 1); this.tone('sine', 95, 28, .9, .9); this.tone('sawtooth', 60, 25, .7, .25); },
+  splash() { this.noise(.6, 'bandpass', 2600, 600, .55); this.tone('sine', 300, 90, .25, .15, .03); },
+  sunk() { this.noise(1.8, 'lowpass', 500, 60, .7, .15); for (let i = 0; i < 5; i++) this.tone('sine', 500 + i * 80, 900 + i * 120, .12, .06, .5 + i * .18); },
+  click() { this.tone('square', 520, 780, .06, .06); },
+  horn() { this.tone('sawtooth', 110, 105, .7, .22); this.tone('sawtooth', 138, 131, .7, .16); },
+  win() { [0, 4, 7, 12].forEach((s, i) => this.tone('triangle', 330 * Math.pow(2, s / 12), 330 * Math.pow(2, s / 12), .35, .22, i * .14)); },
+  lose() { [0, -3, -7, -12].forEach((s, i) => this.tone('triangle', 330 * Math.pow(2, s / 12), 320 * Math.pow(2, s / 12), .5, .22, i * .22)); }
+};
+try { SND.muted = localStorage.getItem('bs-mute') === '1'; } catch (e) { }
+
+/* =====================================================================
+   Fleet data + rules
+   ===================================================================== */
+const FLEET = [
+  { id: 0, type: 'carrier', L: 5 }, { id: 1, type: 'battleship', L: 4 }, { id: 2, type: 'cruiser', L: 3 },
+  { id: 3, type: 'submarine', L: 3 }, { id: 4, type: 'destroyer', L: 2 }
+];
+const N = 10;
+const grid = v => Array.from({ length: N }, () => new Array(N).fill(v));
+const cellsOf = s => { const a = []; for (let i = 0; i < s.L; i++) a.push(s.vert ? [s.c, s.r + i] : [s.c + i, s.r]); return a; };
+const inB = (c, r) => c >= 0 && r >= 0 && c < N && r < N;
+const coord = (c, r) => String.fromCharCode(65 + r) + (c + 1);
+function fitsLayout(layout, s) {
+  if (!cellsOf(s).every(([c, r]) => inB(c, r))) return false;
+  const used = new Set(); layout.forEach(o => { if (o !== s && o.id !== s.id) cellsOf(o).forEach(([c, r]) => used.add(c + ',' + r)); });
+  return cellsOf(s).every(([c, r]) => !used.has(c + ',' + r));
+}
+function randomLayout() {
+  for (let tries = 0; tries < 50; tries++) {
+    const out = []; let ok = true;
+    for (const f of FLEET.slice().sort((a, b) => b.L - a.L)) {
+      let placed = false;
+      for (let k = 0; k < 400 && !placed; k++) {
+        const s = { id: f.id, type: f.type, L: f.L, vert: Math.random() < .5, c: 0, r: 0 };
+        s.c = (Math.random() * (s.vert ? N : N - f.L + 1)) | 0; s.r = (Math.random() * (s.vert ? N - f.L + 1 : N)) | 0;
+        if (fitsLayout(out, s)) { out.push(s); placed = true; }
+      }
+      if (!placed) { ok = false; break; }
+    }
+    if (ok) return out.sort((a, b) => a.id - b.id);
+  }
+  return null;
+}
+class Fleet {
+  constructor(layout) {
+    this.ships = layout.map(s => Object.assign({}, s, { hits: 0, sunk: false }));
+    this.cell = grid(-1); this.inc = grid(0); this.memo = {};
+    this.ships.forEach(s => cellsOf(s).forEach(([c, r]) => { this.cell[c][r] = s.id; }));
+  }
+  receive(c, r) {
+    const key = c + ',' + r; if (this.memo[key]) return this.memo[key];
+    const id = this.cell[c][r]; let res;
+    if (id < 0) { this.inc[c][r] = 1; res = { c, r, hit: false, sunk: null, win: false }; }
+    else {
+      this.inc[c][r] = 2; const s = this.ships[id]; s.hits++;
+      let sunk = null;
+      if (s.hits >= s.L) { s.sunk = true; sunk = { id: s.id, type: s.type, L: s.L, c: s.c, r: s.r, vert: s.vert }; }
+      res = { c, r, hit: true, sunk, win: this.ships.every(x => x.sunk) };
+    }
+    this.memo[key] = res; return res;
+  }
+  layout() { return this.ships.map(s => ({ id: s.id, type: s.type, L: s.L, c: s.c, r: s.r, vert: s.vert })); }
+}
+
+/* =====================================================================
+   Scene objects
+   ===================================================================== */
+const BOARD_X = [0, 17];
+const BD = [0, 1].map(i => ({ i, cx: BOARD_X[i], pegs: [], fires: [], ships: [], hover: null, target: null }));
+const MESH = {};
+FLEET.forEach(f => { MESH[f.type] = mesh(buildShip(f.type, f.L)); });
+MESH.pegHit = mesh(PEG_GEO([0.92, 0.12, 0.1])); MESH.pegMiss = mesh(PEG_GEO([0.95, 0.95, 0.96]));
+MESH.frame = (() => {
+  const g = new Geo(), h = 0.14, FC = [0.17, 0.22, 0.27], FL = [0.27, 0.34, 0.4];
+  g.box(0, h / 2, -5.3, 11.2, h, 0.6, FC, 0.9); g.box(0, h / 2, 5.3, 11.2, h, 0.6, FC, 0.9);
+  g.box(-5.3, h / 2, 0, 0.6, h, 10, FC, 0.9); g.box(5.3, h / 2, 0, 0.6, h, 10, FC, 0.9);
+  g.box(0, h + 0.004, -5.04, 10.1, 0.01, 0.05, FL); g.box(0, h + 0.004, 5.04, 10.1, 0.01, 0.05, FL);
+  g.box(-5.04, h + 0.004, 0, 0.05, 0.01, 10.1, FL); g.box(5.04, h + 0.004, 0, 0.05, 0.01, 10.1, FL);
+  for (const x of [-5.3, 5.3]) for (const z of [-5.3, 5.3]) { g.cyl(x, h + 0.03, z, 0.13, 0.15, 0.06, COL.brass, 12); g.cyl(x, h + 0.075, z, 0.04, 0.05, 0.03, COL.dark, 8); }
+  return g;
+})();
+MESH.frame = mesh(MESH.frame);
+MESH.shell = mesh((() => { const g = new Geo(); g.ellipsoid(0, 0, 0, 0.13, 0.13, 0.13, [1, .85, .5], 8, 5); return g; })());
+
+let T = 0;
+const rings = [], shells = [];
+
+class Ship {
+  constructor(def, board) {
+    this.def = def; this.id = def.id; this.type = def.type; this.L = def.L; this.b = board;
+    this.x = 0; this.z = 0; this.tx = 0; this.tz = 0; this.y = 0; this.ty = 0; this.yaw = 0; this.tyaw = 0; this.pitch = 0; this.roll = 0;
+    this.vx = 0; this.vz = 0; this.vert = false; this.placed = false; this.held = false; this.sunk = false; this.enemy = false; this.revealed = false;
+    this.c = 0; this.r = 0; this.phase = Math.random() * 6.28; this.shake = 0; this.home = [0, 8]; this.sinkT = 0; this.dropFx = false;
+  }
+  len() { return this.L * 0.94; }
+  update(dt) {
+    const px = this.x, pz = this.z;
+    const k = damp(this.held ? 24 : 13, dt);
+    this.x += (this.tx - this.x) * k; this.z += (this.tz - this.z) * k;
+    this.vx = (this.x - px) / Math.max(dt, 1e-4); this.vz = (this.z - pz) / Math.max(dt, 1e-4);
+    let d = this.tyaw - this.yaw; d = Math.atan2(Math.sin(d), Math.cos(d));
+    this.yaw += d * damp(11, dt);
+    this.shake = Math.max(0, this.shake - dt * 3);
+    if (this.shake > 0) this.yaw += Math.sin(T * 50) * this.shake * 0.05;
+    const prevY = this.y;
+    this.y += (this.ty - this.y) * damp(this.sunk ? 1.1 : 15, dt);
+    if (this.dropFx && prevY > 0.12 && this.y <= 0.12 && !this.held && !this.sunk) { this.dropFx = false; splashAt(this.b.cx + this.x, this.z, 0.5, this.L * 0.5); }
+    // tilt follows motion (a heavy thing being dragged through water)
+    const c = Math.cos(this.yaw), s = Math.sin(this.yaw);
+    const lvx = this.vx * c - this.vz * s, lvz = this.vx * s + this.vz * c;
+    const tp = this.sunk ? 0.07 : clamp(-lvx * 0.022, -0.18, 0.18), tr = this.sunk ? 0.2 : clamp(lvz * 0.03, -0.22, 0.22);
+    this.pitch += (tp - this.pitch) * damp(9, dt); this.roll += (tr - this.roll) * damp(9, dt);
+    if (this.sunk) this.sinkT += dt;
+  }
+  pose() {
+    let bob = 0, br = 0, bp = 0;
+    if (!this.sunk && !this.held) { bob = Math.sin(T * 1.4 + this.phase) * 0.018; br = Math.sin(T * 1.1 + this.phase) * 0.02; bp = Math.sin(T * 0.9 + this.phase * 2) * 0.012; }
+    return Mx.compose(this.b.cx + this.x, this.y + bob + (this.type === 'submarine' ? -0.02 : 0), this.z, this.yaw, this.pitch + bp, this.roll + br);
+  }
+  hitTest(lx, lz, pad) {
+    const dx = lx - this.x, dz = lz - this.z, c = Math.cos(this.yaw), s = Math.sin(this.yaw);
+    const ax = dx * c - dz * s, az = dx * s + dz * c;
+    return Math.abs(ax) <= this.len() / 2 + pad && Math.abs(az) <= 0.55 + pad;
+  }
+  setLogical(c, r, vert) {
+    this.c = c; this.r = r; this.vert = vert; this.tyaw = vert ? -Math.PI / 2 : 0;
+    const p = centerOf(this.L, vert, c, r); this.tx = p[0]; this.tz = p[1];
+  }
+}
+const centerOf = (L, vert, c, r) => vert ? [c - 4.5, r + L / 2 - 5] : [c + L / 2 - 5, r - 4.5];
+const originOf = (L, vert, cx, cz) => vert ? { c: Math.round(cx + 4.5), r: Math.round(cz + 5 - L / 2) } : { c: Math.round(cx + 5 - L / 2), r: Math.round(cz + 4.5) };
+
+const HOME = { 0: [-2.9, 7.0], 1: [2.5, 7.0], 2: [-3.6, 8.5], 3: [0.0, 8.5], 4: [3.2, 8.5] };
+let ships = []; // my ships (board 0)
+function makeMyShips() {
+  ships = FLEET.map(f => { const s = new Ship(f, BD[0]); s.home = HOME[f.id]; s.x = s.tx = s.home[0]; s.z = s.tz = s.home[1]; return s; });
+  BD[0].ships = ships;
+}
+makeMyShips();
+function sendHome(s) { s.placed = false; s.held = false; s.vert = false; s.tyaw = 0; s.tx = s.home[0]; s.tz = s.home[1]; s.ty = 0; s.dropFx = true; }
+function layoutOfPlaced(except) { return ships.filter(s => s.placed && s !== except).map(s => ({ id: s.id, L: s.L, c: s.c, r: s.r, vert: s.vert })); }
+function validAt(s, c, r, vert) { return fitsLayout(layoutOfPlaced(s), { id: s.id, L: s.L, c, r, vert }); }
+const OFFS = []; for (let a = -9; a <= 9; a++) for (let b = -9; b <= 9; b++) OFFS.push([a, b]); OFFS.sort((p, q) => (p[0] * p[0] + p[1] * p[1]) - (q[0] * q[0] + q[1] * q[1]));
+function nearestValid(s, cx, cz, vert) {
+  for (const v of [vert, !vert]) {
+    const o = originOf(s.L, v, cx, cz);
+    for (const [dc, dr] of OFFS) { if (dc * dc + dr * dr > (v === vert ? 30 : 12)) break; if (validAt(s, o.c + dc, o.r + dr, v)) return { c: o.c + dc, r: o.r + dr, vert: v }; }
+  }
+  return null;
+}
+function placeAt(s, c, r, vert, fx) {
+  s.placed = true; s.held = false; s.setLogical(c, r, vert); s.ty = 0; s.dropFx = !!fx;
+}
+function randomizeMine() {
+  const lay = randomLayout(); if (!lay) return;
+  lay.forEach(o => { const s = ships[o.id]; s.y = Math.max(s.y, 0.25); placeAt(s, o.c, o.r, o.vert, true); });
+  SND.click(); refreshHud();
+}
+
+/* =====================================================================
+   Effects
+   ===================================================================== */
+function ringFx(x, z, r1, dur, col, w, delay) { rings.push({ x, z, r1, dur, col, w: w || 0.1, t: -(delay || 0) }); }
+function splashAt(wx, wz, sc, big) {
+  sc = sc || 1;
+  ringFx(wx, wz, 1.3 * sc, 0.9, [1, 1, 1, .75], 0.12); ringFx(wx, wz, 0.8 * sc, 0.75, [.8, .95, 1, .6], 0.14, 0.1);
+  const n = Math.round(22 * sc * (big ? 1.4 : 1));
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * 6.283, sp = rnd(0.4, 1.8) * sc;
+    spawn({ x: wx, y: 0.1, z: wz, vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, vy: rnd(3, 6.5) * Math.sqrt(sc), g: 11, life: rnd(0.6, 1.1), s0: 0.07, s1: 0.04, c0: [.9, .97, 1, .9], c1: [.8, .9, 1, 0] });
+  }
+  for (let i = 0; i < 7; i++) spawn({ x: wx + rnd(-.2, .2), y: 0.15, z: wz + rnd(-.2, .2), vx: rnd(-.4, .4), vz: rnd(-.4, .4), vy: rnd(.6, 1.4), drag: 1.5, life: rnd(0.7, 1.1), s0: 0.2 * sc, s1: 0.55 * sc, c0: [.9, .96, 1, .5], c1: [.9, .96, 1, 0] });
+}
+function boomAt(wx, wz, sc) {
+  sc = sc || 1;
+  spawn({ x: wx, y: 0.5, z: wz, life: 0.28, s0: 0.5, s1: 2.6 * sc, c0: [1, .95, .7, 1], c1: [1, .5, .1, 0], add: true });
+  ringFx(wx, wz, 1.7 * sc, 0.55, [1, .85, .5, .8], 0.18); ringFx(wx, wz, 1.0 * sc, 0.45, [1, .5, .2, .7], 0.2, 0.05);
+  for (let i = 0; i < 24; i++) {
+    const a = Math.random() * 6.283, sp = rnd(.5, 3.2);
+    spawn({ x: wx, y: 0.2, z: wz, vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, vy: rnd(1, 4.5), drag: 2.2, life: rnd(.45, .95), s0: rnd(.25, .45), s1: 0.06, c0: [1, .75, .25, 1], c1: [.9, .12, 0, 0], add: true });
+  }
+  for (let i = 0; i < 20; i++) {
+    const a = Math.random() * 6.283, sp = rnd(2, 6);
+    spawn({ x: wx, y: 0.3, z: wz, vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, vy: rnd(2, 7), g: 9, life: rnd(.5, 1.0), s0: .06, s1: .02, c0: [1, .9, .5, 1], c1: [1, .5, .1, 0], add: true });
+  }
+  for (let i = 0; i < 16; i++) spawn({ x: wx + rnd(-.3, .3), y: 0.3, z: wz + rnd(-.3, .3), vx: rnd(-.8, .8), vz: rnd(-.8, .8), vy: rnd(.8, 2.2), drag: .8, life: rnd(1.4, 2.6), s0: .25, s1: rnd(.7, 1.2), c0: [.1, .1, .11, .7], c1: [.25, .25, .27, 0] });
+  cam.shake = Math.max(cam.shake, 0.35 * sc);
+}
+function sinkFx(wx, wz, len, vert) {
+  for (let i = 0; i < 4; i++) {
+    const o = (i - 1.5) * len / 4 * 0.9;
+    setTimeout(() => boomAt(wx + (vert ? 0 : o), wz + (vert ? o : 0), .6), i * 170);
+  }
+  for (let i = 0; i < 26; i++) spawn({ x: wx + rnd(-len / 2, len / 2) * (vert ? .2 : 1), y: 0.1, z: wz + rnd(-len / 2, len / 2) * (vert ? 1 : .2), vx: rnd(-.3, .3), vz: rnd(-.3, .3), vy: rnd(.3, 1), life: rnd(1.5, 3), s0: .08, s1: .06, c0: [.8, .95, 1, .6], c1: [.8, .95, 1, 0] });
+}
+function addPeg(b, c, r, hit) { b.pegs.push({ c, r, hit, y: 2.4 + Math.random() * .6, vy: 0, bounced: 0 }); if (hit) b.fires.push({ x: b.cx + c - 4.5, z: r - 4.5, acc: Math.random() }); }
+function stepFx(dt) {
+  stepParts(dt);
+  for (let i = rings.length - 1; i >= 0; i--) { rings[i].t += dt; if (rings[i].t > rings[i].dur) rings.splice(i, 1); }
+  for (const b of BD) {
+    for (const p of b.pegs) {
+      p.vy -= 16 * dt; p.y += p.vy * dt;
+      if (p.y <= 0.06) { p.y = 0.06; if (Math.abs(p.vy) > 1.2 && p.bounced < 2) { p.vy = -p.vy * 0.35; p.bounced++; } else p.vy = 0; }
+    }
+    for (const f of b.fires) {
+      f.acc += dt * 9;
+      while (f.acc > 1) {
+        f.acc -= 1;
+        spawn({ x: f.x + rnd(-.12, .12), y: 0.25, z: f.z + rnd(-.12, .12), vx: rnd(-.1, .1), vz: rnd(-.1, .1), vy: rnd(.8, 1.6), drag: .6, life: rnd(.45, .8), s0: .17, s1: .03, c0: [1, .68, .18, .9], c1: [.9, .15, 0, 0], add: true });
+        if (Math.random() < .3) spawn({ x: f.x, y: 0.5, z: f.z, vx: rnd(-.15, .25), vz: rnd(-.15, .15), vy: rnd(.7, 1.1), drag: .3, life: rnd(1.8, 3), s0: .12, s1: rnd(.4, .65), c0: [.13, .13, .14, .5], c1: [.3, .3, .32, 0] });
+      }
+    }
+  }
+}
+// a shell falling from above onto world point (wx,wz); resolves when it lands
+function shellFly(wx, wz, from) {
+  return new Promise(res => {
+    const dur = 0.95, dz = from === 'me' ? 11 : -11;
+    shells.push({ wx, wz, dz, t: 0, dur, res });
+    SND.fire(); SND.whistle(dur);
+  });
+}
+function stepShells(dt) {
+  for (let i = shells.length - 1; i >= 0; i--) {
+    const s = shells[i]; s.t += dt; const u = Math.min(1, s.t / s.dur);
+    s.x = s.wx; s.z = s.wz + s.dz * (1 - u); s.y = 13 * (1 - u * u);
+    spawn({ x: s.x, y: s.y, z: s.z, vx: 0, vz: 0, vy: 0, life: .5, s0: .13, s1: .35, c0: [.8, .8, .82, .35], c1: [.6, .6, .62, 0] });
+    spawn({ x: s.x, y: s.y, z: s.z, life: .12, s0: .16, s1: .04, c0: [1, .8, .35, .8], c1: [1, .4, .1, 0], add: true });
+    if (u >= 1) { shells.splice(i, 1); s.res(); }
+  }
+}
+
+/* =====================================================================
+   HUD helpers
+   ===================================================================== */
+function banner(text, cls, stay) { const b = $('banner'); b.className = ''; void b.offsetWidth; b.textContent = text; b.className = (cls || '') + (stay ? ' stay' : ' on'); }
+function logMsg(text, cls) { const d = document.createElement('div'); d.textContent = text; if (cls) d.className = cls; const l = $('log'); l.appendChild(d); while (l.children.length > 4) l.removeChild(l.firstChild); setTimeout(() => d.remove(), 6200); }
+function toast(text, ms) { const e = $('toast'); e.textContent = text; e.classList.remove('hide'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.add('hide'), ms || 2200); }
+function turnBox(title, sub, enemy) { $('turnT').textContent = title; $('turnS').textContent = sub || ''; $('turn').classList.toggle('enemy', !!enemy); $('turn').classList.toggle('hide', !title); }
+function fleetPanel(el, who, sunkIds) {
+  el.querySelectorAll('.row').forEach(x => x.remove());
+  FLEET.forEach(f => {
+    const d = document.createElement('div'); d.className = 'row' + (sunkIds.has(f.id) ? ' dead' : '');
+    d.innerHTML = '<i style="--n:' + f.L + '"></i><span style="font-size:14px;letter-spacing:.04em">' + t('n_' + f.type) + '</span>'; el.appendChild(d);
+  });
+}
+
+/* =====================================================================
+   Game state
+   ===================================================================== */
+const G = {
+  mode: null, phase: 'menu', turn: null, fleet: null, out: grid(0), opp: null, level: 'easy', busy: false, over: false,
+  stats: { shots: 0, hits: 0 }, oppSunk: new Set(), mySunk: new Set(), chain: Promise.resolve(), oppName: 'Enemy',
+  view: 'mine', sel: null, drag: null, hoverC: null, aim: null, revealedEnemy: false, meAgain: false, oppAgain: false
+};
+function refreshHud() {
+  if (G.phase === 'place') { turnBox(t('placeT'), t('placeS')); }
+  else if (G.phase === 'wait') { turnBox(t('waitOpp'), t('waitOppS')); }
+  else if (G.phase === 'battle') setTurnBox();
+  $('bReady').disabled = !(G.phase === 'place' && ships.every(s => s.placed));
+  $('bBattle').classList.toggle('hide', !(G.phase === 'battle' && G.touch && G.turn === 'me'));
+  fleetPanel($('flMine'), 'me', G.mySunk); fleetPanel($('flEnemy'), 'opp', G.oppSunk);
+  $('bSnd').style.opacity = SND.muted ? .45 : 1;
+}
+function setTurnBox() {
+  if (G.over) { turnBox('', ''); return; }
+  if (G.turn === 'me') turnBox(t('yourTurn'), (G.touch ? t('tapAim') : t('yourTurnS')), false); else turnBox(t('enemyTurn'), t('enemyTurnS'), true);
+}
+
+/* =====================================================================
+   Camera focus
+   ===================================================================== */
+let focusMode = 'menu';
+function focusCam(mode, instant) {
+  focusMode = mode;
+  const W = canvas.clientWidth, H = canvas.clientHeight, asp = W / H, R = 5.95;
+  let tx = 0, tz = 0, pts, pitch = 1.2, yaw = 0;
+  const box = (x, z0, z1) => [[x - R, 0, z0], [x + R, 0, z0], [x - R, 0, z1], [x + R, 0, z1], [x - R, .6, z0], [x + R, .6, z0]];
+  if (mode === 'enemy') { tx = BOARD_X[1]; pts = box(tx, -R, R); }
+  else if (mode === 'mine') { pts = box(0, -R, R); }
+  else if (mode === 'place') { tz = 1.9; pts = box(0, -R, 9.9); }
+  else { pitch = 0.98; tx = asp > 1.25 ? -3.2 : 0; pts = box(0, -R - 1, R + 1); yaw = 0; }
+  const mt = (H < 520 ? 56 : 70) * 2 / H, mb = (mode === 'place' ? 84 : mode === 'menu' ? 20 : 70) * 2 / H, mx = 0.04;
+  const d = fitDist(pts, tx, tz, pitch, yaw, asp, mx, mt, mb);
+  Object.assign(camT, { tx, tz, pitch, yaw, dist: d });
+  if (instant) Object.assign(cam, camT);
+}
+function setView(v, instant) {
+  G.view = v; focusCam(v, instant);
+  $('vMine').classList.toggle('on', v === 'mine'); $('vEnemy').classList.toggle('on', v === 'enemy');
+}
+
+// cinematic push-in on one cell while a shell is falling there
+function zoomTo(bi, c, r) {
+  focusCam(bi === 1 ? 'enemy' : 'mine'); const keep = camT.dist;
+  Object.assign(camT, { tx: BD[bi].cx + c - 4.5, tz: r - 4.5, dist: Math.max(9, keep * 0.55), pitch: 1.02, yaw: (bi === 1 ? -0.12 : 0.12) });
+}
+
+/* =====================================================================
+   Flow
+   ===================================================================== */
+function clearBoards() {
+  BD.forEach(b => { b.pegs.length = 0; b.fires.length = 0; b.hover = null; b.target = null; });
+  BD[1].ships = []; parts.length = 0; rings.length = 0; shells.length = 0;
+  G.out = grid(0); G.stats = { shots: 0, hits: 0 }; G.oppSunk = new Set(); G.mySunk = new Set(); G.over = false; G.busy = false;
+  G.fleet = null; G.aim = null; G.revealedEnemy = false; G.chain = Promise.resolve(); G.meAgain = false; G.oppAgain = false;
+  makeMyShips();
+}
+function hideAll() { ['menu', 'lobby', 'end'].forEach(i => $(i).classList.add('hide')); }
+function langVis(on) { $('lang').classList.toggle('hide', !on); }
+function showMenu() {
+  if (G.opp && G.opp.close) G.opp.close(); G.opp = null; G.mode = null;
+  clearBoards(); G.phase = 'menu'; hideAll(); langVis(true); $('hud').classList.add('hide'); $('menu').classList.remove('hide');
+  const lay = randomLayout(); lay.forEach(o => { const s = ships[o.id]; placeAt(s, o.c, o.r, o.vert, false); s.x = s.tx; s.z = s.tz; s.yaw = s.tyaw; });
+  focusCam('menu', true);
+}
+function startPlacement() {
+  clearBoards(); G.phase = 'place'; hideAll(); langVis(false); $('hud').classList.remove('hide');
+  $('fleets').classList.add('hide'); $('views').classList.add('hide'); $('bBattle').classList.add('hide'); $('bPlace').classList.remove('hide');
+  $('hint').textContent = ''; $('log').textContent = '';
+  ships.forEach(s => { s.x = s.tx = s.home[0] + rnd(-.3, .3); s.z = s.tz = s.home[1] + 6; s.dropFx = true; sendHome(s); });
+  focusCam('place', false); G.sel = null; refreshHud(); $('bReady').textContent = t('ready'); $('bReady').disabled = true;
+  if (G.mode === 'online') $('bMenu').dataset.online = '1';
+}
+async function readyUp() {
+  if (G.phase !== 'place' || !ships.every(s => s.placed)) return;
+  SND.init(); SND.horn();
+  const lay = ships.map(s => ({ id: s.id, type: s.type, L: s.L, c: s.c, r: s.r, vert: s.vert }));
+  G.fleet = new Fleet(lay); G.phase = 'wait'; G.drag = null; G.sel = null; ships.forEach(s => { s.held = false; });
+  $('bPlace').classList.add('hide'); refreshHud();
+  if (G.mode === 'ai') { G.opp = new AIOpp(G.level); startBattle(Math.random() < .5 ? 'me' : 'opp'); }
+  else G.opp.ready(lay);
+}
+function startBattle(first) {
+  G.phase = 'battle'; G.turn = first; $('bPlace').classList.add('hide'); $('fleets').classList.remove('hide'); $('views').classList.remove('hide');
+  $('bFire').disabled = true; hideAll(); refreshHud();
+  banner(first === 'me' ? t('youGo') : t('theyGo'));
+  setTimeout(() => nextTurn(true), 900);
+}
+function nextTurn(first) {
+  if (G.over) return;
+  setTurnBox(); $('bFire').disabled = true; G.aim = null; BD[1].target = null;
+  if (G.turn === 'me') { setView('enemy'); $('hint').textContent = ''; }
+  else { setView('mine'); $('hint').textContent = ''; if (G.mode === 'ai') G.opp.turn(); }
+  refreshHud();
+}
+// ---- my shot ----
+async function fireAt(c, r) {
+  if (G.phase !== 'battle' || G.turn !== 'me' || G.busy || G.out[c][r]) return;
+  G.busy = true; G.out[c][r] = 3; G.stats.shots++; BD[1].target = null; G.aim = null; $('bFire').disabled = true; BD[1].hover = null;
+  const wx = BD[1].cx + c - 4.5, wz = r - 4.5;
+  let res; zoomTo(1, c, r);
+  if (G.view !== 'enemy') setView('enemy');
+  try { [, res] = await Promise.all([shellFly(wx, wz, 'me'), G.opp.shoot(c, r)]); }
+  catch (e) { focusCam(G.view); G.busy = false; return; }
+  applyMyResult(res);
+}
+function applyMyResult(res) {
+  const { c, r } = res, b = BD[1], wx = b.cx + c - 4.5, wz = r - 4.5;
+  G.out[c][r] = res.hit ? 2 : 1; addPeg(b, c, r, res.hit);
+  if (res.hit) { G.stats.hits++; boomAt(wx, wz, 1); SND.boom(); $('flash').classList.remove('on'); }
+  else { splashAt(wx, wz, 1); SND.splash(); }
+  if (res.sunk) revealEnemyShip(res.sunk, true);
+  banner(res.sunk ? t('sunkB') : res.hit ? t('hit') : t('miss'), res.hit ? '' : 'red');
+  if (!res.hit) { /* splash is cool-blue */ }
+  logMsg(res.sunk ? t('logSunk', { s: t('n_' + res.sunk.type) }) : res.hit ? t('logHit', { x: coord(c, r) }) : t('logMiss', { x: coord(c, r) }), res.hit ? 'good' : '');
+  if (res.sunk) { G.oppSunk.add(res.sunk.id); SND.sunk(); }
+  refreshHud();
+  if (res.win) { G.phase = 'over'; setTimeout(() => endGame(true), 1500); G.busy = false; return; }
+  setTimeout(() => { if (G.over) return; G.turn = 'opp'; G.busy = false; nextTurn(); }, res.sunk ? 2300 : 1600);
+}
+function revealEnemyShip(sk, sinkIt) {
+  const def = FLEET[sk.id], s = new Ship(def, BD[1]); s.enemy = true; s.revealed = true;
+  s.setLogical(sk.c, sk.r, sk.vert); s.x = s.tx; s.z = s.tz; s.yaw = s.tyaw; s.placed = true;
+  if (sinkIt) { s.sunk = true; s.ty = -0.12; sinkFx(BD[1].cx + s.tx, s.tz, s.len(), sk.vert); }
+  BD[1].ships.push(s); return s;
+}
+// ---- their shot ----
+function onOppShot(c, r) {
+  const res = G.fleet.receive(c, r);
+  G.chain = G.chain.then(() => animateIncoming(res));
+  return res;
+}
+async function animateIncoming(res) {
+  if (G.over) return;
+  const { c, r } = res, b = BD[0], wx = b.cx + c - 4.5, wz = r - 4.5;
+  if (G.view !== 'mine') setView('mine');
+  zoomTo(0, c, r);
+  await shellFly(wx, wz, 'opp');
+  addPeg(b, c, r, res.hit);
+  if (res.hit) { boomAt(wx, wz, 1); SND.boom(); const f = $('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }
+  else { splashAt(wx, wz, 1); SND.splash(); }
+  if (res.sunk) {
+    const s = ships[res.sunk.id]; s.sunk = true; s.ty = -0.12; sinkFx(b.cx + s.tx, s.tz, s.len(), s.vert); G.mySunk.add(res.sunk.id); SND.sunk();
+  }
+  banner(res.sunk ? t('sunkB') : res.hit ? t('hit') : t('miss'), res.hit ? 'red' : '');
+  logMsg(res.sunk ? t('logSunkMe', { s: t('n_' + res.sunk.type) }) : res.hit ? t('logHitMe', { x: coord(c, r) }) : t('logMissMe', { x: coord(c, r) }), res.hit ? 'bad' : '');
+  refreshHud();
+  if (res.win) { G.phase = 'over'; setTimeout(() => { focusCam(G.view); endGame(false); }, 1500); return; }
+  await new Promise(rs => setTimeout(rs, res.sunk ? 1700 : 1100));
+  focusCam(G.view);
+  await new Promise(rs => setTimeout(rs, 900));
+  if (G.over) return;
+  G.turn = 'me'; nextTurn();
+}
+function endGame(win) {
+  if (G.over) return; G.over = true; G.phase = 'over'; G.busy = false; G.turn = null;
+  $('bBattle').classList.add('hide'); $('hint').textContent = ''; turnBox('', '');
+  banner(win ? t('victory') : t('defeat'), win ? '' : 'red', true); win ? SND.win() : SND.lose();
+  if (G.opp && G.opp.reveal) G.opp.reveal(G.fleet.layout());
+  if (G.mode === 'ai') revealRemaining(G.opp.fleet.layout());
+  setView(win ? 'enemy' : 'mine');
+  setTimeout(() => {
+    $('end').classList.toggle('lose', !win); $('endT').textContent = win ? t('victory') : t('defeat');
+    $('endS').textContent = win ? t('endWin') : t('endLose');
+    const acc = G.stats.shots ? Math.round(G.stats.hits / G.stats.shots * 100) : 0;
+    $('endStats').innerHTML = '<div><b>' + G.stats.shots + '</b>' + t('sShots') + '</div><div><b>' + G.stats.hits + '</b>' + t('sHits') + '</div><div><b>' + acc + '%</b>' + t('sAcc') + '</div>';
+    $('banner').className = ''; $('bAgain').disabled = false; $('bAgain').textContent = t('again');
+    $('end').classList.remove('hide');
+  }, 1900);
+}
+function revealRemaining(layout) {
+  if (G.revealedEnemy) return; G.revealedEnemy = true;
+  layout.forEach(o => { if (!G.oppSunk.has(o.id)) { const s = revealEnemyShip({ id: o.id, type: o.type, L: o.L, c: o.c, r: o.r, vert: o.vert }, false); s.y = 1.2; s.ty = 0; s.dropFx = true; } });
+}
+
+/* =====================================================================
+   Computer opponent
+   ===================================================================== */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+class AIOpp {
+  constructor(level) {
+    this.level = level; this.fleet = new Fleet(randomLayout()); this.known = grid(0); this.remaining = FLEET.map(f => f.L); this.dead = false;
+  }
+  async shoot(c, r) { await sleep(120); return this.fleet.receive(c, r); }
+  close() { this.dead = true; }
+  pick() {
+    const k = this.known, hits = []; for (let c = 0; c < N; c++) for (let r = 0; r < N; r++) if (k[c][r] === 2) hits.push([c, r]);
+    const free = []; for (let c = 0; c < N; c++) for (let r = 0; r < N; r++) if (k[c][r] === 0) free.push([c, r]);
+    if (this.level === 'easy') {
+      if (hits.length) { const nb = []; hits.forEach(([c, r]) => [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([a, b]) => { if (inB(c + a, r + b) && k[c + a][r + b] === 0) nb.push([c + a, r + b]); })); if (nb.length && Math.random() < .85) return nb[(Math.random() * nb.length) | 0]; }
+      return free[(Math.random() * free.length) | 0];
+    }
+    const score = grid(0);
+    for (const L of this.remaining) for (const vert of [false, true]) for (let c = 0; c < N; c++) for (let r = 0; r < N; r++) {
+      const cells = cellsOf({ L, c, r, vert }); if (!cells.every(([a, b]) => inB(a, b) && k[a][b] !== 1 && k[a][b] !== 3)) continue;
+      const hc = cells.filter(([a, b]) => k[a][b] === 2).length, w = hc ? Math.pow(30, hc) : 1;
+      cells.forEach(([a, b]) => { if (k[a][b] === 0) score[a][b] += w; });
+    }
+    let best = -1, pool = []; free.forEach(([c, r]) => { const s = score[c][r] + (((c + r) & 1) ? 0.01 : 0); if (s > best + 1e-9) { best = s; pool = [[c, r]]; } else if (Math.abs(s - best) < 1e-9) pool.push([c, r]); });
+    return pool[(Math.random() * pool.length) | 0];
+  }
+  async turn() {
+    await sleep(rnd(1100, 1900)); if (this.dead || G.over || G.mode !== 'ai') return;
+    const [c, r] = this.pick(); const res = onOppShot(c, r);
+    if (res.hit) { this.known[c][r] = 2; if (res.sunk) { cellsOf(res.sunk).forEach(([a, b]) => { this.known[a][b] = 3; }); const i = this.remaining.indexOf(res.sunk.L); if (i >= 0) this.remaining.splice(i, 1); } }
+    else this.known[c][r] = 1;
+  }
+}
+
+/* =====================================================================
+   Input
+   ===================================================================== */
+const ptr = e => { const b = canvas.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+function cellAt(px, py, bi) {
+  const h = rayHit(px, py, 0.05); if (!h) return null;
+  const c = Math.floor(h[0] - BD[bi].cx + 5), r = Math.floor(h[2] + 5);
+  return inB(c, r) ? [c, r] : null;
+}
+function selectShip(s) { G.sel = s; }
+function rotateShip(s) {
+  if (!s) return;
+  const nv = !s.vert;
+  if (G.drag && G.drag.s === s) {
+    s.vert = nv; s.tyaw = nv ? -Math.PI / 2 : 0; const o = G.drag; // keep the grabbed point under the pointer
+    const ox = o.offX, oz = o.offZ; o.offX = nv ? -oz : oz; o.offZ = nv ? ox : -ox; s.tx = o.lx + o.offX; s.tz = o.lz + o.offZ; SND.click(); return;
+  }
+  if (!s.placed) return;
+  const cen = centerOf(s.L, s.vert, s.c, s.r), v = nearestValidFor(s, cen[0], cen[1], nv);
+  if (v) { placeAt(s, v.c, v.r, v.vert, false); SND.click(); } else { s.shake = 1; }
+}
+function nearestValidFor(s, cx, cz, vert) {
+  const o = originOf(s.L, vert, cx, cz);
+  for (const [dc, dr] of OFFS) { if (dc * dc + dr * dr > 8) break; if (validAt(s, o.c + dc, o.r + dr, vert)) return { c: o.c + dc, r: o.r + dr, vert }; }
+  return null;
+}
+canvas.addEventListener('contextmenu', e => { e.preventDefault(); if (G.phase === 'place') rotateShip(G.drag ? G.drag.s : G.sel); });
+canvas.addEventListener('wheel', e => { if (G.phase === 'place' && G.drag && G.drag.moved) { e.preventDefault(); rotateShip(G.drag.s); } }, { passive: false });
+canvas.addEventListener('pointerdown', e => {
+  SND.init(); canvas.focus({ preventScroll: true }); const wasTouch = G.touch; G.touch = e.pointerType !== 'mouse'; if (wasTouch !== G.touch) refreshHud();
+  const [px, py] = ptr(e);
+  if (G.phase === 'place') {
+    if (e.button === 2) return;
+    const h = rayHit(px, py, 0.3); if (!h) return;
+    const lx = h[0], lz = h[2]; let pick = null;
+    const order = ships.slice().sort((a, b) => (a === G.sel ? 1 : 0) - (b === G.sel ? 1 : 0)).reverse();
+    for (const s of order) if (s.hitTest(lx, lz, 0.12)) { pick = s; break; }
+    if (!pick) { G.sel = null; return; }
+    canvas.setPointerCapture(e.pointerId);
+    G.sel = pick; G.drag = { s: pick, offX: pick.x - lx, offZ: pick.z - lz, lx, lz, sx: lx, sz: lz, moved: false, t0: performance.now() };
+  } else if (G.phase === 'battle') {
+    if (G.view !== 'enemy' || G.turn !== 'me' || G.busy) return;
+    const c = cellAt(px, py, 1); if (!c || G.out[c[0]][c[1]]) return;
+    if (e.pointerType === 'mouse') { fireAt(c[0], c[1]); }
+    else { G.aim = c; BD[1].target = c; $('bFire').disabled = false; SND.click(); }
+  }
+});
+canvas.addEventListener('pointermove', e => {
+  const [px, py] = ptr(e);
+  if (G.phase === 'place' && G.drag) {
+    const h = rayHit(px, py, 0.3); if (!h) return; const d = G.drag, s = d.s;
+    d.lx = h[0]; d.lz = h[2];
+    if (!d.moved && Math.hypot(h[0] - d.sx, h[2] - d.sz) > 0.22) { d.moved = true; s.held = true; s.ty = 0.55; if (s.placed) { s.placed = false; refreshHud(); } SND.click(); }
+    if (d.moved) { s.tx = d.lx + d.offX; s.tz = d.lz + d.offZ; }
+  } else if (G.phase === 'battle' && G.view === 'enemy' && G.turn === 'me' && !G.busy && e.pointerType === 'mouse') {
+    const c = cellAt(px, py, 1); BD[1].hover = c && !G.out[c[0]][c[1]] ? c : null;
+  }
+});
+function endDrag(cancel) {
+  const d = G.drag; if (!d) return; G.drag = null; const s = d.s;
+  if (!d.moved) { // a tap
+    if (!cancel && s.placed && performance.now() - d.t0 < 450) rotateShip(s);
+    return;
+  }
+  s.held = false;
+  const cx = s.tx, cz = s.tz;
+  if (!cancel && Math.abs(cx) < 5.4 && Math.abs(cz) < 5.4) {
+    const v = nearestValid(s, cx, cz, s.vert);
+    if (v) { s.y = Math.max(s.y, .3); placeAt(s, v.c, v.r, v.vert, true); SND.splash(); refreshHud(); return; }
+    s.shake = 1;
+  }
+  sendHome(s); refreshHud();
+}
+canvas.addEventListener('pointerup', () => endDrag(false));
+canvas.addEventListener('pointercancel', () => endDrag(true));
+canvas.addEventListener('pointerleave', () => { BD[1].hover = null; });
+window.addEventListener('keydown', e => {
+  if (/INPUT|TEXTAREA/.test((e.target || {}).tagName || '')) return;
+  const k = e.key.toLowerCase();
+  if (k === 'r' || k === ' ') { if (G.phase === 'place') { e.preventDefault(); rotateShip(G.drag ? G.drag.s : G.sel); } }
+  else if (k === 'enter') { if (G.phase === 'place') readyUp(); else if (G.phase === 'battle' && G.aim) fireAt(G.aim[0], G.aim[1]); }
+  else if (k === 'tab' && G.phase === 'battle') { e.preventDefault(); setView(G.view === 'mine' ? 'enemy' : 'mine'); }
+  else if (k === 'escape') { G.aim = null; BD[1].target = null; $('bFire').disabled = true; }
+  else if (k === 'm') { SND.setMute(!SND.muted); refreshHud(); }
+});
+
+/* =====================================================================
+   Render loop
+   ===================================================================== */
+let lastT = performance.now(), lastW = 0, lastH = 0;
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), w = canvas.clientWidth, h = canvas.clientHeight;
+  if (w !== lastW || h !== lastH) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); lastW = w; lastH = h; focusCam(focusMode, false); }
+}
+function highlightCells(b, cells, col) { cells.forEach(([c, r]) => decal(b.cx + c - 4.5, 0.02, r - 4.5, 0.92, 0.92, 0, 2, col)); }
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now; T += dt;
+  resize();
+  const k = damp(3.2, dt);
+  ['tx', 'tz', 'dist', 'pitch', 'yaw'].forEach(p => { cam[p] += (camT[p] - cam[p]) * k; });
+  if (G.phase === 'menu') { camT.yaw = Math.sin(T * 0.18) * 0.42; camT.pitch = 0.95 + Math.sin(T * 0.13) * 0.1; }
+  cam.shake = Math.max(0, cam.shake - dt * 1.4);
+  const shakeCam = Object.assign({}, cam);
+  const travel = Math.hypot(camT.tx - cam.tx, camT.tz - cam.tz);
+  shakeCam.dist += Math.min(15, travel * 0.5); shakeCam.yaw += clamp((camT.tx - cam.tx) * 0.012, -0.25, 0.25); if (cam.shake > 0.01) { shakeCam.tx += (Math.random() - .5) * cam.shake * .5; shakeCam.tz += (Math.random() - .5) * cam.shake * .5; }
+
+  stepFx(dt); stepShells(dt);
+  BD.forEach(b => b.ships.forEach(s => s.update(dt)));
+
+  const W = canvas.clientWidth, H = canvas.clientHeight, vp = viewProj(shakeCam, W / H);
+  VP = Mx.mul(vp.P, vp.V); EYE = vp.e;
+  CAM_R = [vp.V[0], vp.V[4], vp.V[8]]; CAM_U = [vp.V[1], vp.V[5], vp.V[9]];
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.clearColor(0.02, 0.07, 0.11, 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(true);
+
+  // sea
+  gl.useProgram(PW.p); gl.uniformMatrix4fv(PW.u.uVP, false, VP); gl.uniformMatrix4fv(PW.u.uM, false, Mx.scale(400, 1, 400));
+  gl.uniform1f(PW.u.uT, T); gl.uniform2f(PW.u.uB0, BOARD_X[0], 0); gl.uniform2f(PW.u.uB1, BOARD_X[1], 0); gl.uniform3fv(PW.u.uSun, SUN); gl.uniform3fv(PW.u.uCam, EYE);
+  gl.bindBuffer(gl.ARRAY_BUFFER, QUAD); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 12, 0); gl.disableVertexAttribArray(1); gl.disableVertexAttribArray(2);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+  // frames
+  use3d(); BD.forEach(b => drawMesh(MESH.frame, Mx.trans(b.cx, 0, 0)));
+
+  // decals (no depth writes)
+  gl.depthMask(false); useDecal();
+  const lc = [.8, .9, 1, .85];
+  BD.forEach(b => { for (let i = 0; i < 10; i++) { labelDecal(i, b.cx + i - 4.5, -5.3, .42, lc); labelDecal(10 + i, b.cx - 5.3, i - 4.5, .42, lc); } });
+  if (G.phase === 'place') { decal(0, 0.015, 7.75, 11.2, 3.6, 0, 2, [.02, .09, .14, .5]); decal(0, 0.02, 7.75, 11.2, 3.6, 0, 0, [.5, .8, 1, .25], .02); }
+  // shadows
+  BD.forEach(b => b.ships.forEach(s => {
+    if (s.sunk && s.sinkT > 2) return;
+    const lift = s.y + 0.15;
+    decal(b.cx + s.x + 0.14 + lift * 0.45, 0.012, s.z + 0.12 + lift * 0.3, s.len() + 0.5, 1.25, s.yaw, 0, [0, 0.02, 0.05, clamp(0.42 - s.y * 0.28, .12, .42)], .3);
+  }));
+  shells.forEach(s => decal(s.wx, 0.02, s.wz, 0.6 + s.y * 0.04, 0.6 + s.y * 0.04, 0, 3, [0, 0, 0, 0.35 * (s.t / s.dur)], .6));
+  // placement feedback
+  if (G.phase === 'place') {
+    if (G.sel && G.sel.placed) { const s = G.sel; decal(s.x, 0.02, s.z, s.len() + 0.35, 1.2, s.yaw, 0, [1, .78, .3, .55 + Math.sin(T * 5) * .15], .22); }
+    if (G.drag && G.drag.moved) {
+      const s = G.drag.s, cx = s.tx, cz = s.tz;
+      if (Math.abs(cx) < 6 && Math.abs(cz) < 6) {
+        const o = originOf(s.L, s.vert, cx, cz), ok = validAt(s, o.c, o.r, s.vert);
+        highlightCells(BD[0], cellsOf({ L: s.L, c: o.c, r: o.r, vert: s.vert }).filter(([c, r]) => inB(c, r)), ok ? [.3, 1, .55, .38] : [1, .3, .25, .42]);
+      }
+    }
+  }
+  // battle feedback
+  if (G.phase === 'battle' || G.phase === 'over') {
+    const b = BD[1];
+    if (b.hover && G.turn === 'me' && !G.busy) { highlightCells(b, [b.hover], [1, 1, 1, .14]); decal(b.cx + b.hover[0] - 4.5, 0.03, b.hover[1] - 4.5, 1.1, 1.1, T * .5, 5, [1, .86, .4, .95]); }
+    if (b.target && G.turn === 'me') { const p = 1 + Math.sin(T * 8) * .06; decal(b.cx + b.target[0] - 4.5, 0.03, b.target[1] - 4.5, 1.25 * p, 1.25 * p, -T * .8, 5, [1, .35, .3, 1]); highlightCells(b, [b.target], [1, .3, .25, .16]); }
+  }
+  // fire glows
+  BD.forEach(b => b.fires.forEach(f => decal(f.x, 0.025, f.z, 1.3, 1.3, 0, 3, [1, .35, .08, .22 + Math.sin(T * 9 + f.x * 3) * .06], .9)));
+  // rings
+  rings.forEach(r => { if (r.t < 0) return; const u = r.t / r.dur, rad = r.r1 * (1 - Math.pow(1 - u, 2)), sz = r.r1 * 2.2; decal(r.x, 0.03, r.z, sz, sz, 0, 1, [r.col[0], r.col[1], r.col[2], r.col[3] * (1 - u)], rad / (sz / 2), r.w * (1 - u * .5)); });
+
+  // solid things
+  gl.depthMask(true); use3d();
+  BD.forEach(b => b.ships.forEach(s => {
+    let tint = null, emis = 0;
+    if (s.enemy) tint = s.sunk ? [.18, .06, .05, .65] : [.55, .16, .12, .4];
+    else if (s.sunk) tint = [.1, .05, .04, .6];
+    if (s.held) emis = .1; else if (G.phase === 'place' && s === G.sel) emis = .06;
+    drawMesh(MESH[s.type], s.pose(), tint, 1, emis);
+  }));
+  BD.forEach(b => b.pegs.forEach(p => drawMesh(p.hit ? MESH.pegHit : MESH.pegMiss, Mx.trans(b.cx + p.c - 4.5, p.y, p.r - 4.5), null, 1, p.hit ? .12 : .03)));
+  shells.forEach(s => { if (s.y !== undefined) drawMesh(MESH.shell, Mx.compose(s.x, s.y, s.z, 0, 0, 0, 1), [1, .8, .4, .5], 1, .4); });
+
+  // particles
+  gl.depthMask(false); drawParts(false); drawParts(true); gl.depthMask(true);
+}
+requestAnimationFrame(frame);
+
+/* =====================================================================
+   Online play
+   - Firebase (same project as the rest of the site) is only used to introduce
+     the two players: a room document + the invite message in your chat.
+   - The game itself runs peer-to-peer over a WebRTC data channel.
+   ===================================================================== */
+const FBCFG = { apiKey: "AIzaSyDJhWSi7QZKXtOPYwKHPF7zPg_klh1If7w", authDomain: "damp-2406a.firebaseapp.com", projectId: "damp-2406a", appId: "1:940989851976:web:f8fd07c258afa71fd22b7d" };
+const SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
+const ICE = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }] };
+let FB = null;
+async function fbInit() {
+  if (FB) return FB;
+  const [A, Au, F] = await Promise.all([import(SDK + 'firebase-app.js'), import(SDK + 'firebase-auth.js'), import(SDK + 'firebase-firestore.js')]);
+  const app = A.getApps().length ? A.getApp() : A.initializeApp(FBCFG), auth = Au.getAuth(app), db = F.getFirestore(app);
+  await new Promise(r => { const u = Au.onAuthStateChanged(auth, () => { u(); r(); }); });
+  return FB = { F, db, auth };
+}
+const myName = () => ((FB.auth.currentUser.email || '').replace('@damp.example', '') || 'player');
+const pairId = (a, b) => a < b ? a + '_' + b : b + '_' + a;
+async function sha(str) {
+  try { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)); return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, '0')).join(''); }
+  catch (e) { return ''; }
+}
+function gathered(pc) {
+  return new Promise(r => {
+    if (pc.iceGatheringState === 'complete') return r();
+    const tm = setTimeout(r, 4000);
+    pc.addEventListener('icegatheringstatechange', () => { if (pc.iceGatheringState === 'complete') { clearTimeout(tm); r(); } });
+  });
+}
+
+/* ---------- the remote opponent (talks over the data channel) ---------- */
+class Remote {
+  constructor(pc, dc, role, name) {
+    this.pc = pc; this.dc = dc; this.role = role; this.name = name || 'Enemy'; this.dead = false; this.lastSeen = Date.now();
+    this.resetRound();
+    dc.onmessage = e => { this.lastSeen = Date.now(); let m; try { m = JSON.parse(e.data); } catch (x) { return; } this.handle(m); };
+    dc.onclose = () => this.left();
+    this.hb = setInterval(() => { this.send({ t: 'ping' }); if (Date.now() - this.lastSeen > 15000) this.left(); }, 3000);
+    this.send({ t: 'hi', name: FB && FB.auth.currentUser ? myName() : 'player' });
+  }
+  resetRound() { this.meReady = false; this.oppReady = false; this.started = false; this.pending = {}; this.myShots = []; this.salt = ''; this.commit = ''; }
+  send(m) { try { if (this.dc.readyState === 'open') this.dc.send(JSON.stringify(m)); } catch (e) { } }
+  async ready(layout) {
+    this.salt = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    this.commit = await sha(JSON.stringify(layout) + this.salt);
+    this.meReady = true; this.send({ t: 'ready', commit: this.commit }); this.tryStart();
+  }
+  tryStart() {
+    if (this.role === 'host' && this.meReady && this.oppReady && !this.started) {
+      this.started = true; const first = Math.random() < .5 ? 'host' : 'guest';
+      this.send({ t: 'start', first }); startBattle(first === 'host' ? 'me' : 'opp');
+    }
+  }
+  shoot(c, r) { return new Promise((res, rej) => { this.pending[c + ',' + r] = { res, rej }; this.send({ t: 'shot', c, r }); }); }
+  handle(m) {
+    switch (m.t) {
+      case 'hi': this.name = String(m.name || 'Enemy').slice(0, 24); G.oppName = this.name; break;
+      case 'ready': this.oppCommit = m.commit; this.oppReady = true; this.tryStart(); break;
+      case 'start': if (this.role === 'guest' && !this.started && G.phase === 'wait') { this.started = true; startBattle(m.first === 'guest' ? 'me' : 'opp'); } break;
+      case 'shot':
+        if (G.phase === 'battle' && G.turn === 'opp' && inB(m.c, m.r) && G.fleet) { const res = onOppShot(m.c, m.r); this.send({ t: 'res', c: res.c, r: res.r, hit: res.hit, sunk: res.sunk, win: res.win }); }
+        break;
+      case 'res': { const p = this.pending[m.c + ',' + m.r]; if (p) { delete this.pending[m.c + ',' + m.r]; this.myShots.push(m); p.res(m); } break; }
+      case 'reveal': this.verify(m); break;
+      case 'again': G.oppAgain = true; if (G.meAgain) startPlacement(); break;
+      case 'bye': this.left(); break;
+    }
+  }
+  reveal(layout) { this.send({ t: 'reveal', fleet: layout, salt: this.salt }); }
+  async verify(m) {
+    let ok = Array.isArray(m.fleet) && m.fleet.length === 5;
+    try {
+      if (ok && this.oppCommit) { const h = await sha(JSON.stringify(m.fleet) + m.salt); if (h && h !== this.oppCommit) ok = false; }
+      if (ok) { const f = new Fleet(m.fleet.map(s => ({ id: s.id, type: s.type, L: s.L, c: s.c, r: s.r, vert: !!s.vert }))); this.myShots.forEach(s => { if (f.receive(s.c, s.r).hit !== s.hit) ok = false; }); revealRemaining(f.layout()); }
+    } catch (e) { ok = false; }
+    if (!ok) toast(t('cheat'), 6000);
+  }
+  left() {
+    if (this.dead) return; this.dead = true; clearInterval(this.hb);
+    Object.keys(this.pending).forEach(k => { try { this.pending[k].rej(new Error('left')); } catch (e) { } });
+    if (G.mode !== 'online' || G.opp !== this) return;
+    if (G.over) { $('bAgain').disabled = true; return; }
+    G.over = true; G.phase = 'over'; $('bBattle').classList.add('hide'); $('bPlace').classList.add('hide'); turnBox('', '');
+    $('end').classList.add('lose'); $('endT').textContent = '⚓'; $('endS').textContent = t('oppLeft'); $('endStats').innerHTML = '';
+    $('bAgain').disabled = true; $('end').classList.remove('hide');
+  }
+  close() { if (this.dead) return; this.send({ t: 'bye' }); this.dead = true; clearInterval(this.hb); try { this.dc.close(); this.pc.close(); } catch (e) { } }
+}
+
+/* ---------- lobby: create room / invite / join ---------- */
+const LB = { pc: null, dc: null, ref: null, unsub: null, code: '', timer: 0, sent: {}, people: [], joining: false, role: null };
+const lbStatus = (txt, cls) => { const p = $('lbStatus'); p.textContent = txt || ''; p.className = cls || ''; };
+const inviteLink = code => { const u = new URL(location.href); u.search = ''; u.hash = ''; u.searchParams.set('room', code); return u.href; };
+
+async function closeRoom(keepPc) {
+  clearTimeout(LB.timer); try { LB.unsub && LB.unsub(); } catch (e) { } LB.unsub = null;
+  if (LB.ref && FB) { try { await FB.F.deleteDoc(LB.ref); } catch (e) { } }
+  LB.ref = null;
+  if (!keepPc) { try { LB.dc && LB.dc.close(); LB.pc && LB.pc.close(); } catch (e) { } LB.pc = null; LB.dc = null; }
+  LB.code = '';
+}
+function connected(role, oppName) {
+  clearTimeout(LB.timer);
+  const pc = LB.pc, dc = LB.dc; LB.pc = LB.dc = null;
+  if (LB.ref && FB) { FB.F.deleteDoc(LB.ref).catch(() => { }); } LB.ref = null; try { LB.unsub && LB.unsub(); } catch (e) { } LB.unsub = null;
+  G.mode = 'online'; G.oppName = oppName || 'Enemy'; G.opp = new Remote(pc, dc, role, oppName);
+  toast(t('connected', { n: G.oppName })); SND.horn();
+  startPlacement();
+}
+function armTimeout() { clearTimeout(LB.timer); LB.timer = setTimeout(() => { lbStatus(t('lbFail'), 'bad'); $('lbRetry').classList.remove('hide'); }, 25000); }
+function newPc() {
+  const pc = new RTCPeerConnection(ICE);
+  pc.onconnectionstatechange = () => { if (pc.connectionState === 'failed' && G.phase === 'menu') { lbStatus(t('lbFail'), 'bad'); $('lbRetry').classList.remove('hide'); } };
+  return pc;
+}
+async function hostRoom() {
+  await closeRoom(); LB.role = 'host'; $('lbCode').textContent = ''; $('lbLink').value = ''; lbStatus(t('lbPrep'));
+  const fb = FB, pc = newPc(); LB.pc = pc; const dc = pc.createDataChannel('g'); LB.dc = dc;
+  let guestName = '';
+  dc.onopen = () => connected('host', guestName);
+  await pc.setLocalDescription(await pc.createOffer()); await gathered(pc);
+  const L = 'ABCDEFGHJKMNPQRSTUVWXYZ'; let code, ref;
+  for (let i = 0; i < 8; i++) {
+    code = 'B' + Array.from({ length: 4 }, () => L[Math.random() * L.length | 0]).join(''); ref = fb.F.doc(fb.db, 'rooms', code);
+    if (!(await fb.F.getDoc(ref)).exists()) break;
+  }
+  await fb.F.setDoc(ref, { host: fb.auth.currentUser.uid, hostName: myName(), game: 'battleship', offer: { type: 'offer', sdp: pc.localDescription.sdp }, at: Date.now() });
+  LB.ref = ref; LB.code = code; $('lbCode').textContent = code; $('lbLink').value = inviteLink(code);
+  lbStatus(t('lbWait'), 'ok'); $('lbRetry').classList.add('hide');
+  LB.unsub = fb.F.onSnapshot(ref, s => {
+    const d = s.data();
+    if (d && d.answer && pc.signalingState === 'have-local-offer') { guestName = d.guestName || ''; lbStatus(t('lbJoining')); armTimeout(); pc.setRemoteDescription(d.answer).catch(() => { lbStatus(t('lbFail'), 'bad'); }); }
+  });
+}
+async function joinRoom(raw) {
+  const code = String(raw || '').trim().toUpperCase(); if (!code || LB.joining) return;
+  LB.joining = true; lbStatus(t('lbJoining')); $('lbRetry').classList.add('hide');
+  try {
+    await closeRoom(); const fb = FB; LB.role = 'guest';
+    const ref = fb.F.doc(fb.db, 'rooms', code), snap = await fb.F.getDoc(ref);
+    if (!snap.exists()) { lbStatus(t('lbNoRoom'), 'bad'); return; }
+    const d = snap.data();
+    if (d.game && d.game !== 'battleship') { lbStatus(t('lbNoRoom'), 'bad'); return; }
+    if (d.guest) { lbStatus(t('lbFull'), 'bad'); return; }
+    if (Date.now() - (d.at || 0) > 45 * 60 * 1000) { lbStatus(t('lbOld'), 'bad'); return; }
+    const pc = newPc(); LB.pc = pc;
+    pc.ondatachannel = e => { LB.dc = e.channel; e.channel.onopen = () => connected('guest', d.hostName); };
+    await pc.setRemoteDescription(d.offer); await pc.setLocalDescription(await pc.createAnswer()); await gathered(pc);
+    await fb.F.updateDoc(ref, { guest: fb.auth.currentUser.uid, guestName: myName(), answer: { type: 'answer', sdp: pc.localDescription.sdp } });
+    armTimeout();
+  } catch (e) { lbStatus(t('lbErr', { e: (e && (e.code || e.message)) || '?' }), 'bad'); $('lbRetry').classList.remove('hide'); }
+  finally { LB.joining = false; }
+}
+async function loadPeople() {
+  const fb = FB, uid = fb.auth.currentUser.uid, map = new Map();
+  try { (await fb.F.getDocs(fb.F.collection(fb.db, 'people'))).forEach(d => { if (d.id !== uid) map.set(d.id, d.data().name || 'player'); }); } catch (e) { }
+  try { (await fb.F.getDocs(fb.F.query(fb.F.collection(fb.db, 'flappy'), fb.F.limit(50)))).forEach(d => { if (d.id !== uid && !map.has(d.id)) map.set(d.id, d.data().name || 'player'); }); } catch (e) { }
+  LB.people = Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name)); drawPeople();
+}
+function drawPeople() {
+  const q = $('lbFilter').value.trim().toLowerCase(), box = $('lbPeople'); box.textContent = '';
+  const list = LB.people.filter(p => !q || p.name.toLowerCase().indexOf(q) >= 0);
+  if (!list.length) { const p = document.createElement('p'); p.textContent = t('lbNoPeople'); box.appendChild(p); return; }
+  list.forEach(p => {
+    const row = document.createElement('div'); row.className = 'pp' + (LB.sent[p.id] ? ' sent' : '');
+    const n = document.createElement('span'); n.textContent = p.name;
+    const b = document.createElement('button'); b.className = 'btn sm'; b.textContent = LB.sent[p.id] ? t('sent') : t('invite'); b.disabled = !LB.code;
+    b.onclick = () => sendInvite(p, b); row.append(n, b); box.appendChild(row);
+  });
+}
+// the invite is an ordinary chat message, so it shows up in the site's People / message popup
+async function sendInvite(p, btn) {
+  if (!LB.code) return; btn.disabled = true;
+  const fb = FB, me = fb.auth.currentUser.uid, id = pairId(me, p.id), chat = fb.F.doc(fb.db, 'chats', id), ids = [me, p.id].sort();
+  const names = {}; names[me] = myName(); names[p.id] = p.name;
+  const text = ('⚓ ' + t('inviteMsg') + ' ' + inviteLink(LB.code)).slice(0, 480), at = Date.now();
+  try {
+    await fb.F.setDoc(chat, { ids, names }, { merge: true });
+    await fb.F.addDoc(fb.F.collection(fb.db, 'chats', id, 'messages'), { from: me, text, at });
+    await fb.F.setDoc(chat, { ids, last: text.slice(0, 120), lastAt: at, lastFrom: me }, { merge: true });
+    LB.sent[p.id] = true; lbStatus(t('lbSent', { n: p.name }), 'ok'); drawPeople();
+  } catch (e) { btn.disabled = false; lbStatus(t('lbErr', { e: (e && (e.code || e.message)) || '?' }), 'bad'); }
+}
+async function openLobby(joinCode) {
+  G.mode = 'online'; hideAll(); langVis(true); $('lobby').classList.remove('hide'); $('lbMain').classList.add('hide'); $('lbRetry').classList.add('hide');
+  $('lbLoginBtn') && $('lbLoginBtn').remove();
+  lbStatus(t('lbJoining'));
+  try {
+    await fbInit();
+    if (!FB.auth.currentUser) {
+      lbStatus(t('lbLogin'), 'bad');
+      const a = document.createElement('a'); a.id = 'lbLoginBtn'; a.className = 'btn alt sm'; a.style.textDecoration = 'none'; a.style.textAlign = 'center'; a.textContent = t('open');
+      a.href = new URL('../', location.href).href; a.target = '_top'; $('lbStatus').after(a); $('lbRetry').classList.remove('hide'); return;
+    }
+  } catch (e) { lbStatus(t('lbErr', { e: (e && (e.code || e.message)) || '?' }), 'bad'); $('lbRetry').classList.remove('hide'); return; }
+  if (joinCode) { await joinRoom(joinCode); return; }
+  $('lbMain').classList.remove('hide'); drawPeople();
+  try { await hostRoom(); drawPeople(); } catch (e) { lbStatus(t('lbErr', { e: (e && (e.code || e.message)) || '?' }), 'bad'); $('lbRetry').classList.remove('hide'); }
+  loadPeople();
+}
+function leaveLobby() { closeRoom(); LB.sent = {}; showMenu(); }
+
+/* =====================================================================
+   Wiring + boot
+   ===================================================================== */
+$('lDa').onclick = () => setLang('da'); $('lEn').onclick = () => setLang('en');
+$('lvEasy').onclick = () => { G.level = 'easy'; $('lvEasy').classList.add('on'); $('lvHard').classList.remove('on'); SND.click(); };
+$('lvHard').onclick = () => { G.level = 'hard'; $('lvHard').classList.add('on'); $('lvEasy').classList.remove('on'); SND.click(); };
+$('bAI').onclick = () => { SND.init(); SND.click(); G.mode = 'ai'; startPlacement(); };
+$('bOnline').onclick = () => { SND.init(); SND.click(); openLobby(); };
+$('lbCancel').onclick = leaveLobby;
+$('lbRetry').onclick = () => openLobby();
+$('lbFilter').oninput = drawPeople;
+$('lbJoinBtn').onclick = () => joinRoom($('lbJoin').value);
+$('lbJoin').onkeydown = e => { if (e.key === 'Enter') joinRoom($('lbJoin').value); };
+$('lbCopy').onclick = () => {
+  const v = $('lbLink').value; if (!v) return;
+  const ok = () => toast(t('linkCopied'));
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(v).then(ok, () => { $('lbLink').select(); });
+  else { $('lbLink').select(); try { document.execCommand('copy'); ok(); } catch (e) { } }
+};
+$('lbLink').onclick = () => $('lbLink').select();
+$('bRotate').onclick = () => rotateShip(G.drag ? G.drag.s : G.sel);
+$('bRandom').onclick = randomizeMine;
+$('bReset').onclick = () => { ships.forEach(s => { s.y = Math.max(s.y, .2); sendHome(s); }); G.sel = null; SND.click(); refreshHud(); };
+$('bReady').onclick = readyUp;
+$('bFire').onclick = () => { if (G.aim) fireAt(G.aim[0], G.aim[1]); };
+$('vMine').onclick = () => { SND.click(); setView('mine'); };
+$('vEnemy').onclick = () => { SND.click(); setView('enemy'); };
+$('bSnd').onclick = () => { SND.init(); SND.setMute(!SND.muted); refreshHud(); };
+$('bMenu').onclick = () => { SND.click(); showMenu(); };
+$('bEndMenu').onclick = () => { SND.click(); showMenu(); };
+$('bBoard').onclick = () => { $('end').classList.add('hide'); const b = document.createElement('button'); b.className = 'btn sm'; b.id = 'bBack'; b.textContent = '↺'; b.style.cssText = 'position:absolute;right:12px;bottom:calc(14px + env(safe-area-inset-bottom,0));z-index:7'; b.onclick = () => { b.remove(); $('end').classList.remove('hide'); }; $('app').appendChild(b); };
+$('bAgain').onclick = () => {
+  SND.click();
+  if (G.mode === 'ai') { startPlacement(); return; }
+  if (!G.opp || G.opp.dead) return;
+  G.meAgain = true; G.opp.send({ t: 'again' }); $('bAgain').disabled = true; $('bAgain').textContent = t('waitOpp');
+  if (G.oppAgain) startPlacement();
+};
+
+// a fresh round of an online match resets the opponent's per-round state
+const _startPlacement = startPlacement;
+startPlacement = function () {
+  const b = $('bBack'); if (b) b.remove();
+  _startPlacement();
+  if (G.opp && G.opp.resetRound && G.mode === 'online') G.opp.resetRound();
+};
+
+window.addEventListener('pagehide', () => { try { if (G.opp && G.opp.close) G.opp.close(); closeRoom(); } catch (e) { } });
+window.addEventListener('resize', () => { lastW = 0; });
+
+applyLang(); SND.muted = SND.muted; showMenu(); refreshHud();
+window.__bs = { G, BD, cam, camT, addPeg, boomAt, splashAt, ships: () => ships, toScreen, fireAt, readyUp, startPlacement: () => startPlacement(), randomizeMine, rayHit, setView };
+(function () {
+  const room = new URLSearchParams(location.search).get('room');
+  if (room) { G.mode = 'online'; openLobby(room.toUpperCase()); }
+})();
+</script>
+</body></html>

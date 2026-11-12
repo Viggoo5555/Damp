@@ -77,6 +77,9 @@ select{font:inherit;color:var(--fg);background:#0d2434;border:2px solid var(--li
 .panel p{margin:6px 0;color:#b9cbd8;font-size:16px;line-height:1.35}
 .panel .rules{text-align:left;font-size:15px;color:#a9bdcb;margin:12px 0;line-height:1.45}
 .panel .rules b{color:#e8dcc0}
+#flying{position:absolute;inset:0;pointer-events:none;z-index:7;overflow:hidden}
+.flycard{position:absolute;min-width:62px;height:34px;padding:0 9px;border:2px solid #2b5672;border-left:6px solid #888;background:#0c2030f6;
+ display:flex;align-items:center;justify-content:center;gap:3px;font:700 13px/1 var(--b);letter-spacing:.03em;color:#fff;border-radius:3px;box-shadow:0 8px 22px #000a,0 0 12px #f0b84a33;white-space:nowrap}
 #toast{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9;background:#0a1c2af2;border:2px solid var(--brass);padding:9px 18px;
  font-size:17px;letter-spacing:.05em;pointer-events:none;opacity:0;transition:opacity .18s;max-width:80vw;text-align:center}
 #toast.on{opacity:1}
@@ -207,6 +210,7 @@ select{font:inherit;color:var(--fg);background:#0d2434;border:2px solid var(--li
 </div>
 
 <div id="modal" class="hide"><div id="modalCard"></div></div>
+<div id="flying"></div>
 <div id="toast"></div>
 </div>
 
@@ -613,9 +617,49 @@ function payCost(pi,cost){
   for(const r in cost){p.res[r]-=cost[r];G.bank[r]+=cost[r];}
   return true;
 }
+/* ---------- resource pick-up animation ---------- */
+const RES_COLOR={wood:'#4f8a45',brick:'#b4583a',sheep:'#a8c973',wheat:'#e0bc55',ore:'#8a95a3'};
+let GAIN_FROM=null,flySeq=0,flySeqAt=0;
+function screenOf(x,y,z){
+  const v=new THREE.Vector3(x,y,z).project(camera);
+  return {x:(v.x*.5+.5)*innerWidth,y:(-v.y*.5+.5)*innerHeight};
+}
+function flyResource(r,n=1,from){
+  if(!$('flying'))return;
+  const start=from||{x:innerWidth*.5,y:innerHeight*.42};
+  const target=document.querySelector(`#res .rc.${r}`);
+  if(!target)return;
+  const tr=target.getBoundingClientRect();
+  const to={x:tr.left+tr.width/2,y:tr.top+tr.height/2};
+  const now=performance.now();
+  if(now-flySeqAt>700)flySeq=0;
+  flySeqAt=now;
+  const delay=(flySeq++)*80,dx=to.x-start.x,dy=to.y-start.y;
+  setTimeout(()=>{
+    const el=document.createElement('div');
+    el.className='flycard';
+    el.textContent='+'+n+' '+RES_LABEL[r];
+    el.style.borderLeftColor=RES_COLOR[r];
+    el.style.left=(start.x-40)+'px';
+    el.style.top=(start.y-17)+'px';
+    $('flying').appendChild(el);
+    const anim=el.animate([
+      {transform:'translate(0,0) scale(.5)',opacity:0},
+      {transform:`translate(${dx*.5}px,${dy*.5-90}px) scale(1)`,opacity:1,offset:.55},
+      {transform:`translate(${dx}px,${dy}px) scale(.86)`,opacity:.92}
+    ],{duration:700,easing:'cubic-bezier(.22,.75,.3,1)'});
+    anim.onfinish=()=>{
+      el.remove();
+      const t=document.querySelector(`#res .rc.${r}`);
+      if(t){t.classList.remove('flash');void t.offsetWidth;t.classList.add('flash')}
+    };
+  },delay);
+}
 function gain(pi,r,n=1){
   const have=Math.min(n,G.bank[r]);if(have<=0)return 0;
-  P(pi).res[r]+=have;G.bank[r]-=have;return have;
+  P(pi).res[r]+=have;G.bank[r]-=have;
+  if(pi===0)flyResource(r,have,GAIN_FROM);
+  return have;
 }
 function log(msg){
   G.log.push(msg);if(G.log.length>40)G.log.shift();
@@ -717,17 +761,19 @@ function produce(sum){
     for(const k of h.corners){
       const own=ownerAt(k);if(own<0)continue;
       const n=G.b.city[k]!==undefined?2:1;
-      awards.push([own,h.terrain,n]);
+      awards.push([own,h.terrain,n,h.i]);
       demand[h.terrain]=(demand[h.terrain]||0)+n;
     }
   }
   const short=new Set(Object.keys(demand).filter(r=>G.bank[r]<demand[r]));
   const gained={0:{},1:{},2:{},3:{}};
-  for(const [own,res,n] of awards){
+  for(const [own,res,n,hi] of awards){
     if(short.has(res))continue;
+    if(own===0)GAIN_FROM=screenOf(hexes[hi].x,TOP,hexes[hi].z);
     const got=gain(own,res,n);
     if(got)gained[own][res]=(gained[own][res]||0)+got;
   }
+  GAIN_FROM=null;
   if(short.size)log(`The bank is short of ${[...short].map(r=>RES_LABEL[r]).join(', ')}`);
   for(const pi in gained){
     const parts=Object.keys(gained[pi]);
@@ -792,6 +838,11 @@ function steal(pi,from){
   for(const r of RES)for(let i=0;i<victim.res[r];i++)pool.push(r);
   const r=pool[rnd(pool.length)];
   victim.res[r]--;P(pi).res[r]++;
+  if(pi===0){
+    const row=document.querySelectorAll('#players .pl')[from];
+    GAIN_FROM=row?(()=>{const b=row.getBoundingClientRect();return {x:b.left+b.width/2,y:b.top+b.height/2}})():null;
+    flyResource(r,1,GAIN_FROM);GAIN_FROM=null;
+  }
   log(`${P(pi).name} stole a card from ${victim.name}`);
 }
 function moveRobber(hexIdx){
@@ -1199,6 +1250,7 @@ function openTrade(){
     $('tw').onchange=e=>{want=e.target.value;render()};
     $('tBank').onclick=()=>{
       me.res[give]-=ratio;G.bank[give]+=ratio;me.res[want]++;G.bank[want]--;
+      flyResource(want,1,{x:innerWidth/2,y:innerHeight*.45});
       log(`You traded ${ratio} ${RES_LABEL[give]} for 1 ${RES_LABEL[want]}`);
       closeModal();updateHud();
     };
@@ -1391,7 +1443,9 @@ async function handleClick(pt){
       const second=Object.keys(G.b.settlement).some(x=>G.b.settlement[x]===pi)||Object.keys(G.b.city).some(x=>G.b.city[x]===pi);
       addSettlement(pi,k);
       if(second){
+        GAIN_FROM=screenOf(V[k].x,TOP,V[k].z);
         for(const hi of V[k].hexes){const h=hexes[hi];if(h.terrain!=='desert')gain(pi,h.terrain,1)}
+        GAIN_FROM=null;
         log('You placed your second settlement and took its resources');
       }else log('You placed a settlement');
       G.focus=k;G.clickMode='setupRoad';
@@ -1633,7 +1687,7 @@ requestAnimationFrame(loop);
 if(location.hash==='#dev'){
   window.__catan={G,V,E,hexes,P,doRoll,produce,addSettlement,addRoad,addCity,updateSpecial,vp,longestRoad,
     finishSetup,beginBuild,openTrade,endTurn,ratioFor,steal,playDevCard,buyDev,canPlayDev,checkWin,
-    syncPieces,updateHud,camera,cam,renderer,scene,startGame,aiTurn,nextTurn,askResources};
+    syncPieces,updateHud,camera,cam,renderer,scene,startGame,aiTurn,nextTurn,askResources,flyResource,gain};
 }
 </script>
 </body></html>

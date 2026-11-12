@@ -107,9 +107,18 @@ a{text-decoration:none}
 .irow input{flex:1;min-width:0}
 input[type=text],input[type=password]{width:100%;background:#06121b;border:2px solid var(--line);color:var(--fg);padding:9px 11px;font:700 18px/1 var(--b);letter-spacing:.05em;outline:none;user-select:text;-webkit-user-select:text}
 input[type=text]:focus,input[type=password]:focus{border-color:var(--brass)}
-#onWait{color:var(--brass)}
 #online .irow .btn{flex:1}
-#onPick h3{margin-top:6px}
+#onMain{display:flex;flex-direction:column;gap:8px}
+.btn.big{padding:16px 22px 15px;font-size:22px;width:100%}
+.vhead{display:flex;align-items:center;gap:10px;margin:2px 0 0}
+.vhead h3{margin:0}
+.back{width:34px;height:32px;flex:none;display:grid;place-items:center;background:#06121b;border:2px solid var(--line);
+ color:var(--fg);font:700 20px/1 var(--b);padding:0}
+.back:hover{border-color:var(--brass);color:var(--brass)}
+.share{display:flex;align-items:center;gap:8px;border-top:2px solid #16374f;padding-top:10px;margin-top:4px;
+ font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.share b{font:400 22px/1 var(--d);letter-spacing:.16em;color:var(--brass)}
+.share .btn{margin-left:auto}
 .plist{display:flex;flex-direction:column;gap:6px;max-height:230px;overflow-y:auto;padding-right:2px}
 .person{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:#06121b;border:2px solid var(--line);
  color:var(--fg);padding:9px 10px;font:700 18px/1 var(--b);letter-spacing:.04em;transition:border-color .12s,color .12s}
@@ -196,20 +205,19 @@ input[type=text]:focus,input[type=password]:focus{border-color:var(--brass)}
      <div class="irow"><button class="btn sm" id="onIn">Sign in</button><button class="btn alt sm" id="onUp">Create account</button></div>
     </div>
     <div id="onMain" class="hide">
-     <div class="irow"><button class="btn" id="onHost">Create a room</button><button class="btn alt" id="onInvite">Invite a player</button></div>
-     <div id="onHostBox" class="hide">
-      <h3>Share this code or link</h3>
-      <div class="code" id="onCode"></div>
-      <div class="irow"><input type="text" id="onLink" readonly><button class="btn sm" id="onCopy">Copy</button></div>
-      <p id="onWait">Waiting for your friend&hellip;</p>
-     </div>
-     <div id="onPick" class="hide">
-      <h3>Invite a Damp player</h3>
-      <p class="note" id="onPickNote">Looking for players&hellip;</p>
-      <div id="onPeople" class="plist"></div>
-     </div>
-     <h3>Got a code?</h3>
+     <button class="btn big" id="onInvite">Invite a friend</button>
+     <button class="btn ghost" id="onJoinOpen">Join with a code</button>
+    </div>
+    <div id="onPick" class="hide">
+     <div class="vhead"><button class="back" id="onPickBack" aria-label="Back">&larr;</button><h3>Choose a player</h3></div>
+     <p class="note" id="onPickNote">Looking for players&hellip;</p>
+     <div id="onPeople" class="plist"></div>
+     <div class="share"><span>Room</span><b id="onCode">&mdash;</b><button class="btn sm" id="onCopy">Copy link</button></div>
+    </div>
+    <div id="onJoinView" class="hide">
+     <div class="vhead"><button class="back" id="onJoinBack" aria-label="Back">&larr;</button><h3>Enter a code</h3></div>
      <div class="irow"><input type="text" id="onJoin" maxlength="8" placeholder="CODE" autocomplete="off" autocapitalize="characters"><button class="btn alt sm" id="onJoinBtn">Join</button></div>
+     <p class="note">The friend who invited you can also send a link that joins automatically.</p>
     </div>
     <div class="btns"><button class="btn ghost sm" id="onBack">Back</button></div>
    </div>
@@ -2119,10 +2127,11 @@ async function fbInit() {
 function renderOnline() {
   const who = NET.fb && NET.fb.auth.currentUser;
   $('onAuth').classList.toggle('hide', !!who);
-  $('onMain').classList.toggle('hide', !who);
+  if (who) showLobby('home');
+  else { $('onMain').classList.add('hide'); $('onPick').classList.add('hide'); $('onJoinView').classList.add('hide'); }
   if (who) {
     $('onName').value = meName();
-    onStatus('Signed in as ' + meName() + '. Create a room, or join one with a code.', 'ok');
+    onStatus('Signed in as ' + meName() + '. Invite a friend, or join their game.', 'ok');
   } else {
     onStatus('Sign in with the same account you use on Damp, then invite a friend.');
   }
@@ -2143,6 +2152,8 @@ async function openOnline() {
     if (NET.pendingCode && NET.fb.auth.currentUser) {
       const code = NET.pendingCode;
       NET.pendingCode = '';
+      showLobby('join');
+      $('onJoin').value = code;
       joinRoom(code);
     }
   } catch (e) {
@@ -2246,7 +2257,6 @@ function leaveOnline() {
   if (NET.ref && NET.fb) NET.fb.F.deleteDoc(NET.ref).catch(() => { });
   NET.ref = null;
   NET.code = '';
-  $('onHostBox').classList.add('hide');
   stopPeople();
   G.online = false;
   $('bResign').classList.add('hide');
@@ -2293,11 +2303,8 @@ async function hostRoom() {
   const keptCode = NET.code;
   await closeRoom();
   NET.invited.clear();
-  $('onHostBox').classList.add('hide');
-  $('onCode').textContent = '';
-  $('onLink').value = '';
+  $('onCode').textContent = '\u2014';
   onStatus('Preparing the table\u2026');
-  $('onHost').disabled = true;
   try {
     const fb = NET.fb;
     if (!fb || !fb.auth.currentUser) { onStatus('Sign in first.', 'bad'); return; }
@@ -2329,9 +2336,7 @@ async function hostRoom() {
     NET.ref = ref;
     NET.code = code;
     $('onCode').textContent = code;
-    $('onLink').value = inviteLink(code);
-    $('onHostBox').classList.remove('hide');
-    onStatus('Room ready. Send the code or link to your friend.', 'ok');
+    onStatus('Pick a player, or copy the link and send it yourself.', 'ok');
     clearTimeout(NET.timer);
     NET.timer = setTimeout(() => {
       if (!G.online) onStatus('Still waiting. The code stays valid, so you can send it again.', '');
@@ -2346,8 +2351,6 @@ async function hostRoom() {
     });
   } catch (e) {
     onStatus('Could not create the room: ' + ((e && (e.code || e.message)) || '?'), 'bad');
-  } finally {
-    $('onHost').disabled = false;
   }
 }
 
@@ -2400,13 +2403,21 @@ async function joinRoom(raw) {
 /* ---------- inviting one of the people on Damp ---------- */
 const presenceOn = at => !!at && Date.now() - at < 120000;
 
+function showLobby(view) {
+  $('onStatus').classList.toggle('hide', view !== 'home');
+  const foot = document.querySelector('#online .btns');
+  if (foot) foot.classList.toggle('hide', view !== 'home');
+  $('onMain').classList.toggle('hide', view !== 'home');
+  $('onPick').classList.toggle('hide', view !== 'pick');
+  $('onJoinView').classList.toggle('hide', view !== 'join');
+  if (view !== 'pick') stopPeople();
+}
+
 function stopPeople() {
   if (NET.peopleUnsub) { try { NET.peopleUnsub(); } catch (e) { } NET.peopleUnsub = null; }
   NET.people = new Map();
   const box = $('onPeople');
   if (box) box.textContent = '';
-  const pick = $('onPick');
-  if (pick) pick.classList.add('hide');
 }
 
 function drawPeople() {
@@ -2469,13 +2480,13 @@ function loadPeople() {
 async function openPicker() {
   const fb = NET.fb;
   if (!fb || !fb.auth.currentUser) return;
-  $('onPick').classList.remove('hide');
   $('onPickNote').textContent = 'Looking for players\u2026';
   if (!NET.code) {
     onStatus('Setting up a table for you\u2026');
     await hostRoom();
     if (!NET.code) { $('onPickNote').textContent = 'Could not make a room just now. Try again.'; return; }
   }
+  $('onCode').textContent = NET.code;
   loadPeople();
 }
 
@@ -2546,20 +2557,31 @@ async function withAuth(mode) {
 $('bOnline').addEventListener('click', () => { SND.init(); SND.pick(); openOnline(); });
 $('onBack').addEventListener('click', () => {
   SND.pick();
-  if (G.online) leaveOnline();
-  else { stopPeople(); $('online').classList.add('hide'); $('menu').classList.remove('hide'); }
+  if (G.online) { leaveOnline(); return; }
+  if (!$('onPick').classList.contains('hide') || !$('onJoinView').classList.contains('hide')) { showLobby('home'); return; }
+  stopPeople();
+  $('online').classList.add('hide');
+  $('menu').classList.remove('hide');
 });
 $('onIn').addEventListener('click', () => withAuth('in'));
 $('onUp').addEventListener('click', () => withAuth('up'));
 $('onPass').addEventListener('keydown', e => { if (e.key === 'Enter') withAuth('in'); });
-$('onHost').addEventListener('click', () => { SND.init(); SND.pick(); hostRoom(); });
-$('onInvite').addEventListener('click', () => { SND.init(); SND.pick(); openPicker(); });
+$('onInvite').addEventListener('click', () => { SND.init(); SND.pick(); showLobby('pick'); openPicker(); });
+$('onJoinOpen').addEventListener('click', () => { SND.pick(); showLobby('join'); $('onJoin').focus(); });
+$('onPickBack').addEventListener('click', () => { SND.pick(); showLobby('home'); });
+$('onJoinBack').addEventListener('click', () => { SND.pick(); showLobby('home'); });
 $('onJoinBtn').addEventListener('click', () => { SND.init(); SND.pick(); joinRoom($('onJoin').value); });
 $('onJoin').addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom($('onJoin').value); });
 $('onCopy').addEventListener('click', async () => {
-  const link = $('onLink').value;
-  try { await navigator.clipboard.writeText(link); $('onCopy').textContent = 'Copied'; setTimeout(() => $('onCopy').textContent = 'Copy', 1600); }
-  catch (e) { $('onLink').select(); document.execCommand && document.execCommand('copy'); }
+  if (!NET.code) return;
+  const link = inviteLink(NET.code);
+  try {
+    await navigator.clipboard.writeText(link);
+    $('onCopy').textContent = 'Copied';
+    setTimeout(() => { $('onCopy').textContent = 'Copy link'; }, 1600);
+  } catch (e) {
+    toast(link);
+  }
 });
 $('bResign').addEventListener('click', () => {
   if (!G.online || G.over) return;

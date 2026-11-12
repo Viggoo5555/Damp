@@ -49,7 +49,7 @@ select{font:inherit;color:var(--fg);background:#0d2434;border:2px solid var(--li
 .pl span{color:var(--brass);font-weight:700}
 .pl em{color:var(--dim);font-style:normal;font-size:12px}
 .pl u{text-decoration:none;color:#9fd0ff;font-size:12px}
-#logList{position:absolute;left:10px;top:204px;width:210px;max-height:104px;overflow:hidden;
+#logList{position:absolute;left:10px;top:238px;width:210px;max-height:100px;overflow:hidden;
  background:#07141fd0;border:2px solid #1d4159;padding:5px 8px;font-size:13px;line-height:1.32;color:#c3d4e0;display:flex;flex-direction:column-reverse}
 #logList div{border-top:1px solid #ffffff10;padding:1px 0}
 #logList div:last-child{color:#f0d9a8}
@@ -95,14 +95,51 @@ select{font:inherit;color:var(--fg);background:#0d2434;border:2px solid var(--li
 #meta{position:absolute;right:12px;top:56px;width:150px;display:flex;flex-direction:column;gap:4px;align-items:flex-end;font-size:13px;color:#a8bccb;text-align:right;pointer-events:none}
 #meta div{background:#07141fd0;border:1px solid #1d4159;padding:2px 7px}
 #meta b{color:var(--brass)}
+/* ---------- clearer hud, camera pad ---------- */
+#cam{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:4px;pointer-events:auto;z-index:3}
+#cam .chip{width:40px;height:36px;justify-content:center;padding:0;font-size:19px;line-height:1}
+#dsum{min-width:40px;justify-content:center;color:var(--brass);font-size:17px}
+#turnBox.you #turnName{color:#ffd87a}
+#players .pl{padding:5px 8px}
+#players .pl span.vp{color:#ffd87a;font:400 20px/1 var(--d);min-width:20px;text-align:center}
+#players .pl em{color:#8fa9ba}
+.rc{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:0;padding:4px 10px 3px 13px;min-width:76px;border:2px solid #1d4159;background:#07141fe6;overflow:hidden}
+.rc em{font-style:normal;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#9fb5c4;font-weight:700}
+.rc b{font:400 22px/1 var(--d);color:#fff;letter-spacing:.03em}
+.rc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--rc,#666)}
+.rc.wood{--rc:#4f8a45}.rc.brick{--rc:#b4583a}.rc.sheep{--rc:#a8c973}.rc.wheat{--rc:#e0bc55}.rc.ore{--rc:#8a95a3}
+#acts .btn{position:relative}
+#acts .btn.ready{box-shadow:0 0 0 2px #f0b84a66,0 0 16px #f0b84a44}
+@keyframes rollpulse{0%,100%{box-shadow:0 0 0 0 #f0b84a00}50%{box-shadow:0 0 0 5px #f0b84a4d}}
+#bRoll:not([disabled]){animation:rollpulse 1.7s infinite}
+#acts .btn i{white-space:nowrap}
+#res .rc.flash{animation:rcflash .5s}
+@keyframes rcflash{0%{background:#f0b84a55}100%{background:#07141fe6}}
+#helpPanel .rules b{display:inline-block;min-width:64px;color:#f0d9a8}
+#helpPanel .rules p{margin:5px 0}
+#modalCard .rules b{color:#f0d9a8}
+#modalCard .rules{text-align:left;font-size:15px;color:#b9cbd8;line-height:1.45;margin:8px 0}
+#modalCard .rules p{margin:4px 0}
 @media(max-width:560px){
- #players{width:164px;top:58px}.pl{font-size:12px;padding:3px 5px}.pl b{font-size:13px}
- #logList{width:170px;top:188px;font-size:12px;max-height:88px}
+ #top{gap:5px}
+ #bMenu{padding:6px 8px;font-size:13px}
+ #bHelp{width:30px;height:30px;justify-content:center;padding:0}
+ #turnBox{min-width:0;padding:2px 9px 4px}
+ #turnName{font-size:15px}#turnHint{display:block;font-size:10px;margin-top:0}
+ #right{gap:4px}
+ .die{width:28px;height:28px;font-size:17px}
+ #dsum{display:none}
+ #bRoll{padding:6px 9px;font-size:13px}
+ #players{width:152px;top:54px}.pl{font-size:11px;padding:2px 6px}.pl b{font-size:12px}
+ #players .pl span.vp{font-size:16px;min-width:16px}.pl em,.pl u{font-size:10px}
+ #logList{width:152px;top:190px;font-size:11px;max-height:66px}
  #meta{display:none}
- .die{width:32px;height:32px;font-size:19px}
- #turnName{font-size:20px}#turnBox{min-width:150px;padding:4px 12px 6px}
- #res{gap:3px}.rc{font-size:12px;padding:2px 6px}.rc b{font-size:14px}
- #acts .btn{font-size:13px;padding:6px 8px 5px}
+ #res{gap:3px}.rc{min-width:58px;padding:3px 7px 2px 10px}.rc em{font-size:9px}.rc b{font-size:18px}
+ #acts{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:100%}
+ #acts .btn{font-size:12px;padding:5px 6px 4px}#acts .btn i{font-size:9px;margin-top:1px}
+ #hint{bottom:calc(160px + env(safe-area-inset-bottom));font-size:13px}
+ #cam{right:auto;left:8px;top:58%}
+ #cam .chip{width:34px;height:30px;font-size:16px}
 }
 </style>
 </head><body>
@@ -113,9 +150,11 @@ select{font:inherit;color:var(--fg);background:#0d2434;border:2px solid var(--li
 <div id="hud" class="hide">
   <div id="top">
     <button id="bMenu" class="btn ghost sm">← Menu</button>
+    <button id="bHelp" class="chip" title="How to play">?</button>
     <div id="turnBox"><b id="turnName">Catan</b><span id="turnHint">Settling the island</span></div>
     <div id="right">
       <span class="die" id="d1">·</span><span class="die" id="d2">·</span>
+      <span class="chip" id="dsum" title="Dice total">—</span>
       <button id="bRoll" class="btn sm">Roll</button>
     </div>
   </div>
@@ -123,6 +162,13 @@ select{font:inherit;color:var(--fg);background:#0d2434;border:2px solid var(--li
   <div id="meta"></div>
   <div id="logList"></div>
   <div id="hint"></div>
+  <div id="cam">
+    <button class="chip" id="cRotL" title="Turn the board left">&#10226;</button>
+    <button class="chip" id="cRotR" title="Turn the board right">&#10227;</button>
+    <button class="chip" id="cIn" title="Zoom in">+</button>
+    <button class="chip" id="cOut" title="Zoom out">−</button>
+    <button class="chip" id="cReset" title="Reset the view">⌂</button>
+  </div>
   <div id="bottom">
     <div id="res"></div>
     <div id="acts">
@@ -399,6 +445,100 @@ const robber=new THREE.Group();
 }
 scene.add(robber);
 
+/* ---------- dice on a tray ---------- */
+function pipTexture(n){
+  return texture((g,s)=>{
+    g.fillStyle='#f7efdc';g.fillRect(0,0,s,s);
+    g.strokeStyle='#dccdaa';g.lineWidth=5;g.strokeRect(2,2,s-4,s-4);
+    const grid={1:[[.5,.5]],2:[[.28,.28],[.72,.72]],3:[[.26,.26],[.5,.5],[.74,.74]],
+      4:[[.28,.28],[.72,.28],[.28,.72],[.72,.72]],
+      5:[[.28,.28],[.72,.28],[.5,.5],[.28,.72],[.72,.72]],
+      6:[[.28,.24],[.72,.24],[.28,.5],[.72,.5],[.28,.76],[.72,.76]]}[n];
+    g.fillStyle='#23252c';
+    for(const [x,y] of grid){g.beginPath();g.arc(x*s,y*s,s*.085,0,7);g.fill()}
+  },128);
+}
+const pipMats={};for(let n=1;n<=6;n++)pipMats[n]=new THREE.MeshStandardMaterial({map:pipTexture(n),roughness:.55,metalness:.02});
+const DIE=.82;
+const dieGeo=new THREE.BoxGeometry(DIE,DIE,DIE);
+// faces +x,-x,+y,-y,+z,-z  (opposite sides add up to seven)
+const dieFaces=[1,6,2,5,3,4].map(n=>pipMats[n]);
+const DICE_TRAY=new THREE.Vector3(8.3,-.42,-.7);
+const trayGroup=new THREE.Group();
+{
+  const wood=new THREE.MeshStandardMaterial({color:0x5b3a22,roughness:.8,metalness:.05});
+  const felt=new THREE.MeshStandardMaterial({color:0x123c33,roughness:.95});
+  const base=new THREE.Mesh(new THREE.BoxGeometry(3.3,.16,1.95),wood);
+  base.position.y=.08;
+  base.receiveShadow=true;base.castShadow=true;trayGroup.add(base);
+  const inner=new THREE.Mesh(new THREE.BoxGeometry(3.0,.04,1.65),felt);
+  inner.position.y=.165;trayGroup.add(inner);
+  scene.add(trayGroup);
+}
+const DICE_FLOOR=DICE_TRAY.y+.185+DIE/2;
+const dice=[];
+for(let i=0;i<2;i++){
+  const d=new THREE.Mesh(dieGeo,dieFaces);
+  d.castShadow=true;d.receiveShadow=true;
+  d.position.set(DICE_TRAY.x+(i?.72:-.72),DICE_FLOOR,DICE_TRAY.z);
+  d.rotation.set(i?-.4:.3,.5*i,.2*i);
+  scene.add(d);dice.push(d);
+}
+function layoutDice(){
+  const narrow=innerWidth/Math.max(1,innerHeight)<1.02;
+  DICE_TRAY.set(narrow?4.6:8.3,-.42,narrow?4.9:-.7);
+  trayGroup.position.set(DICE_TRAY.x,-.42,DICE_TRAY.z);
+  trayGroup.rotation.y=narrow?0:-.26;
+  if(!dice.some(d=>d.userData.r)){
+    dice.forEach((d,i)=>d.position.set(DICE_TRAY.x+(i?.72:-.72),DICE_FLOOR,DICE_TRAY.z));
+  }
+}
+layoutDice();
+const FACE_UP={
+  1:new THREE.Euler(0,0,Math.PI/2),6:new THREE.Euler(0,0,-Math.PI/2),
+  2:new THREE.Euler(0,0,0),5:new THREE.Euler(Math.PI,0,0),
+  3:new THREE.Euler(-Math.PI/2,0,0),4:new THREE.Euler(Math.PI/2,0,0)
+};
+let diceResolve=null;
+function rollDiceAnim(a,b){
+  const now=performance.now();
+  [a,b].forEach((v,i)=>{
+    const d=dice[i];
+    const q=new THREE.Quaternion().setFromEuler(FACE_UP[v]);
+    q.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),(Math.random()-.5)*1.3));
+    d.userData.r={
+      t0:now,toss:900+i*100,settle:420,
+      rest:new THREE.Vector3(DICE_TRAY.x+(i?.72:-.72),DICE_FLOOR,DICE_TRAY.z+(i?-.1:.1)),
+      vel:new THREE.Vector3((Math.random()-.5)*3.6,5.9+Math.random()*1.2,(Math.random()-.5)*2.2),
+      av:new THREE.Vector3((Math.random()-.5)*18,(Math.random()-.5)*18,(Math.random()-.5)*18),
+      q
+    };
+  });
+  return new Promise(res=>{diceResolve=res});
+}
+function diceUpdate(dt){
+  let pending=false;
+  for(const d of dice){
+    const r=d.userData.r;if(!r)continue;
+    pending=true;
+    const el=performance.now()-r.t0;
+    if(el<r.toss){
+      r.vel.y-=9.6*dt;
+      d.position.addScaledVector(r.vel,dt);
+      if(d.position.y<DICE_FLOOR){d.position.y=DICE_FLOOR;r.vel.y*=-.42;r.vel.x*=.82;r.vel.z*=.82}
+      d.rotation.x+=r.av.x*dt;d.rotation.y+=r.av.y*dt;d.rotation.z+=r.av.z*dt;
+      d.position.x=clamp(d.position.x,DICE_TRAY.x-1.2,DICE_TRAY.x+1.2);
+      d.position.z=clamp(d.position.z,DICE_TRAY.z-.72,DICE_TRAY.z+.72);
+    }else{
+      const k=Math.min(1,(el-r.toss)/r.settle),e=1-Math.pow(1-k,3);
+      d.position.lerp(r.rest,e*.4);
+      d.quaternion.slerp(r.q,Math.min(1,e*1.7));
+      if(k>=1){d.position.copy(r.rest);d.quaternion.copy(r.q);delete d.userData.r}
+    }
+  }
+  if(!pending&&diceResolve){const fn=diceResolve;diceResolve=null;fn()}
+}
+
 /* ---------- pieces ---------- */
 const pieceGroup=new THREE.Group();scene.add(pieceGroup);
 const playerMat=COLORS.map(c=>new THREE.MeshStandardMaterial({color:c,roughness:.55,metalness:.08}));
@@ -457,11 +597,11 @@ function camUpdate(dt){
   camera.lookAt(0,.1,0);
 }
 function resetCam(){cam.az=0;cam.pol=.82;cam.zoom=1;}
-addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
+addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();layoutDice()});
 renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
 
 /* ---------- game state ---------- */
-const G={mode:'menu',phase:'setup',turn:0,setupIdx:0,rolled:false,devUsed:false,dice:[1,1],robber:0,
+const G={mode:'menu',phase:'setup',turn:0,setupIdx:0,rolled:false,devUsed:false,rolling:false,dice:[1,1],robber:0,
  players:[],b:{settlement:Object.create(null),city:Object.create(null),road:Object.create(null)},
  bank:{},devDeck:[],longest:-1,army:-1,clickMode:null,focus:null,freeRoads:0,busy:false,winner:-1,over:false,turnNum:0};
 function P(i){return G.players[i]}
@@ -496,7 +636,7 @@ function newGame(){
   }));
   G.b={settlement:Object.create(null),city:Object.create(null),road:Object.create(null)};
   G.bank={wood:19,brick:19,sheep:19,wheat:19,ore:19};
-  G.turn=0;G.setupIdx=0;G.rolled=false;G.devUsed=false;G.dice=[1,1];
+  G.turn=0;G.setupIdx=0;G.rolled=false;G.devUsed=false;G.rolling=false;G.dice=[1,1];
   G.longest=-1;G.army=-1;G.clickMode=null;G.focus=null;G.freeRoads=0;G.winner=-1;G.over=false;G.turnNum=0;G.log=[];
   G.phase='setup';G.mode='setup';
   G.devDeck=[];
@@ -570,16 +710,25 @@ function ratioFor(pi,res){
 }
 function produce(sum){
   if(sum===7)return;
-  const gained={0:{},1:{},2:{},3:{}};
+  // first work out the demand, then pay only resources the bank can cover in full
+  const awards=[],demand={};
   for(const h of hexes){
     if(h.num!==sum||h.robber)continue;
     for(const k of h.corners){
       const own=ownerAt(k);if(own<0)continue;
       const n=G.b.city[k]!==undefined?2:1;
-      const got=gain(own,h.terrain,n);
-      if(got)gained[own][h.terrain]=(gained[own][h.terrain]||0)+got;
+      awards.push([own,h.terrain,n]);
+      demand[h.terrain]=(demand[h.terrain]||0)+n;
     }
   }
+  const short=new Set(Object.keys(demand).filter(r=>G.bank[r]<demand[r]));
+  const gained={0:{},1:{},2:{},3:{}};
+  for(const [own,res,n] of awards){
+    if(short.has(res))continue;
+    const got=gain(own,res,n);
+    if(got)gained[own][res]=(gained[own][res]||0)+got;
+  }
+  if(short.size)log(`The bank is short of ${[...short].map(r=>RES_LABEL[r]).join(', ')}`);
   for(const pi in gained){
     const parts=Object.keys(gained[pi]);
     if(parts.length)log(`${P(+pi).name} got ${parts.map(r=>gained[pi][r]+' '+RES_LABEL[r]).join(', ')}`);
@@ -609,9 +758,10 @@ function longestRoad(pi){
 }
 function updateSpecial(){
   const lens=G.players.map((p,i)=>longestRoad(i));
+  if(G.longest>=0&&lens[G.longest]<5)G.longest=-1;      // a cut road gives the bonus back
   let cand=-1,cl=4;
   lens.forEach((l,i)=>{if(l>=5&&l>cl){cl=l;cand=i}});
-  if(cand>=0&&(G.longest<0||lens[G.longest]<cl||lens[G.longest]<5)){
+  if(cand>=0&&(G.longest<0||lens[G.longest]<cl)){
     G.longest=cand;log(`${P(cand).name} has the longest road (${cl})`);
   }
   let army=-1,ak=2;
@@ -888,7 +1038,7 @@ async function playDevCard(idx){
 /* ---------- human actions ---------- */
 function canAct(){return G.phase==='play'&&G.turn===0&&!G.busy&&!G.over}
 function beginBuild(type){
-  if(!canAct()||!G.rolled)return;
+  if(!canAct())return;
   if(type==='dev'){
     if(!G.devDeck.length)return toast('The development deck is empty');
     if(!canPay(P(0),COST.dev))return toast('Not enough resources');
@@ -902,16 +1052,20 @@ function beginBuild(type){
   updateDots();
 }
 async function doRoll(pi){
-  if(G.rolled||G.phase!=='play'||G.over)return;
-  G.rolled=true;
+  if(G.rolled||G.phase!=='play'||G.over||G.rolling)return;
+  G.rolled=true;G.rolling=true;
   G.dice=[1+rnd(6),1+rnd(6)];
   const sum=G.dice[0]+G.dice[1];
-  $('d1').textContent=G.dice[0];$('d2').textContent=G.dice[1];
+  $('d1').textContent='·';$('d2').textContent='·';$('dsum').textContent='…';
+  log(`${P(pi).name} rolled the dice`);
+  updateHud();
+  await rollDiceAnim(G.dice[0],G.dice[1]);
+  G.rolling=false;
+  $('d1').textContent=G.dice[0];$('d2').textContent=G.dice[1];$('dsum').textContent=sum;
   $('d1').classList.add('bump');$('d2').classList.add('bump');
   setTimeout(()=>{$('d1').classList.remove('bump');$('d2').classList.remove('bump')},260);
   log(`${P(pi).name} rolled ${G.dice[0]} + ${G.dice[1]} = ${sum}`);
-  updateHud();
-  await sleep(420);
+  await sleep(220);
   if(sum===7)await robberFlow(pi);
   else {produce(sum);updateHud();}
   if(pi===0&&G.phase==='play'&&!G.over){setStatus('Your turn',G.clickMode?'Finish placing':'Build, trade or end your turn')}
@@ -922,7 +1076,7 @@ async function robberFlow(pi,fromCard){
     const n=countRes(p);
     if(n>7){
       const need=Math.floor(n/2);
-      if(p.i===0)await askDiscard(p,need);
+      if(p.i===0){setStatus('Your turn',`Discard ${need} cards`);await askDiscard(p,need)}
       else {aiDiscard(p,need);log(`${p.name} discarded ${need} cards`)}
     }
   }
@@ -952,6 +1106,7 @@ async function robberFlow(pi,fromCard){
 function askRobberHex(){
   return new Promise(resolve=>{
     G.clickMode='robber';
+    setStatus('Your turn','Move the robber');
     hint('Move the robber to another hex');
     updateDots();
     G.robberResolve=hex=>{G.robberResolve=null;G.clickMode=null;hint('');resolve(hex)};
@@ -1026,7 +1181,7 @@ function askPlayer(title,cands){
   });
 }
 function openTrade(){
-  if(!canAct()||!G.rolled)return;
+  if(!canAct())return;
   const me=P(0);
   let give='wood',want='brick';
   const render=()=>{
@@ -1072,23 +1227,49 @@ function offerTrade(give,want){
 }
 
 /* ---------- hud ---------- */
+function publicVp(pi){
+  const b=Object.keys(G.b.settlement).filter(k=>G.b.settlement[k]===pi).length
+    +Object.keys(G.b.city).filter(k=>G.b.city[k]===pi).length*2;
+  return b+(G.longest===pi?2:0)+(G.army===pi?2:0);
+}
+function missingFor(cost){
+  const me=P(0);
+  return Object.keys(cost).filter(r=>me.res[r]<cost[r]).map(r=>`${cost[r]-me.res[r]} ${RES_LABEL[r]}`);
+}
 function updateHud(){
   if(G.mode==='menu')return;
   const me=P(0);
-  $('players').innerHTML=G.players.map(p=>`<div class="pl ${p.i===G.turn?'on':''}">
-    <i style="background:${COLORS_CSS[p.i]}"></i><b>${p.name}</b>
-    <span>${vp(p.i)}</span><em>${countRes(p)}c</em>${p.knights?`<u>⚔${p.knights}</u>`:''}
-    ${G.longest===p.i?'<u>🛣</u>':''}${G.army===p.i?'<u>⚑</u>':''}</div>`).join('');
-  $('res').innerHTML=RES.map(r=>`<div class="rc ${r}"><span></span>${RES_LABEL[r]}<b>${me.res[r]}</b></div>`).join('');
-  const mine=G.turn===0&&G.phase==='play'&&G.rolled&&!G.busy&&!G.over;
-  $('bRoad').disabled=!mine||!canPay(me,COST.road);
-  $('bSet').disabled=!mine||!canPay(me,COST.settlement);
-  $('bCity').disabled=!mine||!canPay(me,COST.city)||!Object.keys(G.b.settlement).some(k=>G.b.settlement[k]===0);
-  $('bDev').disabled=!mine||!canPay(me,COST.dev)||!G.devDeck.length;
-  $('bTrade').disabled=!mine;
-  $('bEnd').disabled=!mine;
-  $('bRoll').disabled=G.turn!==0||G.rolled||G.phase!=='play'||G.busy||G.over;
-  $('d1').textContent=G.dice[0];$('d2').textContent=G.dice[1];
+  $('players').innerHTML=G.players.map(p=>{
+    const pts=p.i===0?vp(p.i):publicVp(p.i);
+    return `<div class="pl ${p.i===G.turn?'on':''}">
+      <i style="background:${COLORS_CSS[p.i]}"></i><b>${p.name}</b>
+      <span class="vp" title="${p.i===0?'Your victory points':'Visible victory points'}">${pts}</span>
+      <em title="Cards in hand">${countRes(p)}c</em>${p.knights?`<u title="Knights played">⚔${p.knights}</u>`:''}
+      ${G.longest===p.i?'<u title="Longest road">🛣</u>':''}${G.army===p.i?'<u title="Largest army">⚑</u>':''}</div>`;
+  }).join('');
+  $('res').innerHTML=RES.map(r=>`<div class="rc ${r}"><em>${RES_LABEL[r]}</em><b>${me.res[r]}</b></div>`).join('');
+  const yourTurn=G.turn===0&&G.phase==='play'&&!G.busy&&!G.over;
+  const canBuild=yourTurn&&!G.rolling;
+  $('bRoad').disabled=!canBuild||!canPay(me,COST.road);
+  $('bSet').disabled=!canBuild||!canPay(me,COST.settlement);
+  $('bCity').disabled=!canBuild||!canPay(me,COST.city)||!Object.keys(G.b.settlement).some(k=>G.b.settlement[k]===0);
+  $('bDev').disabled=!canBuild||!canPay(me,COST.dev)||!G.devDeck.length;
+  $('bTrade').disabled=!canBuild;
+  $('bEnd').disabled=!yourTurn||!G.rolled||G.rolling;
+  $('bRoll').disabled=!yourTurn||G.rolled||G.rolling;
+  $('bRoll').textContent=G.rolling?'Rolling…':'Roll';
+  const tip=(id,label,cost,extra)=>{const miss=missingFor(cost);
+    $(id).title=label+': '+Object.keys(cost).map(r=>`${cost[r]} ${RES_LABEL[r]}`).join(', ')+(extra?' — '+extra:'')+(miss.length?' — you need '+miss.join(', '):'');};
+  tip('bRoad','Build a road',COST.road,yourTurn?'':'wait for your turn');
+  tip('bSet','Build a settlement',COST.settlement,yourTurn?'':'wait for your turn');
+  tip('bCity','Upgrade to a city',COST.city,yourTurn?'':'wait for your turn');
+  tip('bDev','Buy a development card',COST.dev,G.devDeck.length?'':'the deck is empty');
+  $('bTrade').title='Trade with the bank or a harbor';
+  $('bEnd').title=G.rolled?'End your turn':'Roll the dice first';
+  $('bRoll').title='Roll the dice';
+  document.querySelectorAll('#acts .btn').forEach(b=>b.classList.toggle('ready',!b.disabled));
+  if(!G.rolling){$('d1').textContent=G.dice[0];$('d2').textContent=G.dice[1]}
+  $('dsum').textContent=G.rolling?'…':(G.rolled?G.dice[0]+G.dice[1]:'—');
   const dev=$('devs');
   dev.innerHTML='';
   if(G.turn===0&&G.phase==='play'){
@@ -1109,7 +1290,11 @@ function updateHud(){
   if(G.phase==='setup'&&G.turn===0&&G.setupIdx<8&&SETUP_ORDER[G.setupIdx]===0){
     setStatus('Your turn',G.clickMode==='setupRoad'?'Place a road':'Place a settlement');
   }
-  if(G.phase==='play'&&G.turn===0&&!G.rolled&&!G.over)setStatus('Your turn','Roll the dice');
+  if(G.phase==='play'&&G.turn===0&&!G.over){
+    if(G.rolling)setStatus('Your turn','Rolling the dice…');
+    else if(!G.rolled)setStatus('Your turn','Roll the dice');
+    else setStatus('Your turn','Build, trade — then end your turn');
+  }
   if(G.phase==='play'&&G.turn!==0&&!G.over)setStatus(P(G.turn).name+' is playing','Wait for your turn');
 }
 function updateDots(){
@@ -1229,7 +1414,7 @@ async function handleClick(pt){
     }
     return;
   }
-  if(!canAct()||!G.rolled)return;
+  if(!canAct())return;
   if(G.clickMode==='settlement'||G.clickMode==='city'){
     const k=nearestVertex(pt);
     if(!k)return toast('Pick a corner');
@@ -1315,7 +1500,26 @@ canvas.addEventListener('wheel',e=>{e.preventDefault();cam.zoom=clamp(cam.zoom+e
 $('bPlay').onclick=()=>{startGame();};
 $('bAgain').onclick=()=>{location.reload()};
 $('bMenu').onclick=()=>{location.href='../index.html'};
-$('bRoll').onclick=()=>{if(G.turn===0&&!G.busy)doRoll(0)};
+$('bRoll').onclick=()=>{if(G.turn===0&&!G.busy&&!G.rolling)doRoll(0)};
+$('cRotL').onclick=()=>{cam.az+=Math.PI/2};
+$('cRotR').onclick=()=>{cam.az-=Math.PI/2};
+$('cIn').onclick=()=>{cam.zoom=clamp(cam.zoom*.84,.65,1.9)};
+$('cOut').onclick=()=>{cam.zoom=clamp(cam.zoom*1.19,.65,1.9)};
+$('cReset').onclick=()=>{resetCam();toast('View reset')};
+$('bHelp').onclick=()=>{
+  if(!$('modal').classList.contains('hide'))return;
+  openModal(`<h3>How to play</h3>
+   <div class="rules">
+    <p><b>Setup</b> place a settlement and a road, then a second pair. The second settlement pays out its hexes.</p>
+    <p><b>Turn</b> roll, take resources, then build, trade and play one development card.</p>
+    <p><b>Seven</b> everyone over seven cards discards half; the roller moves the robber and steals a card.</p>
+    <p><b>Build</b> road 1 wood + 1 brick · settlement 1 wood + 1 brick + 1 sheep + 1 wheat · city 2 wheat + 3 ore · card 1 sheep + 1 wheat + 1 ore.</p>
+    <p><b>Trade</b> 4:1 with the bank, 3:1 at any harbor, 2:1 at the matching harbor.</p>
+    <p><b>Win</b> first to ten points. Longest road (five or more) and largest army (three or more knights) are worth two each.</p>
+   </div>
+   <button class="btn" id="hClose" style="margin-top:8px">Got it</button>`);
+  $('hClose').onclick=closeModal;
+};
 $('bEnd').onclick=endTurn;
 $('bTrade').onclick=openTrade;
 $('bDev').onclick=()=>beginBuild('dev');
@@ -1326,7 +1530,18 @@ addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if(!$('modal').classList.contains('hide'))return;
     if(G.clickMode&&G.clickMode!=='robber'){G.clickMode=null;hint('');updateDots();hover.visible=false}
+    return;
   }
+  if(!$('modal').classList.contains('hide')||G.phase!=='play'||G.turn!==0)return;
+  if(e.target&&/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
+  const k=e.key.toLowerCase();
+  if(k==='r')$('bRoll').click();
+  else if(k==='b')beginBuild('road');
+  else if(k==='s')beginBuild('settlement');
+  else if(k==='c')beginBuild('city');
+  else if(k==='d')beginBuild('dev');
+  else if(k==='t')openTrade();
+  else if(k==='e')endTurn();
 });
 
 /* ---------- sync pieces ---------- */
@@ -1409,6 +1624,7 @@ let last=performance.now();
 function loop(now){
   const dt=Math.min(.05,(now-last)/1000);last=now;
   camUpdate(dt);
+  diceUpdate(dt);
   renderer.render(scene,camera);
   requestAnimationFrame(loop);
 }

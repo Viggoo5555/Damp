@@ -319,20 +319,30 @@ const texCache=new Map();
 function labelTexture(rank,side,hidden){
   const k=rank+side+(hidden?'h':'');
   if(texCache.has(k))return texCache.get(k);
-  const s=128,cv=document.createElement('canvas');cv.width=cv.height=s;
+  const s=256,cv=document.createElement('canvas');cv.width=cv.height=s;
   const g=cv.getContext('2d');
-  const base=side==='r'?'#a33a2f':'#2f4f9e';
-  const grad=g.createLinearGradient(0,0,s,s);
-  grad.addColorStop(0,side==='r'?'#c9564a':'#4f74c9');grad.addColorStop(1,base);
-  g.fillStyle=grad;g.fillRect(0,0,s,s);
-  g.strokeStyle='#f3e3bd';g.lineWidth=7;g.strokeRect(8,8,s-16,s-16);
-  g.fillStyle='#f7ecd2';g.textAlign='center';g.textBaseline='middle';
-  if(hidden){g.font='bold 74px Georgia,serif';g.fillText('?',64,66)}
-  else{
-    const big=rank==='10'?58:rank.length>1?60:80;
-    g.font='bold '+big+'px Georgia,serif';g.fillText(rank,64,48);
-    g.font='600 19px Arial Narrow,Arial';g.fillStyle='#f0d9a8';g.fillText(NAME[rank].toUpperCase(),64,91);
+  // printed paper sticker on the tower, transparent around it so the paint shows
+  const pad=20,r=14;
+  g.beginPath();
+  g.moveTo(pad+r,pad);g.lineTo(s-pad-r,pad);g.quadraticCurveTo(s-pad,pad,s-pad,pad+r);
+  g.lineTo(s-pad,s-pad-r);g.quadraticCurveTo(s-pad,s-pad,s-pad-r,s-pad);
+  g.lineTo(pad+r,s-pad);g.quadraticCurveTo(pad,s-pad,pad,s-pad-r);
+  g.lineTo(pad,pad+r);g.quadraticCurveTo(pad,pad,pad+r,pad);g.closePath();
+  g.fillStyle='#efe4c9';g.fill();
+  g.lineWidth=5;g.strokeStyle='#3a2c1c';g.stroke();
+  const ink='#241d13';
+  g.fillStyle=ink;g.textAlign='left';g.textBaseline='alphabetic';
+  g.font='bold 40px Georgia,serif';g.fillText(rank,34,58);
+  const art=ART[rank];
+  if(art){
+    const boxW=196,boxH=138,cx=128,cy=136;
+    const f=Math.min(boxW/art.width,boxH/art.height);
+    const w=art.width*f,h=art.height*f;
+    g.drawImage(art,cx-w/2,cy-h/2,w,h);
   }
+  g.fillStyle=ink;g.textAlign='center';
+  g.font='bold 28px Georgia,serif';
+  g.fillText(NAME[rank].toUpperCase(),128,226);
   const tex=new THREE.CanvasTexture(cv);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=4;
   texCache.set(k,tex);return tex;
 }
@@ -355,9 +365,21 @@ function capMat(rank,side,hidden){
 const bandMats=new Map();
 function bandMat(rank,side,hidden){
   const k=rank+side+(hidden?'h':'');
-  if(!bandMats.has(k))bandMats.set(k,new THREE.MeshBasicMaterial({map:labelTexture(rank,side,hidden)}));
+  if(!bandMats.has(k))bandMats.set(k,new THREE.MeshBasicMaterial({map:labelTexture(rank,side,hidden),transparent:true,alphaTest:.35}));
   return bandMats.get(k);
 }
+/* the rank pictures come straight from the printed piece sheet */
+const ART={};
+const ART_RANKS=['10','9','8','7','6','5','4','3','2','1','B','F'];
+Promise.all(ART_RANKS.map(r=>new Promise(res=>{
+  const im=new Image();
+  im.onload=()=>{ART[r]=im;res()};
+  im.onerror=()=>res();
+  im.src='/img/stratego/'+r+'.png?v=1';
+}))).then(()=>{
+  texCache.clear();bandMats.clear();capMats.clear();
+  if(G.board.some(Boolean))syncPieces();
+});
 (async()=>{
   try{
     const g=await new STLLoader().loadAsync('/files/Tower.stl?v=1');
@@ -380,7 +402,7 @@ function bandMat(rank,side,hidden){
     }
     towerTopR=Math.min(.34,r*1.02);
     towerMaxR=Math.min(.4,maxR+.012);
-    bandGeo=new THREE.CylinderGeometry(towerMaxR,towerMaxR,.58,26,1,true,-.95,1.9);
+    bandGeo=new THREE.CylinderGeometry(towerMaxR+.004,towerMaxR+.004,.6,28,1,true,-.98,1.96);
     towerGeo=g;
     syncPieces();
   }catch(e){console.warn('Tower.stl failed, using round pieces',e)}

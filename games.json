@@ -18,8 +18,7 @@
     "description": "3D top-down battleship. Drag your ships into place, then sink the enemy fleet vs the computer or online with a friend.",
     "file": "games/battleship.html",
     "category": "Strategy",
-    "image": "img/battleship.png",
-    "featured": false
+    "image": "img/battleship.png"
   },
   {
     "title": "Chess",

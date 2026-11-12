@@ -350,6 +350,25 @@
     });
   }
 
+  // Chat text with same-site links made clickable (used by game invites).
+  // Only links to this site become links, anything else stays plain text.
+  function fillText(box, text) {
+    String(text).split(/(https?:\/\/[^\s]+)/g).forEach(function (part) {
+      let ok = false;
+      try { ok = /^https?:\/\//.test(part) && new URL(part).origin === location.origin; } catch (error) { ok = false; }
+      if (ok) {
+        const link = document.createElement("a");
+        link.href = part;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.textContent = part;
+        box.appendChild(link);
+      } else if (part) {
+        box.appendChild(document.createTextNode(part));
+      }
+    });
+  }
+
   function openChat(uid, name) {
     chatWith = uid;
     markSeen(pairId(user.uid, uid), Date.now());
@@ -377,7 +396,7 @@
           const data = doc.data();
           const bubble = document.createElement("div");
           bubble.className = "msg" + (data.from === user.uid ? " me" : "");
-          bubble.textContent = data.text || "";
+          fillText(bubble, data.text || "");
           if (data.at) {
             const time = document.createElement("span");
             time.className = "t";

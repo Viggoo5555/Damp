@@ -927,6 +927,12 @@ label input[type="file"] { height: auto; padding: 8px 12px; }
   font-weight: 600;
 }
 
+.msg a {
+  color: inherit;
+  text-decoration: underline;
+  font-weight: 700;
+}
+
 .msg .t {
   display: block;
   margin-top: 2px;

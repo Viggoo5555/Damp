@@ -11,3 +11,6 @@ artifacts/
 node_modules/
 package.json
 package-lock.json
+
+# the raw download, only used to build models/chess-pieces.glb
+files/chess.glb

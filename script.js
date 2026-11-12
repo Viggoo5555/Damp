@@ -18,7 +18,7 @@ const THUMBS = {
   "img/guess-the-color.png": [480, 960],
   "img/guessing-game.png": [480, 960, 1280],
   "img/hedgerow-hallow-thumb.jpg": [480, 960, 1280],
-  "img/knockout-night.png": [480],
+  "img/knockout-night.png": [480, 640],
   "img/krillion.png": [480, 960, 1280],
   "img/ordle.jpg": [480, 960, 1280],
   "img/slope.jpg": [480],

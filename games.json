@@ -22,6 +22,13 @@
     "featured": false
   },
   {
+    "title": "Chess",
+    "description": "Detailed 3D chess against the computer. Castling, promotion and a written move list, viewed from your own side of the table.",
+    "file": "games/chess.html",
+    "category": "Strategy",
+    "image": "img/chess.png"
+  },
+  {
     "title": "Star Clicker",
     "description": "Click your star, grow it and add orbiting planets.",
     "file": "games/Starclicker.html",

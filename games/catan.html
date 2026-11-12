@@ -77,6 +77,22 @@ select{font:inherit;color:var(--fg);background:#0d2434;border:2px solid var(--li
 .panel p{margin:6px 0;color:#b9cbd8;font-size:16px;line-height:1.35}
 .panel .rules{text-align:left;font-size:15px;color:#a9bdcb;margin:12px 0;line-height:1.45}
 .panel .rules b{color:#e8dcc0}
+.panel input.field{width:100%;margin:6px 0;padding:10px 12px;background:#07141f;border:2px solid var(--line);color:var(--fg);font:700 17px/1 var(--b);letter-spacing:.05em;text-align:center}
+.panel input.field:focus{outline:0;border-color:var(--brass)}
+#onStatus{min-height:20px;font-size:15px;color:#a9bdcb;margin:2px 0 8px;letter-spacing:.02em}
+#onStatus.bad{color:#ff8b7a}#onStatus.ok{color:#7ee2a8}
+#onMe{color:var(--brass)}
+.onBtns{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.joinRow{display:flex;gap:6px;align-items:stretch}
+.joinRow input{flex:1;text-transform:uppercase;letter-spacing:.22em;font-size:22px}
+.joinRow .btn{padding:10px 16px}
+.bigcode{font:400 54px/1 var(--d);letter-spacing:.24em;color:var(--brass);margin:2px 0 8px;text-shadow:0 3px 0 #7a4d0c}
+.onPlayers{display:flex;flex-direction:column;gap:4px;margin:10px 0;text-align:left}
+.onPlayers div{display:flex;align-items:center;gap:8px;background:#07141fd9;border:2px solid #1d4159;padding:6px 9px;font-size:16px}
+.onPlayers div i{width:12px;height:12px;border-radius:2px}
+.onPlayers div em{margin-left:auto;font-style:normal;color:var(--dim);font-size:13px}
+.shareLink{font-size:13px;color:#8fa9ba;margin:2px 0 6px;word-break:break-all}
+@media(max-width:560px){.bigcode{font-size:40px}.panel h1{font-size:42px}}
 #flying{position:absolute;inset:0;pointer-events:none;z-index:7;overflow:hidden}
 .flycard{position:absolute;min-width:62px;height:34px;padding:0 9px;border:2px solid #2b5672;border-left:6px solid #888;background:#0c2030f6;
  display:flex;align-items:center;justify-content:center;gap:3px;font:700 13px/1 var(--b);letter-spacing:.03em;color:#fff;border-radius:3px;box-shadow:0 8px 22px #000a,0 0 12px #f0b84a33;white-space:nowrap}
@@ -197,7 +213,41 @@ select{font:inherit;color:var(--fg);background:#0d2434;border:2px solid var(--li
       <b>Win</b> at ten points — longest road and largest army are worth two each.
     </div>
     <button id="bPlay" class="btn big">Start game</button>
+    <button id="bOnline" class="btn alt big" style="margin-top:8px">Play online</button>
     <p style="font-size:13px;margin-top:10px;opacity:.75">Drag to look around · scroll or pinch to zoom</p>
+  </div>
+</div>
+
+<div id="online" class="screen hide">
+  <div class="panel">
+    <h2>Play online</h2>
+    <div id="onStatus"></div>
+    <div id="onMain">
+      <div id="onAuth" class="hide">
+        <p>Sign in with your Damp account — the same name and password you use on the site.</p>
+        <input id="onName" class="field" maxlength="20" placeholder="Username" autocomplete="username">
+        <input id="onPass" class="field" type="password" maxlength="40" placeholder="Password (6+ characters)" autocomplete="current-password">
+        <div class="onBtns"><button id="onIn" class="btn">Sign in</button><button id="onUp" class="btn ghost sm">Create account</button></div>
+      </div>
+      <div id="onActions" class="hide">
+        <p>Playing as <b id="onMe">player</b></p>
+        <div class="onBtns"><button id="onHost" class="btn big">Create room</button></div>
+        <p style="margin-top:14px">or join a friend's room</p>
+        <div class="joinRow"><input id="onCodeIn" class="field" maxlength="4" placeholder="CODE"><button id="onJoin" class="btn alt">Join</button></div>
+      </div>
+    </div>
+    <div id="onRoom" class="hide">
+      <p>Room code</p>
+      <div id="onCode" class="bigcode">----</div>
+      <div id="onShare" class="shareLink"></div>
+      <div id="onPlayers" class="onPlayers"></div>
+      <p id="onRoomNote">Waiting for players…</p>
+      <div class="onBtns">
+        <button id="onStart" class="btn big hide">Start game</button>
+        <button id="onLeave" class="btn ghost sm">Leave room</button>
+      </div>
+    </div>
+    <button id="onBack" class="btn ghost sm" style="margin-top:12px">Back</button>
   </div>
 </div>
 
@@ -234,7 +284,9 @@ const COLORS_CSS=['#d4453a','#3f79d8','#f0e8d6','#e08c33'];
 const NAMES=['You','Rita','Bo','Karla'];
 const PIPS={2:1,3:2,4:3,5:4,6:5,8:5,9:4,10:3,11:2,12:1};
 const DEV_NAME={knight:'Knight',road:'Road Building',plenty:'Year of Plenty',monopoly:'Monopoly',vp:'Victory Point'};
-const SETUP_ORDER=[0,1,2,3,3,2,1,0];
+let ME=0,NP=4,ONLINE=false,GNAMES=NAMES.slice();
+const setupOrderFor=n=>{const a=[];for(let i=0;i<n;i++)a.push(i);for(let i=n-1;i>=0;i--)a.push(i);return a};
+let SETUP_ORDER=setupOrderFor(4);
 const R=1.62,TOP=.16,SQ3=Math.sqrt(3);
 
 /* ---------- board topology ---------- */
@@ -279,7 +331,9 @@ const V={},E={},hexes=[];
   // ports around the coast
   const coast=Object.values(E).filter(e=>e.hexes.length===1)
     .sort((a,b)=>Math.atan2(a.mz,a.mx)-Math.atan2(b.mz,b.mx));
-  const deck=shuffle(['wood','brick','sheep','wheat','ore','any','any','any','any']);
+  // a fixed deck keeps every machine's harbors in the same places, so an
+  // online game shows the same board to everyone
+  const deck=['any','wood','any','brick','sheep','any','ore','wheat','any'];
   for(let i=0;i<9;i++){
     const e=coast[Math.floor(i*coast.length/9)];
     const port={edge:e.k,res:deck[i]==='any'?null:deck[i],ratio:deck[i]==='any'?3:2};
@@ -518,7 +572,14 @@ function rollDiceAnim(a,b){
       q
     };
   });
-  return new Promise(res=>{diceResolve=res});
+  return new Promise(res=>{
+    let done=false;
+    const finish=()=>{if(done)return;done=true;diceResolve=null;res()};
+    diceResolve=finish;
+    // a hidden tab throttles requestAnimationFrame, and the game must not
+    // wait forever for the dice to come to rest
+    setTimeout(finish,1600);
+  });
 }
 function diceUpdate(dt){
   let pending=false;
@@ -658,7 +719,7 @@ function flyResource(r,n=1,from){
 function gain(pi,r,n=1){
   const have=Math.min(n,G.bank[r]);if(have<=0)return 0;
   P(pi).res[r]+=have;G.bank[r]-=have;
-  if(pi===0)flyResource(r,have,GAIN_FROM);
+  if(pi===ME)flyResource(r,have,GAIN_FROM);
   return have;
 }
 function log(msg){
@@ -675,15 +736,17 @@ function hint(msg){
   h.textContent=msg;h.classList.add('on');
 }
 function newGame(){
-  G.players=NAMES.map((name,i)=>({
+  NP=clamp(NP,2,4);SETUP_ORDER=setupOrderFor(NP);
+  G.players=GNAMES.slice(0,NP).map((name,i)=>({
     i,name,color:COLORS[i],res:{wood:0,brick:0,sheep:0,wheat:0,ore:0},dev:[],knights:0,vpCards:0
   }));
+  G.auto={};G.pending=null;G.pendId=0;G.rollSeq=0;G.ver=0;
   G.b={settlement:Object.create(null),city:Object.create(null),road:Object.create(null)};
   G.bank={wood:19,brick:19,sheep:19,wheat:19,ore:19};
   G.turn=0;G.setupIdx=0;G.rolled=false;G.devUsed=false;G.rolling=false;G.dice=[1,1];
   G.longest=-1;G.army=-1;G.clickMode=null;G.focus=null;G.freeRoads=0;G.winner=-1;G.over=false;G.turnNum=0;G.log=[];
   G.phase='setup';G.mode='setup';
-  G.devDeck=[];
+  G.devDeck=[];G.names=GNAMES.slice(0,NP);
   for(let i=0;i<14;i++)G.devDeck.push('knight');
   for(let i=0;i<2;i++)G.devDeck.push('road');
   for(let i=0;i<2;i++)G.devDeck.push('plenty');
@@ -713,10 +776,12 @@ function newGame(){
 }
 function finishSetup(){
   G.phase='play';G.mode='play';G.turn=0;G.rolled=false;G.devUsed=false;
-  G.clickMode=null;hint('');
+  G.clickMode=null;hint('');G.busy=false;
   setStatus('Your turn','Roll the dice');
   log('The island is settled — roll to begin');
   updateHud();updateDots();
+  if(ONLINE)netBroadcast();
+  if(ONLINE&&isBot(G.turn))setTimeout(()=>aiTurn(G.turn),500);
 }
 
 /* ---------- rules ---------- */
@@ -766,10 +831,11 @@ function produce(sum){
     }
   }
   const short=new Set(Object.keys(demand).filter(r=>G.bank[r]<demand[r]));
-  const gained={0:{},1:{},2:{},3:{}};
+  const gained={};
   for(const [own,res,n,hi] of awards){
     if(short.has(res))continue;
-    if(own===0)GAIN_FROM=screenOf(hexes[hi].x,TOP,hexes[hi].z);
+    if(own===ME)GAIN_FROM=screenOf(hexes[hi].x,TOP,hexes[hi].z);
+    if(!gained[own])gained[own]={};
     const got=gain(own,res,n);
     if(got)gained[own][res]=(gained[own][res]||0)+got;
   }
@@ -838,7 +904,7 @@ function steal(pi,from){
   for(const r of RES)for(let i=0;i<victim.res[r];i++)pool.push(r);
   const r=pool[rnd(pool.length)];
   victim.res[r]--;P(pi).res[r]++;
-  if(pi===0){
+  if(pi===ME){
     const row=document.querySelectorAll('#players .pl')[from];
     GAIN_FROM=row?(()=>{const b=row.getBoundingClientRect();return {x:b.left+b.width/2,y:b.top+b.height/2}})():null;
     flyResource(r,1,GAIN_FROM);GAIN_FROM=null;
@@ -1022,11 +1088,11 @@ async function aiDevCard(pi){
     afterChange();
   }
 }
-async function aiTurn(){
-  if(G.phase!=='play'||G.over||G.turn===0)return;
+async function aiTurn(seat){
+  const pi=seat===undefined?G.turn:seat;
+  if(G.phase!=='play'||G.over||pi!==G.turn)return;
   G.busy=true;updateHud();
   try{
-    const pi=G.turn;
     await sleep(380);
     await aiDevCard(pi);
     if(!G.rolled)await doRoll(pi);
@@ -1039,7 +1105,8 @@ async function aiTurn(){
     updateSpecial();updateHud();checkWin();
     await sleep(300);
   }finally{G.busy=false}
-  if(G.phase==='play'&&!G.over&&G.turn!==0)nextTurn();
+  if(ONLINE)netBroadcast();
+  if(G.phase==='play'&&!G.over&&G.turn===pi)nextTurn();
 }
 
 /* ---------- dev cards ---------- */
@@ -1057,59 +1124,36 @@ function canPlayDev(pi,idx){
   const c=p.dev[idx];
   return !!c&&!c.c&&c.t!=='vp';
 }
-async function playDevCard(idx){
-  const p=P(0);
-  if(!canPlayDev(0,idx))return;
+function playDevCard(idx){
+  const p=P(ME);
+  if(!canPlayDev(ME,idx))return;
   const c=p.dev[idx];
-  if(c.t==='knight'){
-    p.dev.splice(idx,1);G.devUsed=true;p.knights++;
-    log('You played a knight');
-    updateSpecial();updateHud();
-    await robberFlow(0,true);
-  }else if(c.t==='plenty'){
-    p.dev.splice(idx,1);G.devUsed=true;
-    const picks=await askResources('Year of Plenty',2);
-    picks.forEach(r=>gain(0,r,1));
-    log(`You took ${picks.map(r=>RES_LABEL[r]).join(' and ')}`);
-  }else if(c.t==='monopoly'){
-    p.dev.splice(idx,1);G.devUsed=true;
-    const [r]=await askResources('Monopoly',1);
-    let got=0;
-    for(const q of G.players)if(q.i!==0){got+=q.res[r];q.res[r]=0}
-    p.res[r]+=got;
-    log(`You took all ${RES_LABEL[r]} (${got})`);
-  }else if(c.t==='road'){
-    p.dev.splice(idx,1);G.devUsed=true;G.freeRoads=2;G.clickMode='freeRoad';
-    hint('Place two free roads');
-    log('You played road building');
-  }
-  afterChange();
+  if(c.t==='plenty'){askResources('Year of Plenty',2).then(picks=>act({a:'dev',idx,args:picks}));return}
+  if(c.t==='monopoly'){askResources('Monopoly',1).then(([r])=>act({a:'dev',idx,args:[r]}));return}
+  act({a:'dev',idx});
 }
 
 /* ---------- human actions ---------- */
-function canAct(){return G.phase==='play'&&G.turn===0&&!G.busy&&!G.over}
+const isBot=pi=>ONLINE?!!(G.auto&&G.auto[pi]):pi!==ME;
+function canAct(){return G.phase==='play'&&G.turn===ME&&!G.busy&&!G.over&&!G.rolling}
 function beginBuild(type){
   if(!canAct())return;
-  if(type==='dev'){
-    if(!G.devDeck.length)return toast('The development deck is empty');
-    if(!canPay(P(0),COST.dev))return toast('Not enough resources');
-    payCost(0,COST.dev);buyDev(0);log('You bought a development card');
-    afterChange();return;
-  }
-  if(!canPay(P(0),COST[type]))return toast('Not enough resources');
-  if(type==='city'&&!Object.keys(G.b.settlement).some(k=>G.b.settlement[k]===0))return toast('You have no settlement to upgrade');
+  if(type==='dev'){act({a:'buydev'});return}
+  if(!canPay(P(ME),COST[type]))return toast('Not enough resources');
+  if(type==='city'&&!Object.keys(G.b.settlement).some(k=>G.b.settlement[k]===ME))return toast('You have no settlement to upgrade');
   G.clickMode=type;
   hint(type==='road'?'Pick a free edge next to your roads':type==='settlement'?'Pick an open corner connected to your roads':'Pick one of your settlements');
   updateDots();
 }
 async function doRoll(pi){
   if(G.rolled||G.phase!=='play'||G.over||G.rolling)return;
-  G.rolled=true;G.rolling=true;
+  G.rolled=true;G.rolling=true;G.rollSeq=(G.rollSeq||0)+1;
   G.dice=[1+rnd(6),1+rnd(6)];
   const sum=G.dice[0]+G.dice[1];
   $('d1').textContent='·';$('d2').textContent='·';$('dsum').textContent='…';
   log(`${P(pi).name} rolled the dice`);
   updateHud();
+  if(ONLINE)netBroadcast();
   await rollDiceAnim(G.dice[0],G.dice[1]);
   G.rolling=false;
   $('d1').textContent=G.dice[0];$('d2').textContent=G.dice[1];$('dsum').textContent=sum;
@@ -1117,23 +1161,24 @@ async function doRoll(pi){
   setTimeout(()=>{$('d1').classList.remove('bump');$('d2').classList.remove('bump')},260);
   log(`${P(pi).name} rolled ${G.dice[0]} + ${G.dice[1]} = ${sum}`);
   await sleep(220);
-  if(sum===7)await robberFlow(pi);
+  if(sum===7){if(ONLINE)startSeven(pi);else await robberFlow(pi)}
   else {produce(sum);updateHud();}
-  if(pi===0&&G.phase==='play'&&!G.over){setStatus('Your turn',G.clickMode?'Finish placing':'Build, trade or end your turn')}
+  if(pi===ME&&G.phase==='play'&&!G.over){setStatus('Your turn',G.clickMode?'Finish placing':'Build, trade or end your turn')}
   updateHud();updateDots();
+  if(ONLINE)netBroadcast();
 }
 async function robberFlow(pi,fromCard){
   for(const p of G.players){
     const n=countRes(p);
     if(n>7){
       const need=Math.floor(n/2);
-      if(p.i===0){setStatus('Your turn',`Discard ${need} cards`);await askDiscard(p,need)}
+      if(p.i===ME){setStatus('Your turn',`Discard ${need} cards`);const picks=await askDiscard(p,need);for(const r of RES){p.res[r]-=picks[r];G.bank[r]+=picks[r]}log(`You discarded ${need} cards`)}
       else {aiDiscard(p,need);log(`${p.name} discarded ${need} cards`)}
     }
   }
   updateHud();
   let hex;
-  if(pi===0){
+  if(pi===ME){
     hex=await askRobberHex();
   }else{
     hex=aiChooseRobber(pi);moveRobber(hex);
@@ -1143,16 +1188,16 @@ async function robberFlow(pi,fromCard){
   const cands=[...new Set(hexes[hex].corners.map(k=>ownerAt(k)).filter(o=>o>=0&&o!==pi&&countRes(P(o))>0))];
   if(cands.length===1)steal(pi,cands[0]);
   else if(cands.length>1){
-    if(pi===0){
+    if(pi===ME){
       const who=await askPlayer('Steal a card from',cands);
-      steal(0,who);
+      steal(ME,who);
     }else{
       cands.sort((a,b)=>countRes(P(b))-countRes(P(a)));
       steal(pi,cands[0]);
     }
   }
   updateHud();updateDots();
-  if(pi===0&&G.phase==='play'&&!G.over)setStatus('Your turn','Build, trade or end your turn');
+  if(pi===ME&&G.phase==='play'&&!G.over)setStatus('Your turn','Build, trade or end your turn');
 }
 function askRobberHex(){
   return new Promise(resolve=>{
@@ -1164,24 +1209,26 @@ function askRobberHex(){
   });
 }
 function endTurn(){
-  if(!canAct()||!G.rolled||G.devUsed&&false)return;
+  if(!canAct()||!G.rolled)return;
   if(G.clickMode&&G.clickMode!=='robber'){G.clickMode=null;updateDots()}
-  nextTurn();
+  act({a:'end'});
 }
 function nextTurn(){
   if(G.phase!=='play'||G.over)return;
-  G.turn=(G.turn+1)%4;
+  G.turn=(G.turn+1)%NP;
   G.rolled=false;G.devUsed=false;G.turnNum++;
-  G.clickMode=null;G.freeRoads=0;hint('');
+  G.clickMode=null;G.freeRoads=0;G.pending=null;hint('');
   for(const p of G.players)p.dev.forEach(c=>c.c=false);
   updateHud();updateDots();
-  if(G.turn===0)setStatus('Your turn','Roll the dice');
-  else {setStatus(P(G.turn).name+' is playing','Wait for your turn');aiTurn()}
+  if(G.turn===ME)setStatus('Your turn','Roll the dice');
+  else setStatus(P(G.turn).name+(isBot(G.turn)?' is playing':'’s turn'),isBot(G.turn)?'Wait for your turn':'Waiting for them');
+  if(ONLINE)netBroadcast();
+  if(isBot(G.turn))setTimeout(()=>aiTurn(G.turn),320);
 }
 function setStatus(name,sub){
   $('turnName').textContent=name;
   $('turnHint').textContent=sub;
-  $('turnBox').classList.toggle('foe',G.turn!==0);
+  $('turnBox').classList.toggle('foe',G.turn!==ME);
 }
 
 /* ---------- modals ---------- */
@@ -1200,11 +1247,7 @@ function askDiscard(p,need){
       $('modalCard').querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{
         const r=b.dataset.r;picked[r]+=b.dataset.m==='+'?1:-1;render();
       });
-      $('okDiscard').onclick=()=>{
-        for(const r of RES){p.res[r]-=picked[r];G.bank[r]+=picked[r]}
-        log(`You discarded ${need} cards`);
-        closeModal();updateHud();resolve();
-      };
+      $('okDiscard').onclick=()=>{closeModal();resolve({...picked})};
     };
     render();
   });
@@ -1233,38 +1276,33 @@ function askPlayer(title,cands){
 }
 function openTrade(){
   if(!canAct())return;
-  const me=P(0);
+  const me=P(ME);
   let give='wood',want='brick';
   const render=()=>{
-    const ratio=ratioFor(0,want);
+    const ratio=ratioFor(ME,want);
     openModal(`<h3>Trade</h3>
       <div class="tradeRow"><label>You give</label><select id="tg">${RES.map(r=>`<option value="${r}" ${r===give?'selected':''}>${RES_LABEL[r]} (${me.res[r]})</option>`).join('')}</select></div>
       <div class="tradeRow"><label>You get</label><select id="tw">${RES.map(r=>`<option value="${r}" ${r===want?'selected':''}>${RES_LABEL[r]}</option>`).join('')}</select></div>
       <p>Your rate: <b>${ratio}:1</b> ${ratio<4?'at a harbor':'at the bank'}</p>
       <div class="modalBtns">
         <button id="tBank" class="btn" ${me.res[give]>=ratio&&G.bank[want]>0?'':'disabled'}>Give ${ratio} · get 1</button>
-        <button id="tOffer" class="btn alt" ${me.res[give]>=1?'':'disabled'}>Offer to the other players</button>
+        ${ONLINE?'':`<button id="tOffer" class="btn alt" ${me.res[give]>=1?'':'disabled'}>Offer to the other players</button>`}
         <button id="tClose" class="btn ghost sm">Close</button>
       </div>`);
     $('tg').onchange=e=>{give=e.target.value;render()};
     $('tw').onchange=e=>{want=e.target.value;render()};
-    $('tBank').onclick=()=>{
-      me.res[give]-=ratio;G.bank[give]+=ratio;me.res[want]++;G.bank[want]--;
-      flyResource(want,1,{x:innerWidth/2,y:innerHeight*.45});
-      log(`You traded ${ratio} ${RES_LABEL[give]} for 1 ${RES_LABEL[want]}`);
-      closeModal();updateHud();
-    };
-    $('tOffer').onclick=()=>offerTrade(give,want);
+    $('tBank').onclick=()=>{closeModal();act({a:'trade',give,want})};
+    if($('tOffer'))$('tOffer').onclick=()=>offerTrade(give,want);
     $('tClose').onclick=closeModal;
   };
   render();
 }
 function offerTrade(give,want){
-  const me=P(0);
+  const me=P(ME);
   if(me.res[give]<1)return;
   let best=-1;
   for(const q of G.players){
-    if(q.i===0)continue;
+    if(q.i===ME||!isBot(q.i))continue;
     if(q.res[want]<1)continue;
     const needWant=Math.max(0,3-q.res[want]);
     const needGive=Math.max(0,3-q.res[give]);
@@ -1285,26 +1323,26 @@ function publicVp(pi){
   return b+(G.longest===pi?2:0)+(G.army===pi?2:0);
 }
 function missingFor(cost){
-  const me=P(0);
+  const me=P(ME);
   return Object.keys(cost).filter(r=>me.res[r]<cost[r]).map(r=>`${cost[r]-me.res[r]} ${RES_LABEL[r]}`);
 }
 function updateHud(){
-  if(G.mode==='menu')return;
-  const me=P(0);
+  if(G.mode==='menu'||!G.players[ME])return;
+  const me=P(ME);
   $('players').innerHTML=G.players.map(p=>{
-    const pts=p.i===0?vp(p.i):publicVp(p.i);
+    const pts=p.i===ME?vp(p.i):publicVp(p.i);
     return `<div class="pl ${p.i===G.turn?'on':''}">
       <i style="background:${COLORS_CSS[p.i]}"></i><b>${p.name}</b>
-      <span class="vp" title="${p.i===0?'Your victory points':'Visible victory points'}">${pts}</span>
+      <span class="vp" title="${p.i===ME?'Your victory points':'Visible victory points'}">${pts}</span>
       <em title="Cards in hand">${countRes(p)}c</em>${p.knights?`<u title="Knights played">⚔${p.knights}</u>`:''}
       ${G.longest===p.i?'<u title="Longest road">🛣</u>':''}${G.army===p.i?'<u title="Largest army">⚑</u>':''}</div>`;
   }).join('');
   $('res').innerHTML=RES.map(r=>`<div class="rc ${r}"><em>${RES_LABEL[r]}</em><b>${me.res[r]}</b></div>`).join('');
-  const yourTurn=G.turn===0&&G.phase==='play'&&!G.busy&&!G.over;
+  const yourTurn=G.turn===ME&&G.phase==='play'&&!G.busy&&!G.over;
   const canBuild=yourTurn&&!G.rolling;
   $('bRoad').disabled=!canBuild||!canPay(me,COST.road);
   $('bSet').disabled=!canBuild||!canPay(me,COST.settlement);
-  $('bCity').disabled=!canBuild||!canPay(me,COST.city)||!Object.keys(G.b.settlement).some(k=>G.b.settlement[k]===0);
+  $('bCity').disabled=!canBuild||!canPay(me,COST.city)||!Object.keys(G.b.settlement).some(k=>G.b.settlement[k]===ME);
   $('bDev').disabled=!canBuild||!canPay(me,COST.dev)||!G.devDeck.length;
   $('bTrade').disabled=!canBuild;
   $('bEnd').disabled=!yourTurn||!G.rolled||G.rolling;
@@ -1324,48 +1362,49 @@ function updateHud(){
   $('dsum').textContent=G.rolling?'…':(G.rolled?G.dice[0]+G.dice[1]:'—');
   const dev=$('devs');
   dev.innerHTML='';
-  if(G.turn===0&&G.phase==='play'){
+  if(G.turn===ME&&G.phase==='play'){
     me.dev.forEach((c,i)=>{
       if(c.t==='vp')return;
       const b=document.createElement('button');
       b.className='btn ghost sm';
       b.textContent=DEV_NAME[c.t]+(c.c?' (new)':'');
-      b.disabled=!canPlayDev(0,i);
+      b.disabled=!canPlayDev(ME,i);
       b.onclick=()=>playDevCard(i);
       dev.appendChild(b);
     });
   }
-  $('meta').innerHTML=`<div>Harbors <b>${portsOf(0).length}</b></div>
+  $('meta').innerHTML=`<div>Harbors <b>${portsOf(ME).length}</b></div>
     <div>Deck <b>${G.devDeck.length}</b></div>
     <div>Longest road <b>${G.longest<0?'—':P(G.longest).name}</b></div>
     <div>Largest army <b>${G.army<0?'—':P(G.army).name}</b></div>`;
-  if(G.phase==='setup'&&G.turn===0&&G.setupIdx<8&&SETUP_ORDER[G.setupIdx]===0){
+  if(G.phase==='setup'&&G.turn===ME&&SETUP_ORDER[G.setupIdx]===ME){
     setStatus('Your turn',G.clickMode==='setupRoad'?'Place a road':'Place a settlement');
   }
-  if(G.phase==='play'&&G.turn===0&&!G.over){
+  if(G.phase==='setup'&&G.turn!==ME)setStatus(P(G.turn).name+' is placing','Settle the island');
+  if(G.phase==='play'&&G.turn===ME&&!G.over){
     if(G.rolling)setStatus('Your turn','Rolling the dice…');
     else if(!G.rolled)setStatus('Your turn','Roll the dice');
     else setStatus('Your turn','Build, trade — then end your turn');
   }
-  if(G.phase==='play'&&G.turn!==0&&!G.over)setStatus(P(G.turn).name+' is playing','Wait for your turn');
+  if(G.phase==='play'&&G.turn!==ME&&!G.over)setStatus(P(G.turn).name+(isBot(G.turn)?' is playing':'’s turn'),'Waiting for them');
 }
 function updateDots(){
   const vm=G.clickMode==='settlement'||G.clickMode==='setupSettlement'||G.clickMode==='city';
   const em=G.clickMode==='road'||G.clickMode==='setupRoad'||G.clickMode==='freeRoad';
   for(const [k,d] of dotsV){
     let on=false;
-    if(vm&&G.turn===0){
-      if(G.clickMode==='city')on=G.b.settlement[k]===0;
-      else on=vertexFree(k)&&(G.clickMode==='setupSettlement'||vertexConnected(0,k));
+    if(vm&&G.turn===ME){
+      if(G.clickMode==='city')on=G.b.settlement[k]===ME;
+      else on=vertexFree(k)&&(G.clickMode==='setupSettlement'||vertexConnected(ME,k));
     }
     d.visible=on;
   }
   for(const [k,d] of dotsE){
     let on=false;
-    if(em&&G.turn===0){
+    if(em&&G.turn===ME){
       if(G.clickMode==='setupRoad'){on=edgeFree(k)&&G.focus&&(E[k].a===G.focus||E[k].b===G.focus)}
-      else if(G.clickMode==='freeRoad')on=edgeFree(k)&&edgeConnected(0,k);
-      else on=edgeFree(k)&&edgeConnected(0,k);
+      else if(G.clickMode==='freeRoad')on=edgeFree(k)&&edgeConnected(ME,k);
+      else on=edgeFree(k)&&edgeConnected(ME,k);
     }
     d.visible=on;
   }
@@ -1416,8 +1455,8 @@ function hoverAt(pt){
     hover.position.set(V[k].x,TOP+.035,V[k].z);
     let ok=false;
     if(G.clickMode==='setupSettlement')ok=vertexFree(k);
-    else if(G.clickMode==='city')ok=G.b.settlement[k]===0;
-    else ok=vertexFree(k)&&vertexConnected(0,k);
+    else if(G.clickMode==='city')ok=G.b.settlement[k]===ME;
+    else ok=vertexFree(k)&&vertexConnected(ME,k);
     hover.material.color.set(ok?0x6ef2a4:0xff6b5a);
   }
 }
@@ -1426,6 +1465,14 @@ async function handleClick(pt){
   if(G.clickMode==='robber'){
     const hi=nearestHex(pt);
     if(hi==null||hi===G.robber){toast('Pick a different hex');return}
+    if(G.pending&&G.pending.t==='robber'){
+      const cands=[...new Set(hexes[hi].corners.map(k=>ownerAt(k)).filter(o=>o>=0&&o!==ME&&countRes(P(o))>0))];
+      let victim=-1;
+      G.clickMode=null;hint('');hover.visible=false;updateDots();
+      if(cands.length>1)victim=await askPlayer('Steal a card from',cands);
+      act({a:'robber',hex:hi,victim});
+      return;
+    }
     moveRobber(hi);
     log('You moved the robber');
     G.clickMode=null;hint('');hover.visible=false;
@@ -1433,24 +1480,13 @@ async function handleClick(pt){
     updateDots();updateHud();
     return;
   }
-  if(G.turn!==0)return;
+  if(G.turn!==ME)return;
   if(G.phase==='setup'){
     if(G.clickMode==='setupSettlement'){
       const k=nearestVertex(pt);
       if(!k)return toast('Pick a corner');
       if(!vertexFree(k))return toast('Too close to another settlement');
-      const pi=0;
-      const second=Object.keys(G.b.settlement).some(x=>G.b.settlement[x]===pi)||Object.keys(G.b.city).some(x=>G.b.city[x]===pi);
-      addSettlement(pi,k);
-      if(second){
-        GAIN_FROM=screenOf(V[k].x,TOP,V[k].z);
-        for(const hi of V[k].hexes){const h=hexes[hi];if(h.terrain!=='desert')gain(pi,h.terrain,1)}
-        GAIN_FROM=null;
-        log('You placed your second settlement and took its resources');
-      }else log('You placed a settlement');
-      G.focus=k;G.clickMode='setupRoad';
-      hint('Place a road touching your new settlement');
-      updateDots();updateHud();
+      act({a:'setupSettle',v:k});
       return;
     }
     if(G.clickMode==='setupRoad'){
@@ -1458,12 +1494,7 @@ async function handleClick(pt){
       if(!ek)return toast('Pick an edge');
       if(!edgeFree(ek))return toast('That edge is taken');
       if(!(E[ek].a===G.focus||E[ek].b===G.focus))return toast('The road must touch your settlement');
-      addRoad(0,ek);
-      log('You placed a road');
-      G.focus=null;G.setupIdx++;
-      G.clickMode=null;hint('');
-      syncPieces();updateDots();updateHud();
-      if(G.setupWait){const fn=G.setupWait;G.setupWait=null;fn();}
+      act({a:'setupRoad',e:ek});
       return;
     }
     return;
@@ -1473,34 +1504,546 @@ async function handleClick(pt){
     const k=nearestVertex(pt);
     if(!k)return toast('Pick a corner');
     if(G.clickMode==='city'){
-      if(G.b.settlement[k]!==0)return toast('Pick your own settlement');
-      if(!payCost(0,COST.city))return toast('Not enough resources');
-      addCity(0,k);log('You built a city');
-    }else{
-      if(!vertexFree(k))return toast('Too close to another settlement');
-      if(!vertexConnected(0,k))return toast('Connect it to your roads');
-      if(!payCost(0,COST.settlement))return toast('Not enough resources');
-      addSettlement(0,k);log('You built a settlement');
+      if(G.b.settlement[k]!==ME)return toast('Pick your own settlement');
+      act({a:'build',type:'city',key:k});
+      return;
     }
-    G.clickMode=null;hint('');afterChange();
+    if(!vertexFree(k))return toast('Too close to another settlement');
+    if(!vertexConnected(ME,k))return toast('Connect it to your roads');
+    act({a:'build',type:'settlement',key:k});
     return;
   }
   if(G.clickMode==='road'||G.clickMode==='freeRoad'){
     const ek=nearestEdge(pt);
     if(!ek)return toast('Pick an edge');
     if(!edgeFree(ek))return toast('That edge is taken');
-    const free=G.clickMode==='freeRoad';
-    if(!edgeConnected(0,ek))return toast('Connect it to your roads');
-    if(!free&&!payCost(0,COST.road))return toast('Not enough resources');
-    addRoad(0,ek);log(free?'You placed a free road':'You built a road');
-    if(free){
-      G.freeRoads--;
-      if(G.freeRoads<=0){G.clickMode=null;hint('')}
-      else hint(`Place ${G.freeRoads} more free road${G.freeRoads===1?'':'s'}`);
-    }else{G.clickMode=null;hint('')}
-    afterChange();
+    if(!edgeConnected(ME,ek))return toast('Connect it to your roads');
+    act({a:'build',type:'road',key:ek,free:G.clickMode==='freeRoad'});
   }
 }
+
+/* =====================================================================
+   Online play
+   - Firebase (the site's own project) only introduces the players: the
+     host publishes one lobby document with a WebRTC offer per free seat.
+   - After that the game runs directly between the browsers. The host is
+     the referee: guests send actions, the host applies them and sends
+     everyone the new table state.
+   ===================================================================== */
+const FBCFG={apiKey:"AIzaSyDJhWSi7QZKXtOPYwKHPF7zPg_klh1If7w",authDomain:"damp-2406a.firebaseapp.com",projectId:"damp-2406a",appId:"1:940989851976:web:f8fd07c258afa71fd22b7d"};
+const SDK='https://www.gstatic.com/firebasejs/10.14.1/';
+const ICE={iceServers:[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:stun.cloudflare.com:3478']}]};
+const NET={fb:null,role:null,code:'',lobbyCode:'',conns:[],started:false,pc:null,dc:null,name:'',ref:null,lobbyRef:null,unsubs:[]};
+const onStatus=(txt,cls)=>{const p=$('onStatus');if(!p)return;p.textContent=txt||'';p.className=cls||''};
+const myName=()=>NET.name||(((NET.fb&&NET.fb.auth&&NET.fb.auth.currentUser&&NET.fb.auth.currentUser.email)||'').replace('@damp.example','')||'player');
+const loginEmail=n=>String(n||'').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'')+'@damp.example';
+const inviteLink=code=>{const u=new URL(location.href);u.search='';u.hash='';u.searchParams.set('room',code);return u.href};
+
+async function fbInit(){
+  if(NET.fb)return NET.fb;
+  const [A,Au,F]=await Promise.all([import(SDK+'firebase-app.js'),import(SDK+'firebase-auth.js'),import(SDK+'firebase-firestore.js')]);
+  const app=A.getApps().length?A.getApp():A.initializeApp(FBCFG);
+  const auth=Au.getAuth(app),db=F.getFirestore(app);
+  await new Promise(r=>{const u=Au.onAuthStateChanged(auth,()=>{u();r()})});
+  NET.fb={F,Au,db,auth};
+  return NET.fb;
+}
+function newPc(){const pc=new RTCPeerConnection(ICE);pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed')onStatus('The connection failed. Try another network.','bad')};return pc}
+function gathered(pc){return new Promise(r=>{if(pc.iceGatheringState==='complete')return r();const t=setTimeout(r,4000);pc.addEventListener('icegatheringstatechange',()=>{if(pc.iceGatheringState==='complete'){clearTimeout(t);r()}})})}
+const ROOM_LETTERS='ABCDEFGHJKMNPQRSTUVWXYZ';
+const freshCode=()=>Array.from({length:4},()=>ROOM_LETTERS[Math.random()*ROOM_LETTERS.length|0]).join('');
+function netSend(m){try{if(NET.dc&&NET.dc.readyState==='open')NET.dc.send(JSON.stringify(m))}catch(e){}}
+function sendTo(c,m){try{if(c.dc&&c.dc.readyState==='open')c.dc.send(JSON.stringify(m))}catch(e){}}
+function netBroadcast(){if(!ONLINE||NET.role!=='host'||!NET.started)return;for(const c of NET.conns)if(c.seat)sendTo(c,{t:'state',s:snapshotFor(c.seat)})}
+
+function openOnline(pre){
+  $('menu').classList.add('hide');$('online').classList.remove('hide');
+  $('onMain').classList.remove('hide');$('onRoom').classList.add('hide');
+  onStatus('Connecting…');
+  (async()=>{
+    try{
+      const fb=await fbInit();
+      if(fb.auth.currentUser){NET.name=((fb.auth.currentUser.email||'').replace('@damp.example','')||NET.name);showOnlineMain()}
+      else {$('onAuth').classList.remove('hide');$('onActions').classList.add('hide');onStatus('Sign in, then create or join a room.')}
+      if(pre)$('onCodeIn').value=pre;
+    }catch(e){onStatus('Could not reach the accounts service. Check your connection.','bad')}
+  })();
+}
+function showOnlineMain(){
+  $('onAuth').classList.add('hide');$('onActions').classList.remove('hide');
+  $('onMe').textContent=myName();
+  onStatus('Create a room and send the code to your friends.','ok');
+}
+async function signIn(create){
+  try{
+    const fb=await fbInit();
+    const name=String($('onName').value||'').trim().toLowerCase();
+    const pass=$('onPass').value;
+    const email=loginEmail(name);
+    if(!name||name.length<2||pass.length<6){onStatus('Use a name of 2+ characters and a password of 6+ characters.','bad');return}
+    if(create)await fb.Au.createUserWithEmailAndPassword(fb.auth,email,pass).catch(async e=>{
+      if(e.code==='auth/email-already-in-use')return fb.Au.signInWithEmailAndPassword(fb.auth,email,pass);
+      throw e;
+    });
+    else await fb.Au.signInWithEmailAndPassword(fb.auth,email,pass);
+    NET.name=name;NET.fb.user=fb.auth.currentUser;
+    showOnlineMain();
+  }catch(e){onStatus('Could not sign in ('+(e.code||e.message)+').','bad')}
+}
+function showRoom(code,isHost){
+  $('onMain').classList.add('hide');$('onRoom').classList.remove('hide');
+  $('onCode').textContent=code;
+  $('onShare').textContent=inviteLink(code);
+  $('onStart').classList.toggle('hide',!isHost);
+  refreshLobby();
+}
+function refreshLobby(){
+  if(NET.role!=='host'){return}
+  const rows=[`<div><i style="background:${COLORS_CSS[0]}"></i>${myName()}<em>host</em></div>`];
+  const open=NET.conns.filter(c=>c.dc&&c.dc.readyState==='open');
+  open.forEach((c,i)=>{rows.push(`<div><i style="background:${COLORS_CSS[i+1]}"></i>${c.name||'Player '+(i+2)}<em>ready</em></div>`)});
+  $('onPlayers').innerHTML=rows.join('');
+  $('onStart').disabled=!open.length;
+  $('onStart').classList.toggle('hide',false);
+  $('onRoomNote').textContent=open.length?'Friends can join with the code. Start when everyone is in.':'Waiting for players…';
+}
+async function hostRoom(){
+  try{
+    const fb=await fbInit();
+    if(!fb.auth.currentUser){onStatus('Sign in first.','bad');return}
+    netClose();NET.role='host';NET.conns=[];
+    onStatus('Creating a room…');
+    const seatCodes=[];
+    while(seatCodes.length<3){const c=freshCode();if(!seatCodes.includes(c))seatCodes.push(c)}
+    let lobbyCode=freshCode();while(seatCodes.includes(lobbyCode))lobbyCode=freshCode();
+    for(let i=0;i<3;i++){
+      const pc=newPc();const dc=pc.createDataChannel('g');
+      const conn={seat:0,dc,pc,name:'',code:seatCodes[i]};
+      wireSeat(conn);
+      await pc.setLocalDescription(await pc.createOffer());await gathered(pc);
+      const ref=fb.F.doc(fb.db,'rooms',seatCodes[i]);
+      await fb.F.setDoc(ref,{host:fb.auth.currentUser.uid,hostName:myName(),game:'catan',seat:i,offer:{type:'offer',sdp:pc.localDescription.sdp},at:Date.now()});
+      conn.ref=ref;
+      const unsub=fb.F.onSnapshot(ref,s=>{
+        const d=s.data();
+        if(d&&d.answer&&pc.signalingState==='have-local-offer'){
+          conn.name=String(d.guestName||'Player').slice(0,20);
+          pc.setRemoteDescription(d.answer).catch(()=>onStatus('Could not connect to a friend.','bad'));
+        }
+      });
+      NET.unsubs.push(unsub);
+      NET.conns.push(conn);
+    }
+    const lobbyRef=fb.F.doc(fb.db,'rooms',lobbyCode);
+    await fb.F.setDoc(lobbyRef,{host:fb.auth.currentUser.uid,hostName:myName(),game:'catan',lobby:true,seats:seatCodes,at:Date.now()});
+    NET.lobbyRef=lobbyRef;NET.lobbyCode=lobbyCode;NET.code=lobbyCode;
+    showRoom(lobbyCode,true);
+    onStatus('Room ready — share the code.','ok');
+  }catch(e){onStatus('Could not create the room ('+(e.code||e.message)+').','bad')}
+}
+function wireSeat(conn){
+  const dc=conn.dc,pc=conn.pc;
+  dc.onopen=()=>{
+    if(NET.started){try{dc.send(JSON.stringify({t:'full'}));dc.close()}catch(e){}return}
+    if(!conn.seat)conn.seat=Math.max(0,NET.conns.indexOf(conn))+1;
+    refreshLobby();
+    onStatus('A friend connected.','ok');
+  };
+  dc.onmessage=e=>{
+    let m;try{m=JSON.parse(e.data)}catch(x){return}
+    if(m.t==='hi'){
+      conn.name=String(m.name||'Player').slice(0,20);
+      sendTo(conn,{t:'hello',seat:conn.seat,code:NET.code});
+      refreshLobby();
+    }else if(m.t==='act'){
+      if(conn.seat)applyRemote(conn.seat,m.a);
+    }
+  };
+  dc.onclose=()=>{seatLeft(conn);if(!NET.started)refreshLobby()};
+  pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed')onStatus('A friend lost the connection.','bad')};
+}
+function seatLeft(conn){
+  if(!NET.started)return;
+  if(!conn.seat||conn.seat>=NP||G.auto[conn.seat])return;
+  G.auto[conn.seat]=true;
+  log(`${P(conn.seat).name} left — the computer takes over`);
+  toast(`${P(conn.seat).name} left the game`);
+  netBroadcast();
+  if(G.turn===conn.seat&&G.phase==='play')setTimeout(()=>aiTurn(conn.seat),500);
+}
+async function joinRoom(raw){
+  const code=String(raw||'').trim().toUpperCase();
+  if(code.length!==4){onStatus('A room code is four letters.','bad');return}
+  try{
+    const fb=await fbInit();
+    if(!fb.auth.currentUser){onStatus('Sign in first.','bad');return}
+    onStatus('Joining…');
+    const lobbyRef=fb.F.doc(fb.db,'rooms',code);
+    const lobby=await fb.F.getDoc(lobbyRef);
+    if(!lobby.exists()||!lobby.data().lobby||lobby.data().game!=='catan'){onStatus('No room with that code.','bad');return}
+    const d=lobby.data();
+    if(Date.now()-(d.at||0)>2*60*60*1000){onStatus('That room has expired.','bad');return}
+    for(const sc of d.seats||[]){
+      const ref=fb.F.doc(fb.db,'rooms',sc);
+      const snap=await fb.F.getDoc(ref);
+      if(!snap.exists())continue;
+      const sd=snap.data();
+      if(sd.guest)continue;
+      netClose();NET.role='guest';
+      const pc=newPc();NET.pc=pc;
+      pc.ondatachannel=e=>{NET.dc=e.channel;wireGuest(e.channel)};
+      await pc.setRemoteDescription(sd.offer);
+      await pc.setLocalDescription(await pc.createAnswer());
+      await gathered(pc);
+      await fb.F.updateDoc(ref,{guest:fb.auth.currentUser.uid,guestName:myName(),answer:{type:'answer',sdp:pc.localDescription.sdp}});
+      NET.code=sc;NET.lobbyCode=code;NET.ref=ref;
+      showRoom(code,false);
+      onStatus('Joined. Waiting for the host to start…','ok');
+      $('onRoomNote').textContent='Waiting for the host to start…';
+      return;
+    }
+    onStatus('That room is full.','bad');
+  }catch(e){onStatus('Could not join ('+(e.code||e.message)+').','bad')}
+}
+function wireGuest(dc){
+  dc.onopen=()=>netSend({t:'hi',name:myName()});
+  dc.onmessage=e=>{
+    let m;try{m=JSON.parse(e.data)}catch(x){return}
+    if(m.t==='hello'){NET.mySeat=m.seat}
+    else if(m.t==='start'){
+      if(NET.started)return;
+      NET.started=true;NET.role='guest';NET.mySeat=m.seat;
+      ME=m.seat;NP=m.n;GNAMES=(m.names||[]).slice();ONLINE=true;
+      $('online').classList.add('hide');
+      startAsGuest();
+    }
+    else if(m.t==='state'){applySnap(m.s)}
+    else if(m.t==='full'){toast('That room is already playing')}
+    else if(m.t==='err'){toast(m.m||'That move was not allowed')}
+  };
+  dc.onclose=()=>{if(NET.started){toast('The host connection closed');setStatus('Offline','The game cannot continue');updateHud()}};
+}
+function startAsGuest(){
+  $('menu').classList.add('hide');$('over').classList.add('hide');$('hud').classList.remove('hide');
+  G.mode='setup';newGame();resetCam();
+  setStatus('Catan','Settling the island');updateHud();
+}
+function netClose(){
+  for(const u of NET.unsubs){try{u()}catch(e){}}
+  NET.unsubs=[];
+  const old=NET.conns;
+  for(const c of old){
+    try{c.dc.close();c.pc.close()}catch(e){}
+    try{c.ref&&NET.fb&&NET.fb.F.deleteDoc(c.ref)}catch(e){}
+  }
+  NET.conns=[];
+  try{NET.dc&&NET.dc.close();NET.pc&&NET.pc.close()}catch(e){}
+  if(NET.fb){
+    try{NET.ref&&NET.fb.F.deleteDoc(NET.ref)}catch(e){}
+    try{NET.lobbyRef&&NET.fb.F.deleteDoc(NET.lobbyRef)}catch(e){}
+    for(const c of NET.conns){try{c.ref&&NET.fb.F.deleteDoc(c.ref)}catch(e){}}
+  }
+  NET.dc=null;NET.pc=null;NET.ref=null;NET.lobbyRef=null;NET.role=null;NET.started=false;NET.code='';NET.lobbyCode='';
+}
+
+/* ---------- state over the wire ---------- */
+function snapshotFor(seat){
+  return {
+    v:++G.ver,
+    hexes:hexes.map(h=>[h.terrain,h.num||0,h.robber?1:0]),
+    players:G.players.map(p=>({name:p.name,res:{...p.res},
+      dev:p.i===seat?p.dev.map(c=>({t:c.t,c:!!c.c})):[],
+      knights:p.knights,vpCards:p.i===seat?p.vpCards:0})),
+    b:{settlement:{...G.b.settlement},city:{...G.b.city},road:{...G.b.road}},
+    bank:{...G.bank},
+    turn:G.turn,setupIdx:G.setupIdx,phase:G.phase,mode:G.mode,rolled:G.rolled,devUsed:G.devUsed,
+    dice:[...G.dice],robber:G.robber,longest:G.longest,army:G.army,devDeckLen:G.devDeck.length,
+    log:G.log.slice(-12),over:G.over,winner:G.winner,turnNum:G.turnNum,freeRoads:G.freeRoads,
+    focus:G.focus||null,pending:G.pending?JSON.parse(JSON.stringify(G.pending)):null,
+    rollSeq:G.rollSeq||0,names:G.names?G.names.slice():[]
+  };
+}
+let lastRollSeq=0,applying=false;
+function applySnap(s){
+  if(!s||applying)return;
+  applying=true;
+  const before=G.players[ME]?{...G.players[ME].res}:null;
+  G.ver=s.v;G.turn=s.turn;G.setupIdx=s.setupIdx;G.phase=s.phase;G.mode=s.mode;
+  G.rolled=s.rolled;G.devUsed=s.devUsed;G.dice=s.dice.slice();G.robber=s.robber;
+  G.longest=s.longest;G.army=s.army;G.bank={...s.bank};G.over=!!s.over;G.winner=s.winner;
+  G.turnNum=s.turnNum;G.freeRoads=s.freeRoads;G.focus=s.focus;G.pending=s.pending;
+  G.names=s.names.slice();G.log=s.log.slice();
+  G.devDeck=new Array(s.devDeckLen).fill('knight');
+  G.players=s.players.map((p,i)=>({i,name:p.name,color:COLORS[i],res:{...p.res},
+    dev:(p.dev||[]).map(c=>({t:c.t,c:!!c.c})),knights:p.knights,vpCards:p.vpCards}));
+  G.b.settlement=Object.assign(Object.create(null),s.b.settlement);
+  G.b.city=Object.assign(Object.create(null),s.b.city);
+  G.b.road=Object.assign(Object.create(null),s.b.road);
+  applyBoard(s);
+  syncPieces();
+  $('logList').innerHTML=G.log.slice(-7).map(m=>`<div>${m}</div>`).join('');
+  updateHud();maybeSetupUi();maybePending();
+  const diceChanged=s.rollSeq!==lastRollSeq;
+  if(diceChanged){lastRollSeq=s.rollSeq;$('d1').textContent='·';$('d2').textContent='·';rollDiceAnim(s.dice[0],s.dice[1]).then(()=>{updateHud()})}
+  if(before&&G.players[ME]){
+    for(const r of RES){const d=G.players[ME].res[r]-before[r];if(d>0)flyResource(r,d,{x:innerWidth/2,y:innerHeight*.45})}
+  }
+  if(G.over&&$('over').classList.contains('hide')){
+    $('overName').textContent=G.winner===ME?'You win':'You lost';
+    $('overText').textContent=G.winner===ME?'Ten points on the island. You rule Catan.':`${P(G.winner).name} reached ten points first.`;
+    $('over').classList.remove('hide');
+  }
+  applying=false;
+}
+function applyBoard(s){
+  s.hexes.forEach((h,i)=>{
+    const hx=hexes[i];
+    if(hx.terrain!==h[0]){hx.terrain=h[0];tileMeshes[i].material=terrainMats[h[0]]}
+    const num=h[1]||null;
+    if(hx.num!==num){hx.num=num;const tok=tokenMeshes[i];tok.visible=!!num;if(num){tok.material.map=numberTex[num];tok.material.needsUpdate=true}}
+    hx.robber=!!h[2];
+  });
+  if(hexes[G.robber])robber.position.set(hexes[G.robber].x,TOP,hexes[G.robber].z);
+}
+function maybeSetupUi(){
+  if(G.phase!=='setup')return;
+  if(G.turn===ME){const cm=G.focus?'setupRoad':'setupSettlement';if(G.clickMode!==cm){G.clickMode=cm}}
+  else G.clickMode=null;
+  updateDots();
+}
+function maybePending(){
+  const pd=G.pending;
+  if(!pd){pendingShown=0;if(G.clickMode==='robber'){G.clickMode=null;hint('');updateDots()}return}
+  if(pd.t==='discard'){
+    const mine=(pd.seats||[]).find(s=>s.i===ME);
+    if(mine&&pendingShown!==pd.id){pendingShown=pd.id;askDiscard(P(ME),mine.need).then(picks=>{pendingShown=0;act({a:'discard',picks})})}
+  }else if(pd.t==='robber'&&pd.roller===ME&&G.clickMode!=='robber'){
+    G.clickMode='robber';hint('Move the robber to another hex');setStatus('Your turn','Move the robber');updateDots();
+  }
+}
+let pendingShown=0;
+
+/* ---------- actions ---------- */
+function act(a){
+  if(ONLINE&&NET.role==='guest'){netSend({t:'act',a});return}
+  const r=applyAction(ME,a);
+  if(typeof r==='string'&&r)toast(r);
+  if(ONLINE)netBroadcast();
+}
+function applyRemote(seat,a){
+  const r=applyAction(seat,a);
+  if(typeof r==='string'&&r)sendTo(NET.conns.find(c=>c.seat===seat)||{}, {t:'err',m:r});
+  if(ONLINE)netBroadcast();
+}
+function applyAction(seat,a){
+  if(!a||seat<0||seat>=NP)return '';
+  if(G.phase==='setup'){
+    if(a.a==='setupSettle'){
+      if(G.turn!==seat||SETUP_ORDER[G.setupIdx]!==seat)return 'Not your turn';
+      if(!V[a.v]||!vertexFree(a.v))return 'Too close to another settlement';
+      const second=Object.keys(G.b.settlement).some(x=>G.b.settlement[x]===seat)||Object.keys(G.b.city).some(x=>G.b.city[x]===seat);
+      addSettlement(seat,a.v);
+      if(second){
+        if(seat===ME)GAIN_FROM=screenOf(V[a.v].x,TOP,V[a.v].z);
+        for(const hi of V[a.v].hexes){const h=hexes[hi];if(h.terrain!=='desert')gain(seat,h.terrain,1)}
+        GAIN_FROM=null;
+        log(`${P(seat).name} placed a second settlement and took its resources`);
+      }else log(`${P(seat).name} placed a settlement`);
+      G.focus=a.v;G.clickMode=seat===ME?'setupRoad':null;
+      hint('');syncPieces();updateDots();updateHud();
+      return '';
+    }
+    if(a.a==='setupRoad'){
+      if(G.turn!==seat||SETUP_ORDER[G.setupIdx]!==seat)return 'Not your turn';
+      if(!E[a.e]||!edgeFree(a.e))return 'That edge is taken';
+      if(!(E[a.e].a===G.focus||E[a.e].b===G.focus))return 'The road must touch your settlement';
+      addRoad(seat,a.e);log(`${P(seat).name} placed a road`);
+      G.focus=null;G.setupIdx++;G.clickMode=null;hint('');
+      syncPieces();updateDots();updateHud();
+      setupNext();
+      return '';
+    }
+    return '';
+  }
+  if(G.over)return '';
+  if(a.a==='discard')return applyDiscard(seat,a.picks);
+  if(a.a==='robber')return applyRobber(seat,a.hex,a.victim);
+  if(G.turn!==seat)return 'Wait for your turn';
+  if(a.a==='roll'){
+    if(G.rolled||G.rolling)return '';
+    doRoll(seat);return '';
+  }
+  if(a.a==='build'){
+    const type=a.type;
+    if(type==='road'){
+      if(!E[a.key]||!edgeFree(a.key))return 'That edge is taken';
+      if(!edgeConnected(seat,a.key))return 'Connect it to your roads';
+      if(a.free){
+        if(G.freeRoads<=0)return '';
+        G.freeRoads--;addRoad(seat,a.key);log(`${P(seat).name} placed a free road`);
+        if(seat===ME)G.clickMode=G.freeRoads>0?'freeRoad':null;
+      }else{
+        if(!canPay(P(seat),COST.road))return 'Not enough resources';
+        payCost(seat,COST.road);addRoad(seat,a.key);log(`${P(seat).name} built a road`);
+        if(seat===ME)G.clickMode=null;
+      }
+    }else if(type==='settlement'){
+      if(!V[a.key]||!vertexFree(a.key))return 'Too close to another settlement';
+      if(!vertexConnected(seat,a.key))return 'Connect it to your roads';
+      if(!canPay(P(seat),COST.settlement))return 'Not enough resources';
+      payCost(seat,COST.settlement);addSettlement(seat,a.key);log(`${P(seat).name} built a settlement`);
+      if(seat===ME)G.clickMode=null;
+    }else if(type==='city'){
+      if(G.b.settlement[a.key]!==seat)return 'Pick your own settlement';
+      if(!canPay(P(seat),COST.city))return 'Not enough resources';
+      payCost(seat,COST.city);addCity(seat,a.key);log(`${P(seat).name} built a city`);
+      if(seat===ME)G.clickMode=null;
+    }else return '';
+    hint('');afterChange();return '';
+  }
+  if(a.a==='buydev'){
+    if(!G.devDeck.length)return 'The development deck is empty';
+    if(!canPay(P(seat),COST.dev))return 'Not enough resources';
+    payCost(seat,COST.dev);buyDev(seat);log(`${P(seat).name} bought a development card`);
+    afterChange();return '';
+  }
+  if(a.a==='dev'){
+    if(!canPlayDev(seat,a.idx))return 'You cannot play that card now';
+    const p=P(seat),c=p.dev[a.idx];
+    if(c.t==='knight'){
+      p.dev.splice(a.idx,1);G.devUsed=true;p.knights++;
+      log(`${p.name} played a knight`);updateSpecial();updateHud();
+      startSeven(seat,true);return '';
+    }
+    if(c.t==='plenty'){
+      const picks=Array.isArray(a.args)?a.args.filter(r=>RES.includes(r)).slice(0,2):[];
+      if(picks.length!==2)return 'Pick two resources';
+      p.dev.splice(a.idx,1);G.devUsed=true;
+      picks.forEach(r=>gain(seat,r,1));
+      log(`${p.name} took ${picks.map(r=>RES_LABEL[r]).join(' and ')}`);
+    }else if(c.t==='monopoly'){
+      const r=RES.includes(a.args&&a.args[0])?a.args[0]:null;
+      if(!r)return 'Pick a resource';
+      p.dev.splice(a.idx,1);G.devUsed=true;
+      let got=0;for(const q of G.players)if(q.i!==seat){got+=q.res[r];q.res[r]=0}
+      p.res[r]+=got;log(`${p.name} took all ${RES_LABEL[r]} (${got})`);
+    }else if(c.t==='road'){
+      p.dev.splice(a.idx,1);G.devUsed=true;G.freeRoads=2;
+      if(seat===ME){G.clickMode='freeRoad';hint('Place two free roads')}
+      log(`${p.name} played road building`);
+    }
+    afterChange();return '';
+  }
+  if(a.a==='trade'){
+    const give=a.give,want=a.want;
+    if(!RES.includes(give)||!RES.includes(want)||give===want)return '';
+    const ratio=ratioFor(seat,want);
+    if(P(seat).res[give]<ratio)return 'Not enough resources';
+    if(G.bank[want]<=0)return 'The bank is empty';
+    P(seat).res[give]-=ratio;G.bank[give]+=ratio;P(seat).res[want]++;G.bank[want]--;
+    if(seat===ME)flyResource(want,1,{x:innerWidth/2,y:innerHeight*.45});
+    log(`${P(seat).name} traded ${ratio} ${RES_LABEL[give]} for 1 ${RES_LABEL[want]}`);
+    afterChange();return '';
+  }
+  if(a.a==='end'){
+    if(!G.rolled)return 'Roll the dice first';
+    G.clickMode=null;G.freeRoads=0;hint('');
+    nextTurn();return '';
+  }
+  return '';
+}
+function applyDiscard(seat,picks){
+  const pd=G.pending;
+  if(!pd||pd.t!=='discard')return '';
+  const entry=(pd.seats||[]).find(s=>s.i===seat);
+  if(!entry)return '';
+  const p=P(seat);const clean={wood:0,brick:0,sheep:0,wheat:0,ore:0};
+  for(const r of RES){const n=Math.max(0,Math.min(p.res[r],+(picks&&picks[r])||0));clean[r]=n}
+  const sum=RES.reduce((s,r)=>s+clean[r],0);
+  if(sum!==entry.need)return `Discard exactly ${entry.need} cards`;
+  for(const r of RES){p.res[r]-=clean[r];G.bank[r]+=clean[r]}
+  log(`${p.name} discarded ${entry.need} cards`);
+  pd.seats=pd.seats.filter(s=>s.i!==seat);
+  updateHud();
+  if(!pd.seats.length)pendingRobber();
+  return '';
+}
+function applyRobber(seat,hexIdx,victim){
+  const pd=G.pending;
+  if(!pd||pd.t!=='robber'||pd.roller!==seat)return '';
+  if(hexIdx==null||!hexes[hexIdx]||hexIdx===G.robber)return 'Pick a different hex';
+  moveRobber(hexIdx);log(`${P(seat).name} moved the robber`);
+  const cands=[...new Set(hexes[hexIdx].corners.map(k=>ownerAt(k)).filter(o=>o>=0&&o!==seat&&countRes(P(o))>0))];
+  let who=cands.includes(victim)?victim:(cands.length?cands[0]:-1);
+  if(who>=0)steal(seat,who);
+  G.pending=null;G.clickMode=null;hint('');
+  afterChange();
+  if(seat===ME)setStatus('Your turn','Build, trade or end your turn');
+  return '';
+}
+function startSeven(seat,fromCard){
+  const list=[];
+  for(const p of G.players){
+    const n=countRes(p);
+    if(n>7){
+      const need=Math.floor(n/2);
+      if(isBot(p.i)){aiDiscard(p,need);log(`${p.name} discarded ${need} cards`)}
+      else list.push({i:p.i,need});
+    }
+  }
+  G.pending={id:++G.pendId,t:list.length?'discard':'robber',seats:list,roller:seat,fromCard:!!fromCard};
+  if(!list.length)pendingRobber();
+  updateHud();updateDots();
+  if(ONLINE)netBroadcast();
+  maybePending();
+}
+function pendingRobber(){
+  if(!G.pending)return;
+  G.pending.t='robber';
+  const roll=G.pending.roller;
+  if(roll===ME){
+    G.clickMode='robber';hint('Move the robber to another hex');
+    setStatus('Your turn','Move the robber');updateDots();
+  }else if(isBot(roll)){
+    setTimeout(()=>{
+      if(!G.pending||G.pending.t!=='robber')return;
+      const hex=aiChooseRobber(roll);
+      applyRobber(roll,hex,aiStealTarget(roll,hex));
+    },650);
+  }
+  updateHud();
+  if(ONLINE)netBroadcast();
+}
+
+/* ---------- lobby buttons ---------- */
+$('bOnline').onclick=()=>openOnline('');
+$('onIn').onclick=()=>signIn(false);
+$('onUp').onclick=()=>signIn(true);
+$('onHost').onclick=hostRoom;
+$('onJoin').onclick=()=>joinRoom($('onCodeIn').value);
+$('onStart').onclick=startOnline;
+$('onBack').onclick=()=>{netClose();$('online').classList.add('hide');$('menu').classList.remove('hide')};
+$('onLeave').onclick=()=>{netClose();$('onRoom').classList.add('hide');$('onMain').classList.remove('hide');showOnlineMain();onStatus('You left the room.')};
+function startOnline(){
+  if(NET.role!=='host'||NET.started)return;
+  const live=NET.conns.filter(c=>c.dc&&c.dc.readyState==='open'&&c.seat);
+  if(!live.length){onStatus('Wait for at least one friend to join.','bad');return}
+  live.sort((a,b)=>a.seat-b.seat);
+  GNAMES=[myName(),...live.map(c=>c.name||'Player')].slice(0,4);
+  NP=GNAMES.length;ME=0;ONLINE=true;NET.started=true;
+  live.forEach((c,i)=>{c.seat=i+1;sendTo(c,{t:'start',seat:i+1,n:NP,names:GNAMES,code:NET.code})});
+  $('online').classList.add('hide');
+  $('menu').classList.add('hide');
+  $('over').classList.add('hide');
+  $('hud').classList.remove('hide');
+  G.mode='setup';newGame();resetCam();
+  setStatus('Catan','Settling the island');log('Place your first settlement');updateHud();
+  setupNext();
+}
+addEventListener('load',()=>{
+  const room=new URLSearchParams(location.search).get('room');
+  if(room&&/^[A-Za-z]{4}$/.test(room))openOnline(room.toUpperCase());
+});
 
 /* ---------- pointer ---------- */
 const canvas=$('gl');
@@ -1554,7 +2097,7 @@ canvas.addEventListener('wheel',e=>{e.preventDefault();cam.zoom=clamp(cam.zoom+e
 $('bPlay').onclick=()=>{startGame();};
 $('bAgain').onclick=()=>{location.reload()};
 $('bMenu').onclick=()=>{location.href='../index.html'};
-$('bRoll').onclick=()=>{if(G.turn===0&&!G.busy&&!G.rolling)doRoll(0)};
+$('bRoll').onclick=()=>{if(G.turn===ME&&!G.rolled&&!G.rolling&&G.phase==='play'&&!G.over)act({a:'roll'})};
 $('cRotL').onclick=()=>{cam.az+=Math.PI/2};
 $('cRotR').onclick=()=>{cam.az-=Math.PI/2};
 $('cIn').onclick=()=>{cam.zoom=clamp(cam.zoom*.84,.65,1.9)};
@@ -1586,7 +2129,7 @@ addEventListener('keydown',e=>{
     if(G.clickMode&&G.clickMode!=='robber'){G.clickMode=null;hint('');updateDots();hover.visible=false}
     return;
   }
-  if(!$('modal').classList.contains('hide')||G.phase!=='play'||G.turn!==0)return;
+  if(!$('modal').classList.contains('hide')||G.phase!=='play'||G.turn!==ME)return;
   if(e.target&&/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
   const k=e.key.toLowerCase();
   if(k==='r')$('bRoll').click();
@@ -1624,8 +2167,8 @@ function syncPieces(){
 function gameOver(){
   G.busy=false;
   hint('');
-  $('overName').textContent=G.winner===0?'You win':'You lost';
-  $('overText').textContent=G.winner===0
+  $('overName').textContent=G.winner===ME?'You win':'You lost';
+  $('overText').textContent=G.winner===ME
     ? `Ten points on the island. You rule Catan.`
     : `${P(G.winner).name} reached ten points first. Better luck next island.`;
   $('over').classList.remove('hide');
@@ -1634,35 +2177,31 @@ function gameOver(){
 }
 
 /* ---------- start ---------- */
-let setupRunning=false;
-async function runSetup(){
-  if(setupRunning)return;
-  setupRunning=true;
-  while(G.phase==='setup'){
-    const pi=SETUP_ORDER[G.setupIdx];
-    if(pi===undefined){finishSetup();break}
-    if(pi!==0){
-      G.busy=true;updateHud();
-      await sleep(520);
-      aiSetupPick(pi);
-      G.setupIdx++;
-      G.busy=false;
-      await sleep(240);
-      if(G.setupIdx>=8){finishSetup();break}
-    }else{
-      G.busy=false;updateHud();
-      setStatus('Your turn',G.setupIdx===0?'Place your first settlement':'Place your second settlement');
-      G.clickMode='setupSettlement';
-      G.focus=null;
-      updateDots();
-      await new Promise(res=>{G.setupWait=res});
-    }
+function setupNext(){
+  if(G.phase!=='setup')return;
+  const pi=SETUP_ORDER[G.setupIdx];
+  if(pi===undefined){finishSetup();return}
+  G.turn=pi;
+  if(isBot(pi)){
+    G.busy=true;updateHud();
+    setTimeout(()=>{
+      if(G.phase!=='setup')return;
+      aiSetupPick(pi);G.setupIdx++;G.busy=false;
+      setupNext();
+      if(ONLINE)netBroadcast();
+    },520);
+  }else{
+    G.busy=false;G.clickMode=G.focus?'setupRoad':'setupSettlement';
+    updateHud();updateDots();
+    if(pi===ME)setStatus('Your turn',G.setupIdx===0?'Place your first settlement':'Place your second settlement');
+    if(ONLINE)netBroadcast();
   }
-  setupRunning=false;
 }
 function startGame(){
+  ONLINE=false;ME=0;NP=4;GNAMES=NAMES.slice();NET.role=null;
   $('menu').classList.add('hide');
   $('over').classList.add('hide');
+  $('online').classList.add('hide');
   $('hud').classList.remove('hide');
   G.mode='setup';
   newGame();
@@ -1670,7 +2209,7 @@ function startGame(){
   setStatus('Catan','Settling the island');
   log('Place your first settlement');
   updateHud();
-  runSetup();
+  setupNext();
 }
 
 /* ---------- loop ---------- */
@@ -1687,7 +2226,10 @@ requestAnimationFrame(loop);
 if(location.hash==='#dev'){
   window.__catan={G,V,E,hexes,P,doRoll,produce,addSettlement,addRoad,addCity,updateSpecial,vp,longestRoad,
     finishSetup,beginBuild,openTrade,endTurn,ratioFor,steal,playDevCard,buyDev,canPlayDev,checkWin,
-    syncPieces,updateHud,camera,cam,renderer,scene,startGame,aiTurn,nextTurn,askResources,flyResource,gain};
+    syncPieces,updateHud,camera,cam,renderer,scene,startGame,aiTurn,nextTurn,askResources,flyResource,gain,
+    act,applyAction,applyRemote,applySnap,snapshotFor,setupNext,netBroadcast,NET,startOnline,startAsGuest,startSeven,
+    get ME(){return ME},setMe(v){ME=v},
+    onlineTest(seat,names){ME=seat;NP=names.length;GNAMES=names.slice();ONLINE=true;G.auto={};startAsGuest()}};
 }
 </script>
 </body></html>

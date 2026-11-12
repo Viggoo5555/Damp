@@ -92,6 +92,22 @@ select{font:inherit;color:var(--fg);background:#0d2434;border:2px solid var(--li
 .onPlayers div i{width:12px;height:12px;border-radius:2px}
 .onPlayers div em{margin-left:auto;font-style:normal;color:var(--dim);font-size:13px}
 .shareLink{font-size:13px;color:#8fa9ba;margin:2px 0 6px;word-break:break-all}
+.pickHead{display:flex;align-items:center;gap:10px;margin:0 0 6px}
+.pickHead h3{margin:0;font:400 26px/1 var(--d);letter-spacing:.05em;color:var(--brass)}
+.backBtn{width:34px;height:32px;flex:none;background:#06121b;border:2px solid var(--line);color:var(--fg);font:700 20px/1 var(--b)}
+.backBtn:hover{border-color:var(--brass);color:var(--brass)}
+.pickNote{margin:4px 0 6px;font-size:15px;color:#9fb5c4}
+.pkList{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;margin:8px 0}
+.pkRow{display:flex;align-items:center;gap:9px;width:100%;background:#06121b;border:2px solid var(--line);color:var(--fg);padding:9px 10px;font:700 17px/1 var(--b);text-align:left;letter-spacing:.03em}
+.pkRow:hover:not([disabled]){border-color:var(--brass);color:var(--brass)}
+.pkRow[disabled]{opacity:.6}
+.pkRow i{width:9px;height:9px;border-radius:50%;background:#33526b;flex:none}
+.pkRow i.on{background:var(--ok);box-shadow:0 0 8px #46e08a99}
+.pkRow em{margin-left:auto;font-style:normal;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.pkRow[disabled] em{color:var(--brass)}
+.shareRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;border-top:2px solid #16374f;padding-top:10px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.shareRow b{font:400 22px/1 var(--d);letter-spacing:.12em;color:var(--brass)}
+.shareRow .shr{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
 @media(max-width:560px){.bigcode{font-size:40px}.panel h1{font-size:42px}}
 #flying{position:absolute;inset:0;pointer-events:none;z-index:7;overflow:hidden}
 .flycard{position:absolute;min-width:62px;height:34px;padding:0 9px;border:2px solid #2b5672;border-left:6px solid #888;background:#0c2030f6;
@@ -231,10 +247,16 @@ select{font:inherit;color:var(--fg);background:#0d2434;border:2px solid var(--li
       </div>
       <div id="onActions" class="hide">
         <p>Playing as <b id="onMe">player</b></p>
-        <div class="onBtns"><button id="onHost" class="btn big">Create room</button></div>
+        <div class="onBtns"><button id="onInvite" class="btn big">Invite a friend</button></div>
         <p style="margin-top:14px">or join a friend's room</p>
         <div class="joinRow"><input id="onCodeIn" class="field" maxlength="4" placeholder="CODE"><button id="onJoin" class="btn alt">Join</button></div>
       </div>
+    </div>
+    <div id="onPick" class="hide">
+      <div class="pickHead"><button id="onPickBack" class="backBtn" aria-label="Back">←</button><h3>Choose a player</h3></div>
+      <p id="onPickNote" class="pickNote">Looking for players…</p>
+      <div id="onPeople" class="pkList"></div>
+      <div class="shareRow"><span>Room</span><b id="onPickCode">—</b><span class="shr"><button id="onPickOpen" class="btn ghost sm">Room &amp; start</button><button id="onCopy" class="btn alt sm">Copy link</button></span></div>
     </div>
     <div id="onRoom" class="hide">
       <p>Room code</p>
@@ -244,6 +266,8 @@ select{font:inherit;color:var(--fg);background:#0d2434;border:2px solid var(--li
       <p id="onRoomNote">Waiting for players…</p>
       <div class="onBtns">
         <button id="onStart" class="btn big hide">Start game</button>
+        <button id="onInvite2" class="btn alt">Invite a friend</button>
+        <button id="onCopy2" class="btn ghost sm">Copy link</button>
         <button id="onLeave" class="btn ghost sm">Leave room</button>
       </div>
     </div>
@@ -1533,7 +1557,8 @@ async function handleClick(pt){
 const FBCFG={apiKey:"AIzaSyDJhWSi7QZKXtOPYwKHPF7zPg_klh1If7w",authDomain:"damp-2406a.firebaseapp.com",projectId:"damp-2406a",appId:"1:940989851976:web:f8fd07c258afa71fd22b7d"};
 const SDK='https://www.gstatic.com/firebasejs/10.14.1/';
 const ICE={iceServers:[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:stun.cloudflare.com:3478']}]};
-const NET={fb:null,role:null,code:'',lobbyCode:'',conns:[],started:false,pc:null,dc:null,name:'',ref:null,lobbyRef:null,unsubs:[]};
+const NET={fb:null,role:null,code:'',lobbyCode:'',conns:[],started:false,pc:null,dc:null,name:'',ref:null,lobbyRef:null,unsubs:[],
+ people:new Map(),peopleUnsub:null,invited:new Set(),pendingCode:''};
 const onStatus=(txt,cls)=>{const p=$('onStatus');if(!p)return;p.textContent=txt||'';p.className=cls||''};
 const myName=()=>NET.name||(((NET.fb&&NET.fb.auth&&NET.fb.auth.currentUser&&NET.fb.auth.currentUser.email)||'').replace('@damp.example','')||'player');
 const loginEmail=n=>String(n||'').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'')+'@damp.example';
@@ -1558,7 +1583,8 @@ function netBroadcast(){if(!ONLINE||NET.role!=='host'||!NET.started)return;for(c
 
 function openOnline(pre){
   $('menu').classList.add('hide');$('online').classList.remove('hide');
-  $('onMain').classList.remove('hide');$('onRoom').classList.add('hide');
+  $('onMain').classList.remove('hide');$('onRoom').classList.add('hide');$('onPick').classList.add('hide');
+  if(pre)NET.pendingCode=String(pre).toUpperCase();
   onStatus('Connecting…');
   (async()=>{
     try{
@@ -1571,8 +1597,111 @@ function openOnline(pre){
 }
 function showOnlineMain(){
   $('onAuth').classList.add('hide');$('onActions').classList.remove('hide');
+  $('onPick').classList.add('hide');$('onRoom').classList.add('hide');
   $('onMe').textContent=myName();
-  onStatus('Create a room and send the code to your friends.','ok');
+  onStatus('Invite a friend, or join with their code.','ok');
+  if(NET.pendingCode){const c=NET.pendingCode;NET.pendingCode='';joinRoom(c)}
+}
+
+/* ---------- inviting one of the people on Damp ---------- */
+const presenceOn=at=>!!at&&Date.now()-at<120000;
+function showPick(){
+  $('onMain').classList.add('hide');$('onRoom').classList.add('hide');$('onPick').classList.remove('hide');
+  $('onPickCode').textContent=NET.code||'—';
+}
+function stopPeople(){
+  if(NET.peopleUnsub){try{NET.peopleUnsub()}catch(e){}}
+  NET.peopleUnsub=null;NET.people=new Map();
+  const box=$('onPeople');if(box)box.textContent='';
+}
+function drawPeople(){
+  const box=$('onPeople');if(!box)return;
+  const list=Array.from(NET.people.values())
+    .sort((a,b)=>(presenceOn(b.at)?1:0)-(presenceOn(a.at)?1:0)||a.name.localeCompare(b.name));
+  box.textContent='';
+  $('onPickNote').textContent=list.length
+    ?'Pick someone and they get a chat invite with a join link.'
+    :'No other Damp players found yet. Share the room code instead.';
+  list.forEach(p=>{
+    const row=document.createElement('button');
+    row.type='button';row.className='pkRow';
+    row.disabled=NET.invited.has(p.id);
+    const dot=document.createElement('i');if(presenceOn(p.at))dot.className='on';
+    const nm=document.createElement('span');nm.textContent=p.name;
+    const st=document.createElement('em');st.textContent=NET.invited.has(p.id)?'Invited':(presenceOn(p.at)?'Online':'');
+    row.append(dot,nm,st);
+    row.onclick=()=>invitePerson(p,row,st);
+    box.appendChild(row);
+  });
+}
+function loadPeople(){
+  const fb=NET.fb;
+  if(!fb||!fb.auth.currentUser)return;
+  const uid=fb.auth.currentUser.uid;
+  NET.people=new Map();
+  if(NET.peopleUnsub){try{NET.peopleUnsub()}catch(e){}}
+  NET.peopleUnsub=fb.F.onSnapshot(fb.F.collection(fb.db,'people'),snap=>{
+    snap.forEach(doc=>{
+      if(doc.id===uid)return;
+      const d=doc.data()||{};
+      NET.people.set(doc.id,{id:doc.id,name:d.name||'player',at:d.at||0});
+    });
+    drawPeople();
+  },()=>{$('onPickNote').textContent='Could not load the player list. Share the room code instead.'});
+  fb.F.getDocs(fb.F.query(fb.F.collection(fb.db,'flappy'),fb.F.limit(50))).then(snap=>{
+    let added=false;
+    snap.forEach(doc=>{
+      if(doc.id===uid||NET.people.has(doc.id))return;
+      NET.people.set(doc.id,{id:doc.id,name:(doc.data()||{}).name||'player',at:0});
+      added=true;
+    });
+    if(added)drawPeople();
+  },()=>{});
+  drawPeople();
+}
+async function openPicker(){
+  const fb=NET.fb;
+  if(!fb||!fb.auth.currentUser){onStatus('Sign in first.','bad');return}
+  showPick();
+  $('onPickNote').textContent='Looking for players…';
+  if(!NET.code||NET.role!=='host'){
+    onStatus('Setting up a room for you…');
+    await hostRoom();
+    if(!NET.code){$('onPickNote').textContent='Could not make a room just now. Try again.';return}
+    showPick();
+  }
+  $('onPickCode').textContent=NET.code;
+  loadPeople();
+}
+async function invitePerson(p,row,st){
+  const fb=NET.fb;
+  if(!fb||!fb.auth.currentUser||!NET.code)return;
+  const uid=fb.auth.currentUser.uid;
+  row.disabled=true;st.textContent='Sending…';
+  try{
+    const id=uid<p.id?uid+'_'+p.id:p.id+'_'+uid;
+    const chatRef=fb.F.doc(fb.db,'chats',id);
+    const names={};names[uid]=myName();names[p.id]=p.name;
+    await fb.F.setDoc(chatRef,{ids:[uid,p.id].sort(),names},{merge:true});
+    const text=('Catan: '+myName()+' invites you to a game. '+inviteLink(NET.code)).slice(0,480);
+    const at=Date.now();
+    await fb.F.addDoc(fb.F.collection(chatRef,'messages'),{from:uid,text,at});
+    await fb.F.setDoc(chatRef,{last:text.slice(0,120),lastAt:at,lastFrom:uid},{merge:true});
+    NET.invited.add(p.id);
+    st.textContent='Invited';
+    onStatus('Invite sent to '+p.name+'. The room stays open while you wait.','ok');
+    toast('Invite sent to '+p.name);
+  }catch(e){
+    row.disabled=false;st.textContent='';
+    onStatus('Could not send the invite: '+((e&&(e.code||e.message))||'?'),'bad');
+  }
+}
+async function copyInvite(){
+  const code=NET.code||NET.lobbyCode;
+  if(!code)return;
+  const link=inviteLink(code);
+  try{await navigator.clipboard.writeText(link);toast('Link copied')}
+  catch(e){toast(link)}
 }
 async function signIn(create){
   try{
@@ -1591,7 +1720,8 @@ async function signIn(create){
   }catch(e){onStatus('Could not sign in ('+(e.code||e.message)+').','bad')}
 }
 function showRoom(code,isHost){
-  $('onMain').classList.add('hide');$('onRoom').classList.remove('hide');
+  $('onMain').classList.add('hide');$('onRoom').classList.remove('hide');$('onPick').classList.add('hide');
+  $('onInvite2').classList.toggle('hide',!isHost);
   $('onCode').textContent=code;
   $('onShare').textContent=inviteLink(code);
   $('onStart').classList.toggle('hide',!isHost);
@@ -1611,7 +1741,7 @@ async function hostRoom(){
   try{
     const fb=await fbInit();
     if(!fb.auth.currentUser){onStatus('Sign in first.','bad');return}
-    netClose();NET.role='host';NET.conns=[];
+    netClose();NET.role='host';NET.conns=[];NET.invited.clear();
     onStatus('Creating a room…');
     const seatCodes=[];
     while(seatCodes.length<3){const c=freshCode();if(!seatCodes.includes(c))seatCodes.push(c)}
@@ -2019,11 +2149,16 @@ function pendingRobber(){
 $('bOnline').onclick=()=>openOnline('');
 $('onIn').onclick=()=>signIn(false);
 $('onUp').onclick=()=>signIn(true);
-$('onHost').onclick=hostRoom;
+$('onInvite').onclick=()=>openPicker();
+$('onInvite2').onclick=()=>openPicker();
+$('onPickBack').onclick=()=>{stopPeople();showOnlineMain()};
+$('onPickOpen').onclick=()=>{if(NET.code)showRoom(NET.code,NET.role==='host')};
+$('onCopy').onclick=copyInvite;
+$('onCopy2').onclick=copyInvite;
 $('onJoin').onclick=()=>joinRoom($('onCodeIn').value);
 $('onStart').onclick=startOnline;
-$('onBack').onclick=()=>{netClose();$('online').classList.add('hide');$('menu').classList.remove('hide')};
-$('onLeave').onclick=()=>{netClose();$('onRoom').classList.add('hide');$('onMain').classList.remove('hide');showOnlineMain();onStatus('You left the room.')};
+$('onBack').onclick=()=>{stopPeople();netClose();$('online').classList.add('hide');$('menu').classList.remove('hide')};
+$('onLeave').onclick=()=>{stopPeople();netClose();$('onRoom').classList.add('hide');$('onMain').classList.remove('hide');showOnlineMain();onStatus('You left the room.')};
 function startOnline(){
   if(NET.role!=='host'||NET.started)return;
   const live=NET.conns.filter(c=>c.dc&&c.dc.readyState==='open'&&c.seat);

@@ -74,6 +74,19 @@ a{text-decoration:none}
 .army i{font-style:normal;background:#06121b;border:1px solid var(--line);padding:3px 7px;color:var(--fg)}
 .code{font:400 clamp(34px,7vw,46px)/1 var(--d);letter-spacing:.22em;color:var(--brass);text-align:center;min-height:1.1em}
 .irow{display:flex;gap:8px;align-items:stretch}.irow input{flex:1;min-width:0}
+.vhead{display:flex;align-items:center;gap:10px;margin:2px 0 0}.vhead h3{margin:0;font:400 24px/1 var(--d);letter-spacing:.05em;color:var(--brass)}
+.back{width:34px;height:32px;flex:none;display:grid;place-items:center;background:#06121b;border:2px solid var(--line);color:var(--fg);font:700 20px/1 var(--b);padding:0}
+.back:hover{border-color:var(--brass);color:var(--brass)}
+.share{display:flex;align-items:center;gap:8px;border-top:2px solid #16374f;padding-top:9px;margin-top:6px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.share b{font:400 22px/1 var(--d);letter-spacing:.16em;color:var(--brass)}
+.share .shr{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.plist{display:flex;flex-direction:column;gap:6px;max-height:230px;overflow-y:auto;padding-right:2px}
+.person{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:#06121b;border:2px solid var(--line);color:var(--fg);padding:9px 10px;font:700 17px/1 var(--b);letter-spacing:.04em}
+.person:hover:not([disabled]){border-color:var(--brass);color:var(--brass)}.person[disabled]{opacity:.6}
+.person .presence{width:9px;height:9px;border-radius:50%;background:#33526b;flex:none}
+.person .presence.on{background:var(--ok);box-shadow:0 0 8px #46e08a99}
+.person .pstate{margin-left:auto;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.person[disabled] .pstate{color:var(--brass)}
 input[type=text],input[type=password]{width:100%;background:#06121b;border:2px solid var(--line);color:var(--fg);padding:9px 11px;font:700 18px/1 var(--b);letter-spacing:.05em;outline:none;user-select:text;-webkit-user-select:text}
 input[type=text]:focus,input[type=password]:focus{border-color:var(--brass)}
 #toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%);z-index:9;background:#0b1f2def;border:2px solid var(--brass);padding:9px 16px;letter-spacing:.05em;max-width:88vw;text-align:center;pointer-events:none}
@@ -166,13 +179,21 @@ input[type=text]:focus,input[type=password]:focus{border-color:var(--brass)}
      <div class="irow"><button class="btn sm" id="onIn">Sign in</button><button class="btn alt sm" id="onUp">Create account</button></div>
     </div>
     <div id="onMain" class="hide">
-     <button class="btn big" id="onHost">Create a room</button>
+     <button class="btn big" id="onInvite">Invite a friend</button>
+     <p class="note" style="margin:2px 0">or join with their code</p>
      <div class="irow"><input type="text" id="onCodeIn" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters"><button class="btn alt sm" id="onJoin">Join</button></div>
+    </div>
+    <div id="onPick" class="hide">
+     <div class="vhead"><button class="back" id="onPickBack" aria-label="Back">&larr;</button><h3>Choose a player</h3></div>
+     <p class="note" id="onPickNote">Looking for players&hellip;</p>
+     <div id="onPeople" class="plist"></div>
+     <div class="share"><span>Room</span><b id="onPickCode">&mdash;</b><span class="shr"><button class="btn ghost sm" id="onPickOpen">Room</button><button class="btn sm" id="onCopy">Copy link</button></span></div>
     </div>
     <div id="onRoom" class="hide">
      <p class="note">Give this code to your friend:</p>
      <div class="code" id="onCode">&mdash;</div>
      <p class="note" id="onRoomNote">Waiting for your friend to join&hellip;</p>
+     <div class="btns"><button class="btn alt sm" id="onInvite2">Invite a friend</button><button class="btn ghost sm" id="onCopy2">Copy link</button></div>
     </div>
     <div class="btns"><button class="btn ghost sm" id="onBack">Back</button></div>
    </div>
@@ -714,7 +735,9 @@ function aiTurn(){
 const FBCFG={apiKey:"AIzaSyDJhWSi7QZKXtOPYwKHPF7zPg_klh1If7w",authDomain:"damp-2406a.firebaseapp.com",projectId:"damp-2406a",appId:"1:940989851976:web:f8fd07c258afa71fd22b7d"};
 const SDK='https://www.gstatic.com/firebasejs/10.14.1/';
 const ICE={iceServers:[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:stun.cloudflare.com:3478']}]};
-const NET={fb:null,pc:null,dc:null,ref:null,unsub:null,role:null,on:false,code:'',army:null,enemyReady:false,ready:false};
+const NET={fb:null,pc:null,dc:null,ref:null,unsub:null,role:null,on:false,code:'',army:null,enemyReady:false,ready:false,
+ people:new Map(),peopleUnsub:null,invited:new Set(),pendingCode:''};
+const inviteLink=code=>{const u=new URL(location.href);u.search='';u.hash='';u.searchParams.set('room',code);return u.href};
 const onStatus=(t,cls)=>{const p=$('onStatus');p.textContent=t;p.className=cls||''};
 const meName=()=>(((NET.fb&&NET.fb.user&&NET.fb.user.email)||'').replace('@damp.example','')||'player');
 const loginEmail=n=>String(n||'').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'')+'@damp.example';
@@ -744,9 +767,10 @@ async function hostRoom(){
     const L='ABCDEFGHJKMNPQRSTUVWXYZ';let code,ref;
     for(let i=0;i<8;i++){code=Array.from({length:4},()=>L[Math.random()*L.length|0]).join('');ref=fb.F.doc(fb.db,'rooms',code);if(!(await fb.F.getDoc(ref)).exists())break}
     await fb.F.setDoc(ref,{host:fb.user.uid,hostName:meName(),game:'stratego',offer:{type:'offer',sdp:NET.pc.localDescription.sdp},at:Date.now()});
-    NET.ref=ref;NET.code=code;
-    $('onMain').classList.add('hide');$('onRoom').classList.remove('hide');
+    NET.ref=ref;NET.code=code;NET.invited.clear();
+    $('onMain').classList.add('hide');$('onRoom').classList.remove('hide');$('onPick').classList.add('hide');
     $('onCode').textContent=code;$('onRoomNote').textContent='Waiting for your friend to join…';
+    $('onInvite2').classList.remove('hide');
     NET.unsub=fb.F.onSnapshot(ref,s=>{const d=s.data();
       if(d&&d.answer&&NET.pc&&!NET.pc.remoteDescription){NET.pc.setRemoteDescription(d.answer).catch(()=>onStatus('Could not connect to your friend.','bad'))}});
   }catch(e){onStatus('Could not create the room ('+(e.code||e.message)+').','bad')}
@@ -767,8 +791,9 @@ async function joinRoom(code){
     await NET.pc.setLocalDescription(await NET.pc.createAnswer());
     await gathered(NET.pc);
     await fb.F.updateDoc(ref,{guest:fb.user.uid,guestName:meName(),answer:{type:'answer',sdp:NET.pc.localDescription.sdp}});
-    $('onMain').classList.add('hide');$('onRoom').classList.remove('hide');
+    $('onMain').classList.add('hide');$('onRoom').classList.remove('hide');$('onPick').classList.add('hide');
     $('onCode').textContent=c;$('onRoomNote').textContent='Joined. Waiting for the host to start…';
+    $('onInvite2').classList.add('hide');
   }catch(e){onStatus('Could not join ('+(e.code||e.message)+').','bad')}
 }
 function wire(dc){
@@ -835,13 +860,114 @@ function netClose(){
 
 /* ---------------- buttons ---------------- */
 $('bAi').onclick=()=>{G.side='r';G.ai=true;NET.side='r';openSetup(false);$('bStart').textContent='Start battle';$('setup').classList.remove('hide')};
-$('bOnline').onclick=()=>{
+function openLobby(pre){
   $('menu').classList.add('hide');$('online').classList.remove('hide');
+  $('onMain').classList.remove('hide');$('onRoom').classList.add('hide');$('onPick').classList.add('hide');
+  if(pre)NET.pendingCode=String(pre).toUpperCase();
   (async()=>{try{const fb=await fbInit();$('onAuth').classList.toggle('hide',!!fb.user);
-    if(fb.user){$('onMain').classList.remove('hide');$('onName').value=meName();onStatus('Signed in as '+meName()+'. Create a room or join with a code.','ok')}
-    else onStatus('Sign in with the same account you use on Damp, then invite a friend.');
+    if(fb.user){$('onMain').classList.remove('hide');$('onName').value=meName();onStatus('Invite a friend, or join with their code.','ok');
+      if(NET.pendingCode){const c=NET.pendingCode;NET.pendingCode='';joinRoom(c)}}
+    else {$('onMain').classList.add('hide');onStatus('Sign in with the same account you use on Damp, then invite a friend.')}
   }catch(e){onStatus('Could not reach the accounts service. Check the connection.','bad')}})();
-};
+}
+const presenceOn=at=>!!at&&Date.now()-at<120000;
+function showPick(){
+  $('onMain').classList.add('hide');$('onRoom').classList.add('hide');$('onPick').classList.remove('hide');
+  $('onPickCode').textContent=NET.code||'—';
+}
+function stopPeople(){
+  if(NET.peopleUnsub){try{NET.peopleUnsub()}catch(e){}}
+  NET.peopleUnsub=null;NET.people=new Map();
+  const box=$('onPeople');if(box)box.textContent='';
+}
+function drawPeople(){
+  const box=$('onPeople');if(!box)return;
+  const list=Array.from(NET.people.values())
+    .sort((a,b)=>(presenceOn(b.at)?1:0)-(presenceOn(a.at)?1:0)||a.name.localeCompare(b.name));
+  box.textContent='';
+  $('onPickNote').textContent=list.length
+    ?'Pick someone and they get a chat invite with a join link.'
+    :'No other Damp players found yet. Share the room code instead.';
+  list.forEach(p=>{
+    const row=document.createElement('button');row.type='button';row.className='person';
+    row.disabled=NET.invited.has(p.id);
+    const dot=document.createElement('span');dot.className='presence'+(presenceOn(p.at)?' on':'');
+    const nm=document.createElement('span');nm.textContent=p.name;
+    const st=document.createElement('span');st.className='pstate';
+    st.textContent=NET.invited.has(p.id)?'Invited':(presenceOn(p.at)?'Online':'');
+    row.append(dot,nm,st);
+    row.addEventListener('click',()=>invitePerson(p,row,st));
+    box.appendChild(row);
+  });
+}
+function loadPeople(){
+  const fb=NET.fb;
+  if(!fb||!fb.user)return;
+  const uid=fb.user.uid;
+  NET.people=new Map();
+  if(NET.peopleUnsub){try{NET.peopleUnsub()}catch(e){}}
+  NET.peopleUnsub=fb.F.onSnapshot(fb.F.collection(fb.db,'people'),snap=>{
+    snap.forEach(doc=>{
+      if(doc.id===uid)return;
+      const d=doc.data()||{};
+      NET.people.set(doc.id,{id:doc.id,name:d.name||'player',at:d.at||0});
+    });
+    drawPeople();
+  },()=>{$('onPickNote').textContent='Could not load the player list. Share the room code instead.'});
+  fb.F.getDocs(fb.F.query(fb.F.collection(fb.db,'flappy'),fb.F.limit(50))).then(snap=>{
+    let added=false;
+    snap.forEach(doc=>{
+      if(doc.id===uid||NET.people.has(doc.id))return;
+      NET.people.set(doc.id,{id:doc.id,name:(doc.data()||{}).name||'player',at:0});
+      added=true;
+    });
+    if(added)drawPeople();
+  },()=>{});
+  drawPeople();
+}
+async function openPicker(){
+  const fb=NET.fb;
+  if(!fb||!fb.user){onStatus('Sign in first.','bad');return}
+  showPick();
+  $('onPickNote').textContent='Looking for players…';
+  if(!NET.code||NET.role!=='host'){
+    onStatus('Setting up a room for you…');
+    await hostRoom();
+    if(!NET.code){$('onPickNote').textContent='Could not make a room just now. Try again.';return}
+    showPick();
+  }
+  $('onPickCode').textContent=NET.code;
+  loadPeople();
+}
+async function invitePerson(p,row,st){
+  const fb=NET.fb;
+  if(!fb||!fb.user||!NET.code)return;
+  const uid=fb.user.uid;
+  row.disabled=true;st.textContent='Sending…';
+  try{
+    const id=uid<p.id?uid+'_'+p.id:p.id+'_'+uid;
+    const chatRef=fb.F.doc(fb.db,'chats',id);
+    const names={};names[uid]=meName();names[p.id]=p.name;
+    await fb.F.setDoc(chatRef,{ids:[uid,p.id].sort(),names},{merge:true});
+    const text=('Stratego: '+meName()+' invites you to a battle. '+inviteLink(NET.code)).slice(0,480);
+    const at=Date.now();
+    await fb.F.addDoc(fb.F.collection(chatRef,'messages'),{from:uid,text,at});
+    await fb.F.setDoc(chatRef,{last:text.slice(0,120),lastAt:at,lastFrom:uid},{merge:true});
+    NET.invited.add(p.id);
+    st.textContent='Invited';
+    onStatus('Invite sent to '+p.name+'. The room stays open while you wait.','ok');
+    toast('Invite sent to '+p.name);
+  }catch(e){
+    row.disabled=false;st.textContent='';
+    onStatus('Could not send the invite: '+((e&&(e.code||e.message))||'?'),'bad');
+  }
+}
+async function copyInvite(){
+  if(!NET.code)return;
+  const link=inviteLink(NET.code);
+  try{await navigator.clipboard.writeText(link);toast('Link copied')}
+  catch(e){toast(link)}
+}
 async function sign(inUp){
   try{
     const fb=await fbInit();
@@ -855,12 +981,19 @@ async function sign(inUp){
     fb.user=fb.auth.currentUser;
     $('onAuth').classList.add('hide');$('onMain').classList.remove('hide');
     onStatus('Signed in as '+meName()+'.','ok');
+    if(NET.pendingCode){const c=NET.pendingCode;NET.pendingCode='';joinRoom(c)}
   }catch(e){onStatus('Could not sign in ('+(e.code||e.message)+').','bad')}
 }
+$('bOnline').onclick=()=>openLobby();
 $('onIn').onclick=()=>sign(false);$('onUp').onclick=()=>sign(true);
-$('onHost').onclick=()=>hostRoom();
+$('onInvite').onclick=()=>openPicker();
+$('onInvite2').onclick=()=>openPicker();
+$('onPickBack').onclick=()=>{stopPeople();$('onPick').classList.add('hide');$('onMain').classList.remove('hide')};
+$('onPickOpen').onclick=()=>{if(!NET.code)return;stopPeople();$('onPick').classList.add('hide');$('onRoom').classList.remove('hide');$('onCode').textContent=NET.code;$('onInvite2').classList.remove('hide');$('onRoomNote').textContent='Waiting for your friend to join…'};
+$('onCopy').onclick=copyInvite;$('onCopy2').onclick=copyInvite;
 $('onJoin').onclick=()=>joinRoom($('onCodeIn').value);
-$('onBack').onclick=()=>{netClose();$('online').classList.add('hide');$('menu').classList.remove('hide')};
+$('onBack').onclick=()=>{stopPeople();netClose();$('online').classList.add('hide');$('menu').classList.remove('hide')};
+addEventListener('load',()=>{const room=new URLSearchParams(location.search).get('room');if(room&&/^[A-Za-z]{4}$/.test(room))openLobby(room.toUpperCase())});
 $('bBack').onclick=()=>{netClose();G.mode='menu';G.over=true;$('hud').classList.add('hide');$('end').classList.add('hide');$('setup').classList.add('hide');$('menu').classList.remove('hide');G.over=false};
 $('bHome').onclick=e=>{if(NET.on||G.mode==='play'){e.preventDefault();$('bBack').onclick()}};
 $('bShuffle').onclick=()=>{if(G.mode!=='setup'||(NET.role==='guest'&&NET.ready))return;G.board=deploy(G.side);G.sel=-1;G.legal=[];syncPieces();drawMarks();snd(360,.08);toast('Army shuffled.')};

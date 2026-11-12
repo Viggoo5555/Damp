@@ -87,6 +87,13 @@ input[type=text]{width:100%;background:#06121b;border:2px solid var(--line);colo
 input[type=text]:focus{border-color:var(--brass)}
 .irow{display:flex;gap:8px}
 .people{display:flex;flex-direction:column;gap:5px;max-height:min(30vh,220px);overflow:auto}
+#lbAuth{display:flex;flex-direction:column;gap:8px;margin-bottom:4px}
+#lbAuth p{margin:0;font-size:15px;color:var(--dim)}
+input[type=password]{width:100%;background:#06121b;border:2px solid var(--line);color:var(--fg);padding:9px 11px;font:700 18px/1 var(--b);letter-spacing:.05em;outline:none;user-select:text;-webkit-user-select:text}
+input[type=password]:focus{border-color:var(--brass)}
+.pp .dot{width:8px;height:8px;border-radius:50%;background:#33526b;flex:none}
+.pp .dot.on{background:var(--ok);box-shadow:0 0 6px #46e08a99}
+.pp .st{margin-left:auto;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
 .pp{display:flex;align-items:center;gap:8px;background:#06121b;border:2px solid #1b3a52;padding:5px 5px 5px 11px}
 .pp span{flex:1;font-size:19px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pp.sent{border-color:var(--ok)}
 .lang{position:absolute;top:calc(10px + env(safe-area-inset-top,0));right:12px;z-index:6;display:flex;gap:6px}
@@ -175,6 +182,12 @@ input[type=text]:focus{border-color:var(--brass)}
    <div class="panel">
     <h2 data-t="onlineT">Play online</h2>
     <p id="lbStatus"></p>
+    <div id="lbAuth" class="hide">
+     <p id="lbAuthNote" data-t="signNote">Sign in with your Damp account, then pick a friend to invite.</p>
+     <input type="text" id="lbName" placeholder="Username" autocomplete="username" autocapitalize="none">
+     <input type="password" id="lbPass" placeholder="Password" autocomplete="current-password">
+     <div class="irow"><button class="btn sm" id="lbSignIn" data-t="signIn">Sign in</button><button class="btn alt sm" id="lbSignUp" data-t="signUp">Create account</button></div>
+    </div>
     <div id="lbMain">
      <h3 data-t="inviteT">Invite a friend by message</h3>
      <input type="text" id="lbFilter" data-ph="search" placeholder="Search…" autocomplete="off">
@@ -632,10 +645,11 @@ const I18N = {
     n_carrier: 'Carrier', n_battleship: 'Battleship', n_cruiser: 'Cruiser', n_submarine: 'Submarine', n_destroyer: 'Destroyer',
     endWin: 'You sank the whole enemy fleet.', endLose: 'Your fleet is on the bottom of the sea.', sShots: 'Shots', sHits: 'Hits', sAcc: 'Accuracy',
     oppLeft: 'Your opponent left the game.', cheat: 'Warning: the opponent’s fleet did not match their answers.', youGo: 'You fire first', theyGo: 'Enemy fires first',
-    lbLogin: 'Log in on the front page first (the Account button), then open this game again.', lbPrep: 'Preparing room…', lbWait: 'Room ready. Invite a friend, or share the link.',
+    lbLogin: 'Sign in with your Damp account to invite friends.', lbPrep: 'Preparing room…', lbWait: 'Room ready. Invite a friend, or share the link.',
     lbSent: 'Invite sent to {n}. Waiting for them to join…', lbJoining: 'Connecting…', lbNoRoom: 'No room with that code.', lbOld: 'That invite has expired.',
     lbFail: 'Could not connect. Try again.', lbFailNet: 'Could not connect directly. A strict network (school, work or mobile data) can block this — try another Wi-Fi or hotspot.', lbNoPeople: 'No friends found yet. Share the link instead.', invite: 'Invite', sent: 'Sent', inviteMsg: 'Battleship? Join me:',
-    linkCopied: 'Link copied', result: 'Result', connected: 'Connected to {n}', lbFull: 'That room is already taken.', lbErr: 'Something went wrong ({e}).', open: 'Open front page'
+    linkCopied: 'Link copied', result: 'Result', connected: 'Connected to {n}', lbFull: 'That room is already taken.', lbErr: 'Something went wrong ({e}).', open: 'Open front page',
+    signNote: 'Sign in with your Damp account, then pick a friend to invite.', signIn: 'Sign in', signUp: 'Create account', online: 'Online', invited: 'Invited'
   },
   da: {
     menu: 'Menu', title: 'SLAGSKIB', sub: 'SÆNK HELE FLÅDEN', level: 'Computerens niveau', easy: 'Rekrut', hard: 'Admiral', vsAI: 'Spil mod computer', vsFriend: 'Spil online mod en ven',
@@ -649,10 +663,11 @@ const I18N = {
     n_carrier: 'Hangarskib', n_battleship: 'Slagskib', n_cruiser: 'Krydser', n_submarine: 'Ubåd', n_destroyer: 'Jager',
     endWin: 'Du sænkede hele fjendens flåde.', endLose: 'Din flåde ligger på havets bund.', sShots: 'Skud', sHits: 'Træf', sAcc: 'Træfprocent',
     oppLeft: 'Din modstander forlod spillet.', cheat: 'Advarsel: modstanderens flåde passede ikke med deres svar.', youGo: 'Du skyder først', theyGo: 'Fjenden skyder først',
-    lbLogin: 'Log ind på forsiden først (knappen Account), og åbn så spillet igen.', lbPrep: 'Gør rummet klar…', lbWait: 'Rummet er klar. Inviter en ven, eller del linket.',
+    lbLogin: 'Log ind med din Damp-konto for at invitere venner.', lbPrep: 'Gør rummet klar…', lbWait: 'Rummet er klar. Inviter en ven, eller del linket.',
     lbSent: 'Invitation sendt til {n}. Venter på at de joiner…', lbJoining: 'Forbinder…', lbNoRoom: 'Der er intet rum med den kode.', lbOld: 'Den invitation er udløbet.',
     lbFail: 'Kunne ikke forbinde. Prøv igen.', lbFailNet: 'Kunne ikke forbinde direkte. Et strengt netværk (skole, arbejde eller mobildata) kan blokere det — prøv et andet Wi-Fi eller hotspot.', lbNoPeople: 'Ingen venner fundet endnu. Del linket i stedet.', invite: 'Inviter', sent: 'Sendt', inviteMsg: 'Slagskib? Join mig:',
-    linkCopied: 'Link kopieret', result: 'Resultat', connected: 'Forbundet til {n}', lbFull: 'Det rum er allerede optaget.', lbErr: 'Noget gik galt ({e}).', open: 'Åbn forsiden'
+    linkCopied: 'Link kopieret', result: 'Resultat', connected: 'Forbundet til {n}', lbFull: 'Det rum er allerede optaget.', lbErr: 'Noget gik galt ({e}).', open: 'Åbn forsiden',
+    signNote: 'Log ind med din Damp-konto, og vælg så en ven du vil invitere.', signIn: 'Log ind', signUp: 'Opret konto', online: 'Online', invited: 'Inviteret'
   }
 };
 let LANG = 'en';
@@ -1349,6 +1364,7 @@ async function fbInit() {
   return FB = { F, db, auth };
 }
 const myName = () => ((FB.auth.currentUser.email || '').replace('@damp.example', '') || 'player');
+const loginEmail = name => String(name || '').trim().toLowerCase().replace(/[^a-z0-9._-]/g, '') + '@damp.example';
 const pairId = (a, b) => a < b ? a + '_' + b : b + '_' + a;
 async function sha(str) {
   try { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)); return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, '0')).join(''); }
@@ -1422,7 +1438,7 @@ class Remote {
 }
 
 /* ---------- lobby: create room / invite / join ---------- */
-const LB = { pc: null, dc: null, ref: null, unsub: null, code: '', timer: 0, sent: {}, people: [], joining: false, role: null };
+const LB = { pc: null, dc: null, ref: null, unsub: null, code: '', timer: 0, sent: {}, people: [], joining: false, role: null, pendingCode: '' };
 const lbStatus = (txt, cls) => { const p = $('lbStatus'); p.textContent = txt || ''; p.className = cls || ''; };
 const inviteLink = code => { const u = new URL(location.href); u.search = ''; u.hash = ''; u.searchParams.set('room', code); return u.href; };
 
@@ -1498,11 +1514,13 @@ async function joinRoom(raw) {
   } catch (e) { lbStatus(t('lbErr', { e: (e && (e.code || e.message)) || '?' }), 'bad'); $('lbRetry').classList.remove('hide'); }
   finally { LB.joining = false; }
 }
+const presenceOn = at => !!at && Date.now() - at < 120000;
 async function loadPeople() {
   const fb = FB, uid = fb.auth.currentUser.uid, map = new Map();
-  try { (await fb.F.getDocs(fb.F.collection(fb.db, 'people'))).forEach(d => { if (d.id !== uid) map.set(d.id, d.data().name || 'player'); }); } catch (e) { }
-  try { (await fb.F.getDocs(fb.F.query(fb.F.collection(fb.db, 'flappy'), fb.F.limit(50)))).forEach(d => { if (d.id !== uid && !map.has(d.id)) map.set(d.id, d.data().name || 'player'); }); } catch (e) { }
-  LB.people = Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name)); drawPeople();
+  try { (await fb.F.getDocs(fb.F.collection(fb.db, 'people'))).forEach(d => { if (d.id !== uid) map.set(d.id, { id: d.id, name: d.data().name || 'player', at: d.data().at || 0 }); }); } catch (e) { }
+  try { (await fb.F.getDocs(fb.F.query(fb.F.collection(fb.db, 'flappy'), fb.F.limit(50)))).forEach(d => { if (d.id !== uid && !map.has(d.id)) map.set(d.id, { id: d.id, name: d.data().name || 'player', at: 0 }); }); } catch (e) { }
+  LB.people = Array.from(map.values()).sort((a, b) => (presenceOn(b.at) ? 1 : 0) - (presenceOn(a.at) ? 1 : 0) || a.name.localeCompare(b.name));
+  drawPeople();
 }
 function drawPeople() {
   const q = $('lbFilter').value.trim().toLowerCase(), box = $('lbPeople'); box.textContent = '';
@@ -1510,9 +1528,12 @@ function drawPeople() {
   if (!list.length) { const p = document.createElement('p'); p.textContent = t('lbNoPeople'); box.appendChild(p); return; }
   list.forEach(p => {
     const row = document.createElement('div'); row.className = 'pp' + (LB.sent[p.id] ? ' sent' : '');
+    const dot = document.createElement('span'); dot.className = 'dot' + (presenceOn(p.at) ? ' on' : '');
     const n = document.createElement('span'); n.textContent = p.name;
+    const st = document.createElement('span'); st.className = 'st';
+    st.textContent = LB.sent[p.id] ? t('invited') : (presenceOn(p.at) ? t('online') : '');
     const b = document.createElement('button'); b.className = 'btn sm'; b.textContent = LB.sent[p.id] ? t('sent') : t('invite'); b.disabled = !LB.code;
-    b.onclick = () => sendInvite(p, b); row.append(n, b); box.appendChild(row);
+    b.onclick = () => sendInvite(p, b); row.append(dot, n, st, b); box.appendChild(row);
   });
 }
 // the invite is an ordinary chat message, so it shows up in the site's People / message popup
@@ -1529,23 +1550,46 @@ async function sendInvite(p, btn) {
   } catch (e) { btn.disabled = false; lbStatus(t('lbErr', { e: (e && (e.code || e.message)) || '?' }), 'bad'); }
 }
 async function openLobby(joinCode) {
+  if (joinCode) LB.pendingCode = joinCode;
   G.mode = 'online'; hideAll(); langVis(true); $('lobby').classList.remove('hide'); $('lbMain').classList.add('hide'); $('lbRetry').classList.add('hide');
   $('lbLoginBtn') && $('lbLoginBtn').remove();
   lbStatus(t('lbJoining'));
   try {
     await fbInit();
     if (!FB.auth.currentUser) {
-      lbStatus(t('lbLogin'), 'bad');
-      const a = document.createElement('a'); a.id = 'lbLoginBtn'; a.className = 'btn alt sm'; a.style.textDecoration = 'none'; a.style.textAlign = 'center'; a.textContent = t('open');
-      a.href = new URL('../', location.href).href; a.target = '_top'; $('lbStatus').after(a); $('lbRetry').classList.remove('hide'); return;
+      lbStatus('');
+      $('lbAuth').classList.remove('hide'); $('lbMain').classList.add('hide'); $('lbRetry').classList.add('hide');
+      return;
     }
   } catch (e) { lbStatus(t('lbErr', { e: (e && (e.code || e.message)) || '?' }), 'bad'); $('lbRetry').classList.remove('hide'); return; }
-  if (joinCode) { await joinRoom(joinCode); return; }
+  $('lbAuth').classList.add('hide');
+  const code = joinCode || LB.pendingCode;
+  if (code) { LB.pendingCode = ''; await joinRoom(code); return; }
   $('lbMain').classList.remove('hide'); drawPeople();
   try { await hostRoom(); drawPeople(); } catch (e) { lbStatus(t('lbErr', { e: (e && (e.code || e.message)) || '?' }), 'bad'); $('lbRetry').classList.remove('hide'); }
   loadPeople();
 }
 function leaveLobby() { closeRoom(); LB.sent = {}; showMenu(); }
+async function lbSign(create) {
+  try {
+    const fb = await fbInit();
+    const Au = await import(SDK + 'firebase-auth.js');
+    const name = String($('lbName').value || '').trim().toLowerCase();
+    const pass = $('lbPass').value;
+    if (!name || name.length < 2 || pass.length < 6) { lbStatus(t('lbErr', { e: 'username / password' }), 'bad'); return; }
+    const email = loginEmail(name);
+    if (create) await Au.createUserWithEmailAndPassword(fb.auth, email, pass).catch(async e => {
+      if (e.code === 'auth/email-already-in-use') return Au.signInWithEmailAndPassword(fb.auth, email, pass);
+      throw e;
+    });
+    else await Au.signInWithEmailAndPassword(fb.auth, email, pass);
+    $('lbPass').value = '';
+    openLobby(LB.pendingCode || undefined);
+  } catch (e) { lbStatus(t('lbErr', { e: (e && (e.code || e.message)) || '?' }), 'bad'); }
+}
+$('lbSignIn').onclick = () => lbSign(false);
+$('lbSignUp').onclick = () => lbSign(true);
+$('lbPass').onkeydown = e => { if (e.key === 'Enter') lbSign(false); };
 
 /* =====================================================================
    Wiring + boot

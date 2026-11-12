@@ -194,10 +194,11 @@ input[type=text]:focus,input[type=password]:focus{border-color:var(--brass)}
 </div>
 
 <script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js"}}
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}
 </script>
 <script type="module">
 import * as THREE from 'three';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 
 /* ---------------- rules data ---------------- */
 const SIDE_NAME={r:'Red',b:'Blue'};
@@ -337,28 +338,74 @@ function labelTexture(rank,side,hidden){
 }
 const cylGeo=new THREE.CylinderGeometry(.355,.355,.21,26);
 const topGeo=new THREE.CircleGeometry(.315,26);
-const sideMat={r:new THREE.MeshStandardMaterial({color:0x8d2f26,roughness:.42,metalness:.35}),
-              b:new THREE.MeshStandardMaterial({color:0x27407f,roughness:.42,metalness:.35})};
+const ringGeo=new THREE.TorusGeometry(.337,.012,8,30);
+const sideMat={r:new THREE.MeshStandardMaterial({color:0xbc4a3c,roughness:.62,metalness:.12}),
+              b:new THREE.MeshStandardMaterial({color:0x3d68c4,roughness:.62,metalness:.12})};
+const brassMat=new THREE.MeshStandardMaterial({color:0xd9b25f,metalness:.7,roughness:.3});
+
+/* the sculpted tower from files/Tower.stl is the piece body when it loads */
+const TOWER_H=.95;
+let towerGeo=null,towerTopR=.26,towerCapGeo=new THREE.CircleGeometry(.26,26);
+const capMats=new Map();
+function capMat(rank,side,hidden){
+  const k=rank+side+(hidden?'h':'');
+  if(!capMats.has(k))capMats.set(k,new THREE.MeshStandardMaterial({map:labelTexture(rank,side,hidden),roughness:.5,metalness:.05}));
+  return capMats.get(k);
+}
+(async()=>{
+  try{
+    const g=await new STLLoader().loadAsync('/files/Tower.stl?v=1');
+    g.rotateX(-Math.PI/2);                     // the model is built Z-up
+    g.computeBoundingBox();
+    const size=g.boundingBox.getSize(new THREE.Vector3());
+    const k=TOWER_H/size.y;
+    g.scale(k,k,k);
+    g.computeBoundingBox();
+    const bb=g.boundingBox,c=bb.getCenter(new THREE.Vector3());
+    g.translate(-c.x,-bb.min.y,-c.z);
+    g.computeBoundingBox();
+    // widest radius near the top gives the cap its size
+    const pos=g.attributes.position,top=g.boundingBox.max.y-.06;
+    let r=.2;
+    for(let i=0;i<pos.count;i++){
+      if(pos.getY(i)>=top)r=Math.max(r,Math.hypot(pos.getX(i),pos.getZ(i)));
+    }
+    towerTopR=Math.min(.34,r*1.02);
+    towerGeo=g;
+    const capGeo=new THREE.CircleGeometry(towerTopR,26);
+    towerCapGeo=capGeo;
+    syncPieces();
+  }catch(e){console.warn('Tower.stl failed, using round pieces',e)}
+})();
 function pieceMesh(p,hidden){
   const g=new THREE.Group();
-  const body=new THREE.Mesh(cylGeo,sideMat[p.side]);
-  body.castShadow=true;body.receiveShadow=true;g.add(body);
-  const top=new THREE.Mesh(topGeo,new THREE.MeshStandardMaterial({map:labelTexture(p.rank,p.side,hidden),roughness:.55}));
-  top.rotation.x=-Math.PI/2;top.position.y=.106;g.add(top);
-  const ring=new THREE.Mesh(new THREE.TorusGeometry(.337,.012,8,30),new THREE.MeshStandardMaterial({color:0xd9b25f,metalness:.7,roughness:.3}));
-  ring.rotation.x=Math.PI/2;ring.position.y=.104;g.add(ring);
+  if(towerGeo){
+    const body=new THREE.Mesh(towerGeo,sideMat[p.side]);
+    body.castShadow=true;body.receiveShadow=true;g.add(body);
+    const cap=new THREE.Mesh(towerCapGeo,capMat(p.rank,p.side,hidden));
+    cap.rotation.x=-Math.PI/2;cap.position.y=TOWER_H+.006;g.add(cap);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(towerTopR+.012,.011,8,28),brassMat);
+    ring.rotation.x=Math.PI/2;ring.position.y=TOWER_H+.005;g.add(ring);
+  }else{
+    const body=new THREE.Mesh(cylGeo,sideMat[p.side]);
+    body.castShadow=true;body.receiveShadow=true;g.add(body);
+    const top=new THREE.Mesh(topGeo,capMat(p.rank,p.side,hidden));
+    top.rotation.x=-Math.PI/2;top.position.y=.106;g.add(top);
+    const ring=new THREE.Mesh(ringGeo,brassMat);
+    ring.rotation.x=Math.PI/2;ring.position.y=.104;g.add(ring);
+  }
   g.userData.piece=p;
   return g;
 }
 const meshes=new Map();
 function syncPieces(){
-  for(const g of meshes.values()){piecesGroup.remove(g);g.traverse(o=>{if(o.geometry&&o.geometry!==cylGeo&&o.geometry!==topGeo&&o.geometry.type!=='TorusGeometry')o.geometry.dispose();if(o.material&&o.material.map&&!o.material.userData.shared)o.material.dispose()})}
+  for(const g of meshes.values())piecesGroup.remove(g);
   meshes.clear();
   for(let i=0;i<100;i++){
     const p=G.board[i];if(!p)continue;
     const hidden=p.side!==G.side&&!p.revealed;
     const g=pieceMesh(p,hidden);
-    g.position.set(colOf(i)-4.5,.115,rowOf(i)-4.5);
+    g.position.set(colOf(i)-4.5,towerGeo?.002:.115,rowOf(i)-4.5);
     g.rotation.y=G.side==='b'?Math.PI:0;
     g.userData.cell=i;
     piecesGroup.add(g);meshes.set(p.id,g);
@@ -827,7 +874,7 @@ resetCam();syncPieces();loop();
 
 /* dev helper */
 if(location.hash==='#dev'){
-  window.__strat={G,doMove,legalMoves,beginBattle,openSetup,deploy,NET,stateMsg,applyState,endGame,syncPieces,camera,pick,cellAt,cam};
+  window.__strat={G,doMove,legalMoves,beginBattle,openSetup,deploy,NET,stateMsg,applyState,endGame,syncPieces,camera,pick,cellAt,cam,renderer,scene};
 }
 </script>
 </body></html>

@@ -1649,6 +1649,8 @@ function handleClick(event) {
 }
 
 canvas.addEventListener('pointerdown', event => {
+  // only the primary button (or a touch/pen) may pick up a piece or drag the view
+  if (event.button > 0) return;
   SND.init();
   canvas.setPointerCapture(event.pointerId);
   pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });

@@ -10,6 +10,22 @@ const extensions = [
   { name: "Grammatik Hjælper", description: "Chrome extension for grammatip.", file: "files/grammatik-hjaelper.zip" },
 ];
 
+// Thumbnails are pre-scaled once with a proper filter (img/thumbs), so the
+// browser never has to crush a 1920px image into a 300px tile.
+const THUMBS = {
+  "img/10-minute-dungeon.png": [480, 960],
+  "img/flappy-bird.png": [480, 960, 1280],
+  "img/guess-the-color.png": [480, 960],
+  "img/guessing-game.png": [480, 960, 1280],
+  "img/hedgerow-hallow-thumb.jpg": [480, 960, 1280],
+  "img/knockout-night.png": [480],
+  "img/krillion.png": [480, 960, 1280],
+  "img/ordle.jpg": [480, 960, 1280],
+  "img/slope.jpg": [480],
+  "img/starclicker.png": [480],
+  "img/verity-clicker.png": [480, 960, 1280]
+};
+
 const ADMIN_CODE = "1203";
 
 // ---------------------------------------------------------------
@@ -48,6 +64,11 @@ function slug(game) {
   return slugText(game.title);
 }
 
+// img/verity-clicker.png + 960 -> img/thumbs/verity-clicker-960.webp
+function thumbUrl(image, width) {
+  return image.replace(/^img\//, "img/thumbs/").replace(/\.[^.]+$/, "") + "-" + width + ".webp";
+}
+
 // Gives each picture-less game its own tile color
 function hueFrom(text) {
   let hue = 0;
@@ -80,10 +101,36 @@ function makeCard(game) {
   }
   if (game.image) {
     const img = el("img");
-    img.src = encodeURI(game.image);
+    const full = encodeURI(game.image);
+    const widths = THUMBS[game.image] || [];
     img.alt = "";
     img.loading = "lazy";
-    img.addEventListener("error", function () { img.remove(); letterTile(); });
+    img.decoding = "async";
+    if (widths.length) {
+      // The browser picks the smallest pre-scaled copy that still covers the
+      // tile at this screen's pixel density.
+      img.src = encodeURI(thumbUrl(game.image, widths[0]));
+      img.srcset = widths.map(function (w) {
+        return encodeURI(thumbUrl(game.image, w)) + " " + w + "w";
+      }).join(", ");
+      img.sizes = "(max-width: 560px) 46vw, 620px";
+    } else {
+      img.src = full;
+    }
+    // A game added later has no pre-scaled copies yet: go back to the original
+    // picture once, then give up on the picture entirely.
+    let fellBack = false;
+    img.addEventListener("error", function () {
+      if (!fellBack && img.getAttribute("srcset")) {
+        fellBack = true;
+        img.removeAttribute("srcset");
+        img.removeAttribute("sizes");
+        img.src = full;
+        return;
+      }
+      img.remove();
+      letterTile();
+    });
     tile.appendChild(img);
   } else {
     letterTile();

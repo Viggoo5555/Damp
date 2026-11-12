@@ -454,7 +454,7 @@ canvas.addEventListener('pointermove',e=>{
   if(!cam.drag)return;
   const dx=e.clientX-cam.px,dy=e.clientY-cam.py;
   cam.moved+=Math.abs(dx)+Math.abs(dy);
-  cam.az-=dx*.006;cam.pol=Math.max(.3,Math.min(1.2,cam.pol+dy*.004));
+  cam.az-=dx*.006;cam.pol=Math.max(.3,Math.min(1.2,cam.pol-dy*.004));
   cam.px=e.clientX;cam.py=e.clientY;
 });
 canvas.addEventListener('pointerup',e=>{

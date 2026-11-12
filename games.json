@@ -28,6 +28,13 @@
     "image": "img/stratego.png"
   },
   {
+    "title": "Catan",
+    "description": "3D Catan on a full island: settle, trade with the bank or your rivals, build roads and cities, and race three computer players to ten points.",
+    "file": "games/catan.html",
+    "category": "Strategy",
+    "image": "img/catan.png"
+  },
+  {
     "title": "Chess",
     "description": "3D chess on a wooden set. Play the computer, or invite a friend with a code and play live.",
     "file": "games/chess.html",

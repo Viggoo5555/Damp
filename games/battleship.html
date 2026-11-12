@@ -1448,17 +1448,30 @@ function newPc() {
   return pc;
 }
 async function hostRoom() {
+  const keptCode = LB.code;
   await closeRoom(); LB.role = 'host'; $('lbCode').textContent = ''; $('lbLink').value = ''; lbStatus(t('lbPrep'));
   const fb = FB, pc = newPc(); LB.pc = pc; const dc = pc.createDataChannel('g'); LB.dc = dc;
   let guestName = '';
   dc.onopen = () => connected('host', guestName);
   await pc.setLocalDescription(await pc.createOffer()); await gathered(pc);
-  const L = 'ABCDEFGHJKMNPQRSTUVWXYZ'; let code, ref;
-  for (let i = 0; i < 8; i++) {
-    code = 'B' + Array.from({ length: 4 }, () => L[Math.random() * L.length | 0]).join(''); ref = fb.F.doc(fb.db, 'rooms', code);
-    if (!(await fb.F.getDoc(ref)).exists()) break;
+  const L = 'ABCDEFGHJKMNPQRSTUVWXYZ';
+  const freshCode = () => 'B' + Array.from({ length: 4 }, () => L[Math.random() * L.length | 0]).join('');
+  // Reuse the code when the host retries, so an invite that was already sent
+  // still works. Writing the room without merge also clears any half-finished
+  // guest from an earlier attempt (which would otherwise say "room is full").
+  let code = /^B[A-Z]{4}$/.test(keptCode) ? keptCode : freshCode();
+  let ref = fb.F.doc(fb.db, 'rooms', code);
+  const room = () => ({ host: fb.auth.currentUser.uid, hostName: myName(), game: 'battleship', offer: { type: 'offer', sdp: pc.localDescription.sdp }, at: Date.now() });
+  try {
+    await fb.F.setDoc(ref, room());
+  } catch (e) {
+    for (let i = 0; i < 8; i++) {
+      code = freshCode(); ref = fb.F.doc(fb.db, 'rooms', code);
+      if ((await fb.F.getDoc(ref)).exists()) continue;
+      await fb.F.setDoc(ref, room());
+      break;
+    }
   }
-  await fb.F.setDoc(ref, { host: fb.auth.currentUser.uid, hostName: myName(), game: 'battleship', offer: { type: 'offer', sdp: pc.localDescription.sdp }, at: Date.now() });
   LB.ref = ref; LB.code = code; $('lbCode').textContent = code; $('lbLink').value = inviteLink(code);
   lbStatus(t('lbWait'), 'ok'); $('lbRetry').classList.add('hide');
   LB.unsub = fb.F.onSnapshot(ref, s => {

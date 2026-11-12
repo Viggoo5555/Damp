@@ -153,7 +153,7 @@ function make(d){
  const leg=s=>{const L=new THREE.Group();L.position.set(s*.27,1.2,0);body.add(L);add(L,G(cyl(.2,.13,1),skin),0,-.5,0);add(L,G(new THREE.BoxGeometry(.3,.26,.5),boot),0,-1.05,.08);return L};
  const f={def:d,sc,g,body,mats:[skin,tr,gl,tape,boot],aL:arm(-1),aR:arm(1),lL:leg(-1),lR:leg(1),pos:{x:0,z:0},ph:Math.random()*6};
  g.add(body);g.scale.setScalar(sc);scene.add(g);reset(f,-4);return f}
-function reset(f,x){Object.assign(f,{hp:f.def.hp,sta:100,ko:false,fall:0,stun:0,atk:null,vx:0,vz:0,blocking:false,moving:false,mv:0,held:false,slam:0,gt:-1,sup:f.sup||0,last:null,cw:0,cnt:0,cc:0,ccT:0,lift:0,ang:x<0?Math.PI/2:-Math.PI/2});f.pos.x=x;f.pos.z=0;f.body.rotation.set(0,0,0);f.body.position.y=0}
+function reset(f,x){Object.assign(f,{hp:f.def.hp,sta:100,ko:false,fall:0,stun:0,atk:null,vx:0,vz:0,blocking:false,moving:false,mv:0,held:false,slam:0,gt:-1,sup:f.sup||0,last:null,cw:0,cnt:0,cc:0,ccT:0,lift:0,ang:x<0?Math.PI/2:-Math.PI/2});f.pos.x=x;f.pos.z=0;f.tx=x;f.tz=0;f.ta=f.ang;f.first=undefined;f.body.rotation.set(0,0,0);f.body.position.y=0}
 function startAtk(f,type){f.cw=0;f.atk={type,t:0,n:0,landed:false,...MOVES[type]}}
 const sparks=[];
 function spark(f,col,n){S.cheer=1;if(n>=14)shock(f,col);if(n>=20)roar(.22);for(let i=0;i<n;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(.12,.12,.12),new THREE.MeshBasicMaterial({color:col,transparent:true}));m.position.set(f.pos.x,2.3,f.pos.z);m.userData={v:new THREE.Vector3((Math.random()-.5)*8,Math.random()*6+2,(Math.random()-.5)*8),life:.45};scene.add(m);sparks.push(m)}}
@@ -502,11 +502,12 @@ function applySnap(m){
   else if(e[0]==='p')popText(e[1]);else snd(e[1],e[2],e[3],e[4])})}
 function guestFrame(dt,asp){
  const k=Math.min(1,dt*18);
- [P,E].forEach(f=>{f.pos.x+=(f.tx-f.pos.x)*k;f.pos.z+=(f.tz-f.pos.z)*k;let d=f.ta-f.ang;d=Math.atan2(Math.sin(d),Math.cos(d));f.ang+=d*k;f.g.position.set(f.pos.x,0,f.pos.z);f.g.rotation.y=f.ang;if(f.atk)f.atk.t+=dt;f.dist=Math.hypot(E.pos.x-P.pos.x,E.pos.z-P.pos.z)});
+ [P,E].forEach(f=>{const tx=Number.isFinite(f.tx)?f.tx:f.pos.x,tz=Number.isFinite(f.tz)?f.tz:f.pos.z,ta=Number.isFinite(f.ta)?f.ta:f.ang;f.pos.x+=(tx-f.pos.x)*k;f.pos.z+=(tz-f.pos.z)*k;let d=ta-f.ang;d=Math.atan2(Math.sin(d),Math.cos(d));f.ang+=d*k;f.g.position.set(f.pos.x,0,f.pos.z);f.g.rotation.y=f.ang;if(f.atk)f.atk.t+=dt;f.dist=Math.hypot(E.pos.x-P.pos.x,E.pos.z-P.pos.z)});
  pose(P,T);pose(E,T);
  [[P,1],[E,2]].forEach(([f,i])=>{const h=f.hp/f.def.hp*100+'%';$('b'+i).style.width=h;$('t'+i).style.width=h;$('s'+i).style.width=f.sta+'%';$('u'+i).style.width=f.sup+'%';$('u'+i).parentNode.classList.toggle('full',f.sup>=100)});
  $('rd').textContent='ROUND '+Math.min(S.round,3)+'/3';$('tm').textContent=Math.floor(S.clock/60)+':'+String(S.clock%60).padStart(2,'0');hintUpd();
  const mx=(P.pos.x+E.pos.x)/2*.4,mz=(P.pos.z+E.pos.z)/2*.4;let h=15+P.dist*.3;h/=Math.min(1,asp*.85);
+ if(!Number.isFinite(camera.position.x+camera.position.y+camera.position.z))camera.position.set(mx,18,mz+12);
  camera.position.lerp(new THREE.Vector3(mx,h,mz+h*.62),Math.min(1,dt*5+.02));S.shake=Math.max(0,S.shake-dt);if(S.shake>0)camera.position.x+=(Math.random()-.5)*S.shake;
  camera.fov=lerp(camera.fov,42-Math.min(8,S.shake*12),.25);camera.updateProjectionMatrix();camera.lookAt(mx,.8,mz)}
 $('online').onclick=()=>{$('net').classList.remove('hide');$('ncode').textContent='';ns('Playing as '+ROSTER[sel].name+'. Create a room and send the code to a friend, or type their code and join.')};

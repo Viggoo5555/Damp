@@ -329,9 +329,9 @@ function labelTexture(rank,side,hidden){
   g.fillStyle='#f7ecd2';g.textAlign='center';g.textBaseline='middle';
   if(hidden){g.font='bold 74px Georgia,serif';g.fillText('?',64,66)}
   else{
-    const big=rank==='10'?56:rank.length>1?56:74;
-    g.font='bold '+big+'px Georgia,serif';g.fillText(rank,64,58);
-    g.font='600 17px Arial Narrow,Arial';g.fillStyle='#f0d9a8';g.fillText(NAME[rank].toUpperCase(),64,100);
+    const big=rank==='10'?58:rank.length>1?60:80;
+    g.font='bold '+big+'px Georgia,serif';g.fillText(rank,64,48);
+    g.font='600 19px Arial Narrow,Arial';g.fillStyle='#f0d9a8';g.fillText(NAME[rank].toUpperCase(),64,91);
   }
   const tex=new THREE.CanvasTexture(cv);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=4;
   texCache.set(k,tex);return tex;
@@ -345,12 +345,18 @@ const brassMat=new THREE.MeshStandardMaterial({color:0xd9b25f,metalness:.7,rough
 
 /* the sculpted tower from files/Tower.stl is the piece body when it loads */
 const TOWER_H=.95;
-let towerGeo=null,towerTopR=.26,towerCapGeo=new THREE.CircleGeometry(.26,26);
+let towerGeo=null,towerTopR=.26,towerMaxR=.26,bandGeo=null;
 const capMats=new Map();
 function capMat(rank,side,hidden){
   const k=rank+side+(hidden?'h':'');
   if(!capMats.has(k))capMats.set(k,new THREE.MeshStandardMaterial({map:labelTexture(rank,side,hidden),roughness:.5,metalness:.05}));
   return capMats.get(k);
+}
+const bandMats=new Map();
+function bandMat(rank,side,hidden){
+  const k=rank+side+(hidden?'h':'');
+  if(!bandMats.has(k))bandMats.set(k,new THREE.MeshBasicMaterial({map:labelTexture(rank,side,hidden)}));
+  return bandMats.get(k);
 }
 (async()=>{
   try{
@@ -366,14 +372,16 @@ function capMat(rank,side,hidden){
     g.computeBoundingBox();
     // widest radius near the top gives the cap its size
     const pos=g.attributes.position,top=g.boundingBox.max.y-.06;
-    let r=.2;
+    let r=.2,maxR=0;
     for(let i=0;i<pos.count;i++){
-      if(pos.getY(i)>=top)r=Math.max(r,Math.hypot(pos.getX(i),pos.getZ(i)));
+      const rad=Math.hypot(pos.getX(i),pos.getZ(i));
+      if(rad>maxR)maxR=rad;
+      if(pos.getY(i)>=top)r=Math.max(r,rad);
     }
     towerTopR=Math.min(.34,r*1.02);
+    towerMaxR=Math.min(.4,maxR+.012);
+    bandGeo=new THREE.CylinderGeometry(towerMaxR,towerMaxR,.58,26,1,true,-.95,1.9);
     towerGeo=g;
-    const capGeo=new THREE.CircleGeometry(towerTopR,26);
-    towerCapGeo=capGeo;
     syncPieces();
   }catch(e){console.warn('Tower.stl failed, using round pieces',e)}
 })();
@@ -382,10 +390,11 @@ function pieceMesh(p,hidden){
   if(towerGeo){
     const body=new THREE.Mesh(towerGeo,sideMat[p.side]);
     body.castShadow=true;body.receiveShadow=true;g.add(body);
-    const cap=new THREE.Mesh(towerCapGeo,capMat(p.rank,p.side,hidden));
-    cap.rotation.x=-Math.PI/2;cap.position.y=TOWER_H+.006;g.add(cap);
-    const ring=new THREE.Mesh(new THREE.TorusGeometry(towerTopR+.012,.011,8,28),brassMat);
-    ring.rotation.x=Math.PI/2;ring.position.y=TOWER_H+.005;g.add(ring);
+    const band=new THREE.Mesh(bandGeo,bandMat(p.rank,p.side,hidden));
+    band.position.y=TOWER_H*.52;
+    if(G.side==='b')band.rotation.y=Math.PI;
+    band.castShadow=false;
+    g.add(band);
   }else{
     const body=new THREE.Mesh(cylGeo,sideMat[p.side]);
     body.castShadow=true;body.receiveShadow=true;g.add(body);

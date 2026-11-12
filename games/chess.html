@@ -875,17 +875,17 @@ function pieceWood(base, grain, dark) {
   t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   return t;
 }
-const pieceLightTex = pieceWood('#e8d2ab', '#cdae7e', '#8a6a44');
-const pieceDarkTex = pieceWood('#3d2719', '#2f1c10', '#150a04');
+const pieceLightTex = pieceWood('#efd9b2', '#d8b988', '#a07a4c');
+const pieceDarkTex = pieceWood('#5b3a23', '#472a16', '#26150a');
 
 const MAT = {
   ivory: new THREE.MeshPhysicalMaterial({
-    map: pieceLightTex, color: 0xfff8ec, roughness: 0.44, metalness: 0.0,
-    clearcoat: 0.42, clearcoatRoughness: 0.42, envMapIntensity: 0.65
+    map: pieceLightTex, color: 0xfff6e4, roughness: 0.3, metalness: 0.0,
+    clearcoat: 0.75, clearcoatRoughness: 0.22, envMapIntensity: 0.9
   }),
   ebony: new THREE.MeshPhysicalMaterial({
-    map: pieceDarkTex, color: 0xffffff, roughness: 0.38, metalness: 0.02,
-    clearcoat: 0.5, clearcoatRoughness: 0.36, envMapIntensity: 0.8
+    map: pieceDarkTex, color: 0xffffff, roughness: 0.28, metalness: 0.02,
+    clearcoat: 0.8, clearcoatRoughness: 0.2, envMapIntensity: 0.95
   }),
   felt: new THREE.MeshStandardMaterial({ color: 0x2f5238, roughness: 1, metalness: 0 }),
   slit: new THREE.MeshStandardMaterial({ color: 0x241a14, roughness: 0.7 }),
@@ -1048,7 +1048,7 @@ for (let r = 0; r < 8; r++) {
 
 /* ---------- pieces ---------- */
 const PIECE_R = { p: 0.255, r: 0.295, n: 0.29, b: 0.275, q: 0.305, k: 0.315 };
-const PIECE_H = { p: 0.60, r: 0.70, n: 0.90, b: 0.94, q: 1.04, k: 1.16 };
+const PIECE_H = { p: 0.62, r: 0.74, n: 0.92, b: 1.00, q: 1.10, k: 1.22 };
 
 function lathe(pts, seg) {
   return new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(Math.max(0.0001, p[0]), p[1])), seg || 56);
@@ -1077,6 +1077,7 @@ function buildPiece(type, color) {
     g.add(m);
     return m;
   };
+  const bead = (rad, y, n, size) => knurl(rad, y, n, mat, g, size);
 
   // green felt under every piece, just like the photograph
   const felt = new THREE.Mesh(new THREE.CylinderGeometry(R * 1.04, R * 1.04, 0.02, 40), MAT.felt);
@@ -1084,64 +1085,81 @@ function buildPiece(type, color) {
   felt.receiveShadow = true;
   g.add(felt);
 
+  // every piece starts with the same turned foot: a wide disc, a fillet
+  // and a bead ring, which is what gives a Staunton set its weight
+  const foot = [[0, 0.02], [R, 0.02], [R, 0.048], [R * 0.975, 0.062], [R * 0.9, 0.074],
+    [R * 0.87, 0.094], [R * 0.75, 0.116], [R * 0.63, 0.142], [R * 0.56, 0.172]];
+
   if (type === 'p') {
-    M(lathe([[0, 0.02], [R, 0.02], [R, 0.052], [R * 0.93, 0.068], [R * 0.79, 0.098], [R * 0.6, 0.14], [R * 0.47, 0.19], [R * 0.42, 0.23], [R * 0.47, 0.25], [R * 0.47, 0.27], [R * 0.38, 0.3]]), 0);
-    knurl(R * 0.45, 0.305, 20, mat, g, 0.015);
-    const stem = M(new THREE.CylinderGeometry(R * 0.275, R * 0.34, 0.14, 40), 0.385);
-    const head = M(new THREE.SphereGeometry(R * 0.6, 40, 28), 0.49);
-    head.scale.set(1, 1.06, 1);
+    M(lathe(foot.concat([[R * 0.5, 0.205], [R * 0.46, 0.235], [R * 0.44, 0.27],
+      [R * 0.48, 0.292], [R * 0.48, 0.31], [R * 0.4, 0.328]])), 0);
+    bead(R * 0.355, 0.335, 18, 0.012);
+    M(new THREE.CylinderGeometry(R * 0.3, R * 0.36, 0.06, 40), 0.358);
+    const head = M(new THREE.SphereGeometry(R * 0.56, 40, 28), 0.475);
+    head.scale.set(1, 1.04, 1);
+    M(new THREE.SphereGeometry(R * 0.135, 18, 14), 0.6);
   }
 
   if (type === 'r') {
-    M(lathe([[0, 0.02], [R, 0.02], [R, 0.055], [R * 0.94, 0.072], [R * 0.8, 0.1], [R * 0.66, 0.145], [R * 0.6, 0.2], [R * 0.57, 0.27], [R * 0.55, 0.44], [R * 0.58, 0.47], [R * 0.65, 0.49], [R * 0.65, 0.53], [R * 0.56, 0.555]]), 0);
-    const top = M(new THREE.CylinderGeometry(R * 0.53, R * 0.53, 0.075, 44), 0.575);
-    // crenellations
-    for (let i = 0; i < 8; i++) {
-      const a = i / 8 * Math.PI * 2;
-      const merlon = new THREE.Mesh(new THREE.BoxGeometry(R * 0.34, 0.11, R * 0.26), mat);
-      merlon.position.set(Math.cos(a) * R * 0.44, 0.66, Math.sin(a) * R * 0.44);
+    M(lathe(foot.concat([[R * 0.52, 0.21], [R * 0.485, 0.27], [R * 0.47, 0.35],
+      [R * 0.48, 0.41], [R * 0.53, 0.435], [R * 0.53, 0.46], [R * 0.46, 0.482]])), 0);
+    bead(R * 0.49, 0.455, 20, 0.014);
+    // the drum, then a wider lip, then the battlements
+    M(new THREE.CylinderGeometry(R * 0.55, R * 0.5, 0.11, 44), 0.53);
+    const inside = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.46, R * 0.46, 0.01, 40), MAT.slit);
+    inside.position.y = 0.605;
+    g.add(inside);
+    M(lathe([[R * 0.53, 0.578], [R * 0.62, 0.588], [R * 0.63, 0.608], [R * 0.6, 0.62], [R * 0.52, 0.622]], 44), 0);
+    for (let i = 0; i < 6; i++) {
+      const a = i / 6 * Math.PI * 2;
+      const merlon = new THREE.Mesh(new THREE.BoxGeometry(R * 0.34, 0.145, R * 0.34), mat);
+      merlon.position.set(Math.cos(a) * R * 0.4, 0.695, Math.sin(a) * R * 0.4);
       merlon.rotation.y = -a;
       merlon.castShadow = true;
+      merlon.receiveShadow = true;
       g.add(merlon);
     }
-    M(new THREE.CylinderGeometry(R * 0.86, R * 0.86, 0.02, 44), 0.617);
   }
 
   if (type === 'n') {
-    M(lathe([[0, 0.02], [R, 0.02], [R, 0.055], [R * 0.94, 0.072], [R * 0.8, 0.1], [R * 0.62, 0.15], [R * 0.5, 0.2], [R * 0.46, 0.24], [R * 0.5, 0.265], [R * 0.52, 0.29]]), 0);
-    knurl(R * 0.51, 0.3, 22, mat, g, 0.016);
+    M(lathe(foot.concat([[R * 0.5, 0.205], [R * 0.45, 0.245], [R * 0.44, 0.285],
+      [R * 0.49, 0.31], [R * 0.51, 0.335]])), 0);
+    bead(R * 0.5, 0.345, 22, 0.015);
 
     const s = new THREE.Shape();
-    s.moveTo(-0.21, 0.02);
-    s.lineTo(0.18, 0.02);
-    s.bezierCurveTo(0.23, 0.14, 0.21, 0.23, 0.15, 0.28);
-    s.lineTo(0.34, 0.3);
-    s.bezierCurveTo(0.41, 0.315, 0.42, 0.38, 0.35, 0.415);
-    s.bezierCurveTo(0.31, 0.435, 0.27, 0.44, 0.24, 0.45);
-    s.bezierCurveTo(0.21, 0.51, 0.17, 0.535, 0.13, 0.535);
-    s.lineTo(0.17, 0.645);
-    s.lineTo(0.06, 0.565);
-    s.lineTo(0.0, 0.615);
-    s.bezierCurveTo(-0.09, 0.635, -0.17, 0.56, -0.19, 0.45);
-    s.bezierCurveTo(-0.24, 0.33, -0.25, 0.16, -0.21, 0.02);
+    s.moveTo(-0.24, 0.02);
+    s.lineTo(0.22, 0.02);
+    s.bezierCurveTo(0.245, 0.13, 0.23, 0.22, 0.205, 0.285);
+    s.lineTo(0.25, 0.325);
+    s.bezierCurveTo(0.3, 0.335, 0.355, 0.36, 0.383, 0.4);
+    s.bezierCurveTo(0.397, 0.42, 0.377, 0.445, 0.345, 0.45);
+    s.bezierCurveTo(0.29, 0.462, 0.25, 0.49, 0.222, 0.525);
+    s.bezierCurveTo(0.2, 0.565, 0.185, 0.6, 0.163, 0.635);
+    s.lineTo(0.145, 0.71);
+    s.lineTo(0.088, 0.625);
+    s.lineTo(0.04, 0.7);
+    s.lineTo(0.005, 0.6);
+    s.bezierCurveTo(-0.055, 0.615, -0.1, 0.6, -0.135, 0.545);
+    s.bezierCurveTo(-0.185, 0.51, -0.225, 0.43, -0.245, 0.33);
+    s.bezierCurveTo(-0.262, 0.23, -0.258, 0.11, -0.24, 0.02);
     s.closePath();
-
     const headGeo = new THREE.ExtrudeGeometry(s, {
-      depth: 0.14, bevelEnabled: true, bevelSize: 0.017, bevelThickness: 0.014,
-      bevelSegments: 3, curveSegments: 18
+      depth: 0.165, bevelEnabled: true, bevelSize: 0.026, bevelThickness: 0.02,
+      bevelSegments: 5, curveSegments: 24
     });
-    headGeo.translate(0, 0, -0.07);
+    headGeo.translate(0, 0, -0.0825);
     const uv = headGeo.attributes.uv;
     for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 2.6, uv.getY(i) * 2.6);
 
     const headGroup = new THREE.Group();
-    headGroup.position.y = 0.295;
-    headGroup.rotation.y = color === 'w' ? Math.PI / 2 : -Math.PI / 2;
+    headGroup.position.y = 0.335;
+    // seen from the player's seat the head is in profile, like the photograph
+    headGroup.rotation.y = color === 'w' ? -0.18 : Math.PI + 0.18;
     const head = new THREE.Mesh(headGeo, mat);
     head.castShadow = true;
     head.receiveShadow = true;
     headGroup.add(head);
-    [[0.17, 0.46, 0.08], [0.17, 0.46, -0.08]].forEach(([x, y, z]) => {
+    [[0.255, 0.545, 0.082], [0.255, 0.545, -0.082]].forEach(([x, y, z]) => {
       const eye = new THREE.Mesh(new THREE.SphereGeometry(0.013, 10, 8), MAT.eye);
       eye.position.set(x, y, z);
       headGroup.add(eye);
@@ -1150,55 +1168,63 @@ function buildPiece(type, color) {
   }
 
   if (type === 'b') {
-    M(lathe([[0, 0.02], [R, 0.02], [R, 0.055], [R * 0.94, 0.072], [R * 0.8, 0.105], [R * 0.62, 0.15], [R * 0.5, 0.2], [R * 0.45, 0.25], [R * 0.44, 0.33], [R * 0.5, 0.355], [R * 0.5, 0.375], [R * 0.4, 0.395]]), 0);
-    knurl(R * 0.47, 0.4, 20, mat, g, 0.015);
-    const mitre = M(new THREE.SphereGeometry(R * 0.56, 40, 30), 0.545);
-    mitre.scale.set(0.94, 1.62, 0.94);
-    M(new THREE.ConeGeometry(R * 0.26, R * 0.5, 32), 0.755);
-    M(new THREE.SphereGeometry(R * 0.11, 18, 14), 0.85);
-    // the little cut through the mitre
-    const slit = new THREE.Mesh(new THREE.BoxGeometry(R * 0.09, R * 0.78, R * 0.26), MAT.slit);
-    slit.position.set(0, 0.6, R * 0.14);
-    slit.rotation.x = -0.32;
+    M(lathe(foot.concat([[R * 0.5, 0.21], [R * 0.45, 0.27], [R * 0.43, 0.35],
+      [R * 0.44, 0.4], [R * 0.49, 0.42], [R * 0.49, 0.44], [R * 0.41, 0.458]])), 0);
+    bead(R * 0.455, 0.45, 20, 0.014);
+    // the mitre: an egg that tapers into a rounded point
+    const mitre = M(new THREE.SphereGeometry(R * 0.55, 44, 32), 0.63);
+    mitre.scale.set(0.9, 1.68, 0.9);
+    M(new THREE.SphereGeometry(R * 0.115, 20, 16), 0.875);
+    // the cut through the mitre, a diagonal notch that breaks the surface
+    const slit = new THREE.Mesh(new THREE.BoxGeometry(0.017, R * 0.62, R * 0.6), MAT.slit);
+    slit.position.set(0, 0.665, R * 0.25);
+    slit.rotation.x = -0.55;
     g.add(slit);
   }
 
   if (type === 'q') {
-    M(lathe([[0, 0.02], [R, 0.02], [R, 0.058], [R * 0.94, 0.075], [R * 0.8, 0.11], [R * 0.62, 0.16], [R * 0.5, 0.22], [R * 0.44, 0.3], [R * 0.42, 0.4], [R * 0.47, 0.43], [R * 0.47, 0.45], [R * 0.36, 0.47]]), 0);
-    knurl(R * 0.45, 0.475, 22, mat, g, 0.015);
-    // crown
-    M(new THREE.CylinderGeometry(R * 0.42, R * 0.3, 0.1, 40), 0.53);
-    M(lathe([[R * 0.42, 0.58], [R * 0.6, 0.61], [R * 0.62, 0.66], [R * 0.52, 0.69], [R * 0.3, 0.7]], 44), 0);
+    M(lathe(foot.concat([[R * 0.5, 0.21], [R * 0.45, 0.27], [R * 0.43, 0.36],
+      [R * 0.44, 0.43], [R * 0.49, 0.455], [R * 0.49, 0.475], [R * 0.41, 0.495]])), 0);
+    bead(R * 0.455, 0.49, 22, 0.014);
+    M(new THREE.CylinderGeometry(R * 0.4, R * 0.31, 0.09, 44), 0.55);
+    // coronet
+    M(lathe([[R * 0.4, 0.59], [R * 0.58, 0.62], [R * 0.6, 0.665], [R * 0.5, 0.695], [R * 0.31, 0.705]], 44), 0);
     for (let i = 0; i < 9; i++) {
       const a = i / 9 * Math.PI * 2;
-      const spike = new THREE.Mesh(new THREE.ConeGeometry(R * 0.085, 0.14, 12), mat);
-      spike.position.set(Math.cos(a) * R * 0.5, 0.74, Math.sin(a) * R * 0.5);
+      const spike = new THREE.Mesh(new THREE.ConeGeometry(R * 0.07, 0.085, 12), mat);
+      spike.position.set(Math.cos(a) * R * 0.47, 0.728, Math.sin(a) * R * 0.47);
       spike.castShadow = true;
       g.add(spike);
-      const bead = new THREE.Mesh(new THREE.SphereGeometry(R * 0.045, 12, 10), mat);
-      bead.position.set(Math.cos(a) * R * 0.5, 0.815, Math.sin(a) * R * 0.5);
-      g.add(bead);
+      const tip = new THREE.Mesh(new THREE.SphereGeometry(R * 0.042, 12, 10), mat);
+      tip.position.set(Math.cos(a) * R * 0.47, 0.775, Math.sin(a) * R * 0.47);
+      g.add(tip);
     }
-    M(new THREE.SphereGeometry(R * 0.14, 20, 16), 0.72);
-    M(new THREE.ConeGeometry(R * 0.075, R * 0.26, 16), 0.79);
+    // orb on top
+    M(new THREE.SphereGeometry(R * 0.135, 22, 18), 0.825);
+    M(new THREE.SphereGeometry(R * 0.045, 14, 12), 0.935);
   }
 
   if (type === 'k') {
-    M(lathe([[0, 0.02], [R, 0.02], [R, 0.06], [R * 0.94, 0.078], [R * 0.8, 0.115], [R * 0.62, 0.165], [R * 0.5, 0.23], [R * 0.44, 0.32], [R * 0.42, 0.47], [R * 0.47, 0.5], [R * 0.47, 0.52], [R * 0.36, 0.545]]), 0);
-    knurl(R * 0.45, 0.55, 22, mat, g, 0.016);
-    M(new THREE.CylinderGeometry(R * 0.42, R * 0.3, 0.11, 40), 0.61);
-    M(lathe([[R * 0.42, 0.665], [R * 0.6, 0.7], [R * 0.62, 0.75], [R * 0.52, 0.78], [R * 0.34, 0.79]], 44), 0);
+    M(lathe(foot.concat([[R * 0.5, 0.21], [R * 0.45, 0.28], [R * 0.43, 0.4],
+      [R * 0.44, 0.5], [R * 0.5, 0.53], [R * 0.5, 0.55], [R * 0.41, 0.57]])), 0);
+    bead(R * 0.455, 0.565, 22, 0.015);
+    M(new THREE.CylinderGeometry(R * 0.4, R * 0.31, 0.1, 44), 0.635);
+    // crown
+    M(lathe([[R * 0.4, 0.68], [R * 0.58, 0.715], [R * 0.6, 0.755], [R * 0.5, 0.782], [R * 0.3, 0.792]], 44), 0);
     // cross
-    const v = new THREE.Mesh(new THREE.BoxGeometry(0.062, 0.26, 0.062), mat);
-    v.position.y = 0.925; v.castShadow = true; g.add(v);
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.185, 0.062, 0.062), mat);
-    arm.position.y = 0.965; arm.castShadow = true; g.add(arm);
-    // small crown beads
+    const v = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.29, 0.055), mat);
+    v.position.y = 0.925;
+    v.castShadow = true;
+    g.add(v);
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.175, 0.055, 0.055), mat);
+    arm.position.y = 0.975;
+    arm.castShadow = true;
+    g.add(arm);
     for (let i = 0; i < 8; i++) {
       const a = i / 8 * Math.PI * 2;
-      const bead = new THREE.Mesh(new THREE.SphereGeometry(R * 0.06, 12, 10), mat);
-      bead.position.set(Math.cos(a) * R * 0.54, 0.79, Math.sin(a) * R * 0.54);
-      g.add(bead);
+      const tip = new THREE.Mesh(new THREE.SphereGeometry(R * 0.055, 12, 10), mat);
+      tip.position.set(Math.cos(a) * R * 0.52, 0.792, Math.sin(a) * R * 0.52);
+      g.add(tip);
     }
   }
 

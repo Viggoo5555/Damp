@@ -8,6 +8,12 @@
 :root{--ink:#06121b;--panel:#0b1f2d;--panel2:#12304a;--line:#2d5878;--brass:#f0b84a;--brass2:#b9801d;--red:#ff5a47;--ok:#46e08a;--fg:#e8f1f6;--dim:#8fa9ba;
  --d:Anton,Impact,"Arial Narrow",sans-serif;--b:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
+
+:root{--cur:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22w%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23f6d9a8%22%2F%3E%3Cstop%20offset%3D%22.45%22%20stop-color%3D%22%23d69f5e%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%239c6a34%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22s%22%20x%3D%22-40%25%22%20y%3D%22-40%25%22%20width%3D%22180%25%22%20height%3D%22180%25%22%3E%3CfeDropShadow%20dx%3D%22.7%22%20dy%3D%221.4%22%20stdDeviation%3D%221.2%22%20flood-color%3D%22%23000%22%20flood-opacity%3D%22.6%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cg%20filter%3D%22url(%23s)%22%3E%3Cpath%20d%3D%22M2.6%201.2%20L2.6%2026.2%20L8.2%2020.6%20L12.1%2029.4%20L16.8%2027.2%20L12.9%2018.6%20L19.9%2018%20Z%22%20fill%3D%22url(%23w)%22%20stroke%3D%22%2333200f%22%20stroke-width%3D%221.7%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M5.2%205.4%20L5.2%2020.2%22%20stroke%3D%22%23fff4e0%22%20stroke-opacity%3D%22.6%22%20stroke-width%3D%221.15%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M8.1%2015%20L12.5%2020.4%22%20stroke%3D%22%236d3f1a%22%20stroke-opacity%3D%22.45%22%20stroke-width%3D%22.9%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M3.6%202.2%20L3.6%2024.6%20L8.2%2020.2%20L12.2%2029%20L16.6%2026.9%20L12.6%2018.3%20L19.2%2017.7%20Z%22%20fill%3D%22none%22%20stroke%3D%22%23ffe9c4%22%20stroke-opacity%3D%22.55%22%20stroke-width%3D%22.6%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 2 1,auto;--curPick:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22w%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffe6b4%22%2F%3E%3Cstop%20offset%3D%22.45%22%20stop-color%3D%22%23f0b84a%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23a76a20%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22s%22%20x%3D%22-40%25%22%20y%3D%22-40%25%22%20width%3D%22180%25%22%20height%3D%22180%25%22%3E%3CfeDropShadow%20dx%3D%22.7%22%20dy%3D%221.4%22%20stdDeviation%3D%221.2%22%20flood-color%3D%22%23000%22%20flood-opacity%3D%22.6%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cg%20filter%3D%22url(%23s)%22%3E%3Cpath%20d%3D%22M2.6%201.2%20L2.6%2026.2%20L8.2%2020.6%20L12.1%2029.4%20L16.8%2027.2%20L12.9%2018.6%20L19.9%2018%20Z%22%20fill%3D%22url(%23w)%22%20stroke%3D%22%232a1706%22%20stroke-width%3D%221.7%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M5.2%205.4%20L5.2%2020.2%22%20stroke%3D%22%23fff4e0%22%20stroke-opacity%3D%22.6%22%20stroke-width%3D%221.15%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M8.1%2015%20L12.5%2020.4%22%20stroke%3D%22%236d3f1a%22%20stroke-opacity%3D%22.45%22%20stroke-width%3D%22.9%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M3.6%202.2%20L3.6%2024.6%20L8.2%2020.2%20L12.2%2029%20L16.6%2026.9%20L12.6%2018.3%20L19.2%2017.7%20Z%22%20fill%3D%22none%22%20stroke%3D%22%23fff6df%22%20stroke-opacity%3D%22.55%22%20stroke-width%3D%22.6%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 2 1,pointer}
+html,body{cursor:var(--cur)}
+button,.chip,.btn{cursor:var(--cur)}
+#gl.pick{cursor:var(--curPick)}
+input,textarea{cursor:text}
 html,body{height:100%;margin:0;background:var(--ink);color:var(--fg);font-family:var(--b);font-weight:600;font-size:18px;overflow:hidden;
  user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 #app{position:fixed;inset:0;padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0)}
@@ -94,6 +100,15 @@ a{text-decoration:none}
 .promo-row button:hover{border-color:var(--brass);color:var(--brass)}
 .promo-row button span{font-size:38px;line-height:1}
 .promo-row button small{font-size:13px;letter-spacing:.12em;color:var(--dim)}
+#online .col{width:min(470px,100%)}
+#online .panel h2{margin-bottom:2px}
+.code{font:400 clamp(34px,7vw,46px)/1 var(--d);letter-spacing:.22em;color:var(--brass);text-align:center;min-height:1.1em}
+.irow{display:flex;gap:8px;align-items:stretch}
+.irow input{flex:1;min-width:0}
+input[type=text],input[type=password]{width:100%;background:#06121b;border:2px solid var(--line);color:var(--fg);padding:9px 11px;font:700 18px/1 var(--b);letter-spacing:.05em;outline:none;user-select:text;-webkit-user-select:text}
+input[type=text]:focus,input[type=password]:focus{border-color:var(--brass)}
+#onWait{color:var(--brass)}
+#online .note{font-size:15px;color:var(--dim);letter-spacing:.03em}
 #toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%);z-index:9;background:#0b1f2def;border:2px solid var(--brass);padding:9px 16px;letter-spacing:.05em;max-width:88vw;text-align:center;pointer-events:none}
 #loader{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--ink);z-index:8;transition:opacity .5s}
 #loader .ring{width:54px;height:54px;border:3px solid #1b3a52;border-top-color:var(--brass);border-radius:50%;animation:spin 1s linear infinite}
@@ -135,6 +150,7 @@ a{text-decoration:none}
   <div id="hint">Tap a piece, then a highlighted square &middot; drag to look around</div>
   <div id="bottom">
    <button class="btn ghost sm" id="bUndo">Undo</button>
+   <button class="btn ghost sm hide" id="bResign">Resign</button>
    <button class="btn alt sm" id="bNew">New game</button>
   </div>
   <div id="banner"></div>
@@ -151,7 +167,35 @@ a{text-decoration:none}
     <h3>Opponent</h3>
     <div class="seg"><button class="chip on" id="lv1">Rookie</button><button class="chip" id="lv2">Admiral</button></div>
     <button class="btn" id="bPlay">Play vs computer</button>
+    <button class="btn alt" id="bOnline">Play online with a friend</button>
     <p>Drag to look around the board, scroll or pinch to lean in. You always sit on your own side.</p>
+   </div>
+  </div>
+ </div>
+
+ <!-- online lobby -->
+ <div id="online" class="screen mid hide">
+  <div class="col">
+   <div class="panel">
+    <h2>Play online</h2>
+    <p id="onStatus">Sign in with the same account you use on Damp, then invite a friend.</p>
+    <div id="onAuth">
+     <input type="text" id="onName" placeholder="Username" autocomplete="username" autocapitalize="none">
+     <input type="password" id="onPass" placeholder="Password" autocomplete="current-password">
+     <div class="irow"><button class="btn sm" id="onIn">Sign in</button><button class="btn alt sm" id="onUp">Create account</button></div>
+    </div>
+    <div id="onMain" class="hide">
+     <button class="btn" id="onHost">Create a room</button>
+     <div id="onHostBox" class="hide">
+      <h3>Share this code or link</h3>
+      <div class="code" id="onCode"></div>
+      <div class="irow"><input type="text" id="onLink" readonly><button class="btn sm" id="onCopy">Copy</button></div>
+      <p id="onWait">Waiting for your friend&hellip;</p>
+     </div>
+     <h3>Got a code?</h3>
+     <div class="irow"><input type="text" id="onJoin" maxlength="8" placeholder="CODE" autocomplete="off" autocapitalize="characters"><button class="btn alt sm" id="onJoinBtn">Join</button></div>
+    </div>
+    <div class="btns"><button class="btn ghost sm" id="onBack">Back</button></div>
    </div>
   </div>
  </div>
@@ -771,14 +815,61 @@ const teakTex = woodTexture('#8a5f3a', '#4a2c17', '#2b170c', { lines: 190, knots
 const tableTex = woodTexture('#5c3f2b', '#3d2617', '#1e1108', { lines: 240, knots: 34 });
 tableTex.repeat.set(5, 5);
 
+// The pieces are turned from wood: light boxwood for white, walnut for black.
+// The grain runs up the stem, the way a lathe leaves it.
+function pieceWood(base, grain, dark) {
+  const size = 512;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  g.fillStyle = base;
+  g.fillRect(0, 0, size, size);
+
+  for (let i = 0; i < 34; i++) {
+    const x = Math.random() * size, w = 5 + Math.random() * 34;
+    g.fillStyle = grain;
+    g.globalAlpha = 0.04 + Math.random() * 0.08;
+    g.beginPath();
+    g.moveTo(x, 0);
+    for (let y = 0; y <= size; y += 16) g.lineTo(x + Math.sin(y * 0.011 + i) * 5 + Math.sin(y * 0.045 + i * 3) * 1.8, y);
+    for (let y = size; y >= 0; y -= 16) g.lineTo(x + w + Math.sin(y * 0.011 + i) * 5 + Math.sin(y * 0.045 + i * 3) * 1.8, y);
+    g.closePath();
+    g.fill();
+  }
+  g.globalAlpha = 1;
+
+  for (let i = 0; i < 230; i++) {
+    const x = Math.random() * size;
+    const amp = 1 + Math.random() * 3.6;
+    g.strokeStyle = dark;
+    g.globalAlpha = 0.03 + Math.random() * 0.1;
+    g.lineWidth = 0.5 + Math.random() * 1.5;
+    g.beginPath();
+    for (let y = 0; y <= size; y += 12) {
+      const xx = x + Math.sin(y * 0.012 + i * 1.6) * amp + Math.sin(y * 0.05 + i) * 0.8;
+      y === 0 ? g.moveTo(xx, y) : g.lineTo(xx, y);
+    }
+    g.stroke();
+  }
+  g.globalAlpha = 1;
+
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  return t;
+}
+const pieceLightTex = pieceWood('#e8d2ab', '#cdae7e', '#8a6a44');
+const pieceDarkTex = pieceWood('#3d2719', '#2f1c10', '#150a04');
+
 const MAT = {
   ivory: new THREE.MeshPhysicalMaterial({
-    color: 0xf3e7d2, roughness: 0.42, metalness: 0.0,
-    clearcoat: 0.45, clearcoatRoughness: 0.4, envMapIntensity: 0.6
+    map: pieceLightTex, color: 0xfff8ec, roughness: 0.44, metalness: 0.0,
+    clearcoat: 0.42, clearcoatRoughness: 0.42, envMapIntensity: 0.65
   }),
   ebony: new THREE.MeshPhysicalMaterial({
-    color: 0x3a2a22, roughness: 0.36, metalness: 0.02,
-    clearcoat: 0.55, clearcoatRoughness: 0.35, envMapIntensity: 0.75
+    map: pieceDarkTex, color: 0xffffff, roughness: 0.38, metalness: 0.02,
+    clearcoat: 0.5, clearcoatRoughness: 0.36, envMapIntensity: 0.8
   }),
   felt: new THREE.MeshStandardMaterial({ color: 0x2f5238, roughness: 1, metalness: 0 }),
   slit: new THREE.MeshStandardMaterial({ color: 0x241a14, roughness: 0.7 }),
@@ -1024,6 +1115,8 @@ function buildPiece(type, color) {
       bevelSegments: 3, curveSegments: 18
     });
     headGeo.translate(0, 0, -0.07);
+    const uv = headGeo.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 2.6, uv.getY(i) * 2.6);
 
     const headGroup = new THREE.Group();
     headGroup.position.y = 0.295;
@@ -1142,7 +1235,8 @@ const G = {
   busy: false,
   over: false,
   started: false,
-  promo: null
+  promo: null,
+  online: false
 };
 
 const piecesRoot = new THREE.Group();
@@ -1160,13 +1254,18 @@ const GLYPH = {
   b: { k: '\u265A', q: '\u265B', r: '\u265C', b: '\u265D', n: '\u265E', p: '\u265F' }
 };
 
+function markSquare(g, index) {
+  if (!g) return;
+  g.userData.index = index;
+  g.traverse(o => { o.userData.pieceIndex = index; });
+}
+
 function spawnPiece(code, index) {
   const g = TEMPLATES[code].clone(true);
   const f = index % 8, r = (index / 8) | 0;
   g.position.set(f - 3.5, 0, 3.5 - r);
-  g.userData.index = index;
   g.userData.code = code;
-  g.traverse(o => { o.userData.pieceIndex = index; });
+  markSquare(g, index);
   piecesRoot.add(g);
   return g;
 }
@@ -1319,6 +1418,27 @@ const ndc = new THREE.Vector2();
 const pointers = new Map();
 let drag = null;
 let pinch = 0;
+let pieceDrag = null;
+
+// where the pointer meets the board plane; used while a piece is in the hand,
+// so the piece being carried can never block its own drop square
+const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+function planePoint(event) {
+  const rect = canvas.getBoundingClientRect();
+  ndc.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  ndc.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(ndc, camera);
+  const out = new THREE.Vector3();
+  return raycaster.ray.intersectPlane(dragPlane, out) ? out : null;
+}
+
+function squareUnder(event) {
+  const p = planePoint(event);
+  if (!p) return -1;
+  const f = Math.round(p.x + 3.5), r = Math.round(3.5 - p.z);
+  if (f < 0 || f > 7 || r < 0 || r > 7) return -1;
+  return r * 8 + f;
+}
 
 function pickIndex(event) {
   const rect = canvas.getBoundingClientRect();
@@ -1387,7 +1507,16 @@ canvas.addEventListener('pointerdown', event => {
   canvas.setPointerCapture(event.pointerId);
   pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
   if (pointers.size === 1) {
-    drag = { x: event.clientX, y: event.clientY, az: view.azT, pol: view.polT, moved: false };
+    // pressing one of your own pieces picks it up; the rest of the board is for looking around
+    const hit = G.started && !G.busy && !G.over && G.st.turn === G.player ? pickIndex(event) : -1;
+    const own = hit >= 0 && G.bd[hit] && G.bd[hit][0] === G.player;
+    if (own) {
+      pieceDrag = { index: hit, x: event.clientX, y: event.clientY, moved: false, mesh: G.meshes[hit] };
+      drag = null;
+      selectSquare(hit);
+    } else {
+      drag = { x: event.clientX, y: event.clientY, az: view.azT, pol: view.polT, moved: false };
+    }
   } else if (pointers.size === 2) {
     const [a, b] = Array.from(pointers.values());
     pinch = Math.hypot(a.x - b.x, a.y - b.y) || 1;
@@ -1407,12 +1536,36 @@ canvas.addEventListener('pointermove', event => {
     return;
   }
 
+  if (pieceDrag && pointers.size === 1) {
+    const dx = event.clientX - pieceDrag.x, dy = event.clientY - pieceDrag.y;
+    if (!pieceDrag.moved && Math.abs(dx) + Math.abs(dy) > 6) {
+      pieceDrag.moved = true;
+      SND.pick();
+    }
+    if (pieceDrag.moved) {
+      // the piece rides under the pointer, just above the board
+      const at = planePoint(event);
+      if (at && pieceDrag.mesh) {
+        pieceDrag.mesh.position.x = Math.max(-3.4, Math.min(3.4, at.x));
+        pieceDrag.mesh.position.z = Math.max(-3.4, Math.min(3.4, at.z));
+        pieceDrag.mesh.position.y = 0.22;
+      }
+      const over = squareUnder(event);
+      if (over >= 0 && G.legal.some(m => m.to === over)) {
+        sqPos(over, hoverMesh.position);
+        hoverMesh.position.y = 0.02;
+        hoverMesh.visible = true;
+      } else hoverMesh.visible = false;
+      return;
+    }
+  }
+
   if (drag && pointers.size === 1) {
     const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
     if (Math.abs(dx) + Math.abs(dy) > 5) drag.moved = true;
     if (drag.moved) {
       view.azT = clamp(drag.az - dx * 0.0055, -0.62, 0.62);
-      view.polT = clamp(drag.pol + dy * 0.0038, 0.72, 1.14);
+      view.polT = clamp(drag.pol - dy * 0.0038, 0.72, 1.14);
       hoverMesh.visible = false;
       return;
     }
@@ -1422,20 +1575,52 @@ canvas.addEventListener('pointermove', event => {
   if (i !== G.hover) {
     G.hover = i;
     updateHover();
-    canvas.style.cursor = i >= 0 && G.bd[i] && G.bd[i][0] === G.player && G.st.turn === G.player ? 'pointer' : 'default';
+    canvas.classList.toggle('pick', i >= 0 && !!G.bd[i] && G.bd[i][0] === G.player && G.st.turn === G.player);
   }
 });
 
 function endPointer(event) {
   pointers.delete(event.pointerId);
   if (pinch && pointers.size < 2) pinch = 0;
+
+  if (pieceDrag && pointers.size === 0) {
+    const pd = pieceDrag;
+    pieceDrag = null;
+    hoverMesh.visible = false;
+    if (pd.mesh) {
+      pd.mesh.position.y = 0;
+      sqPos(pd.index, pd.mesh.position);
+    }
+    if (pd.moved) {
+      const over = squareUnder(event);
+      const moves = G.legal.filter(m => m.to === over);
+      if (moves.length) {
+        if (moves[0].promo) openPromo(moves);
+        else doMove(moves[0]);
+      } else {
+        drawOverlays();
+        updateTurnUI();
+      }
+    }
+    drag = null;
+    return;
+  }
+
   if (drag && pointers.size === 0) {
     if (!drag.moved) handleClick(event);
     drag = null;
   }
 }
 canvas.addEventListener('pointerup', endPointer);
-canvas.addEventListener('pointercancel', event => { pointers.delete(event.pointerId); drag = null; pinch = 0; });
+canvas.addEventListener('pointercancel', event => {
+  pointers.delete(event.pointerId);
+  drag = null; pinch = 0;
+  if (pieceDrag) {
+    if (pieceDrag.mesh) { pieceDrag.mesh.position.y = 0; sqPos(pieceDrag.index, pieceDrag.mesh.position); }
+    pieceDrag = null;
+    hoverMesh.visible = false;
+  }
+});
 canvas.addEventListener('pointerleave', () => { G.hover = -1; hoverMesh.visible = false; });
 canvas.addEventListener('wheel', event => {
   event.preventDefault();
@@ -1542,7 +1727,7 @@ function commit(mv, res, san, capSq, capCode) {
   if (capSq >= 0) delete G.meshes[capSq];
   delete G.meshes[mv.from];
   G.meshes[mv.to] = mover;
-  if (mover) mover.userData.index = mv.to;
+  markSquare(mover, mv.to);
 
   if (mv.castle) {
     const rookFrom = mv.castle === 'K' ? mv.to + 1 : mv.to - 2;
@@ -1551,7 +1736,7 @@ function commit(mv, res, san, capSq, capCode) {
     if (rook) {
       delete G.meshes[rookFrom];
       G.meshes[rookTo] = rook;
-      rook.userData.index = rookTo;
+      markSquare(rook, rookTo);
       const a = rook.position.clone();
       const b = sqPos(rookTo, new THREE.Vector3());
       tween(0.3, k => {
@@ -1587,6 +1772,10 @@ function commit(mv, res, san, capSq, capCode) {
   drawOverlays();
   updateTurnUI();
 
+  if (G.online && mv.c === G.player) {
+    netSend({ t: 'move', from: mv.from, to: mv.to, promo: mv.promo || null });
+  }
+
   if (finishIfOver()) return;
   maybeAI();
 }
@@ -1594,7 +1783,7 @@ function commit(mv, res, san, capSq, capCode) {
 /* ---------- the computer answers ---------- */
 function maybeAI() {
   updateTurnUI();
-  if (G.over || !G.started || G.st.turn === G.player) return;
+  if (G.online || G.over || !G.started || G.st.turn === G.player) return;
   setTimeout(() => {
     if (G.over) return;
     const mv = bestMove(G.bd, G.st, G.level);
@@ -1705,18 +1894,18 @@ function updateTurnUI() {
   const turn = $('turn');
   turn.classList.toggle('think', !G.over && !yourTurn);
   turn.classList.toggle('check', !G.over && inCheck(G.bd, G.st.turn));
-  $('turnT').textContent = G.over ? 'Game over' : (yourTurn ? 'Your move' : 'Thinking');
+  $('turnT').textContent = G.over ? 'Game over' : (yourTurn ? 'Your move' : (G.online ? 'Their move' : 'Thinking'));
   $('turnS').textContent = (G.st.turn === 'w' ? 'White' : 'Black') + ' to play';
   $('hint').textContent = G.over
     ? ''
     : yourTurn
-      ? (G.legal.length ? 'Pick a highlighted square' : 'Tap one of your pieces')
-      : 'The computer is choosing its move\u2026';
+      ? (G.legal.length ? 'Pick a highlighted square' : 'Tap or drag one of your pieces')
+      : (G.online ? 'Waiting for ' + NET.name + '\u2026' : 'The computer is choosing its move\u2026');
 }
 
 /* ---------- undo ---------- */
 function undo() {
-  if (G.busy || G.over || !G.history.length) return;
+  if (G.online || G.busy || G.over || !G.history.length) return;
   let target = null;
   for (let i = G.history.length - 1; i >= 0; i--) {
     if (G.history[i].st.turn === G.player) { target = G.history[i]; G.history.length = i; break; }
@@ -1746,9 +1935,10 @@ function toast(text) {
 }
 
 /* ---------- starting a game ---------- */
-function newGame(side, level) {
+function newGame(side, level, online) {
   G.player = side;
   G.level = level;
+  G.online = !!online;
   G.bd = START.slice();
   G.st = NEW_STATE();
   G.caps = { w: [], b: [] };
@@ -1771,11 +1961,13 @@ function newGame(side, level) {
   $('hud').classList.remove('hide');
   $('sideChip').textContent = 'You: ' + (side === 'w' ? 'White' : 'Black');
   $('bUndo').disabled = false;
+  $('bUndo').classList.toggle('hide', G.online);
+  $('bResign').classList.toggle('hide', !G.online);
   renderMoves();
   renderCaps();
   drawOverlays();
   updateTurnUI();
-  maybeAI();
+  if (!G.online) maybeAI();
 }
 
 /* ---------- menu and buttons ---------- */
@@ -1786,8 +1978,18 @@ $('sdB').addEventListener('click', () => { pickSide = 'b'; chipGroup(['sdW', 'sd
 $('lv1').addEventListener('click', () => { pickLevel = 1; chipGroup(['lv1', 'lv2'], 'lv1'); SND.init(); SND.pick(); });
 $('lv2').addEventListener('click', () => { pickLevel = 2; chipGroup(['lv1', 'lv2'], 'lv2'); SND.init(); SND.pick(); });
 $('bPlay').addEventListener('click', () => { SND.init(); SND.pick(); newGame(pickSide, pickLevel); });
-$('bAgain').addEventListener('click', () => { SND.init(); newGame(pickSide, pickLevel); });
+$('bAgain').addEventListener('click', () => {
+  SND.init(); SND.pick();
+  if (G.online) {
+    NET.again = true;
+    netSend({ t: 'again' });
+    tryRematch();
+    return;
+  }
+  newGame(pickSide, pickLevel);
+});
 $('bNew').addEventListener('click', () => {
+  if (G.online) { leaveOnline(); return; }
   $('end').classList.add('hide');
   $('menu').classList.remove('hide');
   $('hud').classList.add('hide');
@@ -1796,6 +1998,7 @@ $('bNew').addEventListener('click', () => {
   drawOverlays();
 });
 $('bEndMenu').addEventListener('click', () => {
+  if (G.online) { leaveOnline(); return; }
   $('end').classList.add('hide');
   $('menu').classList.remove('hide');
   $('hud').classList.add('hide');
@@ -1833,6 +2036,386 @@ window.addEventListener('keydown', event => {
   if (event.key === 'u' || event.key === 'U') undo();
   if (event.key === 'Escape') { G.sel = -1; G.legal = []; drawOverlays(); }
 });
+
+/* =====================================================================
+   Online play
+   Firebase only introduces the two players (room document + invite link),
+   exactly like Battleship. The game itself runs over a WebRTC data channel,
+   so a move is a single small message and no extra rules are needed.
+   ===================================================================== */
+const FBCFG = { apiKey: "AIzaSyDJhWSi7QZKXtOPYwKHPF7zPg_klh1If7w", authDomain: "damp-2406a.firebaseapp.com", projectId: "damp-2406a", appId: "1:940989851976:web:f8fd07c258afa71fd22b7d" };
+const SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
+const ICE = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }] };
+
+const NET = {
+  fb: null, pc: null, dc: null, ref: null, unsub: null, code: '', role: null,
+  timer: 0, hb: 0, last: 0, dead: true, joining: false, again: false, oppAgain: false,
+  name: 'Friend', pendingCode: ''
+};
+
+const onStatus = (txt, cls) => { const p = $('onStatus'); p.textContent = txt || ''; p.className = cls || ''; };
+const meName = () => (((NET.fb && NET.fb.auth.currentUser && NET.fb.auth.currentUser.email) || '').replace('@damp.example', '') || 'player');
+const loginEmail = name => String(name || '').trim().toLowerCase().replace(/[^a-z0-9._-]/g, '') + '@damp.example';
+const inviteLink = code => { const u = new URL(location.href); u.search = ''; u.hash = ''; u.searchParams.set('room', code); return u.href; };
+
+function netSend(m) {
+  try { if (NET.dc && NET.dc.readyState === 'open') NET.dc.send(JSON.stringify(m)); } catch (e) { }
+}
+
+async function fbInit() {
+  if (NET.fb) return NET.fb;
+  const [A, Au, F] = await Promise.all([
+    import(SDK + 'firebase-app.js'), import(SDK + 'firebase-auth.js'), import(SDK + 'firebase-firestore.js')
+  ]);
+  const app = A.getApps().length ? A.getApp() : A.initializeApp(FBCFG);
+  const auth = Au.getAuth(app), db = F.getFirestore(app);
+  await new Promise(r => { const u = Au.onAuthStateChanged(auth, () => { u(); r(); }); });
+  NET.fb = { F, db, auth };
+  return NET.fb;
+}
+
+function renderOnline() {
+  const who = NET.fb && NET.fb.auth.currentUser;
+  $('onAuth').classList.toggle('hide', !!who);
+  $('onMain').classList.toggle('hide', !who);
+  if (who) {
+    $('onName').value = meName();
+    onStatus('Signed in as ' + meName() + '. Create a room, or join one with a code.', 'ok');
+  } else {
+    onStatus('Sign in with the same account you use on Damp, then invite a friend.');
+  }
+}
+
+async function openOnline() {
+  $('menu').classList.add('hide');
+  $('end').classList.add('hide');
+  $('hud').classList.add('hide');
+  $('online').classList.remove('hide');
+  G.started = false;
+  G.over = true;
+  drawOverlays();
+  onStatus('Waking up the table\u2026');
+  try {
+    await fbInit();
+    renderOnline();
+    if (NET.pendingCode && NET.fb.auth.currentUser) {
+      const code = NET.pendingCode;
+      NET.pendingCode = '';
+      joinRoom(code);
+    }
+  } catch (e) {
+    onStatus('Could not reach the accounts service. Check the connection and try again.', 'bad');
+  }
+}
+
+function showEnd(title, sub, lose) {
+  G.over = true;
+  G.busy = false;
+  G.sel = -1; G.legal = [];
+  drawOverlays();
+  updateTurnUI();
+  $('endT').textContent = title;
+  $('endS').textContent = sub;
+  $('end').classList.toggle('lose', !!lose);
+  $('endStats').textContent = '';
+  $('end').classList.remove('hide');
+}
+
+function connected(role, oppName) {
+  clearTimeout(NET.timer);
+  const pc = NET.pc, dc = NET.dc;
+  NET.pc = NET.dc = null;
+  if (NET.ref && NET.fb) NET.fb.F.deleteDoc(NET.ref).catch(() => { });
+  NET.ref = null;
+  try { if (NET.unsub) NET.unsub(); } catch (e) { }
+  NET.unsub = null;
+  NET.role = role;
+  NET.pc = pc; NET.dc = dc;
+  NET.dead = false;
+  NET.again = NET.oppAgain = false;
+  NET.last = Date.now();
+  NET.name = oppName || 'Friend';
+  dc.onmessage = onNetMessage;
+  dc.onclose = opponentLeft;
+  clearInterval(NET.hb);
+  NET.hb = setInterval(() => {
+    netSend({ t: 'ping' });
+    if (Date.now() - NET.last > 15000) opponentLeft();
+  }, 3000);
+  netSend({ t: 'hi', name: meName() });
+  $('online').classList.add('hide');
+  SND.init();
+  newGame(role === 'host' ? 'w' : 'b', 2, true);
+  toast('Connected to ' + NET.name);
+  SND.check();
+}
+
+function onNetMessage(event) {
+  NET.last = Date.now();
+  let m;
+  try { m = JSON.parse(event.data); } catch (e) { return; }
+  if (!m || !m.t) return;
+  if (m.t === 'hi') {
+    NET.name = String(m.name || 'Friend').slice(0, 24);
+    toast('Playing ' + NET.name);
+    return;
+  }
+  if (m.t === 'move') {
+    if (G.busy || G.over) return;
+    const mv = G.allLegal.find(x => x.from === m.from && x.to === m.to && (x.promo || null) === (m.promo || null));
+    if (mv && mv.c !== G.player) doMove(mv);
+    return;
+  }
+  if (m.t === 'again') { NET.oppAgain = true; tryRematch(); return; }
+  if (m.t === 'resign') { showEnd('VICTORY', 'Your friend resigned the game.', false); SND.win(); return; }
+  if (m.t === 'bye') { opponentLeft(); return; }
+}
+
+function opponentLeft() {
+  if (NET.dead || !G.online) return;
+  NET.dead = true;
+  clearInterval(NET.hb);
+  try { if (NET.dc) NET.dc.close(); if (NET.pc) NET.pc.close(); } catch (e) { }
+  NET.dc = NET.pc = null;
+  if (G.over) return;
+  showEnd('TABLE EMPTY', 'Your friend left the game.', true);
+}
+
+function tryRematch() {
+  if (NET.again && NET.oppAgain) {
+    NET.again = NET.oppAgain = false;
+    SND.init();
+    newGame(NET.role === 'host' ? 'w' : 'b', 2, true);
+  } else if (NET.again) {
+    toast('Waiting for your friend to accept');
+  }
+}
+
+function leaveOnline() {
+  if (!NET.dead) netSend({ t: 'bye' });
+  NET.dead = true;
+  clearInterval(NET.hb);
+  clearTimeout(NET.timer);
+  try { if (NET.dc) NET.dc.close(); if (NET.pc) NET.pc.close(); } catch (e) { }
+  NET.dc = NET.pc = null;
+  try { if (NET.unsub) NET.unsub(); } catch (e) { }
+  NET.unsub = null;
+  if (NET.ref && NET.fb) NET.fb.F.deleteDoc(NET.ref).catch(() => { });
+  NET.ref = null;
+  NET.code = '';
+  $('onHostBox').classList.add('hide');
+  G.online = false;
+  $('bResign').classList.add('hide');
+  $('bUndo').classList.remove('hide');
+  $('hud').classList.add('hide');
+  $('end').classList.add('hide');
+  $('menu').classList.remove('hide');
+  renderOnline();
+}
+
+async function closeRoom() {
+  clearTimeout(NET.timer);
+  try { if (NET.unsub) NET.unsub(); } catch (e) { }
+  NET.unsub = null;
+  if (NET.ref && NET.fb) { try { await NET.fb.F.deleteDoc(NET.ref); } catch (e) { } }
+  NET.ref = null;
+  try { if (NET.dc) NET.dc.close(); if (NET.pc) NET.pc.close(); } catch (e) { }
+  NET.pc = NET.dc = null;
+  NET.code = '';
+}
+
+function newPc() {
+  const pc = new RTCPeerConnection(ICE);
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState === 'failed' && !G.online) {
+      onStatus('The two computers could not reach each other. Try again, or use the code on another network.', 'bad');
+    }
+  };
+  return pc;
+}
+
+function gathered(pc) {
+  return new Promise(r => {
+    if (pc.iceGatheringState === 'complete') return r();
+    const tm = setTimeout(r, 4000);
+    pc.addEventListener('icegatheringstatechange', () => {
+      if (pc.iceGatheringState === 'complete') { clearTimeout(tm); r(); }
+    });
+  });
+}
+
+async function hostRoom() {
+  if (G.online) return;
+  const keptCode = NET.code;
+  await closeRoom();
+  $('onHostBox').classList.add('hide');
+  $('onCode').textContent = '';
+  $('onLink').value = '';
+  onStatus('Preparing the table\u2026');
+  $('onHost').disabled = true;
+  try {
+    const fb = NET.fb;
+    if (!fb || !fb.auth.currentUser) { onStatus('Sign in first.', 'bad'); return; }
+    const pc = newPc();
+    NET.pc = pc;
+    const dc = pc.createDataChannel('chess');
+    NET.dc = dc;
+    let guestName = '';
+    dc.onopen = () => connected('host', guestName);
+    await pc.setLocalDescription(await pc.createOffer());
+    await gathered(pc);
+
+    const L = 'ABCDEFGHJKMNPQRSTUVWXYZ';
+    const freshCode = () => 'C' + Array.from({ length: 4 }, () => L[Math.random() * L.length | 0]).join('');
+    let code = /^C[A-Z]{4}$/.test(keptCode) ? keptCode : freshCode();
+    let ref = fb.F.doc(fb.db, 'rooms', code);
+    const room = () => ({ host: fb.auth.currentUser.uid, hostName: meName(), game: 'chess', offer: { type: 'offer', sdp: pc.localDescription.sdp }, at: Date.now() });
+    try {
+      await fb.F.setDoc(ref, room());
+    } catch (e) {
+      for (let i = 0; i < 8; i++) {
+        code = freshCode();
+        ref = fb.F.doc(fb.db, 'rooms', code);
+        if ((await fb.F.getDoc(ref)).exists()) continue;
+        await fb.F.setDoc(ref, room());
+        break;
+      }
+    }
+    NET.ref = ref;
+    NET.code = code;
+    $('onCode').textContent = code;
+    $('onLink').value = inviteLink(code);
+    $('onHostBox').classList.remove('hide');
+    onStatus('Room ready. Send the code or link to your friend.', 'ok');
+    clearTimeout(NET.timer);
+    NET.timer = setTimeout(() => {
+      if (!G.online) onStatus('Still waiting. The code stays valid, so you can send it again.', '');
+    }, 25000);
+    NET.unsub = fb.F.onSnapshot(ref, snap => {
+      const d = snap.data();
+      if (d && d.answer && pc.signalingState === 'have-local-offer') {
+        guestName = d.guestName || '';
+        onStatus('Your friend is joining\u2026', 'ok');
+        pc.setRemoteDescription(d.answer).catch(() => onStatus('That join attempt failed. Send the code again.', 'bad'));
+      }
+    });
+  } catch (e) {
+    onStatus('Could not create the room: ' + ((e && (e.code || e.message)) || '?'), 'bad');
+  } finally {
+    $('onHost').disabled = false;
+  }
+}
+
+async function joinRoom(raw) {
+  const code = String(raw || '').trim().toUpperCase();
+  if (!code || NET.joining || G.online) return;
+  NET.joining = true;
+  onStatus('Joining\u2026');
+  try {
+    const fb = await fbInit();
+    if (!fb.auth.currentUser) {
+      onStatus('Sign in first, then join with the code again.', 'bad');
+      return;
+    }
+    await closeRoom();
+    const ref = fb.F.doc(fb.db, 'rooms', code);
+    const snap = await fb.F.getDoc(ref);
+    if (!snap.exists()) { onStatus('No table with that code. Check the letters.', 'bad'); return; }
+    const d = snap.data();
+    if (d.game && d.game !== 'chess') { onStatus('That code belongs to another game.', 'bad'); return; }
+    if (d.guest) { onStatus('That table is already full.', 'bad'); return; }
+    if (Date.now() - (d.at || 0) > 45 * 60 * 1000) { onStatus('That table is too old. Ask for a fresh code.', 'bad'); return; }
+    const pc = newPc();
+    NET.pc = pc;
+    pc.ondatachannel = e => {
+      NET.dc = e.channel;
+      e.channel.onopen = () => connected('guest', d.hostName);
+    };
+    await pc.setRemoteDescription(d.offer);
+    await pc.setLocalDescription(await pc.createAnswer());
+    await gathered(pc);
+    await fb.F.updateDoc(ref, {
+      guest: fb.auth.currentUser.uid,
+      guestName: meName(),
+      answer: { type: 'answer', sdp: pc.localDescription.sdp }
+    });
+    onStatus('Connecting to ' + (d.hostName || 'your friend') + '\u2026', 'ok');
+    clearTimeout(NET.timer);
+    NET.timer = setTimeout(() => {
+      if (!G.online) onStatus('Could not connect. Ask your friend to create a new room.', 'bad');
+    }, 25000);
+  } catch (e) {
+    onStatus('Could not join: ' + ((e && (e.code || e.message)) || '?'), 'bad');
+    try { await closeRoom(); } catch (x) { }
+  } finally {
+    NET.joining = false;
+  }
+}
+
+/* ---------- lobby wiring ---------- */
+const AUTH_MSG = {
+  'auth/invalid-credential': 'Wrong username or password.',
+  'auth/invalid-login-credentials': 'Wrong username or password.',
+  'auth/user-not-found': 'No account with that name yet.',
+  'auth/wrong-password': 'Wrong password.',
+  'auth/email-already-in-use': 'That name is taken. Pick another.',
+  'auth/weak-password': 'The password needs at least 6 characters.',
+  'auth/too-many-requests': 'Too many tries. Wait a minute and try again.',
+  'auth/network-request-failed': 'No connection to the accounts service.'
+};
+
+async function withAuth(mode) {
+  const name = $('onName').value.trim();
+  const pass = $('onPass').value;
+  if (!name || !pass) { onStatus('Enter a username and a password.', 'bad'); return; }
+  onStatus('Signing ' + (mode === 'in' ? 'in' : 'you up') + '\u2026');
+  try {
+    const fb = await fbInit();
+    const Au = await import(SDK + 'firebase-auth.js');
+    const email = loginEmail(name);
+    if (mode === 'in') await Au.signInWithEmailAndPassword(fb.auth, email, pass);
+    else await Au.createUserWithEmailAndPassword(fb.auth, email, pass);
+    $('onPass').value = '';
+    renderOnline();
+    if (NET.pendingCode) {
+      const code = NET.pendingCode;
+      NET.pendingCode = '';
+      joinRoom(code);
+    }
+  } catch (e) {
+    const key = (e && e.code) || '';
+    onStatus(AUTH_MSG[key] || ('Could not sign in: ' + (key || (e && e.message) || '?')), 'bad');
+  }
+}
+
+$('bOnline').addEventListener('click', () => { SND.init(); SND.pick(); openOnline(); });
+$('onBack').addEventListener('click', () => {
+  SND.pick();
+  if (G.online) leaveOnline();
+  else { $('online').classList.add('hide'); $('menu').classList.remove('hide'); }
+});
+$('onIn').addEventListener('click', () => withAuth('in'));
+$('onUp').addEventListener('click', () => withAuth('up'));
+$('onPass').addEventListener('keydown', e => { if (e.key === 'Enter') withAuth('in'); });
+$('onHost').addEventListener('click', () => { SND.init(); SND.pick(); hostRoom(); });
+$('onJoinBtn').addEventListener('click', () => { SND.init(); SND.pick(); joinRoom($('onJoin').value); });
+$('onJoin').addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom($('onJoin').value); });
+$('onCopy').addEventListener('click', async () => {
+  const link = $('onLink').value;
+  try { await navigator.clipboard.writeText(link); $('onCopy').textContent = 'Copied'; setTimeout(() => $('onCopy').textContent = 'Copy', 1600); }
+  catch (e) { $('onLink').select(); document.execCommand && document.execCommand('copy'); }
+});
+$('bResign').addEventListener('click', () => {
+  if (!G.online || G.over) return;
+  netSend({ t: 'resign' });
+  showEnd('DEFEAT', 'You resigned the game.', true);
+  SND.lose();
+});
+
+window.addEventListener('pagehide', () => { if (G.online) netSend({ t: 'bye' }); });
+
+const roomParam = new URLSearchParams(location.search).get('room');
+if (roomParam) { NET.pendingCode = roomParam.trim().toUpperCase(); setTimeout(openOnline, 300); }
 
 /* ---------- the render loop ---------- */
 const clock = new THREE.Clock();

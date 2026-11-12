@@ -23,7 +23,7 @@
   },
   {
     "title": "Chess",
-    "description": "Detailed 3D chess against the computer. Castling, promotion and a written move list, viewed from your own side of the table.",
+    "description": "3D chess on a wooden set. Play the computer, or invite a friend with a code and play live.",
     "file": "games/chess.html",
     "category": "Strategy",
     "image": "img/chess.png"

@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Chess</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700&family=Cinzel:wght@600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700&display=swap">
 <style>
 :root{--ink:#06121b;--panel:#0b1f2d;--panel2:#12304a;--line:#2d5878;--brass:#f0b84a;--brass2:#b9801d;--red:#ff5a47;--ok:#46e08a;--fg:#e8f1f6;--dim:#8fa9ba;
  --d:Anton,Impact,"Arial Narrow",sans-serif;--b:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;color-scheme:dark}
@@ -148,137 +148,6 @@ input[type=text]:focus,input[type=password]:focus{border-color:var(--brass)}
  .logo{white-space:normal}
 }
 @media (max-height:520px){#moves{display:none}}
-
-/* ================= chess club theme ================= */
-:root{
- --ink:#101a14;--panel:#16241d;--panel2:#213629;--line:#8a6a35;
- --brass:#e3c07a;--brass2:#a8801f;--fg:#f2e8d5;--dim:#bda98a;
- --red:#e06146;--ok:#6cc08c;
- --d:Cinzel,"Times New Roman",serif;
- --b:Lora,Georgia,"Times New Roman",serif;
-}
-html,body{
- background:
-  radial-gradient(ellipse at 50% 0%,#2b4636 0,#17251d 52%,#0b120e 100%);
- font-family:var(--b);font-weight:400;letter-spacing:.01em;
-}
-#vig{background:radial-gradient(ellipse at 50% 42%,transparent 42%,#04100acc 100%)}
-
-/* engraved brass + parchment controls */
-.chip{
- background:linear-gradient(#f8f0dc,#e6d6b2);color:#33240f;border:1px solid #9a7838;border-radius:2px;
- font:600 15px/1 var(--d);letter-spacing:.14em;text-transform:uppercase;
- box-shadow:0 2px 0 #0006,inset 0 0 0 1px #fff8;
-}
-.chip:hover{border-color:#c9a227;color:#20160a;filter:brightness(1.03)}
-.chip.on{background:linear-gradient(#fffaee,#f1e1ba);border-color:#b8912f;color:#20160a;box-shadow:inset 0 0 0 2px #c9a22755,0 2px 0 #0006}
-
-.btn{
- clip-path:none;border-radius:3px;border:1px solid #9a7838;color:#2b1d09;
- background:linear-gradient(#fcf4e0,#e7d5a8);
- font-family:var(--d);font-weight:700;letter-spacing:.14em;
- box-shadow:0 3px 0 #0007,inset 0 1px 0 #fffc;
-}
-.btn:hover{filter:brightness(1.05)}
-.btn.alt{background:linear-gradient(#33523f,#1f3527);color:#f2e8d5;border-color:#8a6a35;box-shadow:0 3px 0 #0007,inset 0 1px 0 #ffffff22}
-.btn.ghost{background:linear-gradient(#22392c,#172619);color:#ecdfc2;border-color:#7e6134;box-shadow:0 2px 0 #0006,inset 0 0 0 1px #ffffff14}
-.btn.pulse:not([disabled]){animation:pu 1s infinite alternate}
-
-/* turn plaque */
-#turn{
- background:linear-gradient(#1b3427,#10231a);border:1px solid #8a6a35;border-top:0;border-radius:0 0 7px 7px;clip-path:none;
- box-shadow:0 4px 14px #0009,inset 0 0 0 1px #ffffff10;
-}
-#turn b{font:700 22px/1.15 var(--d);letter-spacing:.18em;color:#ecd6a2}
-#turn span{font:400 14px/1.3 var(--b);letter-spacing:.12em;color:var(--dim);font-style:italic}
-#turn.think b{color:#9cc4ae}
-#turn.check b{color:#ef7a5e}
-
-/* scoresheet */
-#moves{
- background:linear-gradient(#f7edd5,#e8dab7);color:#2b1f0f;border:1px solid #8a6a35;border-top:0;border-radius:0 0 5px 5px;
- box-shadow:0 10px 24px #0008,inset 0 0 0 1px #fff9;
-}
-#moves h4{
- font:700 11px/1 var(--d);letter-spacing:.28em;color:#6d5730;border-bottom:1px solid #bda77a;
- background:linear-gradient(#efe0bd,#e5d4ad);
-}
-#moveList{font-family:"Courier New",ui-monospace,monospace;font-weight:600;color:#241a0c;font-size:15px}
-#moveList .mv:nth-child(odd){background:#00000008}
-#moveList .mv i{color:#8a7648}
-#moveList .mv b{font-weight:700}
-#moveList .mv b.last{color:#8d1f1f}
-#caps{color:#4a3a1f;border-top:1px solid #bda77a;background:#00000006;font-size:18px}
-
-/* hint strip */
-#hint{
- background:linear-gradient(#f7eed8,#eadcb9);color:#3a2c15;border:1px solid #8a6a35;border-radius:3px;
- font:400 15px/1.35 var(--b);box-shadow:0 3px 10px #0006;
-}
-
-/* menus */
-.screen{background:linear-gradient(90deg,#050d09f2 0,#050d09c4 42%,#050d0900 78%)}
-.screen.mid{background:radial-gradient(ellipse at center,#050d09e6,#050d09b0 70%,#050d0955)}
-.panel{
- background:linear-gradient(#21372b,#17271f);border:1px solid #8a6a35;border-radius:6px;
- box-shadow:inset 0 0 0 1px #c9a22726,0 14px 30px #0009;padding:16px;
-}
-.panel h2{font:700 26px/1.1 var(--d);color:#ecd6a2;letter-spacing:.1em}
-.panel h3{font:600 12px/1 var(--d);letter-spacing:.26em;color:#bda98a}
-.panel p{color:#c8b99c;font:400 16px/1.45 var(--b)}
-.panel p.credit{color:#9c8d72}
-.seg .chip{letter-spacing:.1em}
-
-/* title + banners */
-.logo{
- font:700 clamp(38px,6.4vw,76px)/1 var(--d);font-style:normal;letter-spacing:.16em;
- color:#f0dcae;-webkit-text-stroke:0;text-shadow:0 2px 0 #000b,0 14px 34px #0009;transform:none;white-space:nowrap;
-}
-.logo small{
- font:600 clamp(11px,1.6vw,14px)/1 var(--d);letter-spacing:.46em;color:#c9a227;margin-top:14px;
-}
-.logo::after{
- content:"";display:block;height:10px;margin-top:18px;border-radius:1px;opacity:.62;
- background-image:
-  linear-gradient(45deg,#7a5f38 25%,transparent 25%,transparent 75%,#7a5f38 75%),
-  linear-gradient(45deg,#7a5f38 25%,#e3d2ab 25%,#e3d2ab 75%,#7a5f38 75%);
- background-size:18px 18px;background-position:0 0,9px 9px;
- box-shadow:0 1px 0 #0008;
-}
-#banner{font:700 clamp(38px,10vw,96px)/1 var(--d);font-style:normal;letter-spacing:.08em;color:#eed9a6;
- -webkit-text-stroke:2px #3b2a10;filter:drop-shadow(0 5px 0 #0009) drop-shadow(0 0 26px #0007)}
-#banner.red{color:#ef7a5e;-webkit-text-stroke-color:#3b1208}
-#end h1{font:700 clamp(42px,9vw,88px)/1 var(--d);font-style:normal;letter-spacing:.1em;color:#eed9a6;
- -webkit-text-stroke:2px #3b2a10;filter:drop-shadow(0 0 26px #0008)}
-
-/* forms + promo */
-input[type=text],input[type=password]{
- background:linear-gradient(#f8efda,#ece0c1);border:1px solid #8a6a35;color:#2b1f0f;
- font:600 17px/1 var(--b);letter-spacing:.04em;border-radius:2px;
-}
-input[type=text]:focus,input[type=password]:focus{border-color:#b8912f;outline:2px solid #c9a22744}
-.promo-row button{
- background:linear-gradient(#f7eed8,#e7d8b4);border:1px solid #8a6a35;color:#2b1f0f;border-radius:4px;
- box-shadow:0 2px 0 #0006;font-family:var(--d);
-}
-.promo-row button:hover{border-color:#b8912f;color:#1d1406;filter:brightness(1.04)}
-.promo-row button small{color:#6d5730;font-family:var(--b)}
-.back{background:linear-gradient(#f7eed8,#e7d8b4);border:1px solid #8a6a35;color:#2b1f0f;border-radius:3px;font-family:var(--d)}
-.back:hover{border-color:#b8912f;color:#1d1406}
-.person{background:linear-gradient(#20342a,#16241d);border:1px solid #6f5530;border-radius:3px;font-family:var(--b);font-weight:600}
-.person:hover:not([disabled]){border-color:#b8912f;color:#f0dcae}
-.share{border-top:1px solid #6f5530;color:#bda98a;font-family:var(--d);letter-spacing:.14em}
-.share b{color:#e3c07a;font-family:var(--d)}
-#toast{background:linear-gradient(#1d3327,#132218);border:1px solid #c9a227;color:#f2e8d5;border-radius:3px;font-family:var(--b)}
-#loader{background:radial-gradient(ellipse at center,#22392c,#0b120e)}
-#loader .ring{border-color:#3a5544;border-top-color:#d9b25f}
-#loader p{color:#bda98a;font-family:var(--d);letter-spacing:.2em}
-.code{font-family:var(--d);color:#ecd6a2;letter-spacing:.24em}
-#online .note{color:#bda98a}
-@media (max-width:640px){
- .screen{background:linear-gradient(0deg,#050d09f6 0,#050d09d2 62%,#050d0920 100%)}
- .logo{white-space:normal}
-}
 </style></head>
 <body>
 <div id="app">
@@ -295,7 +164,7 @@ input[type=text]:focus,input[type=password]:focus{border-color:#b8912f;outline:2
   </div>
   <div id="turn"><b id="turnT">Your move</b><span id="turnS">White to play</span></div>
   <div id="moves">
-   <h4>Score sheet</h4>
+   <h4>Moves</h4>
    <div id="moveList"></div>
    <div id="caps"><span id="capW"></span><span id="capB"></span></div>
   </div>
@@ -2228,7 +2097,7 @@ function renderMoves() {
   if (!G.san.length) {
     const idle = document.createElement('div');
     idle.className = 'mv';
-    idle.style.color = '#8a7648';
+    idle.style.color = '#8fa9ba';
     idle.textContent = 'No moves yet';
     list.appendChild(idle);
     return;

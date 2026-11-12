@@ -1725,6 +1725,20 @@ canvas.addEventListener('pointermove', event => {
   }
 });
 
+// glide a dropped piece back to its square instead of teleporting it there
+function settlePiece(pd) {
+  if (!pd || !pd.mesh) return;
+  const mesh = pd.mesh;
+  const a = mesh.position.clone();
+  const b = sqPos(pd.index, new THREE.Vector3());
+  tween(0.18, k => {
+    const e = easeOut(k);
+    mesh.position.x = lerp(a.x, b.x, e);
+    mesh.position.z = lerp(a.z, b.z, e);
+    mesh.position.y = lerp(a.y, 0, e);
+  }, () => { mesh.position.copy(b); });
+}
+
 function endPointer(event) {
   pointers.delete(event.pointerId);
   if (pinch && pointers.size < 2) pinch = 0;
@@ -1733,21 +1747,21 @@ function endPointer(event) {
     const pd = pieceDrag;
     pieceDrag = null;
     hoverMesh.visible = false;
-    if (pd.mesh) {
-      pd.mesh.position.y = 0;
-      sqPos(pd.index, pd.mesh.position);
-    }
+    const held = pd.mesh ? pd.mesh.position.clone() : null;
     if (pd.moved) {
       const over = squareUnder(event);
       const moves = G.legal.filter(m => m.to === over);
       if (moves.length) {
-        if (moves[0].promo) openPromo(moves);
-        else doMove(moves[0]);
-      } else {
-        drawOverlays();
-        updateTurnUI();
+        // drop straight from the hand: the move animation picks the piece up where it was released
+        if (moves[0].promo) { settlePiece(pd); openPromo(moves); }
+        else doMove(moves[0], held);
+        drag = null;
+        return;
       }
+      drawOverlays();
+      updateTurnUI();
     }
+    settlePiece(pd);
     drag = null;
     return;
   }
@@ -1762,7 +1776,7 @@ canvas.addEventListener('pointercancel', event => {
   pointers.delete(event.pointerId);
   drag = null; pinch = 0;
   if (pieceDrag) {
-    if (pieceDrag.mesh) { pieceDrag.mesh.position.y = 0; sqPos(pieceDrag.index, pieceDrag.mesh.position); }
+    settlePiece(pieceDrag);
     pieceDrag = null;
     hoverMesh.visible = false;
   }
@@ -1885,7 +1899,7 @@ function animateCapture(mesh, code, dir) {
 }
 
 /* ---------- playing a move ---------- */
-function doMove(mv) {
+function doMove(mv, heldFrom) {
   if (G.busy || G.over || !mv) return;
   const san = sanOf(G.bd, G.st, mv, G.allLegal);
   G.history.push({
@@ -1914,7 +1928,7 @@ function doMove(mv) {
     setTimeout(() => SND.capture(), 70);
   }
 
-  const from = sqPos(mv.from, new THREE.Vector3());
+  const from = heldFrom ? heldFrom.clone() : sqPos(mv.from, new THREE.Vector3());
   const to = sqPos(mv.to, new THREE.Vector3());
   const lift = mv.t === 'n' ? 0.62 : 0.13;
 
@@ -1932,7 +1946,7 @@ function doMove(mv) {
       const e = easeInOut(k);
       mover.position.x = lerp(from.x, to.x, e);
       mover.position.z = lerp(from.z, to.z, e);
-      mover.position.y = Math.sin(k * Math.PI) * lift;
+      mover.position.y = lerp(from.y, 0, k) + Math.sin(k * Math.PI) * lift;
     }, finish);
     // frames can stop while the tab is in the background; the move must still land
     setTimeout(finish, dur * 1000 + 260);

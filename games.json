@@ -64,5 +64,10 @@
     "file": "games/ordle.html",
     "category": "Guessing",
     "image": "img/ordle.jpg"
+  },
+  {
+    "title": "Krillion",
+    "file": "games/krillion.html",
+    "image": "img/krillion.png"
   }
 ]

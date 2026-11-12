@@ -528,7 +528,46 @@
     document.removeEventListener("visibilitychange", presenceVisible);
   }
 
+  // ----- A short chime, so a message is noticed even when the tab is in the background -----
+  // Browsers only allow sound after the player has touched the page, so the audio
+  // context is created on the first click or key press and reused after that.
+  let soundCtx = null;
+
+  function soundUnlock() {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      if (!soundCtx) soundCtx = new Ctx();
+      if (soundCtx.state === "suspended") soundCtx.resume();
+    } catch (error) { /* no audio on this device */ }
+  }
+
+  function chime() {
+    try {
+      if (!soundCtx) return;
+      if (soundCtx.state === "suspended") soundCtx.resume();
+      const now = soundCtx.currentTime;
+      [880, 1174.7].forEach(function (hz, i) {
+        const osc = soundCtx.createOscillator();
+        const gain = soundCtx.createGain();
+        const at = now + i * 0.12;
+        osc.type = "sine";
+        osc.frequency.value = hz;
+        gain.gain.setValueAtTime(0.0001, at);
+        gain.gain.exponentialRampToValueAtTime(0.16, at + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.26);
+        osc.connect(gain).connect(soundCtx.destination);
+        osc.start(at);
+        osc.stop(at + 0.3);
+      });
+    } catch (error) { /* no audio on this device */ }
+  }
+
+  document.addEventListener("pointerdown", soundUnlock, { once: true, passive: true });
+  document.addEventListener("keydown", soundUnlock, { once: true });
+
   function toast(who, text, chatId, uid) {
+    chime();
     const box = byId("toast");
     box.textContent = "";
     const name = document.createElement("b");

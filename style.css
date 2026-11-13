@@ -1,3 +1,19 @@
+/* Self-hosted fonts: the site keeps its look even when Google Fonts is blocked. */
+@font-face {
+  font-family: 'Big Shoulders Display';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url(fonts/big-shoulders-display.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Schibsted Grotesk';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(fonts/schibsted-grotesk.woff2) format('woff2');
+}
+
 /* ---------------------------------------------------------------
    Damp: a window on a wet night.
    Cold slate for the glass, pale mist for the type, and one

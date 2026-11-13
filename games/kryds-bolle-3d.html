@@ -45,8 +45,7 @@
 </style>
 <script type="importmap">
 {"imports":{
-  "three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
-  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+  "three":"../vendor/three/three.module.js"
 }}
 </script>
 </head>
@@ -80,8 +79,8 @@
 <script src="../lang.js?v=2"></script>
 <script type="module">
 import * as THREE from 'three';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from '../vendor/three/RoomEnvironment.js';
+import { RoundedBoxGeometry } from '../vendor/three/RoundedBoxGeometry.js';
 
 /* ---------------- language shortcuts ---------------- */
 const L = window.DampLang;

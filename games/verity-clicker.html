@@ -1094,7 +1094,7 @@ function setV(){
   return tg('sfx','Sound effects')+rg('sfxv','Sound volume')+tg('music','Music')+rg('musv','Music volume')+
    sel('anim','Animations',[['full','Full'],['reduced','Reduced'],['off','Off']])+sel('part','Particles',[['high','High'],['low','Low'],['off','Off']])+tg('shake','Screen shake on crits')+
    sel('fmt','Number format',[['short','Short (1.5M)'],['sci','Scientific (1.5e6)'],['eng','Engineering (1.5e6)']])+
-   `<div class="card"><h3>Save data</h3><p class="hint">Saves automatically every 10 seconds. ${ui.cloud==='on'?'Cloud backup is active for your account.':'Cloud backup is not available here, so progress stays in this browser.'}</p><div class="bulk"><button class="btn small" data-a="saveNow">Save now</button><button class="btn small" data-a="export">Export</button><button class="btn small" data-a="import">Import</button></div><textarea id="saveBox" aria-label="Save code" placeholder="Export creates a code here. Paste a code and press Import to restore it."></textarea>
+   `<div class="card"><h3>Save data</h3><p class="hint">Saves automatically every 10 seconds. ${ui.cloud==='on'?'Cloud backup is active for your account.':ui.cloud==='checking'?'Checking your account for a newer save...':'Log in at the top of Damp to back this save up to your account. Until then it stays in this browser.'}</p><div class="bulk"><button class="btn small" data-a="saveNow">Save now</button><button class="btn small" data-a="export">Export</button><button class="btn small" data-a="import">Import</button></div><textarea id="saveBox" aria-label="Save code" placeholder="Export creates a code here. Paste a code and press Import to restore it."></textarea>
    ${ui.confirmReset?`<p class="hint" style="color:var(--evil)">This erases everything. Are you sure?</p><div class="bulk"><button class="btn evil small" data-a="reset2">Yes, erase all progress</button><button class="btn small" data-a="resetNo">Cancel</button></div>`:`<button class="btn evil small" data-a="reset1">Reset all progress</button>`}</div>`;
 }
 const VIEWS={shop:shopV,forms:formsV,evil:evilV,rebirth:rebirthV,mastery:masteryV,bosses:bossesV,quests:questsV,ach:achV,stats:statsV,settings:setV};
@@ -1215,25 +1215,69 @@ $('btnMusic').addEventListener('click',e=>{S.set.music=!S.set.music;audioInit();
 window.addEventListener('resize',resize);
 if(window.ResizeObserver)new ResizeObserver(resize).observe(arena);
 
-/* ----- cloud backup (optional, only when the viewer is signed in) ----- */
-let cloudRef=null,cloudLast=0;
+/* ----- cloud backup: stored with the site account, next to the other games' saves ----- */
+const FBCFG={apiKey:"AIzaSyDJhWSi7QZKXtOPYwKHPF7zPg_klh1If7w",authDomain:"damp-2406a.firebaseapp.com",projectId:"damp-2406a",appId:"1:940989851976:web:f8fd07c258afa71fd22b7d"};
+const FBSDK='https://www.gstatic.com/firebasejs/10.14.1/';
+const CLOUD_NAME='verity-clicker';   // the site's save name for this game
+let cloudFs=null,cloudDb=null,cloudUid=null,cloudLast=0,cloudTries=0;
+function cloudStamp(){
+  try{return +localStorage.getItem('damp-sync-'+CLOUD_NAME)||0}catch(e){return 0}
+}
 async function initCloud(){
   try{
-    if(!window.claude||!claude.use){ui.cloud='off';return}
-    const [db,user]=await Promise.all([claude.use('db'),claude.use('user')]);
-    if(!db||!user){ui.cloud='off';return}
-    const id=await user.id();if(!id){ui.cloud='off';return}cloudRef=db.doc('data/users/'+id+'/verity');
-    const snap=await cloudRef.get();ui.cloud='on';
-    if(snap.exists){const d=snap.data();
-      if(d&&d.json&&d.t>S.lastSave+5000){const ns=loadFromString(d.json);if(ns){S=ns;T.boss=null;recompute();ensureQuests();const off=offlineGain();save();applyBody();applyAudio();renderAll(true);H.toast('Cloud save loaded','Your newest progress was restored','good');if(off)showOffline(off)}}
+    const [appM,fsM,authM]=await Promise.all([
+      import(FBSDK+'firebase-app.js'),import(FBSDK+'firebase-firestore.js'),import(FBSDK+'firebase-auth.js')
+    ]);
+    const app=appM.getApps().length?appM.getApp():appM.initializeApp(FBCFG);
+    cloudFs=fsM;cloudDb=fsM.getFirestore(app);
+    authM.onAuthStateChanged(authM.getAuth(app),u=>{
+      cloudUid=u?u.uid:null;
+      if(!cloudUid){ui.cloud='off';ui.dirtySet=true;return;}
+      ui.cloud='checking';ui.dirtySet=true;cloudLoad();
+    });
+    // Signed out on this device: no account to wait for, so say so at once
+    setTimeout(()=>{if(!cloudUid&&ui.cloud==='checking'){ui.cloud='off';ui.dirtySet=true}},4000);
+  }catch(e){ui.cloud='off';ui.dirtySet=true;}
+}
+async function cloudLoad(){
+  if(!cloudFs||!cloudDb||!cloudUid)return;
+  try{
+    const snap=await cloudFs.getDoc(cloudFs.doc(cloudDb,'users',cloudUid));
+    const all=snap.exists()?snap.data().games:null;
+    const entry=all?all[CLOUD_NAME]:null;
+    ui.cloud='on';ui.dirtySet=true;
+    if(entry&&entry.updated&&entry.updated!==cloudStamp()){
+      const data=JSON.parse(entry.data||'{}');
+      const raw=data['verityClicker.v1'];
+      let t=0;try{t=raw?(JSON.parse(raw).lastSave||0):0}catch(e){}
+      if(raw&&t>S.lastSave+5000){
+        const ns=loadFromString(raw);
+        if(ns){
+          S=ns;T.boss=null;T.buffs=[];recompute();ensureQuests();
+          const off=offlineGain();save();applyBody();applyAudio();renderAll(true);
+          H.toast('Cloud save loaded','Your newest progress was restored','good');
+          if(off)showOffline(off);
+        }
+      }
+      try{localStorage.setItem('damp-sync-'+CLOUD_NAME,entry.updated)}catch(e){}
     }
+    cloudTries=0;
     pushCloud(true);
-  }catch(e){ui.cloud='off'}
-  ui.dirtySet=true;
+  }catch(e){
+    ui.cloud='off';ui.dirtySet=true;
+    // a slow network is not the same as a signed-out player: try once more
+    if(cloudTries++<1)setTimeout(cloudLoad,6000);
+  }
 }
 async function pushCloud(force){
-  if(!cloudRef)return;const t=now();if(!force&&t-cloudLast<45000)return;cloudLast=t;
-  try{await cloudRef.set({json:serialize(),t:S.lastSave,total:S.total})}catch(e){}
+  if(!cloudFs||!cloudDb||!cloudUid)return;
+  const t=now();if(!force&&t-cloudLast<45000)return;cloudLast=t;
+  try{
+    const updated=Date.now(),entry={};
+    entry[CLOUD_NAME]={data:JSON.stringify({'verityClicker.v1':serialize()}),updated};
+    await cloudFs.setDoc(cloudFs.doc(cloudDb,'users',cloudUid),{games:entry},{merge:true});
+    try{localStorage.setItem('damp-sync-'+CLOUD_NAME,updated)}catch(e){}
+  }catch(e){}
 }
 function showOffline(o){
   openModal(`<h2>Welcome back!</h2><p>You were away for <b>${fmtTime(o.away)}</b>${o.capped?` (rewards capped at ${fmtTime(o.secs)})`:''}. Verity kept working at ${(o.eff*100).toFixed(0)}% efficiency.</p><div class="stat"><span>Verity Points earned</span><b style="color:var(--gold)">+${fmt(o.pts)}</b></div>${o.ep>0?`<div class="stat"><span>Evil Points earned</span><b style="color:var(--evil)">+${fmt(o.ep)}</b></div>`:''}`,[{l:'Collect',cls:'go'}]);

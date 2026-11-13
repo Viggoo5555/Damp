@@ -25,7 +25,7 @@
     "description": "3D Stratego with hidden ranks, spies, miners and bombs. Deploy forty pieces, capture the flag, or play online with a friend.",
     "file": "games/stratego.html",
     "category": "Strategy",
-    "image": "img/stratego.png"
+    "image": "img/stratego.png?v=2"
   },
   {
     "title": "Catan",

@@ -485,7 +485,7 @@ for(const h of hexes){
   const m=new THREE.Mesh(geo,terrainMats.desert);
   m.position.set(h.x,TOP-.25,h.z);m.receiveShadow=true;m.castShadow=true;
   scene.add(m);tileMeshes.push(m);
-  const tok=new THREE.Mesh(new THREE.CircleGeometry(R*.34,28),
+  const tok=new THREE.Mesh(new THREE.CircleGeometry(R*.26,28),
     new THREE.MeshStandardMaterial({map:numberTex[2],roughness:.7}));
   tok.rotation.x=-Math.PI/2;tok.position.set(h.x,TOP+.006,h.z);tok.visible=false;
   scene.add(tok);tokenMeshes.push(tok);
@@ -524,6 +524,8 @@ const robber=new THREE.Group();
     const eye=new THREE.Mesh(new THREE.SphereGeometry(.028,8,6),eyeMat);
     eye.position.set(s*.055,.72,.115);robber.add(eye);
   }
+  // the piece is about as tall as four number tokens are wide
+  robber.scale.setScalar(.85);
 }
 scene.add(robber);
 
@@ -673,26 +675,28 @@ const playerMat=COLORS.map(c=>new THREE.MeshStandardMaterial({color:c,roughness:
 const darkMat=new THREE.MeshStandardMaterial({color:0x2a1c12,roughness:.95});
 function roadMesh(color){
   const g=new THREE.Group();
-  const pad=new THREE.Mesh(new THREE.BoxGeometry(R*1.03,.05,.3),darkMat);
+  // a road is 4.4 x 0.8 cm next to a 5.4 cm hex edge on the real board
+  const pad=new THREE.Mesh(new THREE.BoxGeometry(R*.88,.05,.29),darkMat);
   pad.position.y=-.014;pad.receiveShadow=true;g.add(pad);
-  const m=new THREE.Mesh(new THREE.BoxGeometry(R*.99,.1,.215),playerMat[color]);
+  const m=new THREE.Mesh(new THREE.BoxGeometry(R*.82,.09,.22),playerMat[color]);
   m.position.y=.032;m.castShadow=true;m.receiveShadow=true;g.add(m);
   return g;
 }
 function houseMesh(color,city){
   const g=new THREE.Group(),mat=playerMat[color];
-  const w=city?.82:.64,h=city?.55:.4;
-  const pad=new THREE.Mesh(new THREE.BoxGeometry(w+.1,.06,w+.1),darkMat);
+  // settlements and cities are small next to a tile: about 1.4 and 1.9 cm wide
+  const w=city?.62:.48,h=city?.42:.3;
+  const pad=new THREE.Mesh(new THREE.BoxGeometry(w+.08,.06,w+.08),darkMat);
   pad.position.y=.025;pad.receiveShadow=true;g.add(pad);
   const base=new THREE.Mesh(new THREE.BoxGeometry(w,h,w),mat);
   base.position.y=h/2+.05;base.castShadow=true;base.receiveShadow=true;g.add(base);
-  const roof=new THREE.Mesh(new THREE.ConeGeometry(w*.76,city?.44:.34,4),mat);
-  roof.position.y=h+(city?.26:.18);roof.rotation.y=Math.PI/4;roof.castShadow=true;g.add(roof);
+  const roof=new THREE.Mesh(new THREE.ConeGeometry(w*.76,city?.32:.26,4),mat);
+  roof.position.y=h+(city?.2:.14);roof.rotation.y=Math.PI/4;roof.castShadow=true;g.add(roof);
   if(city){
-    const tower=new THREE.Mesh(new THREE.BoxGeometry(.26,.66,.26),mat);
-    tower.position.set(w*.32,.38,-w*.32);tower.castShadow=true;g.add(tower);
-    const top=new THREE.Mesh(new THREE.ConeGeometry(.2,.24,4),mat);
-    top.position.set(w*.32,.84,-w*.32);top.rotation.y=Math.PI/4;g.add(top);
+    const tower=new THREE.Mesh(new THREE.BoxGeometry(.2,.5,.2),mat);
+    tower.position.set(w*.32,.3,-w*.32);tower.castShadow=true;g.add(tower);
+    const top=new THREE.Mesh(new THREE.ConeGeometry(.16,.2,4),mat);
+    top.position.set(w*.32,.65,-w*.32);top.rotation.y=Math.PI/4;g.add(top);
   }
   return g;
 }

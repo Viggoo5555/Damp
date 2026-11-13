@@ -36,25 +36,31 @@
 </script>
 </head>
 <body>
-<div id="hud"><span>Stars <b id="stars">0</b> / 8</span><span>Time <b id="time">0:00</b></span></div>
-<div id="hint">WASD / arrows move · SPACE jump (twice for a double jump) · drag to orbit</div>
+<div id="hud"><span><span data-i18n="common.stars">Stars</span> <b id="stars">0</b> / 8</span><span><span data-i18n="common.time">Time</span> <b id="time">0:00</b></span></div>
+<div id="hint" data-i18n="sky.hint">WASD / arrows move · SPACE jump (twice for a double jump) · drag to orbit</div>
 <div id="splash">
   <div class="card">
     <div class="intro">
-      <h1>SKY HOP 3D</h1>
-      <p>Eight stars are scattered across the floating islands. Hop, double jump and climb your way to the top of the sky.</p>
-      <button id="start">Start climbing</button>
-      <div class="keys"><span>WASD / ARROWS — MOVE</span><span>SPACE — JUMP ×2</span><span>DRAG — CAMERA</span></div>
+      <h1 data-i18n="sky.title">SKY HOP 3D</h1>
+      <p data-i18n="sky.sub">Eight stars are scattered across the floating islands. Hop, double jump and climb your way to the top of the sky.</p>
+      <button id="start" data-i18n="sky.start">Start climbing</button>
+      <div class="keys"><span data-i18n="sky.move">WASD / ARROWS — MOVE</span><span data-i18n="sky.jump">SPACE — JUMP ×2</span><span data-i18n="sky.camera">DRAG — CAMERA</span></div>
     </div>
     <div class="win">
-      <h1>ALL EIGHT!</h1>
+      <h1 data-i18n="sky.winTitle">ALL EIGHT!</h1>
       <p id="winText">You gathered every star.</p>
-      <button id="again">Climb again</button>
+      <button id="again" data-i18n="sky.again">Climb again</button>
     </div>
   </div>
 </div>
+<script src="../lang.js?v=2"></script>
 <script type="module">
 import * as THREE from 'three';
+
+const L = window.DampLang;
+let wonAt = 0;
+function paintWin() { if (wonAt) $('winText').textContent = L.t('sky.winText', { time: fmt(wonAt) }); }
+L.onChange(paintWin);
 
 /* ---------- renderer + scene ---------- */
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -324,7 +330,8 @@ function tick() {
         if (collected === stars.length) {
           running = false;
           elapsed = (performance.now() - startedAt) / 1000;
-          $('winText').textContent = `All eight stars in ${fmt(elapsed)}. Nice hopping.`;
+          wonAt = elapsed;
+          paintWin();
           document.body.classList.add('won');
           $('splash').style.display = 'grid';
         }

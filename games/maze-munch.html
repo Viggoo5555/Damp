@@ -26,17 +26,19 @@
 <body>
 <div id="wrap">
   <canvas id="c" width="760" height="720"></canvas>
-  <div id="ui"><span>Score <b id="score">0</b></span><span>Dots <b id="dots">0</b></span><span>Lives <b id="lives">3</b></span></div>
+  <div id="ui"><span><span data-i18n="common.score">Score</span> <b id="score">0</b></span><span><span data-i18n="common.dots">Dots</span> <b id="dots">0</b></span><span><span data-i18n="common.lives">Lives</span> <b id="lives">3</b></span></div>
   <div id="over">
     <div>
-      <h1 id="title">MAZE MUNCH</h1>
-      <p id="sub">Eat every dot, dodge the bugs and grab a power pellet to turn the tables. Arrows or WASD.</p>
-      <button id="go">Munch</button>
+      <h1 id="title" data-i18n="maze.title">MAZE MUNCH</h1>
+      <p id="sub" data-i18n="maze.sub">Eat every dot, dodge the bugs and grab a power pellet to turn the tables. Arrows or WASD.</p>
+      <button id="go" data-i18n="maze.start">Munch</button>
     </div>
   </div>
 </div>
+<script src="../lang.js?v=2"></script>
 <script>
 (() => {
+  const L = window.DampLang;
   const cv = document.getElementById('c'), ctx = cv.getContext('2d');
   const W = cv.width, H = cv.height;
   const $ = id => document.getElementById(id);
@@ -121,11 +123,19 @@
     $('lives').textContent = Math.max(0, lives);
   }
 
-  function end(title, sub) {
+  let endState = null;
+  function paintEnd() {
+    if (!endState) return;
+    $('title').textContent = L.t(endState.titleKey);
+    $('sub').textContent = L.t(endState.subKey, endState.vars);
+    $('go').textContent = L.t('maze.again');
+  }
+  L.onChange(() => { if (state === 'over') paintEnd(); });
+
+  function end(titleKey, subKey, vars) {
     state = 'over';
-    $('title').textContent = title;
-    $('sub').textContent = sub;
-    $('go').textContent = 'Munch again';
+    endState = { titleKey, subKey, vars: vars || {} };
+    paintEnd();
     $('over').classList.remove('hide');
   }
 
@@ -183,7 +193,7 @@
         beep(220, .25, 'triangle', .05);
       }
       sync();
-      if (dotsLeft <= 0) { end('MAZE CLEARED', `Every dot eaten. ${score} points.`); return; }
+      if (dotsLeft <= 0) { end('maze.clear', 'maze.clearSub', { score }); return; }
     }
   }
 
@@ -224,7 +234,7 @@
         } else if (state === 'play') {
           lives--; sync();
           beep(150, .35, 'sawtooth', .06);
-          if (lives <= 0) { end('CAUGHT', `The bugs got you. ${score} points.`); return; }
+          if (lives <= 0) { end('maze.caught', 'maze.caughtSub', { score }); return; }
           player.c = 1; player.r = 1; player.dir = { x: 0, y: 0 };
           placePlayer();
           powered = 0;

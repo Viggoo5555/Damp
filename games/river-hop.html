@@ -26,17 +26,19 @@
 <body>
 <div id="wrap">
   <canvas id="c" width="720" height="720"></canvas>
-  <div id="ui"><span>Score <b id="score">0</b></span><span>Time <b id="time">60</b></span><span>Lives <b id="lives">3</b></span></div>
+  <div id="ui"><span><span data-i18n="common.score">Score</span> <b id="score">0</b></span><span><span data-i18n="common.time">Time</span> <b id="time">60</b></span><span><span data-i18n="common.lives">Lives</span> <b id="lives">3</b></span></div>
   <div id="over">
     <div>
-      <h1 id="title">RIVER HOP</h1>
-      <p id="sub">Cross five lanes of traffic, ride the logs and reach the lily pads. One hop at a time. Arrow keys or WASD.</p>
-      <button id="go">Hop in</button>
+      <h1 id="title" data-i18n="river.title">RIVER HOP</h1>
+      <p id="sub" data-i18n="river.sub">Cross five lanes of traffic, ride the logs and reach the lily pads. One hop at a time. Arrow keys or WASD.</p>
+      <button id="go" data-i18n="river.start">Hop in</button>
     </div>
   </div>
 </div>
+<script src="../lang.js?v=2"></script>
 <script>
 (() => {
+  const L = window.DampLang;
   const cv = document.getElementById('c'), ctx = cv.getContext('2d');
   const W = cv.width, H = cv.height, COL = 11, ROW = 13;
   const CELL = Math.floor(Math.min(W / COL, H / ROW));
@@ -114,14 +116,22 @@
     player.cx = 5; player.cy = 12; player.riding = null;
     const p = pos(player.cx, player.cy); player.x = p.x; player.y = p.y;
     timeLeft = Math.max(timeLeft, 12);
-    if (lives <= 0) end('SPLASHED OUT', `You scored ${score}. The river is undefeated.`);
+    if (lives <= 0) end('river.over', 'river.overSub', { score });
   }
 
-  function end(title, sub) {
+  let endState = null;
+  function paintEnd() {
+    if (!endState) return;
+    $('title').textContent = L.t(endState.titleKey);
+    $('sub').textContent = L.t(endState.subKey, endState.vars);
+    $('go').textContent = L.t('river.again');
+  }
+  L.onChange(() => { if (state === 'over') paintEnd(); });
+
+  function end(titleKey, subKey, vars) {
     state = 'over';
-    $('title').textContent = title;
-    $('sub').textContent = sub;
-    $('go').textContent = 'Hop again';
+    endState = { titleKey, subKey, vars: vars || {} };
+    paintEnd();
     $('over').classList.remove('hide');
   }
 
@@ -149,7 +159,7 @@
       goals.find(g => g.col === nx).cat = true;
       score += 200; pad = done;
       beep(760, .18, 'sine', .05);
-      if (goals.every(g => g.cat)) { end('ALL SAFE', `All five lily pads reached. ${score} points.`); return; }
+      if (goals.every(g => g.cat)) { end('river.allSafe', 'river.allSafeSub', { score }); return; }
       player.cx = 5; player.cy = 12;
       timeLeft = Math.max(timeLeft, 20);
     } else if (dy < 0) {

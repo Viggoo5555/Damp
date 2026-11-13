@@ -27,17 +27,19 @@
 <body>
 <div id="wrap">
   <canvas id="c" width="900" height="620"></canvas>
-  <div id="ui"><span>Score <b id="score">0</b></span><span>Level <b id="level">1</b></span><span>Lives <b id="lives">3</b></span></div>
+  <div id="ui"><span><span data-i18n="common.score">Score</span> <b id="score">0</b></span><span><span data-i18n="common.level">Level</span> <b id="level">1</b></span><span><span data-i18n="common.lives">Lives</span> <b id="lives">3</b></span></div>
   <div id="over">
     <div>
-      <h1 id="title">BRICK BLAST</h1>
-      <p id="sub">Clear every brick. Catch the falling capsules: wide paddle, extra ball, slow ball. Mouse or arrow keys.</p>
-      <button id="go">Play</button>
+      <h1 id="title" data-i18n="brick.title">BRICK BLAST</h1>
+      <p id="sub" data-i18n="brick.sub">Clear every brick. Catch the falling capsules: wide paddle, extra ball, slow ball. Mouse or arrow keys.</p>
+      <button id="go" data-i18n="brick.play">Play</button>
     </div>
   </div>
 </div>
+<script src="../lang.js?v=2"></script>
 <script>
 (() => {
+  const L = window.DampLang;
   const cv = document.getElementById('c');
   const ctx = cv.getContext('2d');
   const W = cv.width, H = cv.height;
@@ -106,11 +108,22 @@
     return any;
   }
 
+  function paintOver() {
+    if (state === 'over') {
+      $('title').textContent = L.t('brick.over');
+      $('sub').textContent = L.t('brick.overSub', { score });
+      $('go').textContent = L.t('brick.again');
+    } else {
+      $('title').textContent = L.t('brick.title');
+      $('sub').textContent = L.t('brick.sub');
+      $('go').textContent = L.t('brick.play');
+    }
+  }
+  L.onChange(paintOver);
+
   function gameOver() {
     state = 'over';
-    $('title').textContent = 'GAME OVER';
-    $('sub').textContent = `You scored ${score}. The bricks win this round — go again?`;
-    $('go').textContent = 'Play again';
+    paintOver();
     $('over').classList.remove('hide');
   }
 
@@ -319,9 +332,9 @@
     ctx.fillStyle = '#6f8296';
     ctx.font = '600 12px ui-sans-serif,system-ui,sans-serif';
     ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    ctx.fillText('SPACE OR CLICK TO LAUNCH', 18, 23);
+    ctx.fillText(L.t('brick.launch'), 18, 23);
     ctx.textAlign = 'right';
-    ctx.fillText(balls.some(b => b.stuck) ? 'BALL READY' : '', W - 18, 23);
+    ctx.fillText(balls.some(b => b.stuck) ? L.t('brick.ready') : '', W - 18, 23);
 
     ctx.restore();
   }

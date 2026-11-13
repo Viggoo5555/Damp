@@ -27,17 +27,19 @@
 <body>
 <div id="wrap">
   <canvas id="c" width="900" height="620"></canvas>
-  <div id="ui"><span>Score <b id="score">0</b></span><span>Wave <b id="wave">1</b></span><span>Lives <b id="lives">3</b></span></div>
+  <div id="ui"><span><span data-i18n="common.score">Score</span> <b id="score">0</b></span><span><span data-i18n="common.wave">Wave</span> <b id="wave">1</b></span><span><span data-i18n="common.lives">Lives</span> <b id="lives">3</b></span></div>
   <div id="over">
     <div>
-      <h1 id="title">STAR SWARM</h1>
-      <p id="sub">The swarm descends in formation. Hold the line, use the bunkers, and clear every wave. Arrows or A/D to move, space to fire.</p>
-      <button id="go">Launch</button>
+      <h1 id="title" data-i18n="star.title">STAR SWARM</h1>
+      <p id="sub" data-i18n="star.sub">The swarm descends in formation. Hold the line, use the bunkers, and clear every wave. Arrows or A/D to move, space to fire.</p>
+      <button id="go" data-i18n="star.launch">Launch</button>
     </div>
   </div>
 </div>
+<script src="../lang.js?v=2"></script>
 <script>
 (() => {
+  const L = window.DampLang;
   const cv = document.getElementById('c'), ctx = cv.getContext('2d');
   const W = cv.width, H = cv.height;
   const $ = id => document.getElementById(id);
@@ -128,11 +130,22 @@
     }
   }
 
+  function paintOver() {
+    if (state === 'over') {
+      $('title').textContent = L.t('star.over');
+      $('sub').textContent = L.t('star.overSub', { score, waves: wave });
+      $('go').textContent = L.t('star.again');
+    } else {
+      $('title').textContent = L.t('star.title');
+      $('sub').textContent = L.t('star.sub');
+      $('go').textContent = L.t('star.launch');
+    }
+  }
+  L.onChange(paintOver);
+
   function gameOver() {
     state = 'over';
-    $('title').textContent = 'SWARM WINS';
-    $('sub').textContent = `You scored ${score} across ${wave} wave${wave > 1 ? 's' : ''}. Ready for another run?`;
-    $('go').textContent = 'Launch again';
+    paintOver();
     $('over').classList.remove('hide');
   }
 

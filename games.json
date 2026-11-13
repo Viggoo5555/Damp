@@ -28,6 +28,13 @@
     "image": "img/stratego.png?v=2"
   },
   {
+    "title": "Kryds & Bolle 3D",
+    "description": "Gold X and O pieces on black marble. Beat the computer or a friend — three in a row wins.",
+    "file": "games/kryds-bolle-3d.html",
+    "category": "Strategy",
+    "image": "img/kryds-bolle-3d.png"
+  },
+  {
     "title": "Sky Hop 3D",
     "description": "Small 3D collect-a-thon: hop across floating islands, double jump and grab all eight stars. A love letter to the 3D platformers of the late 90s.",
     "file": "games/sky-hop.html",

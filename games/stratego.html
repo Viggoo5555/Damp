@@ -479,6 +479,10 @@ for(let r=0;r<10;r++)for(let c=0;c<10;c++){
 const boardGroup=new THREE.Group();scene.add(boardGroup);
 const piecesGroup=new THREE.Group();scene.add(piecesGroup);
 const marksGroup=new THREE.Group();scene.add(marksGroup);
+/* cheap invisible cylinders used for hovering and clicking the whole tower */
+const pickGroup=new THREE.Group();scene.add(pickGroup);
+const pickGeo=new THREE.CylinderGeometry(.45,.46,1.12,8,1);
+const pickMat=new THREE.MeshBasicMaterial({visible:false});
 
 /* piece textures */
 const texCache=new Map();
@@ -601,6 +605,7 @@ function pieceMesh(p,hidden){
 const meshes=new Map();
 function syncPieces(){
   for(const g of meshes.values())piecesGroup.remove(g);
+  for(const m of pickGroup.children.slice())pickGroup.remove(m);
   meshes.clear();
   for(let i=0;i<100;i++){
     const p=G.board[i];if(!p)continue;
@@ -610,6 +615,11 @@ function syncPieces(){
     g.rotation.y=G.side==='b'?Math.PI:0;
     g.userData.cell=i;
     piecesGroup.add(g);meshes.set(p.id,g);
+    const proxy=new THREE.Mesh(pickGeo,pickMat);
+    proxy.position.set(colOf(i)-4.5,.56,rowOf(i)-4.5);
+    proxy.userData.cell=i;proxy.userData.piece=p;
+    proxy.castShadow=false;proxy.receiveShadow=false;
+    pickGroup.add(proxy);
   }
 }
 
@@ -707,7 +717,8 @@ function sendMove(from,to){
 canvas.addEventListener('pointerdown',e=>{
   if(e.button>0)return;
   touchInput=e.pointerType==='touch';
-  const cell=cellAt(e.clientX,e.clientY);
+  const hit=pieceGroupAt(e.clientX,e.clientY);
+  const cell=hit?hit.userData.cell:cellAt(e.clientX,e.clientY);
   if(canGrab(cell)){
     const p=G.board[cell];
     drag.active=true;drag.from=cell;drag.id=p.id;drag.mesh=meshes.get(p.id)||null;
@@ -747,7 +758,9 @@ canvas.addEventListener('pointermove',e=>{
   }
   if(coarseHover||(G.mode!=='play'&&G.mode!=='setup')){hidePeek();return}
   const now=performance.now();
-  if(now-hoverT<45)return;hoverT=now;
+  if(now-hoverT<32)return;hoverT=now;
+  if(e.clientX===hoverX&&e.clientY===hoverY)return;
+  hoverX=e.clientX;hoverY=e.clientY;
   const g=pieceGroupAt(e.clientX,e.clientY);
   if(g&&g.userData.cell!=null)showPeek(g.userData.cell,e.clientX,e.clientY,false);
   else hidePeek();
@@ -798,18 +811,13 @@ function cellAt(x,y){
 
 /* ---------------- reading the towers ---------------- */
 const coarseHover=matchMedia('(hover:none)').matches;
-let touchInput=coarseHover,hoverT=0,peekCell=-1;
+let touchInput=coarseHover,hoverT=0,peekCell=-1,hoverX=-1,hoverY=-1;
 function pieceGroupAt(x,y){
   const r=canvas.getBoundingClientRect();
   ndc.set((x-r.left)/r.width*2-1,-((y-r.top)/r.height)*2+1);
   ray.setFromCamera(ndc,camera);
-  const hits=ray.intersectObjects(piecesGroup.children,true);
-  for(const h of hits){
-    let o=h.object;
-    while(o&&!o.userData.piece)o=o.parent;
-    if(o&&o.userData.cell!=null)return o;
-  }
-  return null;
+  const hits=ray.intersectObjects(pickGroup.children,false);
+  return hits.length?hits[0].object:null;
 }
 function hidePeek(){
   peekCell=-1;hoverRing.visible=false;
@@ -817,6 +825,8 @@ function hidePeek(){
 }
 function showPeek(cell,x,y,pin){
   const p=G.board[cell];if(!p){hidePeek();return}
+  const was=peekCell;
+  if(was===cell&&!pin&&!$('peek').classList.contains('hide'))return;
   peekCell=cell;
   const el=$('peek'),known=p.side===G.side||p.revealed,hasArt=p.rank!=='B'&&p.rank!=='F';
   el.classList.toggle('foe',!known);
@@ -1428,7 +1438,8 @@ resetCam();syncPieces();loop();
 
 /* dev helper */
 if(location.hash==='#dev'){
-  window.__strat={G,doMove,legalMoves,beginBattle,openSetup,deploy,NET,stateMsg,applyState,endGame,syncPieces,camera,pick,cellAt,cam,renderer,scene};
+  window.__strat={G,doMove,legalMoves,beginBattle,openSetup,deploy,NET,stateMsg,applyState,endGame,syncPieces,camera,pick,cellAt,cam,renderer,scene,
+    pieceGroupAt,pickGroup,piecesGroup,ray};
 }
 </script>
 </body></html>

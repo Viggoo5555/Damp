@@ -81,6 +81,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 /* ---------------- language shortcuts ---------------- */
 const L = window.DampLang;
@@ -227,8 +228,10 @@ const CELL = 1.08;
 
 function makeX() {
   const g = new THREE.Group();
-  const bar = new THREE.BoxGeometry(0.96, 0.2, 0.26);
+  const bar = new RoundedBoxGeometry(0.93, 0.22, 0.25, 4, 0.055);
   const mat = brass.clone();
+  mat.roughness = 0.22;
+  mat.envMapIntensity = 1.2;
   const a = new THREE.Mesh(bar, mat);
   const b = new THREE.Mesh(bar, mat);
   a.rotation.y = Math.PI / 4;

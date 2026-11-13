@@ -1,45 +1,10 @@
 [
   {
-    "title": "Flappy Bird",
-    "description": "Classic arcade bird game with custom skins and worlds shop.",
-    "file": "games/Flappy Bird.html",
-    "category": "Arcade",
-    "image": "img/flappy-bird.png"
-  },
-  {
-    "title": "Knockout Night",
-    "description": "3D boxing with combos, parry, super and online 1v1 with friends.",
-    "file": "games/knockout-night.html",
-    "category": "Fighting",
-    "image": "img/knockout-night.png"
-  },
-  {
-    "title": "Battleship",
-    "description": "3D top-down battleship. Drag your ships into place, then sink the enemy fleet vs the computer or online with a friend.",
-    "file": "games/battleship.html",
-    "category": "Strategy",
-    "image": "img/battleship.png"
-  },
-  {
-    "title": "Stratego",
-    "description": "3D Stratego with hidden ranks, spies, miners and bombs. Deploy forty pieces, capture the flag, or play online with a friend.",
-    "file": "games/stratego.html",
-    "category": "Strategy",
-    "image": "img/stratego.png?v=2"
-  },
-  {
     "title": "Kryds & Bolle 3D",
     "description": "Gold X and O pieces on black marble. Beat the computer or a friend — three in a row wins.",
     "file": "games/kryds-bolle-3d.html",
     "category": "Strategy",
     "image": "img/kryds-bolle-3d.png"
-  },
-  {
-    "title": "Sky Hop 3D",
-    "description": "Small 3D collect-a-thon: hop across floating islands, double jump and grab all eight stars. A love letter to the 3D platformers of the late 90s.",
-    "file": "games/sky-hop.html",
-    "category": "Platformer",
-    "image": "img/sky-hop.png"
   },
   {
     "title": "Brick Blast",
@@ -49,96 +14,10 @@
     "image": "img/brick-blast.png"
   },
   {
-    "title": "Star Swarm",
-    "description": "A formation of pixel invaders marches down while you hold the line behind crumbling bunkers. Endless waves and a bonus saucer.",
-    "file": "games/star-swarm.html",
-    "category": "Shooter",
-    "image": "img/star-swarm.png"
-  },
-  {
     "title": "River Hop",
     "description": "Five lanes of traffic, a river of drifting logs and five lily pads to reach. One hop at a time, sixty seconds on the clock.",
     "file": "games/river-hop.html",
     "category": "Arcade",
     "image": "img/river-hop.png"
-  },
-  {
-    "title": "Maze Munch",
-    "description": "Chomp every dot in a freshly generated maze while three bugs hunt you. Grab a power pellet and turn the hunt around.",
-    "file": "games/maze-munch.html",
-    "category": "Maze",
-    "image": "img/maze-munch.png"
-  },
-  {
-    "title": "Catan",
-    "description": "3D Catan on a full island: settle, trade with the bank or your rivals, build roads and cities, and race three computer players to ten points.",
-    "file": "games/catan.html",
-    "category": "Strategy",
-    "image": "img/catan.png"
-  },
-  {
-    "title": "Chess",
-    "description": "3D chess on a wooden set. Play the computer, or invite a friend with a code and play live.",
-    "file": "games/chess.html",
-    "category": "Strategy",
-    "image": "img/chess.png?v=2"
-  },
-  {
-    "title": "Star Clicker",
-    "description": "Click your star, grow it and add orbiting planets.",
-    "file": "games/Starclicker.html",
-    "category": "Clicker",
-    "image": "img/starclicker.png"
-  },
-  {
-    "title": "Verity Clicker",
-    "description": "Click On Verity",
-    "file": "games/verity-clicker.html",
-    "category": "Clicker",
-    "image": "img/verity-clicker.png"
-  },
-  {
-    "title": "10-Minute Dungeon",
-    "file": "games/10-minute-dungeon.html",
-    "category": "Dungeon",
-    "image": "img/10-minute-dungeon.png"
-  },
-  {
-    "title": "Guess the Color!",
-    "file": "games/guess-the-color.html",
-    "category": "Guessing",
-    "image": "img/guess-the-color.png"
-  },
-  {
-    "title": "Slope",
-    "file": "games/slope.html",
-    "category": "Racing",
-    "image": "img/slope.jpg"
-  },
-  {
-    "title": "Guessing Game",
-    "file": "games/guessing-game.html",
-    "category": "Guessing",
-    "image": "img/guessing-game.png"
-  },
-  {
-    "title": "Hedgerow Hallow",
-    "description": "Guard the veggie patch from snails, beetles and one very rude badger.",
-    "file": "games/hedgerow-hallow.html",
-    "category": "Tower Defense",
-    "image": "img/hedgerow-hallow-thumb.jpg",
-    "featured": true
-  },
-  {
-    "title": "Ordle",
-    "file": "games/ordle.html",
-    "category": "Guessing",
-    "image": "img/ordle.jpg"
-  },
-  {
-    "title": "Krillion",
-    "file": "games/krillion.html",
-    "category": "Guessing",
-    "image": "img/krillion.png"
   }
 ]

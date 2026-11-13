@@ -14,14 +14,7 @@
     appId: "1:940989851976:web:f8fd07c258afa71fd22b7d"
   };
 
-  const SAVE_KEYS = {
-    "games/Flappy Bird.html": ["fb-best", "fb-save"],
-    "games/Starclicker.html": ["voidfoundry.v1"],
-    "games/verity-clicker.html": ["verityClicker.v1"],
-    "games/hedgerow-hallow.html": ["hedgerow-hollow-v1"],
-    "games/guess-the-color.html": ["colorMemoryBest"],
-    "games/guessing-game.html": ["hol_mode", "hol_cat", "hol_sound", "hol_best", "hol_scores"]
-  };
+  const SAVE_KEYS = {};
 
   // ---------------------------------------------------------------
   // Everything below does the work. You don't need to change it.

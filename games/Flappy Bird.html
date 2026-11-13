@@ -341,7 +341,63 @@ if(!save.sk)save.sk=['jump'];if(!save.col)save.col='#ffeb2f';if(!save.lb)save.lb
 const BF={};
 const birdFrames=c=>BF[c]||(BF[c]=mk({K:K0,Y:c,W:'#fff',R:'#ff5a1e'}));
 const hasSk=id=>save.sk.includes(id);
-function persist(){try{localStorage.setItem('fb-save',JSON.stringify(save))}catch(e){}}
+function persist(){try{localStorage.setItem('fb-save',JSON.stringify(save))}catch(e){}try{cloudSave()}catch(e){}}
+
+/* ---------- account save: the skill tree and the worlds follow the player ---------- */
+// The site's own save system uses the same document and the same keys, so a
+// progress saved here is restored by the site and the other way round.
+const SAVE_NAME='flappy-bird';
+let cloudT=0;
+function mergeSave(a,b){
+  if(!b)return a;
+  const m={...a};
+  m.pts=Math.max(a.pts||0,b.pts||0);
+  m.own=Array.from(new Set([...(a.own||[]),...(b.own||[])]));
+  m.sk=Array.from(new Set([...(a.sk||[]),...(b.sk||[])]));
+  m.tuts={...(b.tuts||{}),...(a.tuts||{})};
+  m.longest=Math.max(a.longest||0,b.longest||0);
+  m.lb=((b.lb||[]).length>(a.lb||[]).length?b.lb:a.lb)||[];
+  m.col=b.col||a.col;
+  m.eq={...(a.eq||{}),...(b.eq||{})};
+  return m;
+}
+function saveSnapshot(){
+  const data={'fb-save':JSON.stringify(save)};
+  try{const b=localStorage.getItem('fb-best');if(b!==null)data['fb-best']=b;}catch(e){}
+  return JSON.stringify(data);
+}
+function cloudSave(){
+  if(!F||!fbDb||!fbUser)return;
+  clearTimeout(cloudT);
+  cloudT=setTimeout(async()=>{
+    if(!F||!fbDb||!fbUser)return;
+    try{
+      const updated=Date.now();
+      await F.setDoc(F.doc(fbDb,'users',fbUser.uid),{games:{[SAVE_NAME]:{data:saveSnapshot(),updated}}},{merge:true});
+      try{localStorage.setItem('damp-sync-'+SAVE_NAME,updated)}catch(e){}
+    }catch(e){}
+  },900);
+}
+async function cloudLoad(){
+  if(!F||!fbDb||!fbUser)return;
+  try{
+    const snap=await F.getDoc(F.doc(fbDb,'users',fbUser.uid));
+    const games=snap.exists()?snap.data().games:null;
+    const entry=games?games[SAVE_NAME]:null;
+    let stamp=0;try{stamp=+localStorage.getItem('damp-sync-'+SAVE_NAME)||0}catch(e){}
+    if(!entry||!entry.updated||entry.updated===stamp){cloudSave();return;}
+    const data=JSON.parse(entry.data||'{}');
+    if(data['fb-save']){
+      save=mergeSave(save,JSON.parse(data['fb-save']));
+      persist();
+      apply();refreshPts();
+      if(!$('skp').classList.contains('hide'))renderSkills();
+      if(!$('shop').classList.contains('hide'))renderShop();
+    }
+    try{localStorage.setItem('damp-sync-'+SAVE_NAME,entry.updated)}catch(e){}
+    cloudSave();
+  }catch(e){}
+}
 function apply(){FR=birdFrames(hasSk('color')?save.col:'#ffeb2f');shield=hasSk('shield')?1:0;inv=0;PT=PIPES[save.eq.w];T=WORLDS[save.eq.w];stage.dataset.w=save.eq.w;stage.style.setProperty('--sky',T.sky);stage.style.setProperty('--g1',T.g1);stage.style.setProperty('--sd',T.sd);}
 function refreshPts(){$('ptsT').textContent='Points: '+save.pts;$('pts').textContent='Points: '+save.pts;$('skpts').textContent=save.pts;}
 function openShop(o){$('shop').classList.toggle('hide',!o);if(o)renderShop();}
@@ -847,7 +903,7 @@ async function initLb(){
     try{
       const authM=await authP;
       fbAuth=authM.getAuth(app);
-      authM.onAuthStateChanged(fbAuth,u=>{fbUser=u;lbWatchOwn();lbRender();if(u){submitLb();syncDeviceBest();}});
+      authM.onAuthStateChanged(fbAuth,u=>{fbUser=u;lbWatchOwn();lbRender();if(u){cloudLoad();submitLb();syncDeviceBest();}}); 
     }catch(e){}
   }catch(e){
     if(!lbApiOk){fbState='off';lbRender();}
@@ -1091,6 +1147,7 @@ const db=$('dbtn');
 db.addEventListener('pointerdown',e=>{e.preventDefault();holding=true;});
 ['pointerup','pointercancel','pointerleave'].forEach(t=>db.addEventListener(t,()=>{holding=false;}));
 apply();reset();fit();if(!save.tuts.jump)startTut('jump','');initLb();requestAnimationFrame(frame);
+if(location.hash==='#dev')window.__fb={get save(){return save},mergeSave,cloudLoad,cloudSave,persist,saveSnapshot};
 })();
 </script>
 </body>

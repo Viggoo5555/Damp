@@ -50,6 +50,20 @@ a{text-decoration:none}
 #caps span.r{color:#ff8d80}#caps span.b{color:#8dc4ff}
 #hint{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(74px + env(safe-area-inset-bottom,0));text-align:center;color:var(--fg);font-size:16px;letter-spacing:.06em;
  background:#07141fd9;border:2px solid var(--line);padding:5px 14px;width:max-content;max-width:88vw;pointer-events:none;transition:opacity .3s}
+#peek{position:fixed;z-index:8;display:flex;gap:10px;align-items:center;width:max-content;max-width:252px;padding:8px 12px 9px 8px;
+ background:#0b1f2df7;border:2px solid var(--brass);box-shadow:0 10px 28px #000b;pointer-events:none}
+#hud>#peek{pointer-events:none}
+#peek.foe{border-color:#5f7f96}
+#peek .art{width:56px;height:56px;flex:none;display:grid;place-items:center;background:#f1e5c8;border:2px solid #b9801d;overflow:hidden;position:relative}
+#peek .art img{width:100%;height:100%;object-fit:contain;display:block}
+#peek .q{font:400 34px/1 var(--d);color:#8a6a34}
+#peek .txt{min-width:0}
+#peek .pn{font:400 20px/1.05 var(--d);letter-spacing:.04em;color:var(--brass);text-transform:uppercase}
+#peek.foe .pn{color:#9fc4dd}
+#peek .pr{margin-top:2px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+#peek .pd{margin:4px 0 0;font-size:14px;line-height:1.25;color:#d7e4ec;letter-spacing:.02em}
+#peek.pin{left:12px;bottom:calc(66px + env(safe-area-inset-bottom,0));top:auto}
+@media (max-width:700px){#peek{max-width:216px;padding:7px 10px 8px 7px}#peek .art{width:46px;height:46px}#peek .pn{font-size:18px}#peek .pd{font-size:13px}}
 #bottom{position:absolute;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0));display:flex;justify-content:center;align-items:flex-end;gap:10px;flex-wrap:wrap;pointer-events:none}
 #bottom>*{pointer-events:auto}
 .screen{position:absolute;inset:0;display:flex;align-items:center;padding:0 clamp(16px,6vw,90px);z-index:5;
@@ -132,7 +146,8 @@ input[type=text]:focus,input[type=password]:focus{border-color:var(--brass)}
   <div id="turn"><b id="turnT">Red to move</b><span id="turnS">Deploy your army</span></div>
   <div id="log"><h4>Battle log</h4><div id="logList"></div></div>
   <div id="caps"><b>Captured</b></div>
-  <div id="hint">Click one of your pieces, then a highlighted square</div>
+  <div id="hint">Hover a tower to read it &middot; click yours, then a highlighted square</div>
+  <div id="peek" class="hide"><div class="art"><img id="peekArt" alt=""><span id="peekQ" class="q hide">?</span></div><div class="txt"><div class="pn" id="peekName"></div><div class="pr" id="peekRank"></div><p class="pd" id="peekRule"></p></div></div>
   <div id="bottom">
    <button class="btn ghost sm" id="bResign">Resign</button>
    <button class="btn alt sm" id="bBack">Menu</button>
@@ -227,6 +242,19 @@ import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 const SIDE_NAME={r:'Red',b:'Blue'};
 const ROSTER=[['10',1],['9',1],['8',2],['7',3],['6',4],['5',4],['4',4],['3',5],['2',8],['1',1],['B',6],['F',1]];
 const NAME={'10':'Marshal','9':'General','8':'Colonel','7':'Major','6':'Captain','5':'Lieutenant','4':'Sergeant','3':'Miner','2':'Scout','1':'Spy','B':'Bomb','F':'Flag'};
+const RULE={
+ '10':'Beats every piece except the spy and bombs.',
+ '9':'Strongest after the marshal. Beats all but rank 10.',
+ '8':'Beats majors and below.',
+ '7':'Beats captains and below.',
+ '6':'Beats lieutenants and below.',
+ '5':'Beats sergeants, miners and scouts.',
+ '4':'Beats miners and scouts.',
+ '3':'The only piece that can defuse a bomb.',
+ '2':'Runs any number of squares in a straight line.',
+ '1':'Kills the marshal, loses to everything else.',
+ 'B':'Cannot move. Only a miner can defuse it.',
+ 'F':'Cannot move. Capture the flag to win.'};
 const LAKES=new Set(['4,2','4,3','5,2','5,3','4,6','4,7','5,6','5,7']);
 const isLake=(r,c)=>LAKES.has(r+','+c);
 const idx=(r,c)=>r*10+c;
@@ -300,29 +328,125 @@ renderer.setPixelRatio(Math.min(2,devicePixelRatio||1));
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x061019);
-scene.fog=new THREE.Fog(0x061019,26,48);
+scene.background=new THREE.Color(0x0a1117);
+scene.fog=new THREE.Fog(0x0a1117,28,52);
 const camera=new THREE.PerspectiveCamera(42,1,.1,120);
 
-const hemi=new THREE.HemisphereLight(0xbcd4ff,0x1a2230,.55);scene.add(hemi);
-const key=new THREE.DirectionalLight(0xfff1d8,2.1);key.position.set(6,16,8);key.castShadow=true;
+const hemi=new THREE.HemisphereLight(0xd9e6ff,0x2a2118,.72);scene.add(hemi);
+const key=new THREE.DirectionalLight(0xfff3e2,2.5);key.position.set(6,16,8);key.castShadow=true;
 key.shadow.mapSize.set(2048,2048);key.shadow.camera.left=-9;key.shadow.camera.right=9;key.shadow.camera.top=9;key.shadow.camera.bottom=-9;
 scene.add(key);
 const rim=new THREE.PointLight(0x2f7bff,.8,40);rim.position.set(-8,6,-8);scene.add(rim);
 const rim2=new THREE.PointLight(0xff6a3d,.5,36);rim2.position.set(8,5,8);scene.add(rim2);
 
-const table=new THREE.Mesh(new THREE.CircleGeometry(34,64),new THREE.MeshStandardMaterial({color:0x0d1a24,roughness:.95}));
+const table=new THREE.Mesh(new THREE.CircleGeometry(34,64),new THREE.MeshStandardMaterial({color:0x111a20,roughness:.95}));
 table.rotation.x=-Math.PI/2;table.position.y=-.62;table.receiveShadow=true;scene.add(table);
 
-const frameMat=new THREE.MeshStandardMaterial({color:0x5b3a22,roughness:.6,metalness:.15});
+/* ---------- printed board textures ---------- */
+function makeTex(w,h,draw){
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+  draw(cv.getContext('2d'),w,h);
+  const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t;
+}
+/* sand paper with a faint grid edge, used on every land square */
+const sandTex=makeTex(256,256,(g,s)=>{
+  const gr=g.createLinearGradient(0,0,s,s);
+  gr.addColorStop(0,'#e6d6ad');gr.addColorStop(.5,'#dbc99e');gr.addColorStop(1,'#cfba8b');
+  g.fillStyle=gr;g.fillRect(0,0,s,s);
+  for(let i=0;i<2200;i++){
+    g.fillStyle=Math.random()<.5?'rgba(80,60,30,.07)':'rgba(255,250,232,.09)';
+    const x=Math.random()*s,y=Math.random()*s,r=.3+Math.random()*1.5;
+    g.beginPath();g.arc(x,y,r,0,7);g.fill();
+  }
+  for(let i=0;i<12;i++){
+    const x=Math.random()*s,y=Math.random()*s,r=18+Math.random()*46;
+    const rg=g.createRadialGradient(x,y,0,x,y,r);
+    rg.addColorStop(0,'rgba(150,124,74,.12)');rg.addColorStop(1,'rgba(150,124,74,0)');
+    g.fillStyle=rg;g.beginPath();g.arc(x,y,r,0,7);g.fill();
+  }
+  g.strokeStyle='rgba(92,74,46,.35)';g.lineWidth=3;g.strokeRect(0,0,s,s);
+  g.strokeStyle='rgba(255,248,226,.28)';g.lineWidth=2;g.strokeRect(3,3,s-6,s-6);
+});
+/* quiet lake water */
+const waterTex=makeTex(256,256,(g,s)=>{
+  const gr=g.createLinearGradient(0,0,s,s);
+  gr.addColorStop(0,'#4a90ad');gr.addColorStop(.5,'#347a97');gr.addColorStop(1,'#276680');
+  g.fillStyle=gr;g.fillRect(0,0,s,s);
+  g.strokeStyle='rgba(214,244,255,.34)';g.lineWidth=2;
+  for(let i=0;i<9;i++){
+    g.beginPath();const y=18+i*26;
+    for(let x=0;x<=s;x+=8)g.lineTo(x,y+Math.sin(x/26+i*1.7)*3.2);
+    g.stroke();
+  }
+  g.strokeStyle='rgba(10,44,58,.5)';g.lineWidth=3;g.strokeRect(0,0,s,s);
+});
+/* walnut frame */
+const woodTex=makeTex(512,512,(g,s)=>{
+  g.fillStyle='#6a4426';g.fillRect(0,0,s,s);
+  for(let i=0;i<150;i++){
+    const y=Math.random()*s;
+    g.strokeStyle='rgba('+(58+(Math.random()*40|0))+','+(32+(Math.random()*26|0))+','+(14+(Math.random()*16|0))+','+(.12+Math.random()*.3).toFixed(2)+')';
+    g.lineWidth=1+Math.random()*3;
+    g.beginPath();
+    for(let x=0;x<=s;x+=14)g.lineTo(x,y+Math.sin(x*.028+i)*4.5);
+    g.stroke();
+  }
+  const vg=g.createLinearGradient(0,0,s,0);
+  vg.addColorStop(0,'rgba(0,0,0,.28)');vg.addColorStop(.5,'rgba(255,220,170,.08)');vg.addColorStop(1,'rgba(0,0,0,.3)');
+  g.fillStyle=vg;g.fillRect(0,0,s,s);
+});
+woodTex.wrapS=woodTex.wrapT=THREE.RepeatWrapping;woodTex.repeat.set(2,2);
+const frameMat=new THREE.MeshStandardMaterial({map:woodTex,roughness:.56,metalness:.1});
 const frame=new THREE.Mesh(new THREE.BoxGeometry(11.9,.55,11.9),frameMat);
 frame.position.y=-.29;frame.castShadow=true;frame.receiveShadow=true;scene.add(frame);
-const inlay=new THREE.Mesh(new THREE.BoxGeometry(10.34,.42,10.34),new THREE.MeshStandardMaterial({color:0x2a1a10,roughness:.9}));
+const edgeMat=new THREE.MeshStandardMaterial({color:0x2b1909,roughness:.68,metalness:.18});
+const edge=new THREE.Mesh(new THREE.BoxGeometry(12.4,.3,12.4),edgeMat);
+edge.position.y=-.47;edge.castShadow=true;edge.receiveShadow=true;scene.add(edge);
+const inlay=new THREE.Mesh(new THREE.BoxGeometry(10.34,.42,10.34),new THREE.MeshStandardMaterial({color:0x4a3823,roughness:.9}));
 inlay.position.y=-.26;scene.add(inlay);
 
-const lightMat=new THREE.MeshStandardMaterial({color:0xe9d9b6,roughness:.86,metalness:.02});
-const darkMat=new THREE.MeshStandardMaterial({color:0x7c5738,roughness:.82,metalness:.03});
-const lakeMat=new THREE.MeshStandardMaterial({color:0x1e4f6b,roughness:.28,metalness:.25,emissive:0x0b2c40,emissiveIntensity:.7});
+/* brass nameplate on the near and far frame edge */
+const plateTex=makeTex(1024,176,(g,w,h)=>{
+  const bg=g.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#3b2812');bg.addColorStop(.5,'#22150a');bg.addColorStop(1,'#170e05');
+  g.fillStyle=bg;g.fillRect(0,0,w,h);
+  g.strokeStyle='#cfa350';g.lineWidth=6;g.strokeRect(9,9,w-18,h-18);
+  g.strokeStyle='#8a6524';g.lineWidth=2;g.strokeRect(21,21,w-42,h-42);
+  g.textAlign='center';g.textBaseline='middle';
+  g.fillStyle='#f0c87e';g.font='700 72px Georgia,serif';g.fillText('S T R A T E G O',w/2,h/2-10);
+  g.fillStyle='#b98f47';g.font='600 23px Georgia,serif';g.fillText('C A P T U R E   T H E   F L A G',w/2,h-44);
+});
+const plateMat=new THREE.MeshStandardMaterial({map:plateTex,roughness:.48,metalness:.22});
+const plates=[];
+for(const z of [5.6,-5.6]){
+  const pl=new THREE.Mesh(new THREE.PlaneGeometry(3.6,.62),plateMat);
+  pl.rotation.x=-Math.PI/2;
+  pl.position.set(0,-.004,z);scene.add(pl);plates.push(pl);
+}
+
+/* faint compass rose printed in the middle of the map */
+const emblemTex=makeTex(512,512,(g,s)=>{
+  g.clearRect(0,0,s,s);g.translate(s/2,s/2);
+  const R=s*.44;
+  g.strokeStyle='#5d4a2a';
+  g.lineWidth=7;g.beginPath();g.arc(0,0,R,0,7);g.stroke();
+  g.lineWidth=2;g.beginPath();g.arc(0,0,R*.84,0,7);g.stroke();
+  g.lineWidth=2;g.beginPath();g.arc(0,0,R*.3,0,7);g.stroke();
+  for(let i=0;i<16;i++){
+    g.save();g.rotate(i*Math.PI/8);
+    g.beginPath();g.moveTo(0,-R*.94);g.lineTo(R*.045,-R*.14);g.lineTo(0,-R*.26);g.lineTo(-R*.045,-R*.14);g.closePath();
+    g.fillStyle=i%2?'#6b552f':'#7d6538';g.fill();g.restore();
+  }
+  for(let i=0;i<4;i++){
+    g.save();g.rotate(i*Math.PI/2);
+    g.beginPath();g.arc(0,-R*.68,7,0,7);g.fillStyle='#5d4a2a';g.fill();g.restore();
+  }
+});
+const emblem=new THREE.Mesh(new THREE.PlaneGeometry(4.8,4.8),new THREE.MeshBasicMaterial({map:emblemTex,transparent:true,opacity:.15,depthWrite:false}));
+emblem.rotation.x=-Math.PI/2;emblem.position.set(0,.0018,0);scene.add(emblem);
+
+const lightMat=new THREE.MeshStandardMaterial({map:sandTex,color:0xfffaf0,roughness:.93,metalness:0});
+const darkMat=new THREE.MeshStandardMaterial({map:sandTex,color:0xf1e6cf,roughness:.93,metalness:0});
+const lakeMat=new THREE.MeshStandardMaterial({map:waterTex,roughness:.2,metalness:.22,emissive:0x0a2c3a,emissiveIntensity:.45});
 const tileGeo=new THREE.PlaneGeometry(.99,.99);
 const tiles=[];
 for(let r=0;r<10;r++)for(let c=0;c<10;c++){
@@ -372,8 +496,8 @@ function labelTexture(rank,side,hidden){
 const cylGeo=new THREE.CylinderGeometry(.355,.355,.21,26);
 const topGeo=new THREE.CircleGeometry(.315,26);
 const ringGeo=new THREE.TorusGeometry(.337,.012,8,30);
-const sideMat={r:new THREE.MeshStandardMaterial({color:0xbc4a3c,roughness:.62,metalness:.12}),
-              b:new THREE.MeshStandardMaterial({color:0x3d68c4,roughness:.62,metalness:.12})};
+const sideMat={r:new THREE.MeshPhysicalMaterial({color:0xc0392b,roughness:.42,metalness:.05,clearcoat:.55,clearcoatRoughness:.35}),
+              b:new THREE.MeshPhysicalMaterial({color:0x2f5fc4,roughness:.42,metalness:.05,clearcoat:.55,clearcoatRoughness:.35})};
 const brassMat=new THREE.MeshStandardMaterial({color:0xd9b25f,metalness:.7,roughness:.3});
 
 /* the sculpted tower from files/Tower.stl is the piece body when it loads */
@@ -473,23 +597,31 @@ function syncPieces(){
 /* selection markers */
 const selRing=new THREE.Mesh(new THREE.TorusGeometry(.42,.035,10,36),new THREE.MeshStandardMaterial({color:0xf0b84a,emissive:0xf0b84a,emissiveIntensity:.8}));
 selRing.rotation.x=-Math.PI/2;selRing.visible=false;marksGroup.add(selRing);
+const hoverRing=new THREE.Mesh(new THREE.TorusGeometry(.43,.016,8,36),new THREE.MeshBasicMaterial({color:0xffe9b0,transparent:true,opacity:.65}));
+hoverRing.rotation.x=-Math.PI/2;hoverRing.visible=false;marksGroup.add(hoverRing);
 const dotGeo=new THREE.CircleGeometry(.13,18);
 const dotMat=new THREE.MeshBasicMaterial({color:0xf0b84a,transparent:true,opacity:.85});
 const dots=[];
 for(let i=0;i<80;i++){const d=new THREE.Mesh(dotGeo,dotMat);d.rotation.x=-Math.PI/2;d.visible=false;marksGroup.add(d);dots.push(d)}
 function drawMarks(){
   dots.forEach(d=>d.visible=false);
-  if(G.sel<0){selRing.visible=false;return}
-  selRing.visible=true;
-  selRing.position.set(colOf(G.sel)-4.5,.13,rowOf(G.sel)-4.5);
-  G.legal.forEach((cell,i)=>{const d=dots[i];if(!d)return;d.visible=true;d.position.set(colOf(cell)-4.5,.125,rowOf(cell)-4.5)});
+  if(G.sel<0){selRing.visible=false}
+  else{
+    selRing.visible=true;
+    selRing.position.set(colOf(G.sel)-4.5,.13,rowOf(G.sel)-4.5);
+    G.legal.forEach((cell,i)=>{const d=dots[i];if(!d)return;d.visible=true;d.position.set(colOf(cell)-4.5,.125,rowOf(cell)-4.5)});
+  }
+  if(coarseHover||touchInput){
+    if(G.sel>=0&&G.board[G.sel])showPeek(G.sel,0,0,true);else hidePeek();
+  }
 }
 
 /* camera orbit */
 const cam={az:0,pol:.62,dist:14.2,drag:false,px:0,py:0,moved:0};
 function resetCam(){
-  cam.az=G.side==='b'?Math.PI:0;cam.pol=.62;cam.dist=14.2;
+  cam.az=G.side==='b'?Math.PI:0;cam.pol=.6;cam.dist=15.3;
   camera.position.set(0,14,16);
+  for(const pl of plates)pl.rotation.z=G.side==='b'?Math.PI:0;
 }
 function camFit(){return Math.max(1,1.12/Math.min(1,camera.aspect||1))}
 function camUpdate(dt){
@@ -506,15 +638,26 @@ const ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),plane=new THREE.Plane(ne
 canvas.addEventListener('pointerdown',e=>{
   if(e.button>0)return;
   cam.drag=true;cam.px=e.clientX;cam.py=e.clientY;cam.moved=0;
+  touchInput=e.pointerType==='touch';
   canvas.setPointerCapture&&canvas.setPointerCapture(e.pointerId);
+  if(!touchInput)hidePeek();
 });
 canvas.addEventListener('pointermove',e=>{
-  if(!cam.drag)return;
-  const dx=e.clientX-cam.px,dy=e.clientY-cam.py;
-  cam.moved+=Math.abs(dx)+Math.abs(dy);
-  cam.az-=dx*.006;cam.pol=Math.max(.3,Math.min(1.2,cam.pol-dy*.004));
-  cam.px=e.clientX;cam.py=e.clientY;
+  if(cam.drag){
+    const dx=e.clientX-cam.px,dy=e.clientY-cam.py;
+    cam.moved+=Math.abs(dx)+Math.abs(dy);
+    cam.az-=dx*.006;cam.pol=Math.max(.3,Math.min(1.2,cam.pol-dy*.004));
+    cam.px=e.clientX;cam.py=e.clientY;
+    hidePeek();return;
+  }
+  if(coarseHover||(G.mode!=='play'&&G.mode!=='setup')){hidePeek();return}
+  const now=performance.now();
+  if(now-hoverT<45)return;hoverT=now;
+  const g=pieceGroupAt(e.clientX,e.clientY);
+  if(g&&g.userData.cell!=null)showPeek(g.userData.cell,e.clientX,e.clientY,false);
+  else hidePeek();
 });
+canvas.addEventListener('pointerleave',()=>{if(!coarseHover)hidePeek()});
 canvas.addEventListener('pointerup',e=>{
   if(!cam.drag)return;cam.drag=false;
   if(cam.moved<9)pick(e.clientX,e.clientY);
@@ -531,6 +674,57 @@ function cellAt(x,y){
   const c=Math.round(hit.x+4.5),rr=Math.round(hit.z+4.5);
   if(c<0||c>9||rr<0||rr>9)return -1;
   return idx(rr,c);
+}
+
+/* ---------------- reading the towers ---------------- */
+const coarseHover=matchMedia('(hover:none)').matches;
+let touchInput=coarseHover,hoverT=0,peekCell=-1;
+function pieceGroupAt(x,y){
+  const r=canvas.getBoundingClientRect();
+  ndc.set((x-r.left)/r.width*2-1,-((y-r.top)/r.height)*2+1);
+  ray.setFromCamera(ndc,camera);
+  const hits=ray.intersectObjects(piecesGroup.children,true);
+  for(const h of hits){
+    let o=h.object;
+    while(o&&!o.userData.piece)o=o.parent;
+    if(o&&o.userData.cell!=null)return o;
+  }
+  return null;
+}
+function hidePeek(){
+  peekCell=-1;hoverRing.visible=false;
+  const el=$('peek');if(el)el.classList.add('hide');
+}
+function showPeek(cell,x,y,pin){
+  const p=G.board[cell];if(!p){hidePeek();return}
+  peekCell=cell;
+  const el=$('peek'),known=p.side===G.side||p.revealed,hasArt=p.rank!=='B'&&p.rank!=='F';
+  el.classList.toggle('foe',!known);
+  $('peekQ').textContent=known?(p.rank==='B'?'B':'F'):'?';
+  $('peekArt').classList.toggle('hide',!known||!hasArt);
+  $('peekQ').classList.toggle('hide',known&&hasArt);
+  if(known){
+    if(hasArt)$('peekArt').src='/img/stratego/'+p.rank+'.png?v=1';
+    $('peekName').textContent=NAME[p.rank];
+    $('peekRank').textContent=(p.rank==='B'||p.rank==='F'?'Special piece':'Rank '+p.rank)+' · '+SIDE_NAME[p.side];
+    $('peekRule').textContent=RULE[p.rank];
+  }else{
+    $('peekName').textContent='Enemy tower';
+    $('peekRank').textContent=SIDE_NAME[p.side]+' army';
+    $('peekRule').textContent='The rank stays hidden until it fights.';
+  }
+  el.classList.remove('hide');
+  el.classList.toggle('pin',!!pin);
+  if(pin){el.style.left='';el.style.top='';}
+  else{
+    const w=el.offsetWidth||230,h=el.offsetHeight||92;
+    let l=x+18,t=y+18;
+    if(l+w>innerWidth-8)l=x-w-18;
+    if(t+h>innerHeight-8)t=y-h-18;
+    el.style.left=Math.max(8,l)+'px';el.style.top=Math.max(8,t)+'px';
+  }
+  if(!pin){hoverRing.visible=true;hoverRing.position.set(colOf(cell)-4.5,.118,rowOf(cell)-4.5)}
+  else hoverRing.visible=false;
 }
 function pick(x,y){
   if(G.busy||(G.over&&G.mode!=='setup'))return;
@@ -602,8 +796,8 @@ function drawHud(){
   $('sideChip').textContent='You: '+SIDE_NAME[G.side];
   $('logList').innerHTML=G.log.slice().reverse().slice(0,10).map(t=>'<div>'+t+'</div>').join('')||'<div>No shots fired yet.</div>';
   const caps=$('caps');caps.innerHTML='<b>Captured</b>'+G.caps.map(c=>'<span class="'+c.side+'" title="'+NAME[c.rank]+'">'+(c.rank==='B'?'&#10005;':c.rank==='F'?'&#9873;':c.rank)+'</span>').join('');
-  $('hint').textContent=G.mode==='setup'?'Click a piece, then another piece to swap them':
-    G.over?'':G.turn===G.side?'Click one of your pieces, then a highlighted square':'Waiting for '+SIDE_NAME[G.turn].toLowerCase()+'…';
+  $('hint').textContent=G.mode==='setup'?'Hover a tower to read it · click a piece, then another to swap':
+    G.over?'':G.turn===G.side?'Hover a tower to read it · click yours, then a highlighted square':'Waiting for '+SIDE_NAME[G.turn].toLowerCase()+'…';
 }
 
 /* ---------------- moves ---------------- */

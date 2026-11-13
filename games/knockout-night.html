@@ -418,7 +418,7 @@ function flashUpd(){flashes.forEach((p,i)=>p.material.opacity=Math.min(1,Math.po
 function roar(v){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const n=AC.sampleRate*.8|0,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);const s=AC.createBufferSource();s.buffer=b;const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=700;const g=AC.createGain();g.gain.value=v;s.connect(f);f.connect(g);g.connect(AC.destination);s.start()}catch(e){}}
 
 const FBCFG={apiKey:"AIzaSyDJhWSi7QZKXtOPYwKHPF7zPg_klh1If7w",authDomain:"damp-2406a.firebaseapp.com",projectId:"damp-2406a",appId:"1:940989851976:web:f8fd07c258afa71fd22b7d"};
-const SDK='https://www.gstatic.com/firebasejs/10.14.1/';
+const SDK='../vendor/firebase/';
 const NET={on:false,guest:false,role:null,ps:null,es:null,pc:null,dc:null,room:null,unsub:null,snapT:0,inpT:0};
 const PR={},EV=[];let FB=null,wrapped=false;
 const ICE={iceServers:[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']}]};

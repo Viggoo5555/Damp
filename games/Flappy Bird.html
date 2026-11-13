@@ -8,9 +8,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com">
-<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js" crossorigin>
-<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js" crossorigin>
-<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js" crossorigin>
+<link rel="modulepreload" href="../vendor/firebase/firebase-app.js" crossorigin>
+<link rel="modulepreload" href="../vendor/firebase/firebase-firestore.js" crossorigin>
+<link rel="modulepreload" href="../vendor/firebase/firebase-auth.js" crossorigin>
 <style>
 :root{--bg:#bfe3ea;--panel:#ded895;--ink:#543847;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10262c}}
@@ -713,7 +713,7 @@ function closeAll(){OVS.forEach(i=>$(i).classList.add('hide'));}
 function openTree(o){$('skp').classList.toggle('hide',!o);if(o)renderSkills();}
 /* ---------- leaderboard: anyone can look, logging in adds your score ---------- */
 const FB={apiKey:"AIzaSyDJhWSi7QZKXtOPYwKHPF7zPg_klh1If7w",authDomain:"damp-2406a.firebaseapp.com",projectId:"damp-2406a",appId:"1:940989851976:web:f8fd07c258afa71fd22b7d"};
-const FBSDK='https://www.gstatic.com/firebasejs/10.14.1/',LB='flappy';
+const FBSDK='../vendor/firebase/',LB='flappy';
 let fbAuth=null,fbDb=null,F=null,fbUser=null,fbState='loading',lbRows=[],lbOwn=null,lbLoaded=false,ownUnsub=null,lbUnsub=null,lbMode='all',lbWriteFail=false;
 try{lbMode=localStorage.getItem('fb-lbmode')==='week'?'week':'all'}catch(e){}
 function lbName(u){

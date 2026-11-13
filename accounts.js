@@ -26,7 +26,7 @@
   // ---------------------------------------------------------------
   // Everything below does the work. You don't need to change it.
   // ---------------------------------------------------------------
-  const SDK = "https://www.gstatic.com/firebasejs/10.14.1/";
+  const SDK = "vendor/firebase/";
   const byId = function (id) { return document.getElementById(id); };
 
   let fb = null;        // the Firebase tools, once they have loaded

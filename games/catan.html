@@ -576,24 +576,29 @@ function layoutDice(){
   }
 }
 layoutDice();
-const FACE_UP={
-  1:new THREE.Euler(0,0,Math.PI/2),6:new THREE.Euler(0,0,-Math.PI/2),
-  2:new THREE.Euler(0,0,0),5:new THREE.Euler(Math.PI,0,0),
-  3:new THREE.Euler(-Math.PI/2,0,0),4:new THREE.Euler(Math.PI/2,0,0)
-};
+/* which local axis shows a value: +x=1, -x=6, +y=2, -y=5, +z=3, -z=4 */
+const FACE_AXIS={1:new THREE.Vector3(1,0,0),6:new THREE.Vector3(-1,0,0),2:new THREE.Vector3(0,1,0),
+  5:new THREE.Vector3(0,-1,0),3:new THREE.Vector3(0,0,1),4:new THREE.Vector3(0,0,-1)};
+const WORLD_UP=new THREE.Vector3(0,1,0);
+const FACE_Q={};
+for(let v=1;v<=6;v++){
+  // every way the die can show v: that face up, then turned to any of four sides
+  const base=new THREE.Quaternion().setFromUnitVectors(FACE_AXIS[v],WORLD_UP);
+  FACE_Q[v]=[0,1,2,3].map(k=>new THREE.Quaternion().setFromAxisAngle(WORLD_UP,k*Math.PI/2).multiply(base));
+}
 let diceResolve=null;
+const _spin=new THREE.Euler(),_dq=new THREE.Quaternion();
+
 function rollDiceAnim(a,b){
   const now=performance.now();
   [a,b].forEach((v,i)=>{
-    const d=dice[i];
-    const q=new THREE.Quaternion().setFromEuler(FACE_UP[v]);
-    q.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),(Math.random()-.5)*1.3));
+    const d=dice[i],side=i?1:-1;
+    // a real throw: up and out of the hand, tumbling, then it rolls onto its face
     d.userData.r={
-      t0:now,toss:900+i*100,settle:420,
-      rest:new THREE.Vector3(DICE_TRAY.x+(i?.72:-.72),DICE_FLOOR,DICE_TRAY.z+(i?-.1:.1)),
-      vel:new THREE.Vector3((Math.random()-.5)*3.6,5.9+Math.random()*1.2,(Math.random()-.5)*2.2),
-      av:new THREE.Vector3((Math.random()-.5)*18,(Math.random()-.5)*18,(Math.random()-.5)*18),
-      q
+      t0:now,value:v,bounces:0,q:null,settling:0,
+      v:new THREE.Vector3(side*(1.4+Math.random()*1.5),5.6+Math.random()*1.1,(Math.random()-.5)*2.2),
+      av:new THREE.Vector3((Math.random()-.5)*26,(Math.random()-.5)*26,(Math.random()-.5)*26),
+      rest:new THREE.Vector3(DICE_TRAY.x+(i?.72:-.72),DICE_FLOOR,DICE_TRAY.z+(i?-.1:.1))
     };
   });
   return new Promise(res=>{
@@ -602,27 +607,61 @@ function rollDiceAnim(a,b){
     diceResolve=finish;
     // a hidden tab throttles requestAnimationFrame, and the game must not
     // wait forever for the dice to come to rest
-    setTimeout(finish,1600);
+    setTimeout(finish,2400);
   });
 }
+
 function diceUpdate(dt){
   let pending=false;
   for(const d of dice){
     const r=d.userData.r;if(!r)continue;
     pending=true;
+    if(r.q){
+      // the last little roll: the die tips over onto the face it has to show
+      r.settling=Math.min(1,r.settling+dt/.2);
+      d.quaternion.slerp(r.q,Math.min(1,dt*18));
+      d.position.lerp(r.rest,Math.min(1,dt*12));
+      if(r.settling>=1){d.quaternion.copy(r.q);d.position.copy(r.rest);delete d.userData.r}
+      continue;
+    }
     const el=performance.now()-r.t0;
-    if(el<r.toss){
-      r.vel.y-=9.6*dt;
-      d.position.addScaledVector(r.vel,dt);
-      if(d.position.y<DICE_FLOOR){d.position.y=DICE_FLOOR;r.vel.y*=-.42;r.vel.x*=.82;r.vel.z*=.82}
-      d.rotation.x+=r.av.x*dt;d.rotation.y+=r.av.y*dt;d.rotation.z+=r.av.z*dt;
-      d.position.x=clamp(d.position.x,DICE_TRAY.x-1.2,DICE_TRAY.x+1.2);
-      d.position.z=clamp(d.position.z,DICE_TRAY.z-.72,DICE_TRAY.z+.72);
+    r.v.y-=30*dt;
+    d.position.addScaledVector(r.v,dt);
+    if(d.position.y<=DICE_FLOOR){
+      d.position.y=DICE_FLOOR;
+      if(r.v.y<0){
+        r.bounces++;
+        r.v.y=r.v.y<-2.4?-r.v.y*.3:0;   // felt soaks up most of the bounce
+      }
+      // felt grips the corners, so the slide and the spin die down fast
+      const f=Math.pow(.02,dt);
+      r.v.x*=f;r.v.z*=f;
+      r.av.multiplyScalar(Math.pow(.03,dt));
     }else{
-      const k=Math.min(1,(el-r.toss)/r.settle),e=1-Math.pow(1-k,3);
-      d.position.lerp(r.rest,e*.4);
-      d.quaternion.slerp(r.q,Math.min(1,e*1.7));
-      if(k>=1){d.position.copy(r.rest);d.quaternion.copy(r.q);delete d.userData.r}
+      r.av.multiplyScalar(Math.pow(.55,dt));
+    }
+    _spin.set(r.av.x*dt,r.av.y*dt,r.av.z*dt);
+    _dq.setFromEuler(_spin);
+    d.quaternion.premultiply(_dq).normalize();
+    // the rim of the tray keeps each die on its own half
+    const xa=DICE_TRAY.x+(d===dice[0]?-1.12:.12),xb=DICE_TRAY.x+(d===dice[0]?-.12:1.12);
+    const za=DICE_TRAY.z-.6,zb=DICE_TRAY.z+.6;
+    if(d.position.x<xa){d.position.x=xa;r.v.x=Math.abs(r.v.x)*.45}
+    if(d.position.x>xb){d.position.x=xb;r.v.x=-Math.abs(r.v.x)*.45}
+    if(d.position.z<za){d.position.z=za;r.v.z=Math.abs(r.v.z)*.45}
+    if(d.position.z>zb){d.position.z=zb;r.v.z=-Math.abs(r.v.z)*.45}
+    const grounded=d.position.y<=DICE_FLOOR+.002;
+    const still=grounded&&r.v.length()<1.4&&r.av.length()<6;
+    // never snap a die down out of the air: wait until it is lying on the felt
+    if(still||(grounded&&el>1100)||el>2300){
+      // take the lying orientation that shows the rolled value and is closest to it
+      let best=null,bd=9;
+      for(const q of FACE_Q[r.value]){
+        const ang=2*Math.acos(Math.min(1,Math.abs(d.quaternion.dot(q))));
+        if(ang<bd){bd=ang;best=q}
+      }
+      r.q=best;r.settling=0;
+      d.position.y=DICE_FLOOR;
     }
   }
   if(!pending&&diceResolve){const fn=diceResolve;diceResolve=null;fn()}
@@ -2363,6 +2402,10 @@ if(location.hash==='#dev'){
     finishSetup,beginBuild,openTrade,endTurn,ratioFor,steal,playDevCard,buyDev,canPlayDev,checkWin,
     syncPieces,updateHud,camera,cam,renderer,scene,startGame,aiTurn,nextTurn,askResources,flyResource,gain,
     act,applyAction,applyRemote,applySnap,snapshotFor,setupNext,netBroadcast,NET,startOnline,startAsGuest,startSeven,
+    dice,rollDiceAnim,
+    upFace(i){const d=dice[i],m=new THREE.Matrix4().makeRotationFromQuaternion(d.quaternion);
+      const axes=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]],vals=[1,6,2,5,3,4];
+      let best=0,by=-9;axes.forEach((a,k)=>{const y=a[0]*m.elements[1]+a[1]*m.elements[5]+a[2]*m.elements[9];if(y>by){by=y;best=k}});return vals[best]},
     get ME(){return ME},setMe(v){ME=v},
     onlineTest(seat,names){ME=seat;NP=names.length;GNAMES=names.slice();ONLINE=true;G.auto={};startAsGuest()}};
 }

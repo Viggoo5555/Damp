@@ -647,13 +647,20 @@ function drawMarks(){
 
 /* camera orbit */
 const cam={az:0,pol:.62,dist:14.2,drag:false,px:0,py:0,moved:0,shake:0};
+const AZ_LIMIT=Math.PI/5;
+const azBase=()=>G.side==='b'?Math.PI:0;
+function clampAz(a){
+  const b=azBase();
+  return Math.max(b-AZ_LIMIT,Math.min(b+AZ_LIMIT,a));
+}
 function resetCam(){
-  cam.az=G.side==='b'?Math.PI:0;cam.pol=.6;cam.dist=15.3;
+  cam.az=azBase();cam.pol=.6;cam.dist=15.3;
   camera.position.set(0,14,16);
   for(const pl of plates)pl.rotation.z=G.side==='b'?Math.PI:0;
 }
 function camFit(){return Math.max(1,1.12/Math.min(1,camera.aspect||1))}
 function camUpdate(dt){
+  cam.az=clampAz(cam.az);
   const d=cam.dist*camFit();
   const sp=Math.sin(cam.pol),x=Math.sin(cam.az)*sp*d,z=Math.cos(cam.az)*sp*d,y=Math.cos(cam.pol)*d;
   camera.position.lerp(new THREE.Vector3(x,y,z),Math.min(1,dt*7+.08));
@@ -752,7 +759,7 @@ canvas.addEventListener('pointermove',e=>{
   if(cam.drag){
     const dx=e.clientX-cam.px,dy=e.clientY-cam.py;
     cam.moved+=Math.abs(dx)+Math.abs(dy);
-    cam.az-=dx*.006;cam.pol=Math.max(.3,Math.min(1.2,cam.pol-dy*.004));
+    cam.az=clampAz(cam.az-dx*.006);cam.pol=Math.max(.3,Math.min(1.2,cam.pol-dy*.004));
     cam.px=e.clientX;cam.py=e.clientY;
     hidePeek();return;
   }
@@ -1388,8 +1395,8 @@ $('bResign').onclick=()=>{
   if(NET.on)netSend(stateMsg());
 };
 $('bView').onclick=()=>{resetCam();toast('View reset.')};
-$('bRotL').onclick=()=>{cam.az+=Math.PI/2};
-$('bRotR').onclick=()=>{cam.az-=Math.PI/2};
+$('bRotL').onclick=()=>{cam.az=clampAz(cam.az+Math.PI/7)};
+$('bRotR').onclick=()=>{cam.az=clampAz(cam.az-Math.PI/7)};
 $('bSnd').onclick=()=>{sound=!sound;$('bSnd').style.opacity=sound?1:.4;toast(sound?'Sound on':'Sound off')};
 $('bAgain').onclick=()=>{$('end').classList.add('hide');if(NET.on||NET.role){toast('Leave this game to start a new one.')}else{newGame(G.ai)}};
 $('bLeave').onclick=()=>{$('end').classList.add('hide');$('bBack').onclick()};

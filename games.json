@@ -28,6 +28,41 @@
     "image": "img/stratego.png?v=2"
   },
   {
+    "title": "Sky Hop 3D",
+    "description": "Small 3D collect-a-thon: hop across floating islands, double jump and grab all eight stars. A love letter to the 3D platformers of the late 90s.",
+    "file": "games/sky-hop.html",
+    "category": "Platformer",
+    "image": "img/sky-hop.png"
+  },
+  {
+    "title": "Brick Blast",
+    "description": "Break every brick, catch the falling capsules and keep the ball alive. Wide paddle, extra balls and slow motion power-ups.",
+    "file": "games/brick-blast.html",
+    "category": "Arcade",
+    "image": "img/brick-blast.png"
+  },
+  {
+    "title": "Star Swarm",
+    "description": "A formation of pixel invaders marches down while you hold the line behind crumbling bunkers. Endless waves and a bonus saucer.",
+    "file": "games/star-swarm.html",
+    "category": "Shooter",
+    "image": "img/star-swarm.png"
+  },
+  {
+    "title": "River Hop",
+    "description": "Five lanes of traffic, a river of drifting logs and five lily pads to reach. One hop at a time, sixty seconds on the clock.",
+    "file": "games/river-hop.html",
+    "category": "Arcade",
+    "image": "img/river-hop.png"
+  },
+  {
+    "title": "Maze Munch",
+    "description": "Chomp every dot in a freshly generated maze while three bugs hunt you. Grab a power pellet and turn the hunt around.",
+    "file": "games/maze-munch.html",
+    "category": "Maze",
+    "image": "img/maze-munch.png"
+  },
+  {
     "title": "Catan",
     "description": "3D Catan on a full island: settle, trade with the bank or your rivals, build roads and cities, and race three computer players to ten points.",
     "file": "games/catan.html",

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Maze Munch</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#070b16;color:#eef2ff;overflow:hidden;
+    font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif}
+  #wrap{position:relative;width:100vw;height:100vh;display:grid;place-items:center}
+  canvas{display:block;max-width:100%;max-height:100%;background:#070b16}
+  #ui{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;
+    padding:13px 20px;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:#8792b5;
+    pointer-events:none}
+  #ui b{color:#ffe066}
+  #over{position:absolute;inset:0;display:grid;place-items:center;background:rgba(5,8,18,.86);
+    text-align:center;padding:24px}
+  #over.hide{display:none}
+  #over h1{margin:0 0 12px;font-size:clamp(36px,8vw,72px);letter-spacing:-.03em;line-height:.95;color:#f5f0ff}
+  #over p{margin:0 0 20px;color:#98a2c4;max-width:450px;line-height:1.55}
+  #over button{font:inherit;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    background:#ffe066;color:#1a1405;border:0;border-radius:10px;padding:14px 32px;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c" width="760" height="720"></canvas>
+  <div id="ui"><span>Score <b id="score">0</b></span><span>Dots <b id="dots">0</b></span><span>Lives <b id="lives">3</b></span></div>
+  <div id="over">
+    <div>
+      <h1 id="title">MAZE MUNCH</h1>
+      <p id="sub">Eat every dot, dodge the bugs and grab a power pellet to turn the tables. Arrows or WASD.</p>
+      <button id="go">Munch</button>
+    </div>
+  </div>
+</div>
+<script>
+(() => {
+  const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const $ = id => document.getElementById(id);
+
+  const COLS = 21, ROWS = 21;
+  const CELL = Math.floor(Math.min((H - 90) / ROWS, W / COLS));
+  const OX = (W - COLS * CELL) / 2, OY = (H - ROWS * CELL) / 2 + 22;
+
+  let state = 'menu', score = 0, lives = 3;
+  let grid = [], dotsLeft = 0, powered = 0, eatenTimer = 0;
+  let player = { c: 1, r: 1, x: 0, y: 0, dir: { x: 0, y: 0 }, want: { x: 0, y: 0 }, moveT: 0 };
+  let bugs = [];
+
+  const DIRS = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }];
+
+  function idx(c, r) { return r * COLS + c; }
+  function wall(c, r) { return c < 0 || r < 0 || c >= COLS || r >= ROWS || grid[idx(c, r)] === '#'; }
+
+  function carve() {
+    grid = new Array(COLS * ROWS).fill('#');
+    const stack = [[1, 1]];
+    grid[idx(1, 1)] = '.';
+    while (stack.length) {
+      const [c, r] = stack[stack.length - 1];
+      const opts = DIRS.map(d => [c + d.x * 2, r + d.y * 2])
+        .filter(([nc, nr]) => nc > 0 && nr > 0 && nc < COLS - 1 && nr < ROWS - 1 && grid[idx(nc, nr)] === '#');
+      if (!opts.length) { stack.pop(); continue; }
+      const [nc, nr] = opts[(Math.random() * opts.length) | 0];
+      grid[idx(c + (nc - c) / 2, r + (nr - r) / 2)] = '.';
+      grid[idx(nc, nr)] = '.';
+      stack.push([nc, nr]);
+    }
+    // knock through a few walls so the maze has loops and escape routes
+    for (let i = 0; i < 26; i++) {
+      const c = 1 + ((Math.random() * (COLS - 2)) | 0);
+      const r = 1 + ((Math.random() * (ROWS - 2)) | 0);
+      if (grid[idx(c, r)] === '#' && (c % 2 === 0 || r % 2 === 0)) grid[idx(c, r)] = '.';
+    }
+    // open house in the middle for the bugs
+    const hc = COLS >> 1, hr = ROWS >> 1;
+    for (let dc = -1; dc <= 1; dc++) for (let dr = -1; dr <= 1; dr++) grid[idx(hc + dc, hr + dr)] = '.';
+    // power pellets: the four open cells furthest from the start
+    const open = [];
+    for (let r = 1; r < ROWS - 1; r++)
+      for (let c = 1; c < COLS - 1; c++)
+        if (grid[idx(c, r)] === '.') open.push([c, r, Math.abs(c - 1) + Math.abs(r - 1)]);
+    open.sort((a, b) => b[2] - a[2]);
+    for (const [c, r] of open.slice(0, 4)) grid[idx(c, r)] = 'o';
+    grid[idx(1, 1)] = ' ';
+    dotsLeft = grid.filter(v => v === '.' || v === 'o').length;
+  }
+
+  function newBug(c, r, color, id) {
+    return { c, r, x: OX + c * CELL + CELL / 2, y: OY + r * CELL + CELL / 2,
+      dir: DIRS[(Math.random() * 4) | 0], color, id, timer: 0, scared: false, eaten: 0 };
+  }
+
+  function start() {
+    carve();
+    score = 0; lives = 3; powered = 0; eatenTimer = 0;
+    player.c = 1; player.r = 1; player.dir = { x: 0, y: 0 }; player.want = { x: 0, y: 0 };
+    const hc = COLS >> 1, hr = ROWS >> 1;
+    bugs = [
+      newBug(hc, hr, '#ff6b9d', 0),
+      newBug(hc, hr - 1, '#7bdff2', 1),
+      newBug(hc - 1, hr, '#ffa94d', 2)
+    ];
+    placePlayer();
+    state = 'play';
+    $('over').classList.add('hide');
+    sync();
+  }
+
+  function placePlayer() {
+    player.x = OX + player.c * CELL + CELL / 2;
+    player.y = OY + player.r * CELL + CELL / 2;
+  }
+
+  function sync() {
+    $('score').textContent = score;
+    $('dots').textContent = dotsLeft;
+    $('lives').textContent = Math.max(0, lives);
+  }
+
+  function end(title, sub) {
+    state = 'over';
+    $('title').textContent = title;
+    $('sub').textContent = sub;
+    $('go').textContent = 'Munch again';
+    $('over').classList.remove('hide');
+  }
+
+  function beep(freq, dur = .07, type = 'sine', gain = .03) {
+    try {
+      if (!beep.ctx) beep.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = beep.ctx.createOscillator(), g = beep.ctx.createGain();
+      o.type = type; o.frequency.value = freq; g.gain.value = gain;
+      o.connect(g); g.connect(beep.ctx.destination);
+      o.start(); g.gain.exponentialRampToValueAtTime(.0001, beep.ctx.currentTime + dur);
+      o.stop(beep.ctx.currentTime + dur);
+    } catch (_) {}
+  }
+
+  addEventListener('keydown', e => {
+    const map = {
+      ArrowUp: { x: 0, y: -1 }, KeyW: { x: 0, y: -1 },
+      ArrowDown: { x: 0, y: 1 }, KeyS: { x: 0, y: 1 },
+      ArrowLeft: { x: -1, y: 0 }, KeyA: { x: -1, y: 0 },
+      ArrowRight: { x: 1, y: 0 }, KeyD: { x: 1, y: 0 }
+    };
+    if (map[e.code]) {
+      e.preventDefault();
+      player.want = map[e.code];
+      if (state !== 'play') start();
+    }
+    if (e.code === 'Space' && state !== 'play') start();
+  });
+  $('go').addEventListener('click', start);
+  cv.addEventListener('pointerdown', () => { if (state !== 'play') start(); });
+
+  function stepPlayer(dt) {
+    player.moveT += dt;
+    const stepTime = 0.13;
+    if (player.moveT < stepTime) return;
+    player.moveT = 0;
+
+    // turn if possible, otherwise keep going
+    if (player.want.x || player.want.y) {
+      if (!wall(player.c + player.want.x, player.r + player.want.y)) player.dir = player.want;
+      player.want = { x: 0, y: 0 };
+    }
+    const nx = player.c + player.dir.x, nr = player.r + player.dir.y;
+    if (wall(nx, nr)) { player.dir = { x: 0, y: 0 }; return; }
+    player.c = nx; player.r = nr;
+
+    const cell = grid[idx(player.c, player.r)];
+    if (cell === '.' || cell === 'o') {
+      grid[idx(player.c, player.r)] = ' ';
+      dotsLeft--;
+      if (cell === '.') { score += 10; beep(420 + (dotsLeft % 5) * 30, .04, 'square', .02); }
+      else {
+        score += 50; powered = 6.5;
+        bugs.forEach(b => { if (!b.eaten) { b.scared = true; b.dir = { x: -b.dir.x, y: -b.dir.y }; } });
+        beep(220, .25, 'triangle', .05);
+      }
+      sync();
+      if (dotsLeft <= 0) { end('MAZE CLEARED', `Every dot eaten. ${score} points.`); return; }
+    }
+  }
+
+  function chooseBugDir(b) {
+    const options = DIRS.filter(d => !wall(b.c + d.x, b.r + d.y));
+    if (!options.length) return;
+    const pc = player.c, pr = player.r;
+    const dist = d => Math.abs(b.c + d.x - pc) + Math.abs(b.r + d.y - pr);
+    if (b.scared) {
+      options.sort((a, z) => dist(z) - dist(a));
+    } else {
+      options.sort((a, z) => dist(a) - dist(z));
+    }
+    // slight wobble so they are not perfect
+    if (Math.random() < 0.22) return options[(Math.random() * options.length) | 0];
+    b.dir = options[0];
+  }
+
+  function stepBugs(dt) {
+    for (const b of bugs) {
+      if (b.eaten > 0) { b.eaten -= dt; continue; }
+      b.timer += dt;
+      const stepTime = powered > 0 ? 0.3 : 0.22 + b.id * 0.02;
+      if (b.timer > stepTime) {
+        b.timer = 0;
+        chooseBugDir(b);
+        const nx = b.c + b.dir.x, nr = b.r + b.dir.y;
+        if (!wall(nx, nr)) { b.c = nx; b.r = nr; }
+      }
+      const tx = OX + b.c * CELL + CELL / 2, ty = OY + b.r * CELL + CELL / 2;
+      b.x += (tx - b.x) * Math.min(1, dt * 14);
+      b.y += (ty - b.y) * Math.min(1, dt * 14);
+
+      if (Math.hypot(b.x - player.x, b.y - player.y) < CELL * .62) {
+        if (powered > 0) {
+          b.eaten = 4; score += 200; sync();
+          beep(900, .15, 'sine', .05);
+        } else if (state === 'play') {
+          lives--; sync();
+          beep(150, .35, 'sawtooth', .06);
+          if (lives <= 0) { end('CAUGHT', `The bugs got you. ${score} points.`); return; }
+          player.c = 1; player.r = 1; player.dir = { x: 0, y: 0 };
+          placePlayer();
+          powered = 0;
+          bugs.forEach((bb, i) => {
+            bb.c = (COLS >> 1) + (i === 2 ? -1 : 0);
+            bb.r = (ROWS >> 1) - (i === 1 ? 1 : 0);
+            bb.eaten = 0; bb.scared = false;
+          });
+        }
+      }
+    }
+  }
+
+  function update(dt) {
+    if (state !== 'play') return;
+    if (powered > 0) {
+      powered -= dt;
+      if (powered <= 0) bugs.forEach(b => b.scared = false);
+    }
+    stepPlayer(dt);
+    if (state !== 'play') return;
+    stepBugs(dt);
+
+    // smooth the player position toward its cell
+    const tx = OX + player.c * CELL + CELL / 2, ty = OY + player.r * CELL + CELL / 2;
+    player.x += (tx - player.x) * Math.min(1, dt * 16);
+    player.y += (ty - player.y) * Math.min(1, dt * 16);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#070b16'; ctx.fillRect(0, 0, W, H);
+
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const v = grid[idx(c, r)];
+        const x = OX + c * CELL, y = OY + r * CELL;
+        if (v === '#') {
+          ctx.fillStyle = '#1b2a6b';
+          ctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
+          ctx.fillStyle = '#2b3f9c';
+          ctx.fillRect(x + 1, y + 1, CELL - 2, 3);
+        } else if (v === '.') {
+          ctx.fillStyle = '#ffe9a8';
+          ctx.beginPath(); ctx.arc(x + CELL / 2, y + CELL / 2, 2.6, 0, 7); ctx.fill();
+        } else if (v === 'o') {
+          ctx.fillStyle = '#ffe066';
+          ctx.shadowColor = '#ffe066'; ctx.shadowBlur = 14;
+          ctx.beginPath(); ctx.arc(x + CELL / 2, y + CELL / 2, CELL * .19, 0, 7); ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+      }
+    }
+
+    // player
+    const mouth = (Math.sin(performance.now() * 0.014) + 1) * 0.32 + 0.08;
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.rotate(Math.atan2(player.dir.y, player.dir.x) || 0);
+    ctx.fillStyle = '#ffe066';
+    ctx.shadowColor = 'rgba(255,224,102,.7)'; ctx.shadowBlur = 16;
+    ctx.beginPath();
+    ctx.arc(0, 0, CELL * .38, mouth, Math.PI * 2 - mouth);
+    ctx.lineTo(0, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    for (const b of bugs) {
+      if (b.eaten > 0) continue;
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.fillStyle = b.scared ? '#5b6ee1' : b.color;
+      ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.arc(0, -2, CELL * .3, Math.PI, 0);
+      ctx.lineTo(CELL * .3, CELL * .22);
+      for (let i = 0; i < 4; i++) {
+        const x0 = CELL * .3 - i * CELL * .15;
+        ctx.lineTo(x0 - CELL * .075, CELL * .08);
+        ctx.lineTo(x0 - CELL * .15, CELL * .22);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#0a0f1e';
+      ctx.beginPath(); ctx.arc(-CELL * .1, -CELL * .08, 2.4, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(CELL * .1, -CELL * .08, 2.4, 0, 7); ctx.fill();
+      ctx.restore();
+    }
+
+    if (powered > 0) {
+      ctx.fillStyle = 'rgba(91,110,225,' + (0.12 + Math.sin(performance.now() * .01) * .05) + ')';
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(.033, (now - last) / 1000);
+    last = now;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  carve();
+  placePlayer();
+  requestAnimationFrame(loop);
+  window.__mm = {
+    start, get state() { return state; }, get score() { return score; },
+    get dotsLeft() { return dotsLeft; }, player, bugs: () => bugs, grid
+  };
+})();
+</script>
+</body>
+</html>

@@ -609,7 +609,7 @@ function syncPieces(){
   meshes.clear();
   for(let i=0;i<100;i++){
     const p=G.board[i];if(!p)continue;
-    const hidden=p.side!==G.side&&!p.revealed;
+    const hidden=p.side!==G.side;
     const g=pieceMesh(p,hidden);
     g.position.set(colOf(i)-4.5,towerGeo?.002:.115,rowOf(i)-4.5);
     g.rotation.y=G.side==='b'?Math.PI:0;
@@ -835,7 +835,7 @@ function showPeek(cell,x,y,pin){
   const was=peekCell;
   if(was===cell&&!pin&&!$('peek').classList.contains('hide'))return;
   peekCell=cell;
-  const el=$('peek'),known=p.side===G.side||p.revealed,hasArt=p.rank!=='B'&&p.rank!=='F';
+  const el=$('peek'),known=p.side===G.side,hasArt=p.rank!=='B'&&p.rank!=='F';
   el.classList.toggle('foe',!known);
   $('peekQ').textContent=known?(p.rank==='B'?'B':'F'):'?';
   $('peekArt').classList.toggle('hide',!known||!hasArt);
@@ -848,7 +848,7 @@ function showPeek(cell,x,y,pin){
   }else{
     $('peekName').textContent='Enemy tower';
     $('peekRank').textContent=SIDE_NAME[p.side]+' army';
-    $('peekRule').textContent='The rank stays hidden until it fights.';
+    $('peekRule').textContent='Only the battle card shows what it was.';
   }
   el.classList.remove('hide');
   el.classList.toggle('pin',!!pin);

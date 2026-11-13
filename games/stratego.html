@@ -1418,7 +1418,6 @@ function loop(){
       const e=f.t;
       f.g.position.y=(f.y0||0)-e*1.1;
       f.g.scale.setScalar(Math.max(.05,1-e*.75));
-      f.g.rotation.y+=dt*5;
     }else if(f.kind==='wave'){
       const e=f.t;
       f.m.scale.setScalar(1+e*2.8);

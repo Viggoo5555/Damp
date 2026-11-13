@@ -89,6 +89,14 @@ a{text-decoration:none}
 .panel p.bad{color:var(--red)}.panel p.ok{color:var(--ok)}
 .panel p.credit{font-size:12px;letter-spacing:.02em;opacity:.6;line-height:1.35}
 .seg{display:flex;gap:6px}.seg .chip{flex:1;justify-content:center;text-align:center}
+.bots{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.bot{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:8px 10px 7px;background:#06121b;border:2px solid var(--line);color:var(--fg);text-align:left;transition:border-color .12s,background .12s}
+.bot b{font:400 18px/1 var(--d);letter-spacing:.06em;text-transform:uppercase;color:var(--fg)}
+.bot span{font-size:12px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
+.bot:hover{border-color:var(--brass)}
+.bot.on{border-color:var(--brass);background:#12304a}
+.bot.on b{color:var(--brass)}
+.bot.on span{color:#a9c3d4}
 .stats{display:flex;gap:18px;justify-content:center;color:var(--dim);font-size:18px;letter-spacing:.06em}.stats b{color:var(--fg);font-size:24px;display:block}
 .btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 #end .col{align-items:center;text-align:center;width:min(500px,100%)}
@@ -186,7 +194,13 @@ input[type=text]:focus,input[type=password]:focus{border-color:var(--brass)}
     <h3>Your side</h3>
     <div class="seg"><button class="chip on" id="sdW">White</button><button class="chip" id="sdB">Black</button></div>
     <h3>Opponent</h3>
-    <div class="seg"><button class="chip on" id="lv1">Rookie</button><button class="chip" id="lv2">Admiral</button></div>
+    <div class="bots" id="botList">
+     <button class="bot" data-lv="0"><b>Pip</b><span>500 elo</span></button>
+     <button class="bot" data-lv="1"><b>Rookie</b><span>800 elo</span></button>
+     <button class="bot" data-lv="2"><b>Club</b><span>1200 elo</span></button>
+     <button class="bot on" data-lv="3"><b>Admiral</b><span>1600 elo</span></button>
+     <button class="bot" data-lv="4"><b>Master</b><span>2000 elo</span></button>
+    </div>
     <button class="btn" id="bPlay">Play vs computer</button>
     <button class="btn alt" id="bOnline">Play online with a friend</button>
     <p>Drag to look around the board, scroll or pinch to lean in. You always sit on your own side.</p>
@@ -657,13 +671,27 @@ function negamax(bd, st, depth, alpha, beta, sign) {
   return alpha;
 }
 
+/* five opponents, weakest to strongest. elo is a rough target for the level */
+const LEVELS = [
+  { n: 'Pip', elo: 500, depth: 1, time: 140, noise: 150, blunder: .30 },
+  { n: 'Rookie', elo: 800, depth: 2, time: 240, noise: 55, blunder: .12 },
+  { n: 'Club', elo: 1200, depth: 3, time: 420, noise: 20, blunder: .03 },
+  { n: 'Admiral', elo: 1600, depth: 3, time: 750, noise: 0, blunder: 0 },
+  { n: 'Master', elo: 2000, depth: 4, time: 1300, noise: 0, blunder: 0 }
+];
+
 function bestMove(bd, st, level) {
+  const L = LEVELS[level] || LEVELS[3];
   const sign = st.turn === 'w' ? 1 : -1;
   const root = legalMoves(bd, st);
   if (!root.length) return null;
-  const maxDepth = level >= 2 ? 4 : 2;
-  searchDeadline = performance.now() + (level >= 2 ? 1100 : 260);
+  // a weak bot now and then simply plays a legal move
+  if (L.blunder && Math.random() < L.blunder) return root[Math.random() * root.length | 0];
+  const maxDepth = L.depth;
+  searchDeadline = performance.now() + L.time;
   nodesSearched = 0;
+  // shuffle equal-scoring opening moves so games differ
+  for (let i = root.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [root[i], root[j]] = [root[j], root[i]]; }
   let pick = root[0];
   for (let d = 1; d <= maxDepth; d++) {
     const scored = [];
@@ -673,7 +701,7 @@ function bestMove(bd, st, level) {
       for (const mv of root) {
         const res = makeMove(bd, st, mv);
         let sc = -negamax(res.bd, res.st, d - 1, -1e9, -alpha, -sign);
-        if (level < 2) sc += Math.random() * 26;
+        if (L.noise) sc += Math.random() * L.noise;
         scored.push({ mv, sc });
         if (sc > alpha) alpha = sc;
       }
@@ -681,8 +709,10 @@ function bestMove(bd, st, level) {
       break; // out of time: keep the best move from the completed depth
     }
     scored.sort((a, b) => b.sc - a.sc);
-    pick = scored[0].mv;
-    if (d >= 2 && scored[0].sc > 25000) break; // found a mate, stop early
+    const best = scored[0].sc;
+    const near = scored.filter(s => s.sc >= best - 6);
+    pick = near[Math.random() * near.length | 0].mv;
+    if (d >= 2 && best > 25000) break; // found a mate, stop early
   }
   return pick;
 }
@@ -2194,7 +2224,7 @@ function newGame(side, level, online) {
   $('menu').classList.add('hide');
   $('end').classList.add('hide');
   $('hud').classList.remove('hide');
-  $('sideChip').textContent = 'You: ' + (side === 'w' ? 'White' : 'Black');
+  $('sideChip').textContent = 'You: ' + (side === 'w' ? 'White' : 'Black') + (online ? '' : ' · vs ' + LEVELS[level].n);
   $('bUndo').disabled = false;
   $('bUndo').classList.toggle('hide', G.online);
   $('bResign').classList.toggle('hide', !G.online);
@@ -2206,12 +2236,15 @@ function newGame(side, level, online) {
 }
 
 /* ---------- menu and buttons ---------- */
-let pickSide = 'w', pickLevel = 2;
+let pickSide = 'w', pickLevel = 3;
 
 $('sdW').addEventListener('click', () => { pickSide = 'w'; chipGroup(['sdW', 'sdB'], 'sdW'); SND.init(); SND.pick(); });
 $('sdB').addEventListener('click', () => { pickSide = 'b'; chipGroup(['sdW', 'sdB'], 'sdB'); SND.init(); SND.pick(); });
-$('lv1').addEventListener('click', () => { pickLevel = 1; chipGroup(['lv1', 'lv2'], 'lv1'); SND.init(); SND.pick(); });
-$('lv2').addEventListener('click', () => { pickLevel = 2; chipGroup(['lv1', 'lv2'], 'lv2'); SND.init(); SND.pick(); });
+document.querySelectorAll('#botList .bot').forEach(b => b.addEventListener('click', () => {
+  pickLevel = +b.dataset.lv;
+  document.querySelectorAll('#botList .bot').forEach(x => x.classList.toggle('on', x === b));
+  SND.init(); SND.pick();
+}));
 $('bPlay').addEventListener('click', () => { SND.init(); SND.pick(); newGame(pickSide, pickLevel); });
 $('bAgain').addEventListener('click', () => {
   SND.init(); SND.pick();

@@ -84,19 +84,15 @@ a{text-decoration:none}
 .logo small{display:block;font:700 clamp(13px,2vw,18px)/1 var(--b);font-style:normal;letter-spacing:.34em;color:#fff;-webkit-text-stroke:0;margin-top:10px;filter:none;opacity:.9}
 .panel{background:#0b1f2df2;border:2px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:10px}
 .panel h2{margin:0;font:400 28px/1 var(--d);letter-spacing:.05em;color:var(--brass);text-transform:uppercase}
-.panel h3{margin:6px 0 0;font:700 14px/1 var(--b);letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
+.panel h3{margin:6px 0 0;display:flex;justify-content:space-between;align-items:baseline;gap:8px;font:700 14px/1 var(--b);letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
+.panel h3 span{font:700 12px/1 var(--b);letter-spacing:.1em;color:var(--brass);white-space:nowrap}
 .panel p{margin:0;color:var(--dim);line-height:1.3;font-size:17px}
 .panel p.bad{color:var(--red)}.panel p.ok{color:var(--ok)}
 .panel p.credit{font-size:12px;letter-spacing:.02em;opacity:.6;line-height:1.35}
 .seg{display:flex;gap:6px}.seg .chip{flex:1;justify-content:center;text-align:center}
-.bots{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.bot{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:8px 10px 7px;background:#06121b;border:2px solid var(--line);color:var(--fg);text-align:left;transition:border-color .12s,background .12s}
-.bot b{font:400 18px/1 var(--d);letter-spacing:.06em;text-transform:uppercase;color:var(--fg)}
-.bot span{font-size:12px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
-.bot:hover{border-color:var(--brass)}
-.bot.on{border-color:var(--brass);background:#12304a}
-.bot.on b{color:var(--brass)}
-.bot.on span{color:#a9c3d4}
+.bots{display:flex;gap:5px}
+.bots .chip{flex:1 1 0;min-width:0;justify-content:center;text-align:center;padding:8px 2px 7px;font-size:13px;letter-spacing:.06em;white-space:nowrap}
+.bots .chip.on{background:#12304a}
 .stats{display:flex;gap:18px;justify-content:center;color:var(--dim);font-size:18px;letter-spacing:.06em}.stats b{color:var(--fg);font-size:24px;display:block}
 .btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 #end .col{align-items:center;text-align:center;width:min(500px,100%)}
@@ -193,13 +189,13 @@ input[type=text]:focus,input[type=password]:focus{border-color:var(--brass)}
    <div class="panel">
     <h3>Your side</h3>
     <div class="seg"><button class="chip on" id="sdW">White</button><button class="chip" id="sdB">Black</button></div>
-    <h3>Opponent</h3>
+    <h3>Opponent <span id="botElo">Admiral · 1600 elo</span></h3>
     <div class="bots" id="botList">
-     <button class="bot" data-lv="0"><b>Pip</b><span>500 elo</span></button>
-     <button class="bot" data-lv="1"><b>Rookie</b><span>800 elo</span></button>
-     <button class="bot" data-lv="2"><b>Club</b><span>1200 elo</span></button>
-     <button class="bot on" data-lv="3"><b>Admiral</b><span>1600 elo</span></button>
-     <button class="bot" data-lv="4"><b>Master</b><span>2000 elo</span></button>
+     <button class="chip" data-lv="0">Pip</button>
+     <button class="chip" data-lv="1">Rookie</button>
+     <button class="chip" data-lv="2">Club</button>
+     <button class="chip on" data-lv="3">Admiral</button>
+     <button class="chip" data-lv="4">Master</button>
     </div>
     <button class="btn" id="bPlay">Play vs computer</button>
     <button class="btn alt" id="bOnline">Play online with a friend</button>
@@ -2240,9 +2236,10 @@ let pickSide = 'w', pickLevel = 3;
 
 $('sdW').addEventListener('click', () => { pickSide = 'w'; chipGroup(['sdW', 'sdB'], 'sdW'); SND.init(); SND.pick(); });
 $('sdB').addEventListener('click', () => { pickSide = 'b'; chipGroup(['sdW', 'sdB'], 'sdB'); SND.init(); SND.pick(); });
-document.querySelectorAll('#botList .bot').forEach(b => b.addEventListener('click', () => {
+document.querySelectorAll('#botList .chip').forEach(b => b.addEventListener('click', () => {
   pickLevel = +b.dataset.lv;
-  document.querySelectorAll('#botList .bot').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('#botList .chip').forEach(x => x.classList.toggle('on', x === b));
+  $('botElo').textContent = LEVELS[pickLevel].n + ' · ' + LEVELS[pickLevel].elo + ' elo';
   SND.init(); SND.pick();
 }));
 $('bPlay').addEventListener('click', () => { SND.init(); SND.pick(); newGame(pickSide, pickLevel); });

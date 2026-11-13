@@ -1438,86 +1438,83 @@ class Remote {
     $('end').classList.add('lose'); $('endT').textContent = '⚓'; $('endS').textContent = t('oppLeft'); $('endStats').innerHTML = '';
     $('bAgain').disabled = true; $('end').classList.remove('hide');
   }
-  close() { if (this.dead) return; this.send({ t: 'bye' }); this.dead = true; clearInterval(this.hb); try { this.dc.close(); this.pc.close(); } catch (e) { } }
+  close() { if (this.dead) return; this.send({ t: 'bye' }); this.dead = true; clearInterval(this.hb); try { this.dc.close(); } catch (e) { } try { this.pc && this.pc.close(); } catch (e) { } }
 }
 
 /* ---------- lobby: create room / invite / join ---------- */
-const LB = { pc: null, dc: null, ref: null, unsub: null, code: '', timer: 0, sent: {}, people: [], joining: false, role: null, pendingCode: '' };
+const LB = { ws: null, ref: null, unsub: null, code: '', timer: 0, sent: {}, people: [], joining: false, role: null, pendingCode: '' };
 const lbStatus = (txt, cls) => { const p = $('lbStatus'); p.textContent = txt || ''; p.className = cls || ''; };
 const inviteLink = code => { const u = new URL(location.href); u.search = ''; u.hash = ''; u.searchParams.set('room', code); return u.href; };
 
-async function closeRoom(keepPc) {
-  clearTimeout(LB.timer); try { LB.unsub && LB.unsub(); } catch (e) { } LB.unsub = null;
-  if (LB.ref && FB) { try { await FB.F.deleteDoc(LB.ref); } catch (e) { } }
-  LB.ref = null;
-  if (!keepPc) { try { LB.dc && LB.dc.close(); LB.pc && LB.pc.close(); } catch (e) { } LB.pc = null; LB.dc = null; }
+/* The two players talk through /api/room/<code> on this site, so no direct
+   connection between the computers is needed. Schools and offices that block
+   WebRTC still let the page reach its own domain. */
+function relayChannel(ws) {
+  const ch = { readyState: 'connecting', onmessage: null, onclose: null,
+    send(text) { try { if (ws.readyState === 1) ws.send(text); } catch (e) { } },
+    close() { try { ws.close(); } catch (e) { } } };
+  ws.onopen = () => { ch.readyState = 'open'; };
+  ws.onclose = () => { ch.readyState = 'closed'; ch.onclose && ch.onclose(); };
+  ws.onerror = () => { };
+  ws.onmessage = e => { ch.onmessage && ch.onmessage({ data: e.data }); };
+  return ch;
+}
+function relayOpen(code, role, handlers) {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(proto + '//' + location.host + '/api/room/' + encodeURIComponent(code) + '?role=' + role);
+  let handled = false;
+  ws.onmessage = e => {
+    let m; try { m = JSON.parse(e.data); } catch (x) { return; }
+    if (m.t === 'peer') { handled = true; if (handlers.peer) handlers.peer(relayChannel(ws)); return; }
+    if (m.t === 'waiting') { if (handlers.waiting) handlers.waiting(); return; }
+    if (m.t === 'empty') { handled = true; try { ws.close(); } catch (x) { } if (handlers.empty) handlers.empty(); return; }
+    if (m.t === 'full') { handled = true; try { ws.close(); } catch (x) { } if (handlers.full) handlers.full(); return; }
+  };
+  ws.onclose = () => { if (!handled && handlers.close) handlers.close(); };
+  return ws;
+}
+
+async function closeRoom() {
+  clearTimeout(LB.timer); try { LB.unsub && LB.unsub(); } catch (e) { } LB.unsub = null; LB.ref = null;
+  try { LB.ws && LB.ws.close(); } catch (e) { } LB.ws = null;
   LB.code = '';
 }
-function connected(role, oppName) {
+function connected(role, oppName, ch) {
   clearTimeout(LB.timer);
-  const pc = LB.pc, dc = LB.dc; LB.pc = LB.dc = null;
-  if (LB.ref && FB) { FB.F.deleteDoc(LB.ref).catch(() => { }); } LB.ref = null; try { LB.unsub && LB.unsub(); } catch (e) { } LB.unsub = null;
-  G.mode = 'online'; G.oppName = oppName || 'Enemy'; G.opp = new Remote(pc, dc, role, oppName);
+  LB.ws = null;
+  G.mode = 'online'; G.oppName = oppName || 'Enemy'; G.opp = new Remote(null, ch, role, oppName);
   toast(t('connected', { n: G.oppName })); SND.horn();
   startPlacement();
 }
 function armTimeout() { clearTimeout(LB.timer); LB.timer = setTimeout(() => { lbStatus(t('lbFail'), 'bad'); $('lbRetry').classList.remove('hide'); }, 25000); }
-function newPc() {
-  const pc = new RTCPeerConnection(ICE);
-  pc.onconnectionstatechange = () => { if (pc.connectionState === 'failed' && G.phase === 'menu') { lbStatus(t('lbFailNet'), 'bad'); $('lbRetry').classList.remove('hide'); } };
-  return pc;
-}
+
 async function hostRoom() {
-  const keptCode = LB.code;
   await closeRoom(); LB.role = 'host'; $('lbCode').textContent = ''; $('lbLink').value = ''; lbStatus(t('lbPrep'));
-  const fb = FB, pc = newPc(); LB.pc = pc; const dc = pc.createDataChannel('g'); LB.dc = dc;
-  let guestName = '';
-  dc.onopen = () => connected('host', guestName);
-  await pc.setLocalDescription(await pc.createOffer()); await gathered(pc);
   const L = 'ABCDEFGHJKMNPQRSTUVWXYZ';
-  const freshCode = () => 'B' + Array.from({ length: 4 }, () => L[Math.random() * L.length | 0]).join('');
-  // Reuse the code when the host retries, so an invite that was already sent
-  // still works. Writing the room without merge also clears any half-finished
-  // guest from an earlier attempt (which would otherwise say "room is full").
-  let code = /^B[A-Z]{4}$/.test(keptCode) ? keptCode : freshCode();
-  let ref = fb.F.doc(fb.db, 'rooms', code);
-  const room = () => ({ host: fb.auth.currentUser.uid, hostName: myName(), game: 'battleship', offer: { type: 'offer', sdp: pc.localDescription.sdp }, at: Date.now() });
-  try {
-    await fb.F.setDoc(ref, room());
-  } catch (e) {
-    for (let i = 0; i < 8; i++) {
-      code = freshCode(); ref = fb.F.doc(fb.db, 'rooms', code);
-      if ((await fb.F.getDoc(ref)).exists()) continue;
-      await fb.F.setDoc(ref, room());
-      break;
-    }
-  }
-  LB.ref = ref; LB.code = code; $('lbCode').textContent = code; $('lbLink').value = inviteLink(code);
+  const code = 'B' + Array.from({ length: 4 }, () => L[Math.random() * L.length | 0]).join('');
+  LB.code = code; $('lbCode').textContent = code; $('lbLink').value = inviteLink(code);
   lbStatus(t('lbWait'), 'ok'); $('lbRetry').classList.add('hide');
-  LB.unsub = fb.F.onSnapshot(ref, s => {
-    const d = s.data();
-    if (d && d.answer && pc.signalingState === 'have-local-offer') { guestName = d.guestName || ''; lbStatus(t('lbJoining')); armTimeout(); pc.setRemoteDescription(d.answer).catch(() => { lbStatus(t('lbFail'), 'bad'); }); }
+  LB.ws = relayOpen(code, 'host', {
+    peer: ch => connected('host', '', ch),
+    close: () => { if (G.mode === 'online' && !G.opp) { lbStatus(t('lbFail'), 'bad'); $('lbRetry').classList.remove('hide'); } }
   });
 }
 async function joinRoom(raw) {
   const code = String(raw || '').trim().toUpperCase(); if (!code || LB.joining) return;
   LB.joining = true; lbStatus(t('lbJoining')); $('lbRetry').classList.add('hide');
   try {
-    await closeRoom(); const fb = FB; LB.role = 'guest';
-    const ref = fb.F.doc(fb.db, 'rooms', code), snap = await fb.F.getDoc(ref);
-    if (!snap.exists()) { lbStatus(t('lbNoRoom'), 'bad'); return; }
-    const d = snap.data();
-    if (d.game && d.game !== 'battleship') { lbStatus(t('lbNoRoom'), 'bad'); return; }
-    if (d.guest) { lbStatus(t('lbFull'), 'bad'); return; }
-    if (Date.now() - (d.at || 0) > 45 * 60 * 1000) { lbStatus(t('lbOld'), 'bad'); return; }
-    const pc = newPc(); LB.pc = pc;
-    pc.ondatachannel = e => { LB.dc = e.channel; e.channel.onopen = () => connected('guest', d.hostName); };
-    await pc.setRemoteDescription(d.offer); await pc.setLocalDescription(await pc.createAnswer()); await gathered(pc);
-    await fb.F.updateDoc(ref, { guest: fb.auth.currentUser.uid, guestName: myName(), answer: { type: 'answer', sdp: pc.localDescription.sdp } });
+    await closeRoom(); LB.role = 'guest'; LB.code = code;
+    LB.ws = relayOpen(code, 'guest', {
+      peer: ch => connected('guest', '', ch),
+      empty: () => lbStatus(t('lbNoRoom'), 'bad'),
+      full: () => lbStatus(t('lbFull'), 'bad'),
+      close: () => { if (!G.opp) { lbStatus(t('lbFail'), 'bad'); $('lbRetry').classList.remove('hide'); } }
+    });
     armTimeout();
   } catch (e) { lbStatus(t('lbErr', { e: (e && (e.code || e.message)) || '?' }), 'bad'); $('lbRetry').classList.remove('hide'); }
   finally { LB.joining = false; }
 }
+
 const presenceOn = at => !!at && Date.now() - at < 120000;
 async function loadPeople() {
   const fb = FB, uid = fb.auth.currentUser.uid, map = new Map();

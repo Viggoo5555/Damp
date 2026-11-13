@@ -11,5 +11,14 @@
     "directory": ".",
     "binding": "ASSETS"
   },
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+
+  // Online games meet in a Room instead of a WebRTC peer connection, so they
+  // keep working on networks that block direct player-to-player traffic.
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Room"] }
+  ]
 }

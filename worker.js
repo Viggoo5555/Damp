@@ -91,6 +91,69 @@ async function leaderboard(request, env, waitUntil) {
   return reply(body, 15);
 }
 
+// One WebSocket room. Two players meet here instead of over WebRTC, so the
+// game works on school and office networks that block peer-to-peer traffic:
+// everything travels over ordinary HTTPS to this same domain.
+export class Room {
+  constructor(state) {
+    this.state = state;
+    this.host = null;
+    this.guest = null;
+  }
+
+  announce() {
+    if (!this.host || !this.guest) return;
+    for (const socket of [this.host, this.guest]) {
+      try { socket.send(JSON.stringify({ t: 'peer' })); } catch (error) { /* gone */ }
+    }
+  }
+
+  async fetch(request) {
+    const role = new URL(request.url).searchParams.get('role') === 'host' ? 'host' : 'guest';
+    const pair = new WebSocketPair();
+    const client = pair[0], server = pair[1];
+    server.accept();
+
+    if (role === 'host') {
+      if (this.host) {
+        try { server.send(JSON.stringify({ t: 'full' })); } catch (error) { /* gone */ }
+        return new Response(null, { status: 101, webSocket: client });
+      }
+      this.host = server;
+    } else {
+      if (!this.host) {
+        try { server.send(JSON.stringify({ t: 'empty' })); } catch (error) { /* gone */ }
+        return new Response(null, { status: 101, webSocket: client });
+      }
+      if (this.guest) {
+        try { server.send(JSON.stringify({ t: 'full' })); } catch (error) { /* gone */ }
+        return new Response(null, { status: 101, webSocket: client });
+      }
+      this.guest = server;
+    }
+
+    const peer = () => (role === 'host' ? this.guest : this.host);
+    server.addEventListener('message', (event) => {
+      const other = peer();
+      if (other) { try { other.send(event.data); } catch (error) { /* gone */ } }
+    });
+
+    const gone = () => {
+      if (role === 'host') this.host = null;
+      else this.guest = null;
+      const other = peer();
+      if (other) { try { other.close(1000, 'peer left'); } catch (error) { /* gone */ } }
+    };
+    server.addEventListener('close', gone);
+    server.addEventListener('error', gone);
+
+    if (this.host && this.guest) this.announce();
+    else if (role === 'host') { try { server.send(JSON.stringify({ t: 'waiting' })); } catch (error) { /* gone */ } }
+
+    return new Response(null, { status: 101, webSocket: client });
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -99,6 +162,11 @@ export default {
         return new Response('Method not allowed', { status: 405, headers: { allow: 'GET' } });
       }
       return leaderboard(request, env, ctx.waitUntil.bind(ctx));
+    }
+    const room = url.pathname.match(/^\/api\/room\/([A-Z0-9]{3,8})$/);
+    if (room && (request.headers.get('Upgrade') || '').toLowerCase() === 'websocket') {
+      if (!env.ROOMS) return new Response('Rooms are not set up', { status: 503 });
+      return env.ROOMS.get(env.ROOMS.idFromName(room[1])).fetch(request);
     }
     return env.ASSETS.fetch(request);
   }

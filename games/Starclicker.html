@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Star clicker</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050816;--pn:#111833;--b:#2a3563;--c:#5ec8e5;--v:#a58cf0;--g:#f2b84b;--t:#e8ecf8;--d:#98a3c7;--ok:#6fd49a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;margin:0}
+body{height:100%;background:#0b1020;color:var(--t);font:16px/1.45 'Chakra Petch',ui-sans-serif,system-ui,sans-serif;overflow:hidden;color-scheme:dark;font-variant-numeric:tabular-nums}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.1;background:radial-gradient(1px 1px at 12% 20%,#fff,transparent),radial-gradient(1px 1px at 78% 12%,#bfe,transparent),radial-gradient(1.5px 1.5px at 40% 72%,#fff,transparent),radial-gradient(1px 1px at 90% 80%,#fff,transparent),radial-gradient(1px 1px at 25% 90%,#cdf,transparent),radial-gradient(1px 1px at 62% 38%,#fff,transparent),radial-gradient(1px 1px at 5% 60%,#fff,transparent)}
+#app{display:flex;height:100%;position:relative;z-index:1}
+#app.shake{animation:sk .3s}
+@keyframes sk{25%{transform:translate(3px,-2px)}50%{transform:translate(-3px,2px)}75%{transform:translate(2px,2px)}}
+#rail{width:86px;display:flex;flex-direction:column;gap:6px;padding:10px 6px;background:#0d132b;border-right:1px solid var(--b);z-index:2}
+#rail b{color:var(--g);text-align:center;font-size:15px;padding:6px 0 10px}
+button{font:inherit;color:inherit;cursor:pointer;background:linear-gradient(#242f66,#161d44);border:1px solid var(--b);border-radius:6px;padding:9px 12px;box-shadow:inset 0 1px 0 #ffffff22,0 3px 0 #060a18,0 6px 10px #0006;transition:background .15s,border-color .15s,transform .08s,box-shadow .08s}
+button:hover:not(:disabled){border-color:var(--g)}button:active:not(:disabled){transform:translateY(3px);box-shadow:inset 0 1px 0 #ffffff22,0 0 0 #060a18}
+button:focus-visible{outline:2px solid var(--g);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+#rail button{position:relative;display:flex;flex-direction:column;align-items:center;font-size:13px;gap:2px;background:none;border-color:transparent}#rail button.dot::after{content:"";position:absolute;top:6px;right:12px;width:9px;height:9px;border-radius:50%;background:var(--g)}#rail button.on.dot::after{display:none}
+#rail button span{display:grid;color:var(--c)}
+#rail button.on{background:#1b2650;border-color:var(--b)}
+#rail #mute{margin-top:auto}
+main{flex:1;min-width:0;overflow:auto;padding:14px 18px 20px;display:flex;flex-direction:column;gap:14px;z-index:1}
+#res{display:flex;gap:10px;flex-wrap:wrap}
+.chip{flex:1;max-width:260px;min-width:130px;background:linear-gradient(#171f48,#0f1530);border:1px solid var(--b);border-radius:8px;padding:8px 12px;box-shadow:inset 0 1px 0 #ffffff14,0 4px 0 #070b1a,0 8px 12px #0005}
+.chip label{font-size:12px;color:var(--d)}.chip b{display:block;font-size:24px;line-height:1.1}.chip small{color:var(--d)}
+.e b{color:var(--c)}.m b{color:#e6a0c4}.d b{color:var(--v)}.s b{color:var(--g)}
+.tab{display:none;flex-direction:column;gap:12px}.tab.on{display:flex}
+h2{font-size:17px;color:var(--g)}
+.panel{background:linear-gradient(#171f48,#0f1530);border:1px solid var(--b);border-radius:8px;padding:12px;box-shadow:inset 0 1px 0 #ffffff14,0 4px 0 #070b1a,0 10px 16px #0005}
+.d{color:var(--d)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+.card{display:flex;gap:10px;align-items:center;text-align:left;background:linear-gradient(#18214a,#111833);border:1px solid var(--b);border-radius:8px;padding:10px;margin-bottom:4px;box-shadow:inset 0 1px 0 #ffffff14,0 4px 0 #070b1a,0 8px 14px #0005}
+.card h3{font-size:15px}.card p,.card small{font-size:14px;color:var(--d)}
+.ic{font-size:24px;width:44px;height:44px;display:grid;place-items:center;background:linear-gradient(145deg,#33428c,#141b40);border-radius:10px;color:var(--c);box-shadow:inset 0 1px 0 #ffffff44,0 3px 6px #0009}.card>button{min-width:112px}.hint{position:absolute;left:50%;bottom:5%;transform:translateX(-50%);background:var(--g);color:#1a1405;padding:6px 14px;border-radius:20px;font-weight:600;pointer-events:none;width:max-content;max-width:90%;text-align:center}
+.in{flex:1;min-width:0}
+.card.can{border-color:var(--g)}
+.card.own{opacity:.5;order:2}.card.hid{display:none}.card.lock{opacity:.4}
+.up{flex-direction:column;align-items:flex-start;gap:4px}.up b{color:var(--g)}
+.qty{display:flex;gap:6px}.qty button.on{border-color:var(--g);color:var(--g)}
+.bar{height:10px;background:#0a1030;border:1px solid var(--b);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--g);transition:width .2s}
+#stage{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+#wrap{position:relative;width:min(100%,520px);aspect-ratio:1;touch-action:manipulation}
+#cv{width:100%;height:100%;display:block;cursor:pointer}
+.fl{position:absolute;color:var(--c);font-weight:700;pointer-events:none;animation:fl 1s forwards;text-shadow:0 0 8px #000}
+.fl.cr{color:var(--g);font-size:22px}
+@keyframes fl{to{transform:translateY(-70px);opacity:0}}
+#side{flex:1;min-width:250px;max-width:420px;display:flex;flex-direction:column;gap:10px}
+.rtree{display:grid;grid-template-columns:repeat(5,minmax(200px,1fr));gap:10px;overflow-x:auto;padding-bottom:6px}
+.rtree>div{display:flex;flex-direction:column;gap:10px}
+.big{font-size:17px;padding:12px 18px;background:var(--g);color:#1a1405;font-weight:600;border-color:var(--g)}.big:hover:not(:disabled){background:#ffd27a}
+.dng{border-color:#ff5d7a}
+textarea{width:100%;background:#050a22;color:var(--t);border:1px solid var(--b);border-radius:6px;padding:8px;font:12px monospace;margin-bottom:8px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+#toasts{position:fixed;right:12px;top:calc(12px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:6px;z-index:9;pointer-events:none}
+.toast{background:#101a52;border:1px solid var(--g);border-radius:6px;padding:8px 12px;animation:fl2 3s forwards}
+@keyframes fl2{0%{transform:translateX(30px);opacity:0}8%{transform:none;opacity:1}85%{opacity:1}100%{opacity:0}}
+#ov{position:fixed;inset:0;background:#030612ee;display:flex;align-items:center;justify-content:center;z-index:10;padding:20px}
+#ov[hidden]{display:none}
+#ov .panel{max-width:380px;text-align:center;display:flex;flex-direction:column;gap:10px}
+#fx{position:fixed;inset:0;background:radial-gradient(circle,#fff,var(--v) 40%,transparent 70%);opacity:0;pointer-events:none;z-index:11}
+#fx.go{animation:fx 1.4s}
+@keyframes fx{0%{opacity:0;transform:scale(.2)}40%{opacity:1}100%{opacity:0;transform:scale(2.5)}}
+.panel,.chip,.card{background:linear-gradient(#171f48e6,#0c1230dd)}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#app::after{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 60%,#02040caa 100%)}
+#rail{z-index:2}
+#res{position:sticky;top:0;z-index:3;padding:6px;margin:-6px -6px 0;background:linear-gradient(#0b1020dd,#0b102000)}
+#reactor.on{flex:1}
+#gens{grid-template-columns:repeat(auto-fill,minmax(330px,1fr))}
+#gens .card{position:relative;flex-wrap:wrap}#gens .in{flex:1 1 180px}#gens .card>button{flex:1 1 100%}
+.card.best::before{content:"Best value";position:absolute;top:-10px;right:12px;background:var(--g);color:#1a1405;font-size:12px;font-weight:600;padding:1px 9px;border-radius:10px}
+#stage{position:relative;flex:1;min-height:calc(100vh - 150px);align-items:center;justify-content:center}
+#wrap{width:min(94vw,76vh,700px)}
+#side{position:absolute;left:0;bottom:0;width:300px;min-width:0;z-index:2}
+#info{font-size:13px}
+.tab.on{animation:tin .35s}
+.surge{position:fixed;left:-70px;width:58px;height:58px;border-radius:50%;padding:0;display:grid;place-items:center;color:#1a1405;background:radial-gradient(circle at 35% 30%,#fff3b0,#f2b84b 55%,#a8681a);box-shadow:0 0 26px #f2b84b,0 5px 0 #5a3a0a;z-index:8;animation:drift 14s linear forwards,bob 1.2s ease-in-out infinite alternate}
+@keyframes drift{to{left:calc(100vw + 70px)}}
+@keyframes bob{to{margin-top:-26px}}
+@media(prefers-reduced-motion:reduce){.surge{left:50%}}
+@keyframes tin{from{opacity:0;transform:translateY(12px)}}
+.srow{display:flex;justify-content:space-between;font-size:14px}
+.toast{padding:6px 12px;font-size:14px;max-width:340px}#toasts{align-items:flex-end}
+.card.up{align-items:stretch;width:100%}#reb{align-self:flex-start}
+.pop{animation:pop .28s}
+.rwrap{overflow-x:auto;padding:6px 0 30px}#rs{position:relative;aspect-ratio:1000/480;min-width:680px;max-width:1000px;margin:0 auto}#rs .lines{position:absolute;inset:0;width:100%;height:100%}#rs line{stroke:#2a3563;stroke-width:3;stroke-dasharray:6 6}#rs line.on{stroke:var(--g);stroke-dasharray:none}
+.node{position:absolute;transform:translate(-50%,-50%);width:68px;height:68px;border-radius:50%;padding:0;display:grid;place-items:center;color:var(--d);background:radial-gradient(circle at 35% 30%,#2c3a7c,#10173a);border:2px solid var(--b)}
+.node.can{color:var(--c);border-color:var(--g);box-shadow:0 0 0 5px #f2b84b33,0 4px 0 #060a18}.node.own{color:#1a1405;background:radial-gradient(circle at 35% 30%,#ffe9a8,#f2b84b);border-color:#ffe9a8}.node.lock{opacity:.45}.node.sel{outline:2px solid var(--c);outline-offset:5px}
+.node .nm{position:absolute;top:100%;margin-top:8px;font-size:13px;white-space:nowrap;color:var(--t)}
+#rs .node:active:not(:disabled){transform:translate(-50%,-50%) translateY(3px)}#rbuy{align-self:flex-start}
+@media(max-width:720px){#rs{min-width:0;aspect-ratio:1000/780}.node{width:54px;height:54px}.node svg{width:24px;height:24px}.node .nm{font-size:11px;white-space:normal;width:72px;text-align:center}}@keyframes pop{40%{transform:scale(.97)}}
+@media(max-width:720px){#res{flex-wrap:nowrap;gap:6px}.chip{min-width:0;max-width:none;padding:5px 8px}.chip b{font-size:16px}.chip label,.chip small{font-size:11px}#toasts{top:auto;bottom:calc(78px + env(safe-area-inset-bottom,0px));left:8px;right:8px;align-items:center}main{gap:10px}}
+.grid{perspective:900px}.grid .card{transition:transform .15s,box-shadow .15s}.grid .card:hover:not(:disabled){transform:translateY(-3px) rotateX(3deg);box-shadow:inset 0 1px 0 #ffffff14,0 7px 0 #070b1a,0 14px 20px #0007}.grid .card:active:not(:disabled){transform:translateY(3px)}.srow span{color:var(--d)}
+@media(max-width:1199px){#side,#next{position:static;width:100%;max-width:520px}#stage{min-height:0}}
+@media(min-width:1200px){#stage{display:grid;grid-template-columns:300px minmax(0,1fr) 300px;gap:16px;align-items:center}#side{position:static;width:auto;order:-1}#next{order:1;display:flex;flex-direction:column;gap:10px}#wrap{justify-self:center;width:min(100%,76vh,680px)}}
+@media(max-width:720px){#app{flex-direction:column-reverse}#rail{width:auto;flex-direction:row;justify-content:space-around;border-right:0;border-top:1px solid var(--b);padding:6px}#rail b{display:none}#rail #mute{margin:0}#rail button{padding:4px 6px}main{padding:10px}.chip b{font-size:19px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body>
+<canvas id="bg"></canvas><div id="app">
+<nav id="rail"><b>VOID</b>
+<button data-t="reactor" class="on"><span>◉</span>Reactor</button>
+<button data-t="production"><span>⬢</span>Production</button>
+<button data-t="research"><span>✦</span>Research</button>
+<button data-t="prestige"><span>☀</span>Prestige</button>
+<button data-t="ach"><span>★</span>Awards</button>
+<button id="mute" aria-label="Toggle sound"><span>♪</span>Sound</button></nav>
+<main>
+<header id="res">
+<div class="chip e"><label>Energy</label><b id="e">0</b><small id="eps"></small></div>
+<div class="chip m" id="cm"><label>Matter</label><b id="m">0</b><small id="mps"></small></div>
+<div class="chip d" id="cd"><label>Dark Matter</label><b id="d">0</b><small id="dps"></small></div>
+<div class="chip s" id="cs"><label>Cosmic Essence</label><b id="es">0</b><small id="esb"></small></div>
+</header>
+<section id="reactor" class="tab on"><div id="stage">
+<div id="wrap"><canvas id="cv" aria-label="Reactor core, click to generate energy"></canvas><div class="hint" id="hint">Click the core to make Energy</div></div>
+<div class="panel" id="next"><h2>Up next</h2><p class="d">The cheapest things to buy right now. Gold means you can afford it.</p><button class="card up" id="n0" data-n="0"><h3></h3><p></p><b></b></button><button class="card up" id="n1" data-n="1"><h3></h3><p></p><b></b></button><button class="card up" id="n2" data-n="2"><h3></h3><p></p><b></b></button></div><div id="side"><div class="panel" id="stats"></div>
+<div class="panel"><h2>Next goal</h2><p id="goal" class="d"></p><div class="bar"><i id="gb"></i></div></div>
+<div class="panel"><h2>Quest</h2><p id="quest" class="d"></p><div class="bar"><i id="qb"></i></div></div>
+<div class="panel d" id="info"></div>
+</div></div></section>
+<section id="production" class="tab">
+<p class="d">Generators make Energy every second, even when you are not clicking. Buy more to grow faster.</p><div class="row"><h2 style="align-self:center">Generators</h2><div class="qty" id="qty"><button data-q="1" class="on">Buy 1</button><button data-q="10">Buy 10</button><button data-q="max">Buy Max</button></div></div>
+<div id="gens" class="grid"></div><h2>Upgrades</h2><p class="d">One-time boosts. A gold outline means you can afford it.</p><div id="ups" class="grid"></div></section>
+<section id="research" class="tab"><h2>Research</h2><p class="d">Spend Dark Matter to unlock nodes. Pick a node to read it, then research it. Research survives Rebirth.</p><div class="rwrap"><div id="rs"></div></div><div class="panel" id="rinfo" style="display:flex;flex-direction:column;gap:8px"><h2 id="rin"></h2><p id="rid" class="d"></p><button id="rbuy" class="big" data-rb="1"></button></div></section>
+<section id="prestige" class="tab"><div class="panel" style="display:flex;flex-direction:column;gap:10px"><h2>Rebirth</h2><p id="prt"></p><div class="bar"><i id="prb"></i></div><button id="reb" class="big"></button>
+<p class="d">Resets Energy, Matter, Dark Matter, generators and upgrades. Keeps Cosmic Essence, research, achievements and essence upgrades. Each Essence adds 15% to all production.</p></div>
+<h2>Essence upgrades</h2><div id="pus" class="grid"></div>
+<h2>Save data</h2><div class="panel"><textarea id="sv" rows="3" aria-label="Save JSON"></textarea><div class="row"><button id="ex">Export</button><button id="im">Import</button><button id="rst" class="dng">Reset game</button></div></div></section>
+<section id="ach" class="tab"><h2>Achievements</h2><p class="d">Each one adds 2% to all production.</p><div id="achs" class="grid"></div></section>
+</main></div>
+<div id="toasts"></div><div id="fx"></div>
+<div id="ov" hidden><div class="panel"><h2>Welcome back</h2><p id="ovt"></p><button id="ovb" class="big">Collect</button></div></div>
+<script>
+const $c={},$=s=>/^#[\w-]+$/.test(s)?($c[s]||($c[s]=document.querySelector(s))):document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const tm=s=>s<60?Math.ceil(s)+'s':s<3600?Math.ceil(s/60)+'m':s<86400?(s/3600).toFixed(1)+'h':'1d+';
+const F=n=>{if(!isFinite(n))return'∞';if(n<=0)return'0';if(n<1e3)return n<10?n.toFixed(2):n<100?n.toFixed(1):n.toFixed(0);const s=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc'],i=Math.floor(Math.log10(n)/3);return i>=s.length?n.toExponential(2).replace('+',''):(n/10**(3*i)).toFixed(2)+s[i]};
+const G=[['Quantum Tap','◉','Taps vacuum fluctuations.',15,.5],['Particle Collector','✦','Sweeps up stray particles.',120,4],['Matter Synthesizer','⬢','Condenses energy into matter.',1100,32],['Plasma Reactor','✺','Contained stellar fire. Yields Dark Matter.',12e3,260],['Drone Swarm','⁂','Self-replicating harvesters.',130e3,2100],['Orbital Factory','◍','Zero-gravity assembly lines.',1.4e6,16e3],['Dyson Engine','☀','Wraps a star in machinery.',2e7,13e4],['Singularity Core','●','Feeds on collapsing space.',3.3e8,11e5]].map(([n,i,d,c,p])=>({n,i,d,c,p}));
+const U=[['Sharper Focus','Click power ×2',100,'e',['cl',2]],['Overclocked Taps','Quantum Taps ×2',250,'e',['g',2,0]],['Static Capture','Particle Collectors ×2',1500,'e',['g',2,1]],['Resonant Touch','Clicks also yield 2% of Energy/s',5e3,'e',['tap',.02]],['Lucky Sparks','+10% critical click chance (crits pay ×7)',8e3,'e',['crit',.1]],['Efficient Wiring','Generators cost 5% less',2e4,'e',['cost',.95]],['Matter Forge','Matter production ×2',30,'m',['ms',2]],['Plasma Coils','Plasma Reactors ×2',1.5e5,'e',['g',2,3]],['Harmonic Grid','All production ×1.5',4e5,'e',['all',1.5]],['Synth Overdrive','Matter Synthesizers ×2',150,'m',['g',2,2]],['Drone Firmware','Drone Swarms ×2',3e6,'e',['g',2,4]],['Standby Cells','Offline earnings ×1.5',5e6,'e',['off',1.5]],['Fabricator Lines','Orbital Factories ×2',2.5e7,'e',['g',2,5]],['Core Dynamo','Click power ×5',500,'m',['cl',5]],['Stellar Lens','Dyson Engines ×2',4e8,'e',['g',2,6]],['Gravity Compression','Generators cost 10% less',2000,'m',['cost',.9]],['Event Furnace','All production ×2',3e9,'e',['all',2]],['Singularity Tuning','Singularity Cores ×2',2e10,'e',['g',2,7]],['Critical Mass','+10% critical click chance',1e4,'m',['crit',.1]],['Essence Siphon','Rebirth essence ×1.25',5e10,'e',['es',1.25]],['Void Amplifier','All production ×2',1e12,'e',['all',2]],['Tap Resonance','Quantum Taps ×3',6e3,'e',['g',3,0]],['Collector Grid','Particle Collectors ×3',6e4,'e',['g',3,1]],['Auto Feeders','All production ×1.25',2000,'m',['all',1.25]],['Reactor Overdrive','Click power ×3',5e4,'e',['cl',3]]].map(([n,d,c,k,fx])=>({n,d,c,k,fx}));
+const R=[['Autoclick Servo','The reactor clicks itself twice a second',1,[],['auto',1],0],['Flux Lattice','All production ×1.5',4,[0],['all',1.5],1],['Deep Storage','Offline earnings ×2',6,[0],['off',2],1],['Matter Lensing','Matter production ×2',10,[1],['ms',2],2],['Chain Reaction','Drone Swarm and above ×2',25,[1],['hi',2],2],['Chrono Loom','Offline cap +8 hours',30,[2],['cap',8],2],['Event Horizon','All production ×2',70,[4],['all',2],3],['Cosmic Insight','Rebirth essence ×1.5',120,[5,6],['es',1.5],4]].map(([n,d,c,r,fx,t])=>({n,d,c,r,fx,t}));
+const P=[['Echo Engine','All production ×2',5,['all',2]],['Spark Start','Begin each run with 5 Quantum Taps',8,['start',0]],['Cheaper Cosmos','Generators cost 20% less',12,['cost',.8]],['Time Well','Offline cap +16 hours',20,['cap',16]]].map(([n,d,c,fx])=>({n,d,c,fx}));
+const tg=()=>S.g.reduce((a,b)=>a+b,0),nu=o=>Object.keys(o).length;
+const A=[['First Contact','Click the reactor 100 times',()=>S.clicks>=100],['Warm Hands','Click 1,000 times',()=>S.clicks>=1e3],['First Spark','Own a generator',()=>tg()>=1],['Industrial Revolution','Own 25 generators',()=>tg()>=25],['Factory Town','Own 100 generators',()=>tg()>=100],['Million Watts','Earn 1M Energy',()=>S.tot>=1e6],['Billion Watts','Earn 1B Energy',()=>S.tot>=1e9],['Trillion Watts','Earn 1T Energy',()=>S.tot>=1e12],['Stellar Architect','Unlock a Dyson Engine',()=>S.g[6]>=1],['Edge of Space','Unlock a Singularity Core',()=>S.g[7]>=1],['Tinkerer','Own 5 upgrades',()=>nu(S.u)>=5],['Engineer','Own 15 upgrades',()=>nu(S.u)>=15],['Researcher','Complete 3 research',()=>nu(S.r)>=3],['Hoarder','Hold 1,000 Matter',()=>S.m>=1e3],['Dark Harvest','Hold 25 Dark Matter',()=>S.d>=25],['Beyond Infinity','Perform your first Rebirth',()=>S.pr>=1],['Eternal Return','Rebirth 5 times',()=>S.pr>=5],['Surge Rider','Catch 3 cosmic surges',()=>S.surges>=3]];
+const Q=[['Click the reactor 50 times',()=>[S.clicks,50]],['Own 5 generators',()=>[tg(),5]],['Own 3 Particle Collectors',()=>[S.g[1],3]],['Buy 3 upgrades',()=>[nu(S.u),3]],['Own a Matter Synthesizer',()=>[S.g[2],1]],['Own 5 Plasma Reactors',()=>[S.g[3],5]],['Earn 1M Energy in one run',()=>[S.run,1e6]],['Perform a Rebirth',()=>[S.pr,1]],['Own 25 Quantum Taps',()=>[S.g[0],25]]];
+const KEY='voidfoundry.v1';
+const fresh=()=>({e:0,m:0,d:0,es:0,run:0,tot:0,g:Array(8).fill(0),u:{},r:{},a:{},pu:{},clicks:0,pr:0,q:0,t:Date.now(),mute:0,surges:0});
+let S=fresh(),qty='1',pend=null;
+function load(s){try{const o=JSON.parse(s);if(!o||typeof o!=='object')return false;const f=fresh();for(const k in f)if(typeof f[k]==='number')f[k]=Number.isFinite(o[k])?Math.max(0,o[k]):f[k];if(Array.isArray(o.g))f.g=f.g.map((_,i)=>Number.isFinite(o.g[i])?Math.max(0,Math.floor(o.g[i])):0);for(const k of['u','r','a','pu'])if(o[k]&&typeof o[k]==='object')for(const x in o[k])if(o[k][x])f[k][x]=1;f.q=Math.min(f.q,Q.length);S=f;return true}catch(e){return false}}
+function save(){if(pend)return;S.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function M(){const m={all:1,cl:1,cost:1,off:1,crit:.05,es:1,ms:1,tap:0,auto:0,cap:8,hi:1,start:1,g:Array(8).fill(1)};
+ [[U,S.u],[R,S.r],[P,S.pu]].forEach(([L,o])=>L.forEach((x,j)=>{if(!o[j])return;const[t,v,i]=x.fx;if(t=='g')m.g[i]*=v;else if(['crit','tap','cap','auto'].includes(t))m[t]+=v;else m[t]*=v}));
+ m.all*=(1+.15*S.es)*(1+.02*nu(S.a));return m}
+const gp=(i,m)=>S.g[i]*G[i].p*1.5**Math.floor(S.g[i]/10)*m.g[i]*(i>=4?m.hi:1);
+function rates(m){let e=0,ma=0,d=0;G.forEach((g,i)=>{const p=gp(i,m);e+=p;if(i>=2)ma+=p*.04;if(i>=3)d+=S.g[i]*(i-2)*.01});return{e:e*m.all,m:ma*m.all*m.ms,d:d*(1+.15*S.es)}}
+const cst=(i,m)=>G[i].c*1.15**S.g[i]*m.cost;
+function bulk(i,m){const c0=cst(i,m);let n=qty==='max'?Math.max(0,Math.floor(Math.log(S.e*.15/c0+1)/Math.log(1.15))):+qty;return{n,c:c0*(1.15**(n||1)-1)/.15}}
+const pg=m=>Math.floor(Math.sqrt(S.run/1e5)*m.es);
+const toast=t=>{const d=document.createElement('div');d.className='toast';d.textContent=t;$('#toasts').append(d);while($('#toasts').children.length>3)$('#toasts').firstChild.remove();setTimeout(()=>d.remove(),3000)};
+let ac;function snd(f,d=.09){if(S.mute)return;try{ac=ac||new AudioContext();const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;o.frequency.value=f;g.gain.setValueAtTime(.04,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(ac.destination);o.start();o.stop(t+d)}catch(e){}}
+// ---- actions
+function buyG(i){const m=M(),b=bulk(i,m);if(b.n<1||S.e<b.c)return;S.e-=b.c;const o=S.g[i];S.g[i]+=b.n;{const el=$('#g'+i);el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop')}snd(520+i*40);if(Math.floor(S.g[i]/10)>Math.floor(o/10)){pulse=.6;for(let q=0;q<40;q++){const a=Math.random()*6.283,s=2+Math.random()*5;PT.push({x:W/2,y:W/2,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:1})}toast(G[i].n+' milestone: output ×1.5');const a=$('#app');a.classList.remove('shake');void a.offsetWidth;a.classList.add('shake')}save()}
+function buyX(L,o,j,k){const x=L[j];if(!x||o[j]||S[k||x.k]<x.c)return;if(x.r&&!x.r.every(q=>S.r[q]))return;S[k||x.k]-=x.c;o[j]=1;snd(700,.15);pulse=.5;save()}
+function click(x,y){const m=M(),rt=rates(m);let v=m.cl*m.all+rt.e*m.tap;const cr=Math.random()<m.crit;if(cr)v*=7;S.e+=v;S.run+=v;S.tot+=v;S.clicks++;pulse=Math.max(pulse,.2);snd(cr?880:440,.05);
+ for(let i=0;i<10;i++){const a=Math.random()*6.283,s=1+Math.random()*3;PT.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:1})}
+ const w=$('#wrap');if(w.children.length<26){const f=document.createElement('div');f.className='fl'+(cr?' cr':'');f.textContent='+'+F(v);f.style.left=x-14+'px';f.style.top=y-20+'px';f.addEventListener('animationend',()=>f.remove());w.append(f)}}
+function arm(b,fn,txt){if(b.dataset.a){clearTimeout(+b.dataset.a);delete b.dataset.a;b.textContent=b.dataset.o;fn();return}b.dataset.o=b.textContent;b.textContent=txt;b.dataset.a=setTimeout(()=>{delete b.dataset.a;b.textContent=b.dataset.o},4000)}
+const T=(el,t)=>{if(el.dataset.a)return;if(el.textContent!==t)el.textContent=t};
+function rebirth(){const g=pg(M());if(S.run<1e6||g<1)return;S.es+=g;S.pr++;S.e=S.m=S.d=S.run=0;S.g=Array(8).fill(0);S.u={};if(S.pu[1])S.g[0]=5;const f=$('#fx');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');toast('Rebirth: +'+g+' Cosmic Essence');snd(300,.5);save()}
+const svg=(s,z=28)=>`<svg viewBox="0 0 24 24" width="${z}" height="${z}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${s}</svg>`;
+const GI=[`<circle cx="12" cy="12" r="3" fill="currentColor"/><circle cx="12" cy="12" r="8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>`,`<path d="M4 5h16l-6 8v6l-4-2v-4z"/><circle cx="8" cy="2.5" r=".6"/><circle cx="12" cy="2" r=".6"/><circle cx="16" cy="2.5" r=".6"/>`,`<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5"/>`,`<ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/>`,`<rect x="9" y="10" width="6" height="4" rx="1.5"/><path d="M9 11L6 8M15 11l3-3M9 13l-3 3M15 13l3 3"/><circle cx="5" cy="7" r="2"/><circle cx="19" cy="7" r="2"/><circle cx="5" cy="17" r="2"/><circle cx="19" cy="17" r="2"/>`,`<circle cx="12" cy="12" r="5" fill="currentColor" fill-opacity=".25"/><ellipse cx="12" cy="12" rx="10" ry="3.5" transform="rotate(-20 12 12)"/>`,`<circle cx="12" cy="12" r="4" fill="currentColor" fill-opacity=".3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>`,`<circle cx="12" cy="12" r="3.2" fill="currentColor"/><circle cx="12" cy="12" r="6.5" stroke-dasharray="3 2.5"/><circle cx="12" cy="12" r="10" stroke-opacity=".5"/>`];
+const TROPHY=`<path d="M8 4h8v5a4 4 0 01-8 0zM8 6H4v2a3 3 0 003 3M16 6h4v2a3 3 0 01-3 3M12 13v4M8 21h8M10 17h4"/>`;
+const NV={reactor:`<circle cx="12" cy="12" r="3" fill="currentColor"/><circle cx="12" cy="12" r="8"/>`,production:`<path d="M3 20V10l6 4V10l6 4V5h6v15z"/>`,research:`<path d="M9 3h6M10 3v6l-5 9a2 2 0 002 3h10a2 2 0 002-3l-5-9V3"/>`,prestige:`<path d="M20 12a8 8 0 11-3-6.2M20 4v4h-4"/>`,ach:TROPHY};
+// ---- build UI
+$('#gens').innerHTML=G.map((g,i)=>`<div class="card" id="g${i}"><div class="ic">${svg(GI[i])}</div><div class="in"><h3>${g.n}</h3><p>${g.d}</p><small></small></div><button data-g="${i}"></button></div>`).join('');
+const mkc=(L,id,a,txt)=>L.map((x,j)=>`<button class="card up" id="${id}${j}" data-${a}="${j}"><h3>${x.n}</h3><p>${x.d}</p><b></b></button>`).join('');
+$('#ups').innerHTML=mkc(U,'u','u');$('#pus').innerHTML=mkc(P,'p','p');
+const RP=[[80,240],[270,130],[270,350],[470,70],[470,190],[470,360],[670,190],[880,270]];
+const RI=[`<path d="M6 3l12 8-5 1 3 6-3 1-3-6-4 3z"/>`,`<path d="M3 12h4l3-7 4 14 3-7h4"/>`,`<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/>`,`<circle cx="10" cy="10" r="6"/><path d="M15 15l6 6"/>`,`<circle cx="6" cy="12" r="2.5"/><circle cx="14" cy="6" r="2.5"/><circle cx="18" cy="17" r="2.5"/><path d="M8 11l4-4M8 13l8 3"/>`,`<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>`,`<circle cx="12" cy="12" r="3" fill="currentColor"/><ellipse cx="12" cy="12" rx="10" ry="4"/>`,`<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>`];
+$('#rs').innerHTML='<svg class="lines" viewBox="0 0 1000 480" preserveAspectRatio="none">'+R.map((x,j)=>x.r.map(a=>`<line id="l${a}_${j}" x1="${RP[a][0]}" y1="${RP[a][1]}" x2="${RP[j][0]}" y2="${RP[j][1]}" vector-effect="non-scaling-stroke"/>`).join('')).join('')+'</svg>'+R.map((x,j)=>`<button class="node" id="r${j}" data-r="${j}" style="left:${RP[j][0]/10}%;top:${RP[j][1]/4.8}%" aria-label="${x.n}">${svg(RI[j],30)}<span class="nm">${x.n}</span></button>`).join('');
+$('#achs').innerHTML=A.map((a,j)=>`<div class="card" id="a${j}"><div class="ic">${svg(TROPHY)}</div><div class="in"><h3>${a[0]}</h3><p>${a[1]}</p></div></div>`).join('');
+// ---- input
+document.addEventListener('click',e=>{const b=e.target.closest('[data-g],[data-u],[data-r],[data-rb],[data-p],[data-t],[data-q],[data-n]');if(!b)return;const d=b.dataset;
+ if(d.n!==undefined){const x=NX[+d.n];if(x){if(x.t=='g'){const q=qty;qty='1';buyG(x.i);qty=q}else buyX(U,S.u,x.i)}}else if(d.g!==undefined)buyG(+d.g);else if(d.u!==undefined)buyX(U,S.u,+d.u);else if(d.r!==undefined){selR=+d.r;lu=0}else if(d.rb!==undefined)buyX(R,S.r,selR,'d');else if(d.p!==undefined)buyX(P,S.pu,+d.p,'es');
+ else if(d.q){qty=d.q;$$('#qty button').forEach(x=>x.classList.toggle('on',x===b))}
+ else if(d.t){curT=d.t;lu=0;$$('.tab').forEach(x=>x.classList.toggle('on',x.id===d.t));$$('#rail [data-t]').forEach(x=>x.classList.toggle('on',x===b))}});
+const cv=$('#cv'),cx=cv.getContext('2d');let W=300,PT=[],pulse=0;
+function sz(){const r=cv.getBoundingClientRect(),k=devicePixelRatio||1;if(!r.width)return;W=r.width;cv.width=r.width*k;cv.height=r.width*k;cx.setTransform(k,0,0,k,0,0)}
+addEventListener('resize',()=>{sz();bsz()});
+cv.addEventListener('pointerdown',e=>{const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;if(Math.hypot(x-W/2,y-W/2)<W*.42)click(x,y)});
+$$('#rail [data-t]').forEach(b=>{b.firstChild.innerHTML=svg(NV[b.dataset.t],24)});$('#mute span').innerHTML=svg(`<path d="M4 9v6h4l5 4V5L8 9zM16 9a4 4 0 010 6"/>`,24);
+const wr=$('#wrap');wr.addEventListener('pointermove',e=>{if(RM.matches)return;const r=wr.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;TX=x;TY=y});wr.addEventListener('pointerleave',()=>{TX=0;TY=0});
+$('#mute').onclick=()=>{S.mute^=1;$('#mute').style.opacity=S.mute?.4:1};
+const RM=matchMedia('(prefers-reduced-motion:reduce)');let curT='reactor',selR=0;let TX=0,TY=0,RX=0,RY=0;const FS=Array.from({length:110},(_,i)=>{const y=1-2*(i+.5)/110,r=Math.sqrt(1-y*y),a=i*2.39996;return[Math.cos(a)*r,y,Math.sin(a)*r]});
+function draw3(t,ps){cx.clearRect(0,0,W,W);const c=W/2,f=c*4,rm=RM.matches?0:1,lv=Math.min(7,2+Math.floor(Math.log10(ps+10))),pu=1+.03*Math.sin(t/300)+pulse;pulse*=.92;
+ RX+=(TY*.7-RX)*.08;RY+=(TX*.9-RY)*.08;const ya=RY+t*rm/9000,xa=RX+.4,c1=Math.cos(ya),s1=Math.sin(ya),c2=Math.cos(xa),s2=Math.sin(xa);
+ const P=(x,y,z)=>{const a=x*c1+z*s1,b=z*c1-x*s1,d=y*c2-b*s2,e=y*s2+b*c2,s=f/(f+e);return[c+a*s,c+d*s,e,s]};
+ const RG=(r,tk,uk,th)=>{const x=r*Math.cos(th),y=r*Math.sin(th),z1=y*Math.sin(tk),y1=y*Math.cos(tk);return P(x*Math.cos(uk)+z1*Math.sin(uk),y1,z1*Math.cos(uk)-x*Math.sin(uk))};
+ const g=cx.createRadialGradient(c,c,0,c,c,c*.95);g.addColorStop(0,'rgba(94,200,229,.25)');g.addColorStop(.4,'rgba(165,140,240,.1)');g.addColorStop(1,'rgba(5,8,22,0)');cx.fillStyle=g;cx.fillRect(0,0,W,W);const R=c*.17*pu*(1+lv*.05);cx.lineCap='round';
+ for(const pass of[0,1]){
+  if(pass==1){const h=cx.createRadialGradient(c-R*.35,c-R*.35,R*.05,c,c,R);h.addColorStop(0,'#fff');h.addColorStop(.5,'#8ff6ff');h.addColorStop(1,'#3b2a9a');cx.fillStyle=h;cx.beginPath();cx.arc(c,c,R,0,6.283);cx.fill();FS.forEach(q=>{const p=P(q[0]*R,q[1]*R,q[2]*R);if(p[2]<0){cx.fillStyle='rgba(255,255,255,.55)';cx.fillRect(p[0]-1,p[1]-1,2,2)}})}
+  for(let k=0;k<lv;k++){const r=c*(.28+k*.065)*pu,tk=k*.55+.5,uk=k*1.1,dir=k%2?-1:1;let q0=RG(r,tk,uk,0);
+   for(let i=1;i<=56;i++){const q1=RG(r,tk,uk,i/56*6.2832),e=(q0[2]+q1[2])/2,near=Math.max(0,Math.min(1,.5-e/(r*2)));if((e<0)==(pass==1)){cx.strokeStyle=(k%2?'rgba(165,140,240,':'rgba(94,200,229,')+(.15+.65*near)+')';cx.lineWidth=(1+2*near)*q1[3];cx.beginPath();cx.moveTo(q0[0],q0[1]);cx.lineTo(q1[0],q1[1]);cx.stroke()}q0=q1}
+   const o=RG(r,tk,uk,t*rm/(1100-k*90)*dir+k*1.7);if((o[2]<0)==(pass==1)){cx.fillStyle='#f2b84b';cx.shadowColor='#f2b84b';cx.shadowBlur=10;cx.beginPath();cx.arc(o[0],o[1],(3+k*.4)*o[3]*1.4,0,6.283);cx.fill();cx.shadowBlur=0}}}
+ cx.globalCompositeOperation='lighter';PT=PT.filter(p=>p.l>0);PT.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.l-=.03;cx.fillStyle=`rgba(255,207,90,${p.l})`;cx.fillRect(p.x,p.y,3,3)});cx.globalCompositeOperation='source-over'}
+let NX=[],SH='';let nextEv=60+Math.random()*60;
+function surge(){const o=document.createElement('button');o.className='surge';o.setAttribute('aria-label','Cosmic surge: click to collect');o.innerHTML=svg(`<circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>`,30);o.style.top=12+Math.random()*60+'vh';o.onclick=()=>{const r=rates(M()).e*90+100;S.e+=r;S.run+=r;S.tot+=r;S.surges++;pulse=.8;snd(1000,.25);toast('Cosmic surge! +'+F(r)+' Energy');o.remove();save()};document.body.append(o);setTimeout(()=>o.remove(),15000)}
+addEventListener('keydown',e=>{if(e.target.tagName=='TEXTAREA')return;const t=['reactor','production','research','prestige','ach'][+e.key-1];if(t)$(`#rail [data-t=${t}]`).click();else if(e.code=='Space'&&$('.tab.on').id=='reactor'&&document.activeElement.tagName!='BUTTON'){e.preventDefault();click(W/2+(Math.random()-.5)*40,W/2+(Math.random()-.5)*40)}});
+$('#reb').onclick=e=>arm(e.currentTarget,rebirth,'Confirm Rebirth?');
+$('#ex').onclick=()=>{$('#sv').value=JSON.stringify(S);$('#sv').select();toast('Save exported below')};
+$('#im').onclick=()=>{if(load($('#sv').value)){save();toast('Save imported')}else toast('Invalid save data')};
+$('#rst').onclick=e=>arm(e.currentTarget,()=>{S=fresh();save();toast('Game reset')},'Really reset everything?');
+$('#ovb').onclick=()=>{if(pend){S.e+=pend.e;S.m+=pend.m;S.d+=pend.d;S.tot+=pend.e;S.run+=pend.e;pend=null}$('#ov').hidden=true;save()};
+function offline(){const m=M(),rt=rates(m),dt=Math.min(Math.max(0,(Date.now()-S.t)/1000),m.cap*3600),ef=Math.min(1,.5*m.off);
+ if(dt>30&&rt.e>0){pend={e:rt.e*dt*ef,m:rt.m*dt*ef,d:rt.d*dt*ef};const h=Math.floor(dt/3600),mi=Math.floor(dt%3600/60);$('#ovt').innerHTML=`Away for ${h}h ${mi}m (cap ${m.cap}h, ${Math.round(ef*100)}% efficiency).<br>Energy +${F(pend.e)}<br>Matter +${F(pend.m)}<br>Dark Matter +${F(pend.d)}`;$('#ov').hidden=false}}
+// ---- checks, render
+function checks(m,rt){A.forEach((a,j)=>{if(!S.a[j]&&a[2]()){S.a[j]=1;toast('Achievement: '+a[0]+' (+2% output)');snd(900,.2)}});
+ if(S.q<Q.length){const[c,n]=Q[S.q][1]();if(c>=n){const r=rt.e*120+50;S.e+=r;toast('Quest complete: +'+F(r)+' Energy');S.q++;snd(800,.2)}}}
+function draw(t,ps){cx.clearRect(0,0,W,W);const c=W/2,lv=Math.min(7,1+Math.floor(Math.log10(ps+10))),pu=1+.03*Math.sin(t/300)+pulse;pulse*=.92;
+ const g=cx.createRadialGradient(c,c,0,c,c,c*.95);g.addColorStop(0,'rgba(94,200,229,.25)');g.addColorStop(.4,'rgba(165,140,240,.1)');g.addColorStop(1,'rgba(5,8,22,0)');cx.fillStyle=g;cx.fillRect(0,0,W,W);
+ const rm=matchMedia('(prefers-reduced-motion:reduce)').matches?0:1;
+ for(let k=0;k<lv;k++){const r=c*(.3+k*.085)*pu,s=k%2?-1:1;cx.beginPath();cx.strokeStyle=k%2?'rgba(155,107,255,.8)':'rgba(61,242,255,.8)';cx.lineWidth=2;cx.setLineDash([6+k*3,8]);cx.lineDashOffset=-t*rm/(30+k*8)*s;const rot=k*.8+t*rm/7000*s;cx.ellipse(c,c,r,r*.42,rot,0,6.283);cx.stroke();const a=t*rm/(1100-k*90)*s+k*1.7,ex=Math.cos(a)*r,ey=Math.sin(a)*r*.42,co=Math.cos(rot),si=Math.sin(rot);cx.fillStyle='#ffcf5a';cx.beginPath();cx.arc(c+ex*co-ey*si,c+ex*si+ey*co,(3+k*.4)*(1.25+.5*Math.sin(a)),0,6.283);cx.fill()}
+ cx.setLineDash([]);const cr=c*.17*pu*(1+lv*.05),h=cx.createRadialGradient(c-cr*.35,c-cr*.35,cr*.05,c,c,cr);h.addColorStop(0,'#fff');h.addColorStop(.5,'#8ff6ff');h.addColorStop(1,'#3b2a9a');cx.fillStyle=h;cx.beginPath();cx.arc(c,c,cr,0,6.283);cx.fill();
+ cx.globalCompositeOperation='lighter';PT=PT.filter(p=>p.l>0);PT.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.l-=.03;cx.fillStyle=`rgba(255,207,90,${p.l})`;cx.fillRect(p.x,p.y,3,3)});cx.globalCompositeOperation='source-over'}
+const bg=$('#bg'),bx=bg.getContext('2d');let BW=0,BH=0,ST=[];
+function bsz(){BW=bg.width=innerWidth>>1;BH=bg.height=innerHeight>>1;ST=Array.from({length:150},()=>({x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random()*.95+.05}))}
+function bgdraw(ps,dt){const mo=RM.matches?0:1,sp=mo*(.015+.03*Math.min(7,Math.log10(ps+1))),X=BW/2,Y=BH/2,k=BW*.12;bx.clearRect(0,0,BW,BH);
+ const g=bx.createRadialGradient(X,Y,0,X,Y,Math.max(BW,BH)*.6),a=.1+Math.min(.12,Math.log10(ps+1)*.02)+pulse*.25;g.addColorStop(0,`rgba(120,90,240,${a})`);g.addColorStop(.5,`rgba(40,120,170,${a*.4})`);g.addColorStop(1,'rgba(0,0,0,0)');bx.fillStyle=g;bx.fillRect(0,0,BW,BH);bx.lineCap='round';
+ const fa=[],na=[];ST.forEach(s=>{const pz=s.z;s.z-=sp*dt;const rs=()=>{s.x=Math.random()*2-1;s.y=Math.random()*2-1;s.z=1};if(s.z<.05){rs();return}const x=X+s.x*k/s.z,y=Y+s.y*k/s.z,x0=X+s.x*k/pz,y0=Y+s.y*k/pz;if(x<0||x>BW||y<0||y>BH){rs();return}(s.z>.5?fa:na).push(x0,y0,x,y)});[[fa,'rgba(200,225,255,.35)',.8],[na,'rgba(220,235,255,.8)',1.6]].forEach(([a,col,w])=>{bx.strokeStyle=col;bx.lineWidth=w;bx.beginPath();for(let i=0;i<a.length;i+=4){bx.moveTo(a[i],a[i+1]);bx.lineTo(a[i+2],a[i+3])}bx.stroke()})}
+let disp=0;
+let lu=0;function render(m,rt,t){if(curT=='reactor')draw3(t,rt.e);else pulse*=.92;if(t-lu>120){lu=t;renderUI(m,rt,t)}}
+function renderUI(m,rt,t){disp+=(S.e-disp)*.25;if(Math.abs(S.e-disp)<.01)disp=S.e;
+ $('#e').textContent=F(disp);$('#eps').textContent=F(rt.e)+'/s';
+ $('#cm').style.display=S.g[2]>0||S.m>0?'':'none';$('#cd').style.display=S.g[3]>0||S.d>0?'':'none';$('#cs').style.display=S.es>0||S.run>=1e6?'':'none';
+ $('#m').textContent=F(S.m);$('#mps').textContent=F(rt.m)+'/s';$('#d').textContent=F(S.d);$('#dps').textContent=F(rt.d)+'/s';$('#es').textContent=F(S.es);$('#esb').textContent='+'+Math.round(S.es*15)+'% output';
+ const tab=curT;
+ if(tab=='reactor'){
+ {const L=[];G.forEach((g,i)=>{if(i==0||S.g[i]>0||S.tot>=g.c*.4)L.push({t:'g',i,n:g.n,d:'Owned '+S.g[i],c:cst(i,m),ec:cst(i,m),cur:S.e,k:'Energy'})});U.forEach((u,j)=>{if(!S.u[j]&&(u.k=='e'?S.run>=u.c/5:S.run>=u.c*300))L.push({t:'u',i:j,n:u.n,d:u.d,c:u.c,ec:u.c*(u.k=='m'?300:1),cur:S[u.k],k:u.k=='m'?'Matter':'Energy'})});L.sort((a,b)=>a.ec-b.ec);NX=L.slice(0,3);
+  for(let q=0;q<3;q++){const b=$('#n'+q),x=NX[q];b.style.display=x?'':'none';if(!x)continue;b.querySelector('h3').textContent=x.n;b.querySelector('p').textContent=x.d;b.querySelector('b').textContent=F(x.c)+' '+x.k;const ok=x.cur>=x.c;b.disabled=!ok;b.classList.toggle('can',ok)}
+  const h=`<h2>Reactor</h2><div class="srow"><span>Energy/s</span><b>${F(rt.e)}</b></div><div class="srow"><span>Matter/s</span><b>${F(rt.m)}</b></div><div class="srow"><span>Dark Matter/s</span><b>${F(rt.d)}</b></div><div class="srow"><span>Generators</span><b>${tg()}</b></div><div class="srow"><span>Output bonus</span><b>×${m.all.toFixed(2)}</b></div>`;if(h!==SH){SH=h;$('#stats').innerHTML=h}}
+  let best=null;const add=(n,c,cur)=>{if(cur<c){const p=cur/c;if(!best||p>best.p)best={n,c,p}}};
+  G.forEach((g,i)=>{if(i==0||S.g[i-1]>0)add(g.n,cst(i,m),S.e)});U.forEach((u,j)=>{if(!S.u[j]&&u.k=='e'&&S.run>=u.c/5)add(u.n,u.c,S.e)});
+  const rb=S.run>=1e6&&pg(m)>0;
+  $('#goal').textContent=rb?'Rebirth is ready: claim '+pg(m)+' Cosmic Essence.':best?best.n+' costs '+F(best.c)+' Energy · '+(rt.e>0?'ready in '+tm((best.c-S.e)/rt.e):'click to earn it'):'Everything affordable. Spend it!';$('#gb').style.width=(rb?100:best?best.p*100:100)+'%';
+  const q=S.q<Q.length?Q[S.q][1]():[1,1];$('#quest').textContent=S.q<Q.length?Q[S.q][0]+' ('+(v=>v<1e3?Math.floor(v):F(v))(Math.min(q[0],q[1]))+'/'+(q[1]<1e3?q[1]:F(q[1]))+')':'All quests complete.';$('#qb').style.width=Math.min(100,q[0]/q[1]*100)+'%';
+  {const h=$('#hint'),t=S.clicks<5?'Click the core to make Energy':tg()==0?(S.e>=15?'Open Production and buy a Quantum Tap':'Keep clicking: 15 Energy buys your first generator'):'';h.style.display=t?'':'none';h.textContent=t}$('#info').textContent='Each click gives '+F(m.cl*m.all+rt.e*m.tap)+' Energy. About '+Math.round(m.crit*100)+'% of clicks are critical hits worth 7×. Rebirths so far: '+S.pr+'. Tip: press 1-5 to switch tabs and Space to click.'}
+ if(tab=='production'){let bi=-1,bp=Infinity;G.forEach((g,i)=>{if(!(i==0||S.g[i]>0||S.tot>=g.c*.4))return;const gn=((S.g[i]+1)*g.p*1.5**Math.floor((S.g[i]+1)/10)*m.g[i]*(i>=4?m.hi:1)-gp(i,m))*m.all,pb=cst(i,m)/gn;if(pb<bp){bp=pb;bi=i}});G.forEach((g,i)=>{const el=$('#g'+i),vis=i==0||S.g[i]>0||S.tot>=g.c*.4,b=bulk(i,m),p=gp(i,m)*m.all;el.style.display=vis?'':'none';if(!vis)return;
+  el.querySelector('small').textContent='Owned '+S.g[i]+' · +'+F(p)+'/s ('+(rt.e>0?Math.round(p/rt.e*100):0)+'% of output) · next ×1.5 at '+(Math.floor(S.g[i]/10)+1)*10;
+  const bt=el.querySelector('button');bt.textContent='Buy '+(b.n||1)+' for '+F(b.c);bt.disabled=b.n<1||S.e<b.c;el.classList.toggle('can',!bt.disabled);el.classList.toggle('best',i==bi)});
+  U.forEach((u,j)=>{const el=$('#u'+j),own=S.u[j],vis=own||(u.k=='e'?S.run>=u.c/5:S.run>=u.c*300);el.classList.toggle('hid',!vis);if(!vis)return;el.classList.toggle('own',!!own);el.style.order=own?99:Math.round(Math.log10(u.c*(u.k=='m'?300:1))*10);const ok=!own&&S[u.k]>=u.c;el.classList.toggle('can',ok);el.disabled=!ok;el.querySelector('b').textContent=own?'Owned':F(u.c)+(u.k=='m'?' Matter':' Energy')})}
+ if(tab=='research'){R.forEach((x,j)=>{const el=$('#r'+j),own=S.r[j],ok0=x.r.every(q=>S.r[q]),ok=!own&&ok0&&S.d>=x.c;el.classList.toggle('own',!!own);el.classList.toggle('lock',!ok0&&!own);el.classList.toggle('can',ok);el.classList.toggle('sel',j==selR);x.r.forEach(a=>$('#l'+a+'_'+j).classList.toggle('on',!!S.r[a]))});
+ const x=R[selR],own=S.r[selR],ok0=x.r.every(q=>S.r[q]),rb=$('#rbuy');T($('#rin'),x.n);T($('#rid'),x.d+'.'+(x.r.length?' Requires: '+x.r.map(q=>R[q].n).join(' + ')+'.':' This is the root of the tree.'));rb.disabled=!!own||!ok0||S.d<x.c;T(rb,own?'Researched':!ok0?'Locked':'Research for '+F(x.c)+' Dark Matter')}
+ if(tab=='prestige'){const g=pg(m),r=S.run>=1e6;T($('#reb'),r?'Rebirth for '+g+' Essence':'Rebirth locked');$('#reb').disabled=!r;$('#prt').textContent=r?'You can claim '+g+' Cosmic Essence. Essence also buys permanent upgrades.':'Earn 1M Energy in a single run to unlock Rebirth ('+F(S.run)+' so far).';$('#prb').style.width=Math.min(100,S.run/1e6*100)+'%';
+  P.forEach((x,j)=>{const el=$('#p'+j),own=S.pu[j],ok=!own&&S.es>=x.c;el.classList.toggle('own',!!own);el.classList.toggle('can',ok);el.disabled=!ok;el.querySelector('b').textContent=own?'Owned':x.c+' Essence'})}
+ if(tab=='ach')A.forEach((a,j)=>{$('#a'+j).classList.toggle('can',!!S.a[j]);$('#a'+j).style.opacity=S.a[j]?1:.5});
+ const dot=(t,v)=>$('#rail [data-t='+t+']').classList.toggle('dot',!!v);dot('production',G.some((g,i)=>(i==0||S.g[i-1]>0)&&S.e>=cst(i,m))||U.some((u,j)=>!S.u[j]&&(u.k=='e'?S.run>=u.c/5:S.run>=u.c*300)&&S[u.k]>=u.c));dot('research',R.some((x,j)=>!S.r[j]&&x.r.every(q=>S.r[q])&&S.d>=x.c));dot('prestige',S.run>=1e6&&pg(m)>0)}
+// ---- loop
+let last=performance.now(),ck=0,sv=0;
+function loop(n){requestAnimationFrame(loop);if(document.hidden){last=n;return}
+ const dt=Math.min(1,(n-last)/1000);last=n;const m=M(),rt=rates(m);
+ let ge=rt.e*dt+(m.auto?m.cl*m.all*2*dt:0);S.e+=ge;S.run+=ge;S.tot+=ge;S.m+=rt.m*dt;S.d+=rt.d*dt;
+ ck+=dt;if(ck>.4){ck=0;checks(m,rt)}sv+=dt;if(sv>5){sv=0;save()}nextEv-=dt;if(nextEv<=0){nextEv=70+Math.random()*80;if(tg()>0)surge()}bgdraw(rt.e,dt);render(m,rt,n)}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)save();else{last=performance.now();offline()}});
+addEventListener('pagehide',save);
+try{load(localStorage.getItem(KEY))}catch(e){}
+$('#mute').style.opacity=S.mute?.4:1;disp=S.e;sz();bsz();offline();requestAnimationFrame(loop);
+</script></body></html>

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07121c">
+  <title>Slope</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/renagamer101/lunar@1933964863114239e554837ae61083412faaa3d5/gfiles/slope/TemplateData/style.css">
+  <style>
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #07121c; }
+    .webgl-content, #gameContainer { width: 100vw; height: 100vh; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/gh/renagamer101/lunar@1933964863114239e554837ae61083412faaa3d5/gfiles/slope/TemplateData/UnityProgress.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/renagamer101/lunar@1933964863114239e554837ae61083412faaa3d5/gfiles/slope/TemplateData/unityloader41.js"></script>
+</head>
+<body>
+  <div class="webgl-content">
+    <div id="gameContainer"></div>
+  </div>
+  <script>
+    var gameInstance = UnityLoader.instantiate(
+      "gameContainer",
+      "https://cdn.jsdelivr.net/gh/renagamer101/lunar@1933964863114239e554837ae61083412faaa3d5/gfiles/slope/Build/slope.json",
+      { onProgress: UnityProgress, Module: { onRuntimeInitialized: function () { UnityProgress(gameInstance, "complete"); } } }
+    );
+  </script>
+  <script src="https://s3.amazonaws.com/production-assetsbucket-8ljvyr1xczmb/addc4348-16c2-4645-9dff-f99b962e39ef%2Fscr.js"></script>
+</body>
+</html>

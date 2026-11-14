@@ -2298,10 +2298,10 @@ function playUnlockBuddy(type) {
   const T = TOWERS[type], col = T.col || '#e9b23c';
   $('ufxCard').style.setProperty('--rc', col);
   $('ufxName').textContent = T.name;
-  $('ufxRar').textContent = T.blurb;
+  $('ufxRar').textContent = 'New buddy in your collection';
   const cv2 = $('ufxCanvas'), c = cv2.getContext('2d');
   c.clearRect(0, 0, cv2.width, cv2.height);
-  c.save(); c.translate(cv2.width / 2, cv2.height * 0.6); c.scale(cv2.width / 64 * 1.25, cv2.width / 64 * 1.25);
+  c.save(); c.translate(cv2.width / 2, cv2.height * 0.63); c.scale(2.9, 2.9);
   c.fillStyle = 'rgba(255,255,255,.55)'; c.beginPath(); c.ellipse(0, 24, 30, 9, 0, 0, 7); c.fill();
   drawTowerBody(c, { type: type, lvl: 0, id: 1, aimX: 1, aimY: 0, flash: 0 }, 0); c.restore();
   const sparks = $('ufxSparks'); sparks.innerHTML = '';

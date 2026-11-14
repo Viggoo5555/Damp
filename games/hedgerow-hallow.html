@@ -414,13 +414,10 @@
   #endBest { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .eb-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
   .mcard .acts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 4px; }
-  .skinmcard { width: min(100%, 560px); margin: auto; }
-  #skinModal { align-items: flex-start; }
-  .skin.buyable .sr { color: var(--ink-soft); text-transform: none; letter-spacing: 0; font-variant-numeric: tabular-nums; }
-  .skin.buyable.armed { background: var(--honey); border-color: var(--berry); }
+  .gcard .ubuy { margin-top: 5px; min-height: 34px; padding: 0 10px; font-size: 15px; box-shadow: 2px 2px 0 var(--ink); }
   .unlockfx { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(38, 50, 77, .5); }
   .unlockfx[hidden] { display: none; }
-  .ufx-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 14px 26px 18px; background: var(--paper-hi); border: 3px solid var(--ink); border-radius: var(--wob); box-shadow: 6px 6px 0 var(--ink); text-align: center; --rc: var(--ink); animation: ufxpop .5s cubic-bezier(.18, 1.5, .4, 1); }
+  .ufx-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 14px 26px 18px; background: var(--paper-hi); border: 3px solid var(--ink); border-radius: var(--wob); box-shadow: 6px 6px 0 var(--ink); text-align: center; --rc: var(--honey); animation: ufxpop .5s cubic-bezier(.18, 1.5, .4, 1); }
   .ufx-card canvas { width: 168px; height: 168px; position: relative; z-index: 1; }
   .ufx-card .ul { font-family: var(--f-display); font-size: 19px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
   .ufx-card strong { font-family: var(--f-display); font-weight: 400; font-size: 34px; line-height: 1; }
@@ -488,10 +485,6 @@
     </div>
     <div class="tabpanel" id="tab-buddies" role="tabpanel" hidden>
       <p class="tabnote" id="buddyNote"></p>
-      <h3 class="shop-h">Skins</h3>
-      <p class="tabnote">Tap a skin you own to wear it. Locked ones unlock for 160 golden seeds, straight away. The trader&rsquo;s five stay trader only.</p>
-      <div class="skins" id="buddySkins"></div>
-      <h3 class="shop-h">Buddies</h3>
       <div class="guide" id="guideB"></div>
     </div>
     <div class="tabpanel" id="tab-shop" role="tabpanel" hidden><div id="shopBox"></div></div>
@@ -558,7 +551,6 @@
         <div class="powers" id="powers"></div>
         <div class="waverow">
           <button class="btn toggle" id="btnAuto" type="button" aria-pressed="false" title="Send waves by itself (T)">Auto</button>
-          <button class="btn toggle" id="btnSkins" type="button" title="Skins (K)">Skins</button>
           <button class="btn primary" id="btnWave" type="button"><span class="w1">Send wave 1</span><span class="w2"></span></button>
         </div>
         <p class="kb-hint">Arrows move, 1-0 pick, Enter plants, U or I upgrade, X sells, N waves, Q E R powers</p>
@@ -590,15 +582,6 @@
     <div class="acts"><button class="btn" id="tradeSkip" type="button">Close</button></div>
   </div>
 </div>
-<div class="modal" id="skinModal" hidden>
-  <div class="mcard skinmcard" role="dialog" aria-modal="true" aria-labelledby="skinTitle">
-    <h2 id="skinTitle">Skins</h2>
-    <div class="panel shopbal"><span>Golden seeds</span><b id="skinGold"></b></div>
-    <p class="tabnote">Wear a skin you own, or unlock a locked one for 160 golden seeds without leaving the garden.</p>
-    <div class="skins" id="skinGrid"></div>
-    <div class="acts"><button class="btn primary" id="skinClose" type="button">Back to the garden</button></div>
-  </div>
-</div>
 <div class="modal" id="helpModal" hidden>
   <div class="mcard" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <h2 id="helpTitle">How to play</h2>
@@ -618,7 +601,7 @@
   <div class="ufx-card" id="ufxCard" role="status">
     <div class="ufx-glow"></div>
     <canvas id="ufxCanvas" width="240" height="240"></canvas>
-    <span class="ul">Skin unlocked</span>
+    <span class="ul">Buddy unlocked</span>
     <strong id="ufxName"></strong>
     <span class="ur" id="ufxRar"></span>
     <span class="ufx-sparks" id="ufxSparks"></span>
@@ -2299,7 +2282,7 @@ function buildMenu() {
   const di = dailyInfo(), dl = LEVELS.find(q => q.daily);
   $('dailySub').textContent = dl.modName + ' \u00b7 ' + (di.doneToday ? 'done today' : di.streak ? 'streak ' + di.streak : 'new today');
   $('endlessSub').textContent = save.endless.wave ? 'Best ' + save.endless.wave + ' waves' : 'No finish line';
-  $('buddyNote').innerHTML = 'You have ' + GOLD_SVG + ' ' + save.gold + ' golden seeds. Buy locked buddies in the Shop tab.';
+  $('buddyNote').innerHTML = 'You have ' + GOLD_SVG + ' ' + save.gold + ' golden seeds. Unlock a locked buddy right here, in the Shop tab, or by tapping it twice in the game.';
   buildGuide(); buildShop();
 }
 let lastPull = null;
@@ -2309,85 +2292,40 @@ function drawSkinPreview(cv2, k, locked) {
   const pf = locked ? (CANVAS_FILTER ? 'grayscale(1) brightness(.1)' : 'none') : (k ? skinFilter(k, 0.6) : 'none');
   drawFiltered(c, pf, cc => drawTowerBody(cc, { type: 'squirrel', lvl: 1, id: 2, aimX: 1, aimY: 0, flash: 0 }, 0)); c.restore();
 }
-const SKIN_BUY_PRICE = 160;
-let armedSkin = null, armedSkinTimer = 0, unlockT1 = 0, unlockT2 = 0;
-function buildSkinGrid(grid) {
-  if (!grid) return;
-  grid.innerHTML = '';
-  const mk = (k) => {
-    const has = !k || !!save.skins[k.id], exclusive = !!(k && k.exclusive);
-    const b = document.createElement('button'); b.type = 'button';
-    b.className = 'btn skin' + (has ? '' : ' unk') + (has || exclusive ? '' : ' buyable');
-    b.style.setProperty('--rc', has && k ? RAR[k.rar].col : '#26324d');
-    b.dataset.sk = k ? k.id : '';
-    b.setAttribute('aria-pressed', String(has && (k ? save.skin === k.id : !save.skin)));
-    const cvs = document.createElement('canvas'); cvs.width = cvs.height = 124; b.appendChild(cvs); drawSkinPreview(cvs, k, !has);
-    let sub;
-    if (has) sub = '<span class="sr">' + (k ? RAR[k.rar].name : 'Default') + '</span>';
-    else if (exclusive) sub = '<span class="sr">Trader only</span>';
-    else sub = '<span class="sr">' + GOLD_SVG + ' ' + SKIN_BUY_PRICE + '</span>';
-    b.insertAdjacentHTML('beforeend', '<span class="sn">' + (has ? (k ? k.name : 'Original') : '???') + '</span>' + sub);
-    if (has) {
-      b.addEventListener('click', () => {
-        save.skin = k ? k.id : ''; persist(); Sound.init(); Sound.play('click'); refreshSkinGrids();
-      });
-    } else if (exclusive) {
-      b.disabled = true;
-    } else {
-      b.disabled = save.gold < SKIN_BUY_PRICE;
-      b.addEventListener('click', () => {
-        if (save.gold < SKIN_BUY_PRICE) { toast('Need ' + SKIN_BUY_PRICE + ' golden seeds'); Sound.play('error'); return; }
-        if (armedSkin !== b) {
-          armedSkin = b; b.classList.add('armed');
-          b.querySelector('.sr').innerHTML = 'Tap again to unlock';
-          clearTimeout(armedSkinTimer);
-          armedSkinTimer = setTimeout(() => { armedSkin = null; refreshSkinGrids(); }, 3200);
-          Sound.play('click');
-          return;
-        }
-        clearTimeout(armedSkinTimer); armedSkin = null;
-        buyLockedSkin(k);
-      });
-    }
-    grid.appendChild(b);
-  };
-  mk(null); SKINS.forEach(mk);
-}
-function buyLockedSkin(k) {
-  if (!k || save.skins[k.id] || save.gold < SKIN_BUY_PRICE) return;
-  save.gold -= SKIN_BUY_PRICE; save.skins[k.id] = true; save.skin = k.id;
-  persist();
-  playUnlock(k);
-  refreshSkinGrids();
-}
-function refreshSkinGrids() {
-  const sg = $('skinGrid'); if (sg && !$('skinModal').hidden) { buildSkinGrid(sg); $('skinGold').innerHTML = GOLD_SVG + ' ' + save.gold; }
-  const bg = $('buddySkins'); if (bg) buildSkinGrid(bg);
-  buildShop();
-  $('buddyNote') && ($('buddyNote').innerHTML = 'You have ' + GOLD_SVG + ' ' + save.gold + ' golden seeds. Buy locked buddies in the Shop tab.');
-  buildMenu();
-}
-function playUnlock(k) {
+let unlockT1 = 0, unlockT2 = 0;
+function playUnlockBuddy(type) {
   const fx = $('unlockFx'); if (!fx) return;
-  const rc = RAR[k.rar].col;
-  $('ufxCard').style.setProperty('--rc', rc);
-  $('ufxName').textContent = k.name;
-  $('ufxRar').textContent = RAR[k.rar].name;
-  drawSkinPreview($('ufxCanvas'), k, false);
+  const T = TOWERS[type], col = T.col || '#e9b23c';
+  $('ufxCard').style.setProperty('--rc', col);
+  $('ufxName').textContent = T.name;
+  $('ufxRar').textContent = T.blurb;
+  const cv2 = $('ufxCanvas'), c = cv2.getContext('2d');
+  c.clearRect(0, 0, cv2.width, cv2.height);
+  c.save(); c.translate(cv2.width / 2, cv2.height * 0.6); c.scale(cv2.width / 64 * 1.25, cv2.width / 64 * 1.25);
+  c.fillStyle = 'rgba(255,255,255,.55)'; c.beginPath(); c.ellipse(0, 24, 30, 9, 0, 0, 7); c.fill();
+  drawTowerBody(c, { type: type, lvl: 0, id: 1, aimX: 1, aimY: 0, flash: 0 }, 0); c.restore();
   const sparks = $('ufxSparks'); sparks.innerHTML = '';
   for (let i = 0; i < 14; i++) {
     const sp = document.createElement('i');
     sp.style.setProperty('--a', (i / 14) * 360 + 'deg');
     sp.style.setProperty('--d', (66 + (i % 4) * 20) + 'px');
-    sp.style.setProperty('--c', rc);
+    sp.style.setProperty('--c', i % 3 ? col : '#f4c14f');
     sp.style.animationDelay = ((i % 5) * 34) + 'ms';
     sparks.appendChild(sp);
   }
   fx.hidden = false; fx.classList.remove('out'); void fx.offsetWidth; fx.classList.add('go');
   Sound.init(); Sound.play('egg');
   clearTimeout(unlockT1); clearTimeout(unlockT2);
-  unlockT1 = setTimeout(() => fx.classList.add('out'), 1450);
-  unlockT2 = setTimeout(() => { fx.hidden = true; fx.classList.remove('go', 'out'); }, 1950);
+  unlockT1 = setTimeout(() => fx.classList.add('out'), 1750);
+  unlockT2 = setTimeout(() => { fx.hidden = true; fx.classList.remove('go', 'out'); }, 2250);
+}
+function unlockBuddy(type) {
+  if (!type || isUnlocked(type) || save.gold < PRICES[type]) return false;
+  save.gold -= PRICES[type]; save.owned[type] = true; persist();
+  playUnlockBuddy(type);
+  toast(TOWERS[type].name + ' is yours!');
+  buildTray(); buildMenu();
+  return true;
 }
 function buildShop() {
   const box = $('shopBox'); if (!box) return; box.innerHTML = '';
@@ -2402,11 +2340,11 @@ function buildShop() {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'btn buybtn' + (own ? '' : ' primary');
     if (own) { b.textContent = 'Owned'; b.disabled = true; } else {
       b.innerHTML = GOLD_SVG + ' ' + PRICES[type]; b.disabled = save.gold < PRICES[type];
-      b.addEventListener('click', () => { if (save.gold < PRICES[type]) return; save.gold -= PRICES[type]; save.owned[type] = true; persist(); Sound.init(); Sound.play('egg'); buildTray(); buildMenu(); });
+      b.addEventListener('click', () => { unlockBuddy(type); });
     }
     d.appendChild(b); list.appendChild(d);
   });
-  box.insertAdjacentHTML('beforeend', '<h3 class="shop-h">Skins</h3><p class="tabnote">Every skin below except the trader\u2019s five exclusives comes from the lucky bundle, or you can unlock a locked one straight away for 160 golden seeds. A duplicate pays golden seeds back.</p>');
+  box.insertAdjacentHTML('beforeend', '<h3 class="shop-h">Skins</h3><p class="tabnote">Every skin below except the trader\u2019s five exclusives comes from the lucky bundle. A duplicate pays golden seeds back.</p>');
   box.insertAdjacentHTML('beforeend', '<div class="panel gamble" id="shopGambleBox"><p>Lucky bundle: <b>' + PULL_COST + ' ' + GOLD_SVG + '</b> for one random skin, any rarity.</p><p class="odds">' + RAR.map(r => r.name + ' ' + r.w + '%').join(' &middot; ') + '</p><button class="btn primary" id="shopGamble" type="button">Open a bundle</button></div>');
   const gbtn = $('shopGamble');
   if (gbtn) {
@@ -2419,7 +2357,18 @@ function buildShop() {
   const owned = SKINS.filter(k => save.skins[k.id]).length;
   box.insertAdjacentHTML('beforeend', '<h3 class="shop-h">Your skins (' + owned + ' of ' + SKINS.length + ')</h3>');
   const grid = document.createElement('div'); grid.className = 'skins'; box.appendChild(grid);
-  buildSkinGrid(grid);
+  const mk = (k) => {
+    const has = !k || !!save.skins[k.id], b = document.createElement('button'); b.type = 'button'; b.className = 'btn skin' + (has ? '' : ' unk');
+    const rc = has && k ? RAR[k.rar].col : '#26324d'; b.style.setProperty('--rc', rc);
+    b.setAttribute('aria-pressed', String(has && (k ? save.skin === k.id : !save.skin)));
+    const cvs = document.createElement('canvas'); cvs.width = cvs.height = 124; b.appendChild(cvs); drawSkinPreview(cvs, k, !has);
+    b.insertAdjacentHTML('beforeend', '<span class="sn">' + (has ? (k ? k.name : 'Original') : '???') + '</span><span class="sr">' + (has ? (k ? RAR[k.rar].name : 'Default') : '???') + '</span>');
+    b.dataset.sk = k ? k.id : '';
+    if (has) b.addEventListener('click', () => { save.skin = k ? k.id : ''; persist(); Sound.init(); Sound.play('click'); grid.querySelectorAll('.skin').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.sk === save.skin))); });
+    else b.disabled = true;
+    grid.appendChild(b);
+  };
+  mk(null); SKINS.forEach(mk);
 }
 function renderPull(el, r) {
   const k = r.skin, rc = RAR[k.rar].col; el.innerHTML = '';
@@ -2555,7 +2504,6 @@ const ENEMY_NOTE = {
 };
 function buildGuide() {
   const gb = $('guideB'), gc = $('guideC'); gb.innerHTML = ''; gc.innerHTML = '';
-  buildSkinGrid($('buddySkins'));
   TOWER_ORDER.forEach((type, i) => {
     const T = TOWERS[type], d = document.createElement('div'); d.className = 'panel gcard';
     const ic = document.createElement('canvas'); ic.width = ic.height = 116; const c = ic.getContext('2d'); c.translate(58, 64); c.scale(1.75, 1.75);
@@ -2563,9 +2511,12 @@ function buildGuide() {
     const gi = document.createElement('span'); gi.className = 'gicon' + (T.unlock && !isUnlocked(type) ? ' locked' : ''); gi.appendChild(ic);
     if (gi.classList.contains('locked')) gi.insertAdjacentHTML('beforeend', LOCK_SVG);
     d.appendChild(gi);
-    const un = T.unlock ? '<br><span class="gc">' + (isUnlocked(type) ? 'Unlocked' : 'Costs ' + PRICES[type] + ' ' + GOLD_SVG + ' in the Shop') + '</span>' : '';
+    const locked = T.unlock && !isUnlocked(type);
+    const un = T.unlock ? '<br><span class="gc">' + (locked ? 'Locked' : 'Unlocked') + '</span>' : '';
     const pp = (save.pops && save.pops[type]) || 0;
-    d.insertAdjacentHTML('beforeend', '<div><strong>' + T.name + '</strong> <span class="gc">' + T.cost + ' seeds</span><br><span class="gs">' + T.blurb + '</span>' + un + (pp ? '<br><span class="gc">All-time pops: ' + pp + '</span>' : '') + '</div>');
+    d.insertAdjacentHTML('beforeend', '<div><strong>' + T.name + '</strong> <span class="gc">' + T.cost + ' seeds</span><br><span class="gs">' + T.blurb + '</span>' + un + (pp ? '<br><span class="gc">All-time pops: ' + pp + '</span>' : '') + (locked ? '<br><button class="btn ubuy" type="button"' + (save.gold < PRICES[type] ? ' disabled' : '') + '>' + GOLD_SVG + ' Unlock for ' + PRICES[type] + '</button>' : '') + '</div>');
+    const ub = d.querySelector('.ubuy');
+    if (ub) ub.addEventListener('click', () => { if (!unlockBuddy(type)) { toast('Need ' + PRICES[type] + ' golden seeds'); Sound.play('error'); } });
     gb.appendChild(d);
   });
   Object.keys(ENEMY_NOTE).forEach((type, i) => {
@@ -2728,7 +2679,7 @@ function setBuildType(type) {
     const T = TOWERS[type], price = PRICES[type];
     if (save.gold < price) { toast(T.name + ' costs ' + price + ' golden seeds. You have ' + save.gold + '. Win rounds to earn more.'); Sound.play('error'); return; }
     if (buyPending !== type) { buyPending = type; clearTimeout(buyT); buyT = setTimeout(() => { buyPending = null; }, 3000); toast('Tap again to buy ' + T.name + ' for ' + price + ' golden seeds'); Sound.play('click'); return; }
-    save.gold -= price; save.owned[type] = true; buyPending = null; persist(); buildTray(); Sound.play('egg'); toast(T.name + ' is yours!');
+    buyPending = null; unlockBuddy(type);
   }
   sel = null; pending = null; moving = null; buildType = type;
   if (gameScreen.classList.contains('fs')) { const c = trayEl.querySelector('[data-type="' + type + '"]'); if (c && c.scrollIntoView) c.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' }); }
@@ -3038,7 +2989,7 @@ function startLevel(i) {
   fxs = []; sel = null; moving = null; buildType = 'squirrel'; hover = null; pending = null; kb = { on: false, col: 4, row: 3 }; speed = 1; infoKey = ''; tvKey = ''; shake = 0; flashT = 0;
   for (const k in hudCache) delete hudCache[k];
   save.last = i; persist(); buildTray(); initAmb(); game.hintCell = bestCell(game); banner = null; patchShake = 0; tutSel = false;
-  mode = 'play'; menuScreen.hidden = true; gameScreen.hidden = false; $('endModal').hidden = true; $('pauseModal').hidden = true; $('helpModal').hidden = true; $('tradeModal').hidden = true; $('skinModal').hidden = true; tradeOpen = false; skinOpen = false;
+  mode = 'play'; menuScreen.hidden = true; gameScreen.hidden = false; $('endModal').hidden = true; $('pauseModal').hidden = true; $('helpModal').hidden = true; $('tradeModal').hidden = true; tradeOpen = false;
   document.body.classList.add('playing');
   $('btnSpeed').textContent = '1x';
   Sound.setIntense(false);
@@ -3164,28 +3115,15 @@ function buySkin(i) {
   const o = traderSkinStock[i];
   if (!o || save.skins[o.skin.id] || save.gold < o.price) return;
   save.gold -= o.price; save.skins[o.skin.id] = true; save.skin = o.skin.id;
-  persist(); playUnlock(o.skin); toast(o.skin.name + ' is yours');
+  persist(); Sound.play('egg'); toast(o.skin.name + ' is yours');
   renderTraderSkins(); buildMenu();
 }
 function closeTrade() { tradeOpen = false; $('tradeModal').hidden = true; if (game) mode = 'play'; }
-let skinOpen = false;
-function openSkins() {
-  if (!game || mode !== 'play' || tradeOpen) return;
-  skinOpen = true; mode = 'skinning'; sel = null; pending = null; moving = null;
-  $('skinGold').innerHTML = GOLD_SVG + ' ' + save.gold;
-  buildSkinGrid($('skinGrid'));
-  $('skinModal').hidden = false;
-  $('skinClose').focus();
-  Sound.play('click');
-}
-function closeSkins() { skinOpen = false; $('skinModal').hidden = true; if (game) mode = 'play'; }
-$('skinClose').addEventListener('click', () => { Sound.play('click'); closeSkins(); });
-$('btnSkins').addEventListener('click', openSkins);
 $('tradeSkip').addEventListener('click', () => { Sound.play('click'); closeTrade(); });
 function toMenu() {
   setFs(false);
   recordEndless();
-  mode = 'menu'; game = null; $('endModal').hidden = true; $('pauseModal').hidden = true; $('helpModal').hidden = true; $('tradeModal').hidden = true; $('skinModal').hidden = true; tradeOpen = false; skinOpen = false;
+  mode = 'menu'; game = null; $('endModal').hidden = true; $('pauseModal').hidden = true; $('helpModal').hidden = true; $('tradeModal').hidden = true; tradeOpen = false;
   gameScreen.hidden = true; menuScreen.hidden = false; Sound.setIntense(false);
   document.body.classList.remove('playing');
   gardenPage = -1;
@@ -3283,10 +3221,8 @@ window.addEventListener('keydown', e => {
   if (!game) return;
   if (!$('helpModal').hidden) { if (k === 'escape' || k === 'enter' || k === ' ') { e.preventDefault(); closeHelp(); } return; }
   if (mode === 'trading') { if (k === 'escape') closeTrade(); return; }
-  if (mode === 'skinning') { if (k === 'escape') closeSkins(); return; }
   if (k === 'escape') { if (mode === 'play' && (sel || pending || moving)) { sel = null; pending = null; moving = null; } else setPaused(mode !== 'paused'); return; }
   if (k === 'p') { setPaused(mode !== 'paused'); return; }
-  if (k === 'k') { openSkins(); return; }
   if (mode !== 'play') return;
   const dirs = { arrowleft: [-1, 0], a: [-1, 0], arrowright: [1, 0], d: [1, 0], arrowup: [0, -1], w: [0, -1], arrowdown: [0, 1], s: [0, 1] };
   if (dirs[k]) {

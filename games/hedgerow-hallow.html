@@ -414,7 +414,8 @@
   #endBest { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .eb-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
   .mcard .acts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 4px; }
-  .skinmcard { width: min(100%, 560px); }
+  .skinmcard { width: min(100%, 560px); margin: auto; }
+  #skinModal { align-items: flex-start; }
   .skin.buyable .sr { color: var(--ink-soft); text-transform: none; letter-spacing: 0; font-variant-numeric: tabular-nums; }
   .skin.buyable.armed { background: var(--honey); border-color: var(--berry); }
   .unlockfx { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(38, 50, 77, .5); }
@@ -2371,7 +2372,7 @@ function playUnlock(k) {
   const rc = RAR[k.rar].col;
   $('ufxCard').style.setProperty('--rc', rc);
   $('ufxName').textContent = k.name;
-  $('ufxRar').textContent = RAR[k.rar].name + ' skin unlocked';
+  $('ufxRar').textContent = RAR[k.rar].name;
   drawSkinPreview($('ufxCanvas'), k, false);
   const sparks = $('ufxSparks'); sparks.innerHTML = '';
   for (let i = 0; i < 14; i++) {

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privatliv – Damp</title>
+  <meta name="description" content="Hvordan Damp behandler data, cookies og reklamer.">
+  <meta name="theme-color" content="#0e171d">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230e171d'/%3E%3Cpath d='M32 9c8 12 14 19 14 28a14 14 0 0 1-28 0c0-9 6-16 14-28z' fill='%23e9b44c'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .page { max-width: 760px; padding: 40px 0 64px; }
+    .page h1 { font-family: var(--display); font-size: clamp(2rem, 5vw, 3rem); letter-spacing: .01em; }
+    .page h2 { font-family: var(--display); font-size: 1.4rem; margin-top: 32px; }
+    .page p, .page li { color: var(--fog); margin-top: 10px; }
+    .page li { margin-top: 4px; }
+    .page a { color: var(--lamp); }
+    .page .meta { font-size: .875rem; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap bar">
+      <a class="logo" href="./" aria-label="Damp home"><svg viewBox="0 0 20 24" aria-hidden="true"><path d="M10 0c3 5 10 9.500 10 14.500a10 10 0 0 1-20 0C0 9.500 7 5 10 0z"/></svg><span>damp</span></a>
+    </div>
+  </header>
+
+  <main class="wrap page">
+    <h1>Privatliv og cookies</h1>
+    <p class="meta">Sidst opdateret: 14. november 2026</p>
+
+    <h2>Hvem står bag</h2>
+    <p>Damp er en samling gratis browserspil på dampgames.dk. Siden har ingen brugerbetaling og ingen abonnementer.</p>
+
+    <h2>Data der gemmes i din browser</h2>
+    <p>Spillet husker lokalt på din enhed, hvilke spil du sidst har åbnet, og hvilket sprog du har valgt. Det ligger i din browsers localStorage under navnene <code>damp-recent</code> og <code>damp.lang</code> og sendes ikke til os. Du kan slette det ved at rydde browserens webstedsdata.</p>
+
+    <h2>Konto</h2>
+    <p>Hvis du vælger at logge ind, bruges en konto hos Google Firebase til at gemme din e-mailadresse og dine gemte resultater, så de kan vises på tværs af enheder. Uden en konto gemmes der ikke noget om dig på vores servere.</p>
+
+    <h2>Reklamer</h2>
+    <p>Siden vises med annoncer fra Google AdSense (udgiver-id <strong>ca-pub-6851662024546666</strong>). Google og dets partnere kan bruge cookies og lignende teknologier til at vise annoncer, måle deres effektivitet og begrænse, hvor ofte du ser den samme annonce. Det kan omfatte oplysninger om din browser, enhed og omtrentlige placering samt hvilke sider du har set.</p>
+    <p>Du kan styre personligt tilpassede annoncer i <a href="https://adssettings.google.com" rel="noopener" target="_blank">Googles annonceindstillinger</a> og læse mere i <a href="https://policies.google.com/technologies/ads?hl=da" rel="noopener" target="_blank">Googles politik for annoncer</a>. I EU/EØS bliver du bedt om samtykke, før der sættes cookies til personligt tilpassede annoncer; uden samtykke vises kun annoncer uden personlig tilpasning.</p>
+
+    <h2>Dine rettigheder</h2>
+    <p>Du kan til enhver tid få oplyst, hvilke data der er gemt om din konto, få dem rettet eller slettet. Skriv i så fald gennem <a href="https://github.com/Viggoo5555/Damp" rel="noopener" target="_blank">projektets side på GitHub</a>. Hvis du ikke har en konto, har vi ingen personoplysninger om dig at slette.</p>
+
+    <h2>Ændringer</h2>
+    <p>Hvis siden begynder at bruge nye tjenester eller cookies, bliver denne side opdateret, og datoen øverst ændret.</p>
+
+    <p><a href="./">&larr; Tilbage til spillene</a></p>
+  </main>
+
+  <footer class="wrap foot">&copy; <span id="year"></span> Damp</footer>
+  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>

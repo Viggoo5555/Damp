@@ -2099,11 +2099,11 @@ const SKINS = [
   { id: 'nebula', name: 'Nebula', rar: 4, f: tm => 'hue-rotate(' + (250 + Math.sin(tm * 1.2) * 60) + 'deg) saturate(2.4) brightness(' + (0.95 + Math.sin(tm * 3) * 0.1) + ')', glow: '#c04bff', sparks: '#ffd6ff' },
   { id: 'prism', name: 'Prismatic', rar: 4, f: tm => 'hue-rotate(' + ((tm * 200) % 360) + 'deg) saturate(2.6) brightness(1.15) contrast(1.1)', glow: '#ffffff', sparks: '#ffffff' },
   /* Trader exclusives: never in the lucky bundle, only sold when he wanders in. */
-  { id: 'wisp', name: 'Willow Wisp', rar: 4, exclusive: true, worth: 460, f: 'invert(.86) hue-rotate(150deg) saturate(1.7) brightness(1.45)', glow: '#a6f0ff', sparks: '#e8ffff', sigil: '#a6f0ff' },
-  { id: 'aurora', name: 'Aurora', rar: 4, exclusive: true, worth: 520, f: tm => 'hue-rotate(' + (115 + Math.sin(tm * 0.9) * 55) + 'deg) saturate(2.3) brightness(1.12)', glow: '#57f2c4', sparks: '#d8fff2', sigil: '#7dffd8' },
-  { id: 'eclipse', name: 'Eclipse', rar: 4, exclusive: true, worth: 620, f: 'grayscale(1) brightness(.34) contrast(2.2)', glow: '#ffb02e', sparks: '#ffd76a', sigil: '#ffcf5a' },
-  { id: 'supernova', name: 'Supernova', rar: 4, exclusive: true, worth: 720, f: tm => 'hue-rotate(' + ((tm * 130) % 360) + 'deg) saturate(3.2) contrast(1.15) brightness(' + (1.1 + Math.sin(tm * 5) * 0.1) + ')', glow: '#ff6a2a', sparks: '#fff0c0', sigil: '#ffa25a' },
-  { id: 'thorn', name: 'Thorn King', rar: 4, exclusive: true, worth: 820, f: 'sepia(.75) saturate(2.8) hue-rotate(245deg) brightness(.9) contrast(1.3)', glow: '#7a3bd6', sparks: '#d6b3ff', sigil: '#b07bff' }
+  { id: 'wisp', name: 'Willow Wisp', rar: 4, exclusive: true, worth: 460, f: 'sepia(.3) hue-rotate(85deg) saturate(1.15) brightness(1.16)', glow: '#8ef0c0', sparks: '#e8fff4', sigil: '#a6ffd4' },
+  { id: 'aurora', name: 'Aurora', rar: 4, exclusive: true, worth: 520, f: tm => 'hue-rotate(' + (145 + Math.sin(tm * 0.9) * 45) + 'deg) saturate(1.5) brightness(1.08)', glow: '#5cf0d8', sparks: '#d8fff8', sigil: '#7dffe8' },
+  { id: 'eclipse', name: 'Eclipse', rar: 4, exclusive: true, worth: 620, f: 'saturate(.3) brightness(.52) contrast(1.55)', glow: '#ffc23a', sparks: '#ffe08a', sigil: '#ffd05a' },
+  { id: 'supernova', name: 'Supernova', rar: 4, exclusive: true, worth: 720, f: tm => 'sepia(.5) saturate(2.6) hue-rotate(-12deg) brightness(' + (1.02 + Math.sin(tm * 5) * 0.12) + ')', glow: '#ff7a2a', sparks: '#fff0c0', sigil: '#ffb066' },
+  { id: 'thorn', name: 'Thorn King', rar: 4, exclusive: true, worth: 820, f: 'hue-rotate(240deg) saturate(1.6) brightness(.85) contrast(1.25)', glow: '#a35cff', sparks: '#d9c2ff', sigil: '#bf8bff' }
 ];
 const CANVAS_FILTER = (() => { try { return typeof document.createElement('canvas').getContext('2d').filter === 'string'; } catch (e) { return false; } })();
 let skOff = null, skCtx = null;
@@ -2149,13 +2149,13 @@ function skinGlow(c, k, tm, id) {
   }
   if (k.sparks) { c.save(); c.fillStyle = k.sparks; for (let i = 0; i < 3; i++) { const a = tm * 1.8 + i * 2.1 + id; c.globalAlpha = 0.5 + 0.4 * Math.sin(tm * 4 + i * 2); c.beginPath(); c.arc(Math.cos(a) * 24, Math.sin(a) * 9 + 2, 1.7, 0, 7); c.fill(); } c.restore(); }
   if (k.sigil) {
-    c.save(); c.translate(0, -6); c.rotate(tm * 0.55);
-    c.strokeStyle = k.sigil; c.lineWidth = 1.7; c.globalAlpha = 0.9;
+    c.save(); c.translate(0, -4); c.rotate(tm * 0.55);
+    c.strokeStyle = k.sigil; c.lineWidth = 1.6; c.globalAlpha = 0.85;
     for (let i = 0; i < 5; i++) {
-      const a = i * 1.2566, x = Math.cos(a) * 31, y = Math.sin(a) * 37;
-      c.beginPath(); c.moveTo(x, y - 4.5); c.lineTo(x + 3.2, y); c.lineTo(x, y + 4.5); c.lineTo(x - 3.2, y); c.closePath(); c.stroke();
+      const a = i * 1.2566, x = Math.cos(a) * 24, y = Math.sin(a) * 28;
+      c.beginPath(); c.moveTo(x, y - 4); c.lineTo(x + 2.8, y); c.lineTo(x, y + 4); c.lineTo(x - 2.8, y); c.closePath(); c.stroke();
     }
-    c.globalAlpha = 0.35; c.beginPath(); c.ellipse(0, 0, 31, 37, 0, 0, 7); c.stroke();
+    c.globalAlpha = 0.3; c.beginPath(); c.ellipse(0, 0, 24, 28, 0, 0, 7); c.stroke();
     c.restore();
   }
 }

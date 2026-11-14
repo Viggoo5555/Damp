@@ -2327,6 +2327,7 @@ function setLang(lang) {
   save.lang = lang === 'da' ? 'da' : 'en';
   persist();
   applyLang(save.lang);
+  syncSettings();
 }
 
 let kb = { on: false, col: 4, row: 3 }, speed = 1, bg = null, fxs = [], shake = 0, flashT = 0, time = 0, lastT = 0, lastPointer = 'mouse';
@@ -3443,8 +3444,6 @@ $('langDa').addEventListener('click', () => { setLang('da'); Sound.play('click')
 $('pResume').addEventListener('click', () => setPaused(false));
 $('pRestart').addEventListener('click', () => startLevel(levelIdx));
 $('pMenu').addEventListener('click', toMenu);
-$('mMusic').addEventListener('click', () => $('btnMusic').click());
-$('mSfx').addEventListener('click', () => $('btnSfx').click());
 $('btnPlay').addEventListener('click', () => startLevel(nextLevelIdx()));
 let curTab = 'gardens';
 function showTab(name) {

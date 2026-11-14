@@ -28,13 +28,6 @@
     "image": "img/stratego.png?v=2"
   },
   {
-    "title": "River Hop",
-    "description": "Five lanes of traffic, a river of drifting logs and five lily pads to reach. One hop at a time, sixty seconds on the clock.",
-    "file": "games/river-hop.html",
-    "category": "Arcade",
-    "image": "img/river-hop.png"
-  },
-  {
     "title": "Catan",
     "description": "3D Catan on a full island: settle, trade with the bank or your rivals, build roads and cities, and race three computer players to ten points.",
     "file": "games/catan.html",

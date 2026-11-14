@@ -15,12 +15,16 @@
   };
 
   const SAVE_KEYS = {
-    "games/Flappy Bird.html": ["fb-best", "fb-save"],
+    "games/Flappy Bird.html": ["fb-best", "fb-save", "fb-lbmode"],
     "games/Starclicker.html": ["voidfoundry.v1"],
     "games/verity-clicker.html": ["verityClicker.v1"],
     "games/hedgerow-hallow.html": ["hedgerow-hollow-v1"],
     "games/guess-the-color.html": ["colorMemoryBest"],
-    "games/guessing-game.html": ["hol_mode", "hol_cat", "hol_sound", "hol_best", "hol_scores"]
+    "games/guessing-game.html": ["hol_mode", "hol_cat", "hol_sound", "hol_best", "hol_scores"],
+    "games/krillion.html": ["deep-dive-draft", "deep-dive-draft-v2", "kdk_day", "kdk_streak"],
+    "games/ordle.html": ["ordle-set"],
+    "games/battleship.html": ["bs-lang", "bs-mute"],
+    "games/chess.html": ["ch-mute"]
   };
 
   // ---------------------------------------------------------------

@@ -299,6 +299,8 @@
   .skin .sr { font-size: 13px; color: var(--rc); text-transform: uppercase; letter-spacing: .05em; }
   .skin[aria-pressed="true"] { background: var(--honey); }
   .skin.unk { opacity: .55; }
+  .skin .sr.price { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .skin .sr.price .gold svg { width: 13px; height: 13px; }
   @media (prefers-reduced-motion: reduce) { .pullcard { animation: none; } }
 
   .gacha { position: fixed; inset: 0; z-index: 200; background: #070a18; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
@@ -454,7 +456,7 @@
         <h2>How to play</h2>
         <p>Pick a buddy, then tap a patch of grass to plant it. Tap a planted buddy and a box pops up right over it with two upgrade paths.</p>
         <p>Press Send wave when you are ready, or switch on Auto. Rain, Thunder and Sunshine help in a tight spot.</p>
-        <p>Win rounds to earn golden seeds. Spend them in the Shop on locked buddies, or gamble them for skins. The Daily garden changes every day and keeps a streak. The Endless meadow never ends.</p>
+        <p>Win rounds to earn golden seeds. Spend them in the Shop on locked buddies; skins are sold by the mystery trader, who wanders into the garden with a new stock every hour. The Daily garden changes every day and keeps a streak. The Endless meadow never ends.</p>
         <p>Every third wave a hedgehog trader stops by with a trade. Each garden also has two goals that pay golden seeds the first time you meet them.</p>
         <p class="kb-only">Keyboard: arrows or WASD move the cursor, 1 to 9, 0, - and = pick a buddy, Enter plants, U and I buy upgrades, X sells, N sends the wave, Q E R use powers, T toggles Auto, P pauses, F changes speed.</p>
       </div>
@@ -530,10 +532,13 @@
 </div>
 <div class="modal" id="tradeModal" hidden>
   <div class="mcard" role="dialog" aria-modal="true" aria-labelledby="tradeTitle">
-    <h2 id="tradeTitle">Hedgehog trader</h2>
-    <p>A hedgehog with a barrow of odds and ends stops by. One trade per visit.</p>
+    <h2 id="tradeTitle">Mystery trader</h2>
+    <p>A traveller with a barrow of oddities. His skins change every hour.</p>
+    <div id="traderSkins" class="skins"></div>
+    <p id="traderSkinNote" class="tabnote" hidden></p>
+    <h3 class="shop-h">Odds and ends</h3>
     <div id="tradeOffers"></div>
-    <div class="acts"><button class="btn" id="tradeSkip" type="button">No trades</button></div>
+    <div class="acts"><button class="btn" id="tradeSkip" type="button">Close</button></div>
   </div>
 </div>
 <div class="modal" id="helpModal" hidden>
@@ -545,7 +550,7 @@
       <li>A green arrow over a buddy means you can afford an upgrade.</li>
       <li>Press Send wave. Critters follow the arrows to the veggie patch.</li>
       <li>Rain, Thunder and Sunshine help in a tight spot.</li>
-      <li>Every third wave a hedgehog trader stops by. Trade seeds or a veggie for an upgrade, a seedling or sharper teeth.</li>
+      <li>Now and then a mystery trader wanders onto the grass. Tap him to buy skins with golden seeds, or to trade seeds for an upgrade, a seedling or sharper teeth.</li>
       <li>Tap the corner button for full screen: a bigger map with a buddy strip you can scroll.</li>
     </ol>
     <div class="acts"><button class="btn primary" id="hClose" type="button">Got it</button></div>
@@ -914,12 +919,12 @@ function createGame(L, onEvent) {
   const leakDist = path.total - 70; // critters vanish into the veggie patch near the right edge
   const g = { L, path, blocked, leakDist, seeds: L.seeds, hearts: L.hearts, wave: 0, cleared: 0, state: 'idle',
     t: 0, towers: [], enemies: [], shots: [], queue: [], clock: 0, score: 0, kills: 0, stars: 0, nid: 1, born: [],
-    autoWave: false, autoDelay: 7, autoT: 0, rainT: 0, sunT: 0, dmgRun: 1, powersUsed: 0, contractWins: [],
+    autoWave: false, autoDelay: 7, autoT: 0, rainT: 0, sunT: 0, dmgRun: 1, powersUsed: 0, contractWins: [], merchant: null,
     powers: POWERS.map(p => ({ id: p.id, cd: 0, max: p.cd })) };
   const emit = (k, d) => { if (onEvent) onEvent(k, d); };
 
   g.towerAt = (c, r) => g.towers.find(t => t.c === c && t.r === r) || null;
-  g.canBuild = (c, r) => c >= 0 && c < COLS && r >= 0 && r < ROWS && !blocked.has(c + ',' + r) && !g.towerAt(c, r);
+  g.canBuild = (c, r) => c >= 0 && c < COLS && r >= 0 && r < ROWS && !blocked.has(c + ',' + r) && !g.towerAt(c, r) && !(g.merchant && g.merchant.c === c && g.merchant.r === r);
   g.stat = (t) => t.st;
   g.place = (c, r, type) => {
     const T = TOWERS[type];
@@ -1038,6 +1043,7 @@ function createGame(L, onEvent) {
   g.update = (dt) => {
     if (g.state === 'won' || g.state === 'lost') return;
     g.t += dt;
+    if (g.merchant) { g.merchant.ttl -= dt; if (g.merchant.ttl <= 0) g.merchant = null; }
     for (const p of g.powers) p.cd = Math.max(0, p.cd - dt);
     g.rainT = Math.max(0, g.rainT - dt); g.sunT = Math.max(0, g.sunT - dt);
 
@@ -1889,6 +1895,26 @@ function drawShot(c, s) {
 function mulberry(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function hash(s) { let h = 7; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h; }
 
+function drawMerchant(c, m, time) {
+  const bob = Math.sin(time * 2.6) * 1.6, blink = m.ttl < 8 && Math.sin(time * 14) > 0;
+  c.save(); c.translate(m.x, m.y + bob);
+  if (blink) c.globalAlpha = 0.45;
+  c.save(); c.globalAlpha *= 0.25; c.fillStyle = INK; c.beginPath(); c.ellipse(0, 17, 17, 5.5, 0, 0, 7); c.fill(); c.restore();
+  setInk(c, 2);
+  ln(c, -5, 6, -6, 16); ln(c, 5, 6, 6, 16);
+  blob(c, 0, 0, 11, 13, '#8b5a3c', 3, 0.6);
+  ln(c, -9, -2, -13, 7); ln(c, 9, -2, 13, 7);
+  c.beginPath(); c.arc(0, -16, 8, 0, 7); c.fillStyle = '#f0c9a0'; c.fill(); c.stroke();
+  c.beginPath(); c.ellipse(0, -22, 12.5, 3.6, 0, 0, 7); c.fillStyle = '#4f3b2a'; c.fill(); c.stroke();
+  c.beginPath(); c.rect(-6, -30, 12, 8.5); c.fillStyle = '#4f3b2a'; c.fill(); c.stroke();
+  dot(c, -2.6, -17, 1.2, INK); dot(c, 2.6, -17, 1.2, INK);
+  c.beginPath(); c.arc(0, -11, 5.5, 0, Math.PI); c.fillStyle = '#ece5d8'; c.fill(); c.stroke();
+  blob(c, 11, 4, 6, 5.5, '#b57a3a', 5, 0.5);
+  const by = -46 + Math.sin(time * 4) * 2;
+  c.beginPath(); c.arc(0, by, 9.5, 0, 7); c.fillStyle = '#f6c231'; c.fill(); c.stroke();
+  c.fillStyle = INK; c.font = 'bold 12px ' + FONT; c.textAlign = 'center'; c.fillText('$', 0, by + 4.5);
+  c.restore();
+}
 function drawPatch(c, x, y) {
   setInk(c, 2.4);
   blob(c, x, y + 2, 29, 27, '#9b7a50', 3, 0.05);
@@ -2049,6 +2075,25 @@ function drawFiltered(c, f, fn) {
   fn(skCtx);
   c.save(); c.filter = f; c.drawImage(skOff, -65, -85, 130, 130); c.restore();
 }
+/* ---------- the mystery trader's hourly stock ---------- */
+const SKIN_PRICE = [60, 90, 140, 220, 400];
+function hourKey(d) {
+  d = d || new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + '-' + String(d.getHours()).padStart(2, '0');
+}
+function traderStock() {
+  const rnd = mulberry(hash('trader-' + hourKey()));
+  const pool = SKINS.slice(), out = [];
+  while (pool.length && out.length < 3) {
+    let total = 0;
+    for (const k of pool) total += 5 - k.rar;
+    let r = rnd() * total, i = 0;
+    while (i < pool.length - 1 && r > (5 - pool[i].rar)) { r -= (5 - pool[i].rar); i++; }
+    const k = pool.splice(i, 1)[0];
+    out.push({ skin: k, price: Math.round(SKIN_PRICE[k.rar] * (0.85 + rnd() * 0.3)) });
+  }
+  return out;
+}
 const activeSkin = () => SKINS.find(k => k.id === save.skin && save.skins[k.id]) || null;
 const skinFilter = (k, tm) => (k && CANVAS_FILTER ? (typeof k.f === 'function' ? k.f(tm) : k.f) : 'none');
 function skinGlow(c, k, tm, id) {
@@ -2164,13 +2209,7 @@ function buildShop() {
     }
     d.appendChild(b); list.appendChild(d);
   });
-  box.insertAdjacentHTML('beforeend', '<h3 class="shop-h">Skin gamble</h3>');
-  const g = document.createElement('div'); g.className = 'panel gamble'; box.appendChild(g);
-  g.insertAdjacentHTML('beforeend', '<p>Spend ' + PULL_COST + ' golden seeds to win a skin. Skins change how all your buddies look.' + (CANVAS_FILTER ? '' : ' This browser shows skins as glows only.') + '</p><p class="odds">Common 59.5% &middot; Rare 28% &middot; Epic 10% &middot; Legendary 2% &middot; <b style="color:#d62cb0">Mythic 0.5%</b>. Epic or better is guaranteed within ' + Math.max(1, 10 - (save.pity || 0)) + ' pulls. Mythic is guaranteed within ' + Math.max(1, 150 - (save.mpity || 0)) + ' pulls. A skin you already own gives some seeds back.</p>');
-  const pb = document.createElement('button'); pb.type = 'button'; pb.className = 'btn primary'; pb.innerHTML = 'Gamble ' + GOLD_SVG + ' ' + PULL_COST; pb.disabled = save.gold < PULL_COST;
-  pb.addEventListener('click', pullSkin); g.appendChild(pb);
-  const pr = document.createElement('div'); pr.className = 'pullres'; pr.id = 'pullRes'; g.appendChild(pr);
-  if (lastPull) renderPull(pr, lastPull);
+  box.insertAdjacentHTML('beforeend', '<h3 class="shop-h">Skins</h3><p class="tabnote">Skins are sold by the mystery trader who wanders into the garden. Tap him when he shows up: his stock changes every hour.</p>');
   const owned = SKINS.filter(k => save.skins[k.id]).length;
   box.insertAdjacentHTML('beforeend', '<h3 class="shop-h">Your skins (' + owned + ' of ' + SKINS.length + ')</h3>');
   const grid = document.createElement('div'); grid.className = 'skins'; box.appendChild(grid);
@@ -2733,7 +2772,7 @@ function onGameEvent(k, d) {
       if (boss) Sound.play('boss');
       break;
     }
-    case 'waveClear': Sound.play('clear'); Sound.setIntense(false); showBanner('Wave cleared', '+' + d.bonus + ' seeds', LEAF); scheduleTrade(d); break;
+    case 'waveClear': Sound.play('clear'); Sound.setIntense(false); showBanner('Wave cleared', '+' + d.bonus + ' seeds', LEAF); spawnTrader(d); break;
     case 'power':
       Sound.play(d);
       if (d === 'rain') toast('Rain slows every critter');
@@ -2867,12 +2906,23 @@ function showEnd(won, newBest) {
   $('endModal').hidden = false; (first || again).focus();
 }
 /* ---------- hedgehog trader ---------- */
-const TRADE_EVERY = 3;
-let tradeOpen = false, tradeList = [];
-function scheduleTrade(d) {
-  if (!game || !d || d.wave % TRADE_EVERY !== 0) return;
-  if (game.wave >= game.L.waves) return;
-  setTimeout(() => { if (mode === 'play' && game && game.state === 'idle' && game.wave === d.wave) openTrade(); }, 1100);
+const MERCHANT_EVERY = 2;
+let tradeOpen = false, tradeList = [], traderSkinStock = [];
+function spawnTrader(d) {
+  if (!game || game.merchant || !d) return;
+  if (d.wave % MERCHANT_EVERY !== 0 || game.wave >= game.L.waves) return;
+  const spots = [], near = [];
+  for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
+    if (!game.canBuild(c, r)) continue;
+    spots.push({ c, r });
+    if (game.path.cells.some(p => Math.abs(p[0] - c) + Math.abs(p[1] - r) === 1)) near.push({ c, r });
+  }
+  const list = near.length ? near : spots;
+  if (!list.length) return;
+  const pick = list[Math.floor(Math.random() * list.length)];
+  game.merchant = { c: pick.c, r: pick.r, x: (pick.c + 0.5) * TILE, y: (pick.r + 0.5) * TILE, ttl: 60 };
+  toast('A mystery trader wanders in. Tap him for skins.');
+  Sound.play('coin');
 }
 function tradeOffers(g) {
   const w = g.wave, out = [];
@@ -2885,9 +2935,15 @@ function tradeOffers(g) {
   for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const tmp = out[i]; out[i] = out[j]; out[j] = tmp; }
   return out.slice(0, 3);
 }
-function openTrade() {
+function openTrader() {
   if (!game || mode !== 'play' || tradeOpen) return;
-  tradeOpen = true; mode = 'trading'; tradeList = tradeOffers(game);
+  tradeOpen = true; mode = 'trading'; sel = null; pending = null; moving = null;
+  tradeList = tradeOffers(game); traderSkinStock = traderStock();
+  renderTraderSkins(); renderTradeOffers();
+  $('tradeModal').hidden = false;
+  $('tradeSkip').focus();
+}
+function renderTradeOffers() {
   const box = $('tradeOffers'); box.innerHTML = '';
   tradeList.forEach((o, i) => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'btn trade-offer';
@@ -2897,8 +2953,29 @@ function openTrade() {
     b.addEventListener('click', () => buyTrade(i));
     box.appendChild(b);
   });
-  $('tradeModal').hidden = false;
-  $('tradeSkip').focus();
+}
+function renderTraderSkins() {
+  const grid = $('traderSkins'); grid.innerHTML = '';
+  traderSkinStock.forEach((o, i) => {
+    const k = o.skin, has = !!save.skins[k.id];
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn skin' + (has ? '' : ' unk');
+    b.style.setProperty('--rc', RAR[k.rar].col);
+    const cvs = document.createElement('canvas'); cvs.width = cvs.height = 124; b.appendChild(cvs); drawSkinPreview(cvs, k, false);
+    b.insertAdjacentHTML('beforeend', '<span class="sn">' + k.name + '</span><span class="sr">' + RAR[k.rar].name + '</span><span class="sr price">' + (has ? 'Owned' : GOLD_SVG + ' ' + o.price) + '</span>');
+    b.disabled = has || save.gold < o.price;
+    if (!has) b.addEventListener('click', () => buySkin(i));
+    grid.appendChild(b);
+  });
+  const note = $('traderSkinNote');
+  if (!traderSkinStock.some(o => !save.skins[o.skin.id])) { note.textContent = 'He has nothing you do not already own. New stock next hour.'; note.hidden = false; }
+  else { note.hidden = true; }
+}
+function buySkin(i) {
+  const o = traderSkinStock[i];
+  if (!o || save.skins[o.skin.id] || save.gold < o.price) return;
+  save.gold -= o.price; save.skins[o.skin.id] = true; save.skin = o.skin.id;
+  persist(); Sound.play('egg'); toast(o.skin.name + ' is yours');
+  renderTraderSkins(); buildMenu();
 }
 function closeTrade() { tradeOpen = false; $('tradeModal').hidden = true; if (game) mode = 'play'; }
 function buyTrade(i) {
@@ -2956,7 +3033,9 @@ cv.addEventListener('click', e => {
     if (r.ok) { moving = null; hover = null; } else { toast('Moles can only dig up empty grass'); Sound.play('error'); }
     return;
   }
-  const wp = toWorld(e), fly = game.towers.find(t => t.roam && Math.hypot(t.x - wp.x, t.y - wp.y) < 28);
+  const wp = toWorld(e);
+  if (game.merchant && Math.hypot(wp.x - game.merchant.x, wp.y - game.merchant.y) < 38) { openTrader(); return; }
+  const fly = game.towers.find(t => t.roam && Math.hypot(t.x - wp.x, t.y - wp.y) < 28);
   if (fly) { sel = fly; pending = null; Sound.play('click'); return; }
   const cell = cellOf(wp); if (!cell) return;
   kb.on = false; hover = cell;
@@ -3097,6 +3176,7 @@ function draw(t) {
   for (let i = 0; i < Math.min(10, g.hearts); i++) drawVeg(c, pxv, ep.y, i, t);
   const items = [];
   for (const tw of g.towers) items.push([tw.y + 14, () => drawTower(c, tw, t, g)]);
+  if (g.merchant) items.push([g.merchant.y + 18, () => drawMerchant(c, g.merchant, t)]);
   for (const e of g.enemies) { if (Math.abs(e.dx) > 0.1) e.face = Math.sign(e.dx); items.push([e.y, () => { drawEnemy(c, e, t); if (e.markT > 0) { const my = e.y - e.r - 16 + Math.sin(t * 6) * 1.5; c.save(); c.strokeStyle = BERRY; c.lineWidth = 2.4; c.lineCap = 'round'; c.beginPath(); c.arc(e.x, my, 6, 0, 7); c.moveTo(e.x - 10, my); c.lineTo(e.x - 3, my); c.moveTo(e.x + 3, my); c.lineTo(e.x + 10, my); c.moveTo(e.x, my - 10); c.lineTo(e.x, my - 3); c.moveTo(e.x, my + 3); c.lineTo(e.x, my + 10); c.stroke(); c.restore(); } }]); }
   items.sort((a, b) => a[0] - b[0]);
   for (const it of items) it[1]();

@@ -77,6 +77,15 @@
   .cta .btn { font-family: var(--f-display); font-size: 27px; line-height: 1; min-height: 52px; padding: 0 22px; max-width: 100%; }
   .sec-h { font-family: var(--f-display); font-weight: 400; font-size: 30px; margin: 6px 0 -4px; line-height: 1; }
   .levels { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 14px; }
+  .gpager { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+  .gpinfo { font-family: var(--f-display); font-size: 21px; color: var(--ink-soft); }
+  .gnav { display: flex; gap: 8px; }
+  .garrow { min-height: 44px; width: 52px; padding: 0; justify-content: center; font-family: var(--f-display); font-size: 30px; line-height: 1; }
+  .garrow:disabled { opacity: .4; }
+  .lvl .diff { display: flex; align-items: center; gap: 7px; font-size: 15px; color: var(--ink-soft); }
+  .pips { display: inline-flex; gap: 3px; }
+  .pips i { width: 9px; height: 9px; border: 2px solid var(--ink); border-radius: 50%; background: transparent; }
+  .pips i.on { background: var(--berry); }
   .lvl { text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 8px 8px 12px; min-width: 0; }
   .lvl canvas { display: block; width: 100%; aspect-ratio: 10 / 7; border: 2.5px solid var(--ink); border-radius: 12px 18px 12px 16px / 16px 12px 18px 12px; }
   .lvl > :not(canvas) { padding: 0 6px; }
@@ -447,7 +456,16 @@
       <button class="btn tab" role="tab" type="button" data-tab="critters" aria-selected="false">Critters</button>
       <button class="btn tab" role="tab" type="button" data-tab="how" aria-selected="false">How to play</button>
     </div>
-    <div class="tabpanel" id="tab-gardens" role="tabpanel"><div class="levels" id="levels"></div></div>
+    <div class="tabpanel" id="tab-gardens" role="tabpanel">
+      <div class="gpager">
+        <span class="gpinfo" id="gRange"></span>
+        <div class="gnav">
+          <button class="btn garrow" id="gPrev" type="button" aria-label="Previous four gardens">&#8249;</button>
+          <button class="btn garrow" id="gNext" type="button" aria-label="Next four gardens">&#8250;</button>
+        </div>
+      </div>
+      <div class="levels" id="levels"></div>
+    </div>
     <div class="tabpanel" id="tab-buddies" role="tabpanel" hidden>
       <p class="tabnote" id="buddyNote"></p>
       <div class="guide" id="guideB"></div>
@@ -2187,25 +2205,48 @@ function drawThumb(cvs, L) {
   c.clearRect(0, 0, cvs.width, cvs.height);
   c.drawImage(off, 0, 0, cvs.width, cvs.height);
 }
+const GARDENS_PER_PAGE = 4;
+const DIFF_STEPS = [
+  { max: 1.05, name: 'Gentle' },
+  { max: 1.2, name: 'Easy' },
+  { max: 1.35, name: 'Tricky' },
+  { max: 1.45, name: 'Hard' },
+  { max: 99, name: 'Brutal' }
+];
+function gardenList() { return LEVELS.map((L, i) => ({ L: L, i: i })).filter(o => !o.L.endless && !o.L.daily); }
+function levelDiff(L) {
+  let step = DIFF_STEPS.length - 1;
+  for (let k = 0; k < DIFF_STEPS.length; k++) if (L.diff <= DIFF_STEPS[k].max) { step = k; break; }
+  return { name: DIFF_STEPS[step].name, pips: step + 1 };
+}
+let gardenPage = -1;
 function buildMenu() {
   const box = $('levels'); box.innerHTML = '';
-  const up = nextLevelIdx(); let gn = 0;
-  LEVELS.forEach((L, i) => {
-    if (L.endless || L.daily) return;
-    gn++;
+  const up = nextLevelIdx();
+  const all = gardenList();
+  const pages = Math.max(1, Math.ceil(all.length / GARDENS_PER_PAGE));
+  if (gardenPage < 0) {
+    const at = all.findIndex(o => o.i === up);
+    gardenPage = at < 0 ? 0 : Math.floor(at / GARDENS_PER_PAGE);
+  }
+  gardenPage = Math.max(0, Math.min(pages - 1, gardenPage));
+  const first = gardenPage * GARDENS_PER_PAGE;
+  const shown = all.slice(first, first + GARDENS_PER_PAGE);
+  shown.forEach(({ L, i }, k) => {
+    const gn = first + k + 1;
     const b = document.createElement('button'); b.type = 'button'; b.className = 'btn lvl';
     const cvs = document.createElement('canvas'); cvs.width = 400; cvs.height = 280; drawThumb(cvs, L); b.appendChild(cvs);
-    let rec;
-    if (L.endless) rec = '<span>Best: ' + (save.endless.wave ? save.endless.wave + ' waves' : 'not played yet') + '</span>';
-    else if (L.daily) { const di = dailyInfo(); rec = '<span>Streak ' + di.streak + (di.streak === 1 ? ' day' : ' days') + (di.doneToday ? ', done today' : '') + '</span><span>' + (di.best ? 'Best ' + di.best : '') + '</span>'; }
-    else {
-      const cs = CONTRACTS[L.id] || [], cd = save.contracts[L.id] || {};
-      rec = starsHTML(save.stars[L.id] || 0) + '<span>' + (save.best[L.id] ? 'Best ' + save.best[L.id] : '') + '</span>' + (cs.length ? '<span>Goals ' + cs.filter(c => cd[c.id]).length + '/' + cs.length + '</span>' : '');
-    }
-    b.insertAdjacentHTML('beforeend', (i === up ? '<span class="tag">Up next</span>' : '<span class="num">Garden ' + gn + '</span>') + '<span class="nm">' + L.name + '</span><span class="meta">' + (L.endless ? 'Endless' : L.waves + ' waves') + ' &middot; ' + L.theme.name + '</span><span class="bl">' + L.blurb + '</span><span class="rec">' + rec + '</span>');
+    const cs = CONTRACTS[L.id] || [], cd = save.contracts[L.id] || {};
+    const rec = starsHTML(save.stars[L.id] || 0) + '<span>' + (save.best[L.id] ? 'Best ' + save.best[L.id] : '') + '</span>' + (cs.length ? '<span>Goals ' + cs.filter(c => cd[c.id]).length + '/' + cs.length + '</span>' : '');
+    const d = levelDiff(L);
+    const pips = '<span class="pips" aria-hidden="true">' + [1, 2, 3, 4, 5].map(n => '<i class="' + (n <= d.pips ? 'on' : '') + '"></i>').join('') + '</span>';
+    b.insertAdjacentHTML('beforeend', (i === up ? '<span class="tag">Up next</span>' : '<span class="num">Garden ' + gn + '</span>') + '<span class="nm">' + L.name + '</span><span class="meta">' + L.waves + ' waves &middot; ' + L.theme.name + '</span><span class="diff" aria-label="Difficulty: ' + d.name + ', ' + d.pips + ' of 5">' + pips + d.name + '</span><span class="bl">' + L.blurb + '</span><span class="rec">' + rec + '</span>');
     b.addEventListener('click', () => startLevel(i));
     box.appendChild(b);
   });
+    $('gRange').textContent = 'Gardens ' + (first + 1) + '\u2013' + (first + shown.length) + ' of ' + all.length;
+  $('gPrev').disabled = gardenPage === 0;
+  $('gNext').disabled = gardenPage >= pages - 1;
   migrateSave();
   const mx = LEVELS.filter(L => !L.endless && !L.daily).length * 3, ts = totalStars();
   $('totals').innerHTML = 'Stars ' + ts + ' of ' + mx + ' &middot; ' + GOLD_SVG + ' <b>' + save.gold + '</b>';
@@ -3020,6 +3061,7 @@ function toMenu() {
   mode = 'menu'; game = null; $('endModal').hidden = true; $('pauseModal').hidden = true; $('helpModal').hidden = true; $('tradeModal').hidden = true; tradeOpen = false;
   gameScreen.hidden = true; menuScreen.hidden = false; Sound.setIntense(false);
   document.body.classList.remove('playing');
+  gardenPage = -1;
   buildMenu(); window.scrollTo(0, 0);
 }
 function setPaused(p) {
@@ -3274,6 +3316,15 @@ function frame_(now) {
 }
 
 /* ---------- boot ---------- */
+$('gPrev').addEventListener('click', () => {
+  if (gardenPage <= 0) return;
+  gardenPage--; Sound.init(); Sound.play('click'); buildMenu();
+});
+$('gNext').addEventListener('click', () => {
+  const pages = Math.ceil(gardenList().length / GARDENS_PER_PAGE);
+  if (gardenPage >= pages - 1) return;
+  gardenPage++; Sound.init(); Sound.play('click'); buildMenu();
+});
 buildTray(); buildPowers(); buildMenu(); buildGuide(); syncToggles();
 window.addEventListener('pointerdown', () => Sound.init(), { once: true });
 window.addEventListener('keydown', () => Sound.init(), { once: true });

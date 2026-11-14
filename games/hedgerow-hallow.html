@@ -2215,7 +2215,7 @@ const DA = {
   "Ember": "Glød", "Shadow": "Skygge", "Rainbow": "Regnbue", "Golden": "Guld", "Nebula": "Tåge", "Prismatic": "Prisme",
   "Willow Wisp": "Pileblink", "Aurora": "Nordlys", "Eclipse": "Formørkelse", "Supernova": "Supernova", "Thorn King": "Tornekongen",
   "Default": "Standard", "Skins": "Skins", "Your skins": "Dine skins", "Lucky bundle:": "Lykkepakke:",
-  " for one random skin, any rarity.": " for én tilfældig skin, uanset sjældenhed.",
+  "for one random skin, any rarity.": "for én tilfældig skin, uanset sjældenhed.",
   "Open a bundle": "Åbn en pakke", "Owned": "Ejet", "Trader only": "Kun hos handelsmanden",
   "Win without using a power": "Vind uden at bruge en kraft", "Save every veggie": "Red alle grøntsager",
   "Win with 5 buddies or fewer": "Vind med 5 hjælpere eller færre",
@@ -2237,7 +2237,12 @@ const DA = {
   "Best score": "Bedste score", "Best": "Bedste",
   "New best!": "Ny rekord!",
   "Golden seeds left": "Gyldne frø tilbage",
-  "Badger down!": "Grævling ned!", "A badger is coming!": "En grævling er på vej!", "Wave cleared": "Bølge klaret"
+  "Badger down!": "Grævling ned!", "A badger is coming!": "En grævling er på vej!", "Wave cleared": "Bølge klaret",
+  "Every skin below except the trader’s five exclusives comes from the lucky bundle. A duplicate pays golden seeds back.": "Alle skins herunder undtagen handelsmandens fem eksklusive kommer fra lykkepakken. En dublet giver gyldne frø tilbage.",
+  "Lobs big dirt bombs that hurt every ground critter in the blast.": "Kaster store jordbomber, der rammer alle kryb på jorden i sprængningen.",
+  "Collects shiny seeds.": "Samler blanke frø.", "Sharp arrows from far away that ignore armor.": "Skarpe pile på lang afstand, der ignorerer panser.",
+  "Does not shoot.": "Skyder ikke.", "Lays a healing egg and brings back a lost veggie every 3 waves.": "Lægger et helbredende æg og henter en tabt grøntsag tilbage hver 3. bølge.",
+  "Flies around the garden and follows the critters.": "Flyver rundt i haven og følger krybene."
 };
 const DA_PLURALS = { snails: 'snegle', beetles: 'biller', mice: 'mus', caterpillars: 'kålorme', grubs: 'larver', hedgehogs: 'pindsvin', ladybugs: 'mariehøns', crows: 'krager', badgers: 'grævlinger' };
 const DA_PATTERNS = [
@@ -2266,6 +2271,8 @@ const DA_PATTERNS = [
   [/^You have (\d+) golden seeds\. Unlock a locked buddy right here, in the Shop tab, or by tapping it twice in the game\.$/, m => 'Du har ' + m[1] + ' gyldne frø. Lås en låst hjælper op her, i Butik-fanen, eller ved at trykke to gange på den i spillet.'],
   [/^(\d+) (snails|beetles|mice|caterpillars|grubs|hedgehogs|ladybugs|crows|badgers)$/, m => m[1] + ' ' + (DA_PLURALS[m[2]] || m[2])],
   [/^Wave (\d+)$/, m => 'Bølge ' + m[1]],
+  [/^(.+) · (\d+) waves$/, m => (daText(m[1]) || m[1]) + ' · ' + m[2] + ' bølger'],
+  [/^(\d+) golden seeds\. Unlock a locked buddy right here, in the Shop tab, or by tapping it twice in the game\.$/, m => m[1] + ' gyldne frø. Lås en låst hjælper op her, i Butik-fanen, eller ved at trykke to gange på den i spillet.'],
   [/^\+(\d+) seeds$/, m => '+' + m[1] + ' frø'],
   [/^Common ([\d.]+)% · Rare ([\d.]+)% · Epic ([\d.]+)% · Legendary ([\d.]+)% · Mythic ([\d.]+)%$/, m => 'Almindelig ' + m[1] + '% · Sjælden ' + m[2] + '% · Episk ' + m[3] + '% · Legendarisk ' + m[4] + '% · Mytisk ' + m[5] + '%'],
   [/^(.+) · (new today|done today|streak \d+)$/, m => (daText(m[1]) || m[1]) + ' · ' + (m[2].startsWith('streak') ? 'serie ' + m[2].split(' ')[1] : m[2] === 'new today' ? 'nyt i dag' : 'klaret i dag')]

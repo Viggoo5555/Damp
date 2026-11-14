@@ -301,6 +301,20 @@
   .skin.unk { opacity: .55; }
   .skin .sr.price { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .skin .sr.price .gold svg { width: 13px; height: 13px; }
+  .mcard .tlist { display: grid; gap: 8px; width: 100%; }
+  .tskin { --rc: var(--ink); display: grid; grid-template-columns: 70px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 6px 10px 6px 6px; text-align: left; background: var(--paper); border: 3px solid var(--rc); border-radius: var(--wob); box-shadow: 3px 3px 0 var(--ink); }
+  .tskin canvas { width: 64px; height: 64px; display: block; }
+  .tskin .ti { display: flex; flex-direction: column; min-width: 0; gap: 0; }
+  .tskin .rn { font-family: var(--f-display); font-weight: 400; font-size: 23px; line-height: 1.05; }
+  .tskin .rr { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--rc); }
+  .tskin .pr { font-size: 15px; color: var(--ink); display: flex; align-items: center; gap: 4px; }
+  .tskin .pr .gold svg { width: 15px; height: 15px; }
+  .tskin .buy { min-height: 40px; padding: 0 12px; font-size: 18px; }
+  .tskin.owned { opacity: .78; }
+  .mcard #traderGambleBox { width: 100%; text-align: left; }
+  .mcard #traderGambleBox p { font-size: 15px; color: var(--ink-soft); }
+  .mcard #traderGambleBox .btn { width: 100%; justify-content: center; margin-top: 6px; }
+  @media (max-width: 380px) { .tskin { grid-template-columns: 56px minmax(0, 1fr) auto; gap: 8px; } .tskin canvas { width: 52px; height: 52px; } .tskin .rn { font-size: 20px; } }
   @media (prefers-reduced-motion: reduce) { .pullcard { animation: none; } }
 
   .gacha { position: fixed; inset: 0; z-index: 200; background: #070a18; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
@@ -397,11 +411,6 @@
   .mcard .star { width: 30px; height: 30px; }
 
   /* hedgehog trader and garden goals */
-  #tradeOffers { display: grid; gap: 8px; width: 100%; }
-  .trade-offer { display: flex; flex-direction: column; align-items: flex-start; gap: 0; min-height: 0; padding: 7px 13px; text-align: left; }
-  .trade-offer b { font-family: var(--f-display); font-weight: 400; font-size: 22px; line-height: 1.1; }
-  .trade-offer span { font-size: 15px; line-height: 1.15; color: var(--ink-soft); }
-  .trade-offer .price { color: var(--ink); font-variant-numeric: tabular-nums; }
   .mcard .goals { display: grid; gap: 4px; width: 100%; text-align: left; font-size: 15px; }
   .mcard .goals .g { display: flex; gap: 6px; align-items: baseline; }
   .mcard .goals .g .tick { color: #4f8a3d; font-weight: 700; }
@@ -457,7 +466,7 @@
         <p>Pick a buddy, then tap a patch of grass to plant it. Tap a planted buddy and a box pops up right over it with two upgrade paths.</p>
         <p>Press Send wave when you are ready, or switch on Auto. Rain, Thunder and Sunshine help in a tight spot.</p>
         <p>Win rounds to earn golden seeds. Spend them in the Shop on locked buddies; skins are sold by the mystery trader, who wanders into the garden with a new stock every hour. The Daily garden changes every day and keeps a streak. The Endless meadow never ends.</p>
-        <p>Every third wave a hedgehog trader stops by with a trade. Each garden also has two goals that pay golden seeds the first time you meet them.</p>
+        <p>Now and then a mystery trader wanders onto the grass and sells skins for golden seeds, plus a lucky bundle that hands you one random skin. Each garden also has two goals that pay golden seeds the first time you meet them.</p>
         <p class="kb-only">Keyboard: arrows or WASD move the cursor, 1 to 9, 0, - and = pick a buddy, Enter plants, U and I buy upgrades, X sells, N sends the wave, Q E R use powers, T toggles Auto, P pauses, F changes speed.</p>
       </div>
     </div>
@@ -533,11 +542,14 @@
 <div class="modal" id="tradeModal" hidden>
   <div class="mcard" role="dialog" aria-modal="true" aria-labelledby="tradeTitle">
     <h2 id="tradeTitle">Mystery trader</h2>
-    <p>A traveller with a barrow of oddities. His skins change every hour.</p>
-    <div id="traderSkins" class="skins"></div>
-    <p id="traderSkinNote" class="tabnote" hidden></p>
-    <h3 class="shop-h">Odds and ends</h3>
-    <div id="tradeOffers"></div>
+    <p>Skins only, and a new trio every hour.</p>
+    <div class="panel shopbal"><span>Golden seeds</span><b id="traderGold"></b></div>
+    <div id="traderSkins" class="tlist"></div>
+    <p id="traderSkinNote" class="tabnote"></p>
+    <div class="panel gamble" id="traderGambleBox">
+      <p>Lucky bundle: <b id="traderGamblePrice"></b> golden seeds for a random skin, any rarity. A duplicate pays seeds back.</p>
+      <button class="btn primary" id="traderGamble" type="button">Gamble</button>
+    </div>
     <div class="acts"><button class="btn" id="tradeSkip" type="button">Close</button></div>
   </div>
 </div>
@@ -550,7 +562,7 @@
       <li>A green arrow over a buddy means you can afford an upgrade.</li>
       <li>Press Send wave. Critters follow the arrows to the veggie patch.</li>
       <li>Rain, Thunder and Sunshine help in a tight spot.</li>
-      <li>Now and then a mystery trader wanders onto the grass. Tap him to buy skins with golden seeds, or to trade seeds for an upgrade, a seedling or sharper teeth.</li>
+      <li>Now and then a mystery trader wanders onto the grass. Tap him to buy one of his three skins with golden seeds, or to gamble for a random one.</li>
       <li>Tap the corner button for full screen: a bigger map with a buddy strip you can scroll.</li>
     </ol>
     <div class="acts"><button class="btn primary" id="hClose" type="button">Got it</button></div>
@@ -2352,7 +2364,7 @@ function pullSkin() {
   let refund = 0;
   if (dup) { refund = RAR[r].refund; save.gold += refund; } else { save.skins[k.id] = true; if (!save.skin) save.skin = k.id; }
   persist(); lastPull = { skin: k, dup, refund };
-  playGacha(lastPull, () => { buildShop(); buildMenu(); });
+  playGacha(lastPull, () => { buildShop(); buildMenu(); if (tradeOpen) renderTraderSkins(); });
 }
 const ENEMY_NOTE = {
   snail: 'Slow and sturdy.', beetle: 'Quick on its feet.', mouse: 'Very fast, very soft.', caterpillar: 'Splits into two grubs when it falls.',
@@ -2905,9 +2917,9 @@ function showEnd(won, newBest) {
   add('Menu', toMenu);
   $('endModal').hidden = false; (first || again).focus();
 }
-/* ---------- hedgehog trader ---------- */
+/* ---------- mystery trader ---------- */
 const MERCHANT_EVERY = 2;
-let tradeOpen = false, tradeList = [], traderSkinStock = [];
+let tradeOpen = false, traderSkinStock = [];
 function spawnTrader(d) {
   if (!game || game.merchant || !d) return;
   if (d.wave % MERCHANT_EVERY !== 0 || game.wave >= game.L.waves) return;
@@ -2924,51 +2936,49 @@ function spawnTrader(d) {
   toast('A mystery trader wanders in. Tap him for skins.');
   Sound.play('coin');
 }
-function tradeOffers(g) {
-  const w = g.wave, out = [];
-  let canUp = false;
-  for (const t of g.towers) for (let p = 0; p < 2; p++) { const n = g.nextTier(t, p); if (!n.maxed && !n.locked) canUp = true; }
-  if (canUp) out.push({ kind: 'upgrade', title: 'A free upgrade', sub: 'The hedgehog tunes up one of your buddies.', cost: 80 + 20 * w });
-  if (g.hearts < g.L.hearts) out.push({ kind: 'heal', title: 'A fresh seedling', sub: 'Plant one more veggie in the patch.', cost: 120 + 30 * w });
-  if (g.hearts > 1) out.push({ kind: 'sellVeg', title: 'Sell a veggie', sub: 'The hedgehog takes a veggie and pays you in seeds.', gain: 130 + 35 * w });
-  out.push({ kind: 'dmg', title: 'Sharper teeth', sub: 'Every buddy hits 12% harder for the rest of this run.', cost: 160 + 40 * w });
-  for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const tmp = out[i]; out[i] = out[j]; out[j] = tmp; }
-  return out.slice(0, 3);
-}
 function openTrader() {
   if (!game || mode !== 'play' || tradeOpen) return;
   tradeOpen = true; mode = 'trading'; sel = null; pending = null; moving = null;
-  tradeList = tradeOffers(game); traderSkinStock = traderStock();
-  renderTraderSkins(); renderTradeOffers();
+  traderSkinStock = traderStock();
+  renderTraderSkins();
   $('tradeModal').hidden = false;
   $('tradeSkip').focus();
-}
-function renderTradeOffers() {
-  const box = $('tradeOffers'); box.innerHTML = '';
-  tradeList.forEach((o, i) => {
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn trade-offer';
-    const price = o.gain != null ? '+' + o.gain + ' seeds' : o.cost + ' seeds';
-    b.innerHTML = '<b>' + o.title + '</b><span>' + o.sub + '</span><span class="price">' + price + '</span>';
-    b.disabled = o.gain == null && game.seeds < o.cost;
-    b.addEventListener('click', () => buyTrade(i));
-    box.appendChild(b);
-  });
 }
 function renderTraderSkins() {
   const grid = $('traderSkins'); grid.innerHTML = '';
   traderSkinStock.forEach((o, i) => {
     const k = o.skin, has = !!save.skins[k.id];
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn skin' + (has ? '' : ' unk');
-    b.style.setProperty('--rc', RAR[k.rar].col);
-    const cvs = document.createElement('canvas'); cvs.width = cvs.height = 124; b.appendChild(cvs); drawSkinPreview(cvs, k, false);
-    b.insertAdjacentHTML('beforeend', '<span class="sn">' + k.name + '</span><span class="sr">' + RAR[k.rar].name + '</span><span class="sr price">' + (has ? 'Owned' : GOLD_SVG + ' ' + o.price) + '</span>');
-    b.disabled = has || save.gold < o.price;
-    if (!has) b.addEventListener('click', () => buySkin(i));
-    grid.appendChild(b);
+    const row = document.createElement('div'); row.className = 'tskin' + (has ? ' owned' : '');
+    row.style.setProperty('--rc', RAR[k.rar].col);
+    const cvs = document.createElement('canvas'); cvs.width = cvs.height = 128; row.appendChild(cvs); drawSkinPreview(cvs, k, false);
+    const info = document.createElement('div'); info.className = 'ti';
+    info.innerHTML = '<span class="rn">' + k.name + '</span><span class="rr">' + RAR[k.rar].name + '</span><span class="pr">' + (has ? 'Owned' : GOLD_SVG + ' ' + o.price) + '</span>';
+    row.appendChild(info);
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn buy';
+    if (has) {
+      b.textContent = save.skin === k.id ? 'Worn' : 'Wear';
+      b.disabled = save.skin === k.id;
+      b.addEventListener('click', () => { save.skin = k.id; persist(); Sound.play('click'); renderTraderSkins(); });
+    } else {
+      b.textContent = 'Buy';
+      b.disabled = save.gold < o.price;
+      b.addEventListener('click', () => buySkin(i));
+    }
+    row.appendChild(b);
+    grid.appendChild(row);
   });
+  $('traderGold').innerHTML = GOLD_SVG + ' ' + save.gold;
+  const mins = 60 - new Date().getMinutes();
   const note = $('traderSkinNote');
-  if (!traderSkinStock.some(o => !save.skins[o.skin.id])) { note.textContent = 'He has nothing you do not already own. New stock next hour.'; note.hidden = false; }
-  else { note.hidden = true; }
+  note.textContent = (traderSkinStock.some(o => !save.skins[o.skin.id]) ? '' : 'He has nothing you do not already own. ') + 'New stock in ' + mins + ' min.';
+  note.hidden = false;
+  renderGamble();
+}
+function renderGamble() {
+  const b = $('traderGamble'); if (!b) return;
+  b.innerHTML = 'Gamble ' + GOLD_SVG + ' ' + PULL_COST;
+  b.disabled = save.gold < PULL_COST;
+  $('traderGamblePrice').textContent = PULL_COST;
 }
 function buySkin(i) {
   const o = traderSkinStock[i];
@@ -2978,29 +2988,12 @@ function buySkin(i) {
   renderTraderSkins(); buildMenu();
 }
 function closeTrade() { tradeOpen = false; $('tradeModal').hidden = true; if (game) mode = 'play'; }
-function buyTrade(i) {
-  const o = tradeList[i], g = game;
-  if (!o || !g || (o.gain == null && g.seeds < o.cost)) return;
-  if (o.cost) g.seeds -= o.cost;
-  if (o.kind === 'upgrade') {
-    const opts = [];
-    for (const t of g.towers) for (let p = 0; p < 2; p++) { const n = g.nextTier(t, p); if (!n.maxed && !n.locked) opts.push({ t, p }); }
-    if (opts.length) {
-      const c = opts[Math.floor(Math.random() * opts.length)];
-      c.t.tiers[c.p]++; c.t.st = computeStat(c.t.type, c.t.tiers); c.t.flash = 0.4;
-      onGameEvent('upgrade', c.t);
-    }
-  } else if (o.kind === 'heal') {
-    g.hearts = Math.min(g.L.hearts, g.hearts + 1); toast('The hedgehog plants a seedling');
-  } else if (o.kind === 'sellVeg') {
-    g.hearts = Math.max(0, g.hearts - 1); g.seeds += o.gain; toast('+ ' + o.gain + ' seeds for a veggie');
-  } else if (o.kind === 'dmg') {
-    g.dmgRun = (g.dmgRun || 1) * 1.12; toast('Every buddy hits 12% harder');
-  }
-  Sound.play('coin');
-  closeTrade();
-}
 $('tradeSkip').addEventListener('click', () => { Sound.play('click'); closeTrade(); });
+$('traderGamble').addEventListener('click', () => {
+  if (!game || mode !== 'trading') return;
+  if (save.gold < PULL_COST) { toast('Need ' + PULL_COST + ' golden seeds'); Sound.play('error'); return; }
+  Sound.play('click'); pullSkin();
+});
 function toMenu() {
   setFs(false);
   recordEndless();

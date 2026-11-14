@@ -2962,10 +2962,10 @@ function showEnd(won, newBest) {
 }
 /* ---------- mystery trader ---------- */
 const MERCHANT_MIN_WAVE = 4;
-const MERCHANT_CHANCE = 0.14;
+const MERCHANT_CHANCE = 0.15;
 let tradeOpen = false, traderSkinStock = [];
 function spawnTrader(d) {
-  if (!game || game.merchant || !d) return;
+  if (!game || game.merchant || game.traderSeen || !d) return;
   if (game.wave < MERCHANT_MIN_WAVE || game.wave >= game.L.waves) return;
   if (Math.random() > MERCHANT_CHANCE) return;
   const spots = [], near = [];
@@ -2977,6 +2977,7 @@ function spawnTrader(d) {
   const list = near.length ? near : spots;
   if (!list.length) return;
   const pick = list[Math.floor(Math.random() * list.length)];
+  game.traderSeen = true;
   game.merchant = { c: pick.c, r: pick.r, x: (pick.c + 0.5) * TILE, y: (pick.r + 0.5) * TILE, ttl: 105 };
   toast('A rare trader wanders in. Tap him for his exclusive skins.');
   Sound.play('coin');

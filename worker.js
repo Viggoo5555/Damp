@@ -154,9 +154,21 @@ export class Room {
   }
 }
 
+// Google's crawler checks this exact path, so serve it from here instead of
+// letting a stale asset or an old cached 404 answer for it.
+const ADS_TXT = 'google.com, pub-6851662024546666, DIRECT, f08c47fec0942fa0\n';
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (url.pathname === '/ads.txt') {
+      return new Response(request.method === 'HEAD' ? null : ADS_TXT, {
+        headers: {
+          'content-type': 'text/plain; charset=utf-8',
+          'cache-control': 'public, max-age=600'
+        }
+      });
+    }
     if (url.pathname === '/api/leaderboard' || url.pathname === '/api/leaderboard/') {
       if (request.method !== 'GET' && request.method !== 'HEAD') {
         return new Response('Method not allowed', { status: 405, headers: { allow: 'GET' } });

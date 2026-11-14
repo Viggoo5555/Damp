@@ -2180,26 +2180,12 @@ function bestCell(g) {
   return best;
 }
 function drawThumb(cvs, L) {
-  const c = cvs.getContext('2d'), th = L.theme, s = cvs.width / W;
-  c.setTransform(s, 0, 0, s, 0, 0);
-  c.fillStyle = th.grass; c.fillRect(0, 0, W, H);
-  c.fillStyle = th.hi; c.globalAlpha = 0.6; for (const [x, y] of [[120, 90], [420, 300], [540, 120]]) { c.beginPath(); c.ellipse(x, y, 90, 50, 0, 0, 7); c.fill(); } c.globalAlpha = 1;
-  const P = buildPath(L.path), pts = [];
-  for (let d = 0; d <= P.total; d += 12) pts.push(P.pointAt(d));
-  c.lineCap = 'round'; c.lineJoin = 'round';
-  const stroke = (wd, col) => { c.strokeStyle = col; c.lineWidth = wd; c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); c.stroke(); };
-  stroke(58, INK); stroke(50, th.path);
-  c.strokeStyle = INK; c.lineWidth = 5;
-  for (const d of L.decor) {
-    const x = (d.c + 0.5) * TILE, y = (d.r + 0.5) * TILE;
-    if (d.k === 'pond') { c.fillStyle = '#8cc4e0'; c.beginPath(); c.ellipse(d.c * TILE + (d.w || 1) * TILE / 2, d.r * TILE + (d.h || 1) * TILE / 2, (d.w || 1) * TILE / 2 - 4, (d.h || 1) * TILE / 2 - 5, 0, 0, 7); c.fill(); c.stroke(); }
-    else if (d.k === 'tree') { c.fillStyle = th.tree[0]; c.beginPath(); c.arc(x, y - 4, 24, 0, 7); c.fill(); c.stroke(); }
-    else if (d.k === 'rock') { c.fillStyle = '#b4b8c4'; c.beginPath(); c.arc(x, y + 6, 15, 0, 7); c.fill(); c.stroke(); }
-  }
-  const ep = P.pointAt(P.total - 70);
-  c.fillStyle = '#9b7a50'; c.beginPath(); c.arc(ep.x + 2, ep.y, 27, 0, 7); c.fill(); c.stroke();
-  c.fillStyle = '#8cc56b'; c.beginPath(); c.arc(ep.x - 6, ep.y - 6, 9, 0, 7); c.fill(); c.fillStyle = '#f08a3c'; c.beginPath(); c.arc(ep.x + 10, ep.y + 8, 7, 0, 7); c.fill();
-  if (th.tint) { c.fillStyle = th.tint; c.fillRect(0, 0, W, H); }
+  // A real picture of the garden: the same background renderer the game uses.
+  const path = buildPath(L.path);
+  const off = renderBg({ L: L, path: path, leakDist: path.total - 70 }, cvs.width * 2, cvs.height * 2);
+  const c = cvs.getContext('2d');
+  c.clearRect(0, 0, cvs.width, cvs.height);
+  c.drawImage(off, 0, 0, cvs.width, cvs.height);
 }
 function buildMenu() {
   const box = $('levels'); box.innerHTML = '';
@@ -2208,7 +2194,7 @@ function buildMenu() {
     if (L.endless || L.daily) return;
     gn++;
     const b = document.createElement('button'); b.type = 'button'; b.className = 'btn lvl';
-    const cvs = document.createElement('canvas'); cvs.width = 200; cvs.height = 140; drawThumb(cvs, L); b.appendChild(cvs);
+    const cvs = document.createElement('canvas'); cvs.width = 400; cvs.height = 280; drawThumb(cvs, L); b.appendChild(cvs);
     let rec;
     if (L.endless) rec = '<span>Best: ' + (save.endless.wave ? save.endless.wave + ' waves' : 'not played yet') + '</span>';
     else if (L.daily) { const di = dailyInfo(); rec = '<span>Streak ' + di.streak + (di.streak === 1 ? ' day' : ' days') + (di.doneToday ? ', done today' : '') + '</span><span>' + (di.best ? 'Best ' + di.best : '') + '</span>'; }

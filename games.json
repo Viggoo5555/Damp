@@ -28,20 +28,6 @@
     "image": "img/stratego.png?v=2"
   },
   {
-    "title": "Kryds & Bolle 3D",
-    "description": "Gold X and O pieces on black marble. Beat the computer or a friend — three in a row wins.",
-    "file": "games/kryds-bolle-3d.html",
-    "category": "Strategy",
-    "image": "img/kryds-bolle-3d.png"
-  },
-  {
-    "title": "Brick Blast",
-    "description": "Break every brick, catch the falling capsules and keep the ball alive. Wide paddle, extra balls and slow motion power-ups.",
-    "file": "games/brick-blast.html",
-    "category": "Arcade",
-    "image": "img/brick-blast.png"
-  },
-  {
     "title": "River Hop",
     "description": "Five lanes of traffic, a river of drifting logs and five lily pads to reach. One hop at a time, sixty seconds on the clock.",
     "file": "games/river-hop.html",

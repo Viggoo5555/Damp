@@ -394,6 +394,17 @@
   .mcard .acts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 4px; }
   .mcard .star { width: 30px; height: 30px; }
 
+  /* hedgehog trader and garden goals */
+  #tradeOffers { display: grid; gap: 8px; width: 100%; }
+  .trade-offer { display: flex; flex-direction: column; align-items: flex-start; gap: 0; min-height: 0; padding: 7px 13px; text-align: left; }
+  .trade-offer b { font-family: var(--f-display); font-weight: 400; font-size: 22px; line-height: 1.1; }
+  .trade-offer span { font-size: 15px; line-height: 1.15; color: var(--ink-soft); }
+  .trade-offer .price { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .mcard .goals { display: grid; gap: 4px; width: 100%; text-align: left; font-size: 15px; }
+  .mcard .goals .g { display: flex; gap: 6px; align-items: baseline; }
+  .mcard .goals .g .tick { color: #4f8a3d; font-weight: 700; }
+  .mcard .goals .g .tick.off { color: #a9a89a; }
+
   @media (prefers-reduced-motion: reduce) {
     .btn, .toast { transition: none; }
   }
@@ -444,6 +455,7 @@
         <p>Pick a buddy, then tap a patch of grass to plant it. Tap a planted buddy and a box pops up right over it with two upgrade paths.</p>
         <p>Press Send wave when you are ready, or switch on Auto. Rain, Thunder and Sunshine help in a tight spot.</p>
         <p>Win rounds to earn golden seeds. Spend them in the Shop on locked buddies, or gamble them for skins. The Daily garden changes every day and keeps a streak. The Endless meadow never ends.</p>
+        <p>Every third wave a hedgehog trader stops by with a trade. Each garden also has two goals that pay golden seeds the first time you meet them.</p>
         <p class="kb-only">Keyboard: arrows or WASD move the cursor, 1 to 9, 0, - and = pick a buddy, Enter plants, U and I buy upgrades, X sells, N sends the wave, Q E R use powers, T toggles Auto, P pauses, F changes speed.</p>
       </div>
     </div>
@@ -512,7 +524,16 @@
     <p id="endMsg"></p>
     <p class="big" id="endScore"></p>
     <p id="endBest"></p>
+    <p id="endGoals" class="goals" hidden></p>
     <div class="acts" id="endActs"></div>
+  </div>
+</div>
+<div class="modal" id="tradeModal" hidden>
+  <div class="mcard" role="dialog" aria-modal="true" aria-labelledby="tradeTitle">
+    <h2 id="tradeTitle">Hedgehog trader</h2>
+    <p>A hedgehog with a barrow of odds and ends stops by. One trade per visit.</p>
+    <div id="tradeOffers"></div>
+    <div class="acts"><button class="btn" id="tradeSkip" type="button">No trades</button></div>
   </div>
 </div>
 <div class="modal" id="helpModal" hidden>
@@ -524,6 +545,7 @@
       <li>A green arrow over a buddy means you can afford an upgrade.</li>
       <li>Press Send wave. Critters follow the arrows to the veggie patch.</li>
       <li>Rain, Thunder and Sunshine help in a tight spot.</li>
+      <li>Every third wave a hedgehog trader stops by. Trade seeds or a veggie for an upgrade, a seedling or sharper teeth.</li>
       <li>Tap the corner button for full screen: a bigger map with a buddy strip you can scroll.</li>
     </ol>
     <div class="acts"><button class="btn primary" id="hClose" type="button">Got it</button></div>
@@ -787,6 +809,20 @@ LEVELS.splice(3, 0, { id: 'l4', name: 'Frosty Glade', waves: 14, seeds: 170, hea
 for (const L of LEVELS) L.theme = THEMES[THEME_OF[L.id]];
 LEVELS.find(L => L.id === 'endless').blurb = 'Under the moon with no finish line. See how many waves you can survive.';
 
+/* Two goals per garden. The first clear of each goal pays golden seeds. */
+const CONTRACTS = {
+  l1: [{ id: 'nopower', text: 'Win without using a power' }, { id: 'full', text: 'Save every veggie' }],
+  l2: [{ id: 'nopower', text: 'Win without using a power' }, { id: 'lean', text: 'Win with 5 buddies or fewer' }],
+  l3: [{ id: 'full', text: 'Save every veggie' }, { id: 'lean', text: 'Win with 5 buddies or fewer' }],
+  l4: [{ id: 'nopower', text: 'Win without using a power' }, { id: 'full', text: 'Save every veggie' }]
+};
+const CONTRACT_CHECK = {
+  nopower: (g) => g.powersUsed === 0,
+  full: (g, L) => g.hearts === L.hearts,
+  lean: (g) => g.towers.length <= 5
+};
+const CONTRACT_GOLD = 25;
+
 /* Daily garden: the same for everyone on a given date */
 const DAILY_PATHS = [
   { path: [[-1, 0], [8, 0], [8, 2], [1, 2], [1, 4], [8, 4], [8, 6], [10, 6]],
@@ -878,7 +914,7 @@ function createGame(L, onEvent) {
   const leakDist = path.total - 70; // critters vanish into the veggie patch near the right edge
   const g = { L, path, blocked, leakDist, seeds: L.seeds, hearts: L.hearts, wave: 0, cleared: 0, state: 'idle',
     t: 0, towers: [], enemies: [], shots: [], queue: [], clock: 0, score: 0, kills: 0, stars: 0, nid: 1, born: [],
-    autoWave: false, autoDelay: 7, autoT: 0, rainT: 0, sunT: 0,
+    autoWave: false, autoDelay: 7, autoT: 0, rainT: 0, sunT: 0, dmgRun: 1, powersUsed: 0, contractWins: [],
     powers: POWERS.map(p => ({ id: p.id, cd: 0, max: p.cd })) };
   const emit = (k, d) => { if (onEvent) onEvent(k, d); };
 
@@ -947,7 +983,7 @@ function createGame(L, onEvent) {
     if (!p || g.state === 'won' || g.state === 'lost') return { ok: false, reason: 'over' };
     if (g.state !== 'wave') return { ok: false, reason: 'idle' };
     if (p.cd > 0) return { ok: false, reason: 'cool' };
-    p.cd = p.max;
+    p.cd = p.max; g.powersUsed++;
     if (id === 'rain') g.rainT = 6;
     else if (id === 'sun') g.sunT = 8;
     else if (id === 'thunder') {
@@ -1151,7 +1187,7 @@ function createGame(L, onEvent) {
       cands.sort((a, b) => key(b) - key(a));
       const first = cands[0], d0 = Math.hypot(first.x - t.x, first.y - t.y) || 1;
       t.aimX = (first.x - t.x) / d0; t.aimY = (first.y - t.y) / d0;
-      const base = st.dmg * t.dbuff;
+      const base = st.dmg * t.dbuff * (g.dmgRun || 1);
       if (t.kind === 'pulse') {
         for (const e of cands) hit(e, st, base);
         t.pulse = 0.35;
@@ -1245,7 +1281,7 @@ function createGame(L, onEvent) {
 
 /* ===================== SAVE ===================== */
 const SAVE_KEY = 'hedgerow-hollow-v1';
-const defaultSave = () => ({ stars: {}, best: {}, endless: { wave: 0, score: 0 }, daily: { date: '', best: 0, streak: 0, lastWin: '' }, music: true, sfx: true, auto: false, tut: false, last: 0, gold: 0, owned: {}, skins: {}, skin: '', pulls: 0, pity: 0, migrated: false, pops: {} });
+const defaultSave = () => ({ stars: {}, best: {}, endless: { wave: 0, score: 0 }, daily: { date: '', best: 0, streak: 0, lastWin: '' }, music: true, sfx: true, auto: false, tut: false, last: 0, gold: 0, owned: {}, skins: {}, skin: '', pulls: 0, pity: 0, migrated: false, pops: {}, contracts: {} });
 function loadSave() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
@@ -2085,7 +2121,10 @@ function buildMenu() {
     let rec;
     if (L.endless) rec = '<span>Best: ' + (save.endless.wave ? save.endless.wave + ' waves' : 'not played yet') + '</span>';
     else if (L.daily) { const di = dailyInfo(); rec = '<span>Streak ' + di.streak + (di.streak === 1 ? ' day' : ' days') + (di.doneToday ? ', done today' : '') + '</span><span>' + (di.best ? 'Best ' + di.best : '') + '</span>'; }
-    else rec = starsHTML(save.stars[L.id] || 0) + '<span>' + (save.best[L.id] ? 'Best ' + save.best[L.id] : '') + '</span>';
+    else {
+      const cs = CONTRACTS[L.id] || [], cd = save.contracts[L.id] || {};
+      rec = starsHTML(save.stars[L.id] || 0) + '<span>' + (save.best[L.id] ? 'Best ' + save.best[L.id] : '') + '</span>' + (cs.length ? '<span>Goals ' + cs.filter(c => cd[c.id]).length + '/' + cs.length + '</span>' : '');
+    }
     b.insertAdjacentHTML('beforeend', (i === up ? '<span class="tag">Up next</span>' : '<span class="num">Garden ' + gn + '</span>') + '<span class="nm">' + L.name + '</span><span class="meta">' + (L.endless ? 'Endless' : L.waves + ' waves') + ' &middot; ' + L.theme.name + '</span><span class="bl">' + L.blurb + '</span><span class="rec">' + rec + '</span>');
     b.addEventListener('click', () => startLevel(i));
     box.appendChild(b);
@@ -2694,7 +2733,7 @@ function onGameEvent(k, d) {
       if (boss) Sound.play('boss');
       break;
     }
-    case 'waveClear': Sound.play('clear'); Sound.setIntense(false); showBanner('Wave cleared', '+' + d.bonus + ' seeds', LEAF); break;
+    case 'waveClear': Sound.play('clear'); Sound.setIntense(false); showBanner('Wave cleared', '+' + d.bonus + ' seeds', LEAF); scheduleTrade(d); break;
     case 'power':
       Sound.play(d);
       if (d === 'rain') toast('Rain slows every critter');
@@ -2764,7 +2803,7 @@ function startLevel(i) {
   fxs = []; sel = null; moving = null; buildType = 'squirrel'; hover = null; pending = null; kb = { on: false, col: 4, row: 3 }; speed = 1; infoKey = ''; tvKey = ''; shake = 0; flashT = 0;
   for (const k in hudCache) delete hudCache[k];
   save.last = i; persist(); buildTray(); initAmb(); game.hintCell = bestCell(game); banner = null; patchShake = 0; tutSel = false;
-  mode = 'play'; menuScreen.hidden = true; gameScreen.hidden = false; $('endModal').hidden = true; $('pauseModal').hidden = true; $('helpModal').hidden = true;
+  mode = 'play'; menuScreen.hidden = true; gameScreen.hidden = false; $('endModal').hidden = true; $('pauseModal').hidden = true; $('helpModal').hidden = true; $('tradeModal').hidden = true; tradeOpen = false;
   document.body.classList.add('playing');
   $('btnSpeed').textContent = '1x';
   Sound.setIntense(false);
@@ -2790,6 +2829,13 @@ function endGame(won) {
     goldGain = 10 + 6 * g.stars + (prevStars === 0 ? 20 : 0) + 10 * Math.max(0, g.stars - prevStars);
     save.stars[L.id] = Math.max(save.stars[L.id] || 0, g.stars);
     if (g.score > (save.best[L.id] || 0)) { save.best[L.id] = g.score; newBest = true; }
+    const list = CONTRACTS[L.id] || [], done = save.contracts[L.id] || (save.contracts[L.id] = {});
+    g.contractWins = list.map((c) => {
+      const pass = CONTRACT_CHECK[c.id] ? CONTRACT_CHECK[c.id](g, L) : false;
+      const fresh = pass && !done[c.id];
+      if (fresh) { done[c.id] = true; goldGain += CONTRACT_GOLD; }
+      return { text: c.text, pass: !!pass, fresh: fresh };
+    });
   } else if (L.endless) {
     newBest = g.cleared > save.endless.wave || (g.cleared === save.endless.wave && g.score > save.endless.score);
     recordEndless(); goldGain = Math.floor(g.cleared / 5) * 3;
@@ -2807,6 +2853,11 @@ function showEnd(won, newBest) {
   $('endScore').textContent = 'Score ' + g.score;
   const best = L.endless ? 'Best: ' + save.endless.wave + ' waves, score ' + save.endless.score : L.daily ? (won ? 'Daily streak: ' + save.daily.streak + (save.daily.streak === 1 ? ' day' : ' days') : 'Try again, today is still open') : save.best[L.id] ? 'Best score ' + save.best[L.id] : '';
   $('endBest').innerHTML = '<span class="eb-line">' + (newBest ? '<span class="new-best">New best!</span>' : '') + (best ? '<span>' + best + '</span>' : '') + '</span>' + (g.goldGain ? '<span class="new-best">+' + g.goldGain + ' ' + GOLD_SVG + ' golden seeds</span>' : '');
+  const goals = $('endGoals');
+  if (won && g.contractWins && g.contractWins.length) {
+    goals.innerHTML = '<b>Garden goals</b>' + g.contractWins.map(c => '<span class="g"><span class="tick' + (c.pass ? '' : ' off') + '">' + (c.pass ? '\u2713' : '\u2717') + '</span><span>' + c.text + (c.fresh ? ' <b>+' + CONTRACT_GOLD + ' ' + GOLD_SVG + '</b>' : '') + '</span></span>').join('');
+    goals.hidden = false;
+  } else { goals.hidden = true; goals.innerHTML = ''; }
   const acts = $('endActs'); acts.innerHTML = '';
   const add = (txt, fn, primary) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (primary ? ' primary' : ''); b.textContent = txt; b.addEventListener('click', fn); acts.appendChild(b); return b; };
   let first;
@@ -2815,10 +2866,68 @@ function showEnd(won, newBest) {
   add('Menu', toMenu);
   $('endModal').hidden = false; (first || again).focus();
 }
+/* ---------- hedgehog trader ---------- */
+const TRADE_EVERY = 3;
+let tradeOpen = false, tradeList = [];
+function scheduleTrade(d) {
+  if (!game || !d || d.wave % TRADE_EVERY !== 0) return;
+  if (game.wave >= game.L.waves) return;
+  setTimeout(() => { if (mode === 'play' && game && game.state === 'idle' && game.wave === d.wave) openTrade(); }, 1100);
+}
+function tradeOffers(g) {
+  const w = g.wave, out = [];
+  let canUp = false;
+  for (const t of g.towers) for (let p = 0; p < 2; p++) { const n = g.nextTier(t, p); if (!n.maxed && !n.locked) canUp = true; }
+  if (canUp) out.push({ kind: 'upgrade', title: 'A free upgrade', sub: 'The hedgehog tunes up one of your buddies.', cost: 80 + 20 * w });
+  if (g.hearts < g.L.hearts) out.push({ kind: 'heal', title: 'A fresh seedling', sub: 'Plant one more veggie in the patch.', cost: 120 + 30 * w });
+  if (g.hearts > 1) out.push({ kind: 'sellVeg', title: 'Sell a veggie', sub: 'The hedgehog takes a veggie and pays you in seeds.', gain: 130 + 35 * w });
+  out.push({ kind: 'dmg', title: 'Sharper teeth', sub: 'Every buddy hits 12% harder for the rest of this run.', cost: 160 + 40 * w });
+  for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const tmp = out[i]; out[i] = out[j]; out[j] = tmp; }
+  return out.slice(0, 3);
+}
+function openTrade() {
+  if (!game || mode !== 'play' || tradeOpen) return;
+  tradeOpen = true; mode = 'trading'; tradeList = tradeOffers(game);
+  const box = $('tradeOffers'); box.innerHTML = '';
+  tradeList.forEach((o, i) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn trade-offer';
+    const price = o.gain != null ? '+' + o.gain + ' seeds' : o.cost + ' seeds';
+    b.innerHTML = '<b>' + o.title + '</b><span>' + o.sub + '</span><span class="price">' + price + '</span>';
+    b.disabled = o.gain == null && game.seeds < o.cost;
+    b.addEventListener('click', () => buyTrade(i));
+    box.appendChild(b);
+  });
+  $('tradeModal').hidden = false;
+  $('tradeSkip').focus();
+}
+function closeTrade() { tradeOpen = false; $('tradeModal').hidden = true; if (game) mode = 'play'; }
+function buyTrade(i) {
+  const o = tradeList[i], g = game;
+  if (!o || !g || (o.gain == null && g.seeds < o.cost)) return;
+  if (o.cost) g.seeds -= o.cost;
+  if (o.kind === 'upgrade') {
+    const opts = [];
+    for (const t of g.towers) for (let p = 0; p < 2; p++) { const n = g.nextTier(t, p); if (!n.maxed && !n.locked) opts.push({ t, p }); }
+    if (opts.length) {
+      const c = opts[Math.floor(Math.random() * opts.length)];
+      c.t.tiers[c.p]++; c.t.st = computeStat(c.t.type, c.t.tiers); c.t.flash = 0.4;
+      onGameEvent('upgrade', c.t);
+    }
+  } else if (o.kind === 'heal') {
+    g.hearts = Math.min(g.L.hearts, g.hearts + 1); toast('The hedgehog plants a seedling');
+  } else if (o.kind === 'sellVeg') {
+    g.hearts = Math.max(0, g.hearts - 1); g.seeds += o.gain; toast('+ ' + o.gain + ' seeds for a veggie');
+  } else if (o.kind === 'dmg') {
+    g.dmgRun = (g.dmgRun || 1) * 1.12; toast('Every buddy hits 12% harder');
+  }
+  Sound.play('coin');
+  closeTrade();
+}
+$('tradeSkip').addEventListener('click', () => { Sound.play('click'); closeTrade(); });
 function toMenu() {
   setFs(false);
   recordEndless();
-  mode = 'menu'; game = null; $('endModal').hidden = true; $('pauseModal').hidden = true; $('helpModal').hidden = true;
+  mode = 'menu'; game = null; $('endModal').hidden = true; $('pauseModal').hidden = true; $('helpModal').hidden = true; $('tradeModal').hidden = true; tradeOpen = false;
   gameScreen.hidden = true; menuScreen.hidden = false; Sound.setIntense(false);
   document.body.classList.remove('playing');
   buildMenu(); window.scrollTo(0, 0);
@@ -2912,6 +3021,7 @@ window.addEventListener('keydown', e => {
   }
   if (!game) return;
   if (!$('helpModal').hidden) { if (k === 'escape' || k === 'enter' || k === ' ') { e.preventDefault(); closeHelp(); } return; }
+  if (mode === 'trading') { if (k === 'escape') closeTrade(); return; }
   if (k === 'escape') { if (mode === 'play' && (sel || pending || moving)) { sel = null; pending = null; moving = null; } else setPaused(mode !== 'paused'); return; }
   if (k === 'p') { setPaused(mode !== 'paused'); return; }
   if (mode !== 'play') return;

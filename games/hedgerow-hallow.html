@@ -2920,7 +2920,7 @@ function spawnTrader(d) {
   const list = near.length ? near : spots;
   if (!list.length) return;
   const pick = list[Math.floor(Math.random() * list.length)];
-  game.merchant = { c: pick.c, r: pick.r, x: (pick.c + 0.5) * TILE, y: (pick.r + 0.5) * TILE, ttl: 60 };
+  game.merchant = { c: pick.c, r: pick.r, x: (pick.c + 0.5) * TILE, y: (pick.r + 0.5) * TILE, ttl: 120 };
   toast('A mystery trader wanders in. Tap him for skins.');
   Sound.play('coin');
 }

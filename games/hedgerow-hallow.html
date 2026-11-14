@@ -2902,7 +2902,8 @@ function drawHero(t) {
   heroS.b.forEach((b, i) => { if (b.sayT > 0) heroBubble(c, heroX(i), 138 - (i % 2) * 28, b.say, b.sayT * 2); });
   heroS.e.forEach(e => { if (e.sayT > 0) heroBubble(c, e.x, 226, e.say, e.sayT * 2.5); });
   if (!heroS.tapped) {
-    c.save(); c.font = '24px ' + FONT; c.textAlign = 'center'; c.globalAlpha = 0.65 + 0.35 * Math.sin(t * 3); c.lineWidth = 6; c.strokeStyle = '#eef6dc'; c.strokeText('Tap a buddy or a critter!', 320, 30); c.fillStyle = INK; c.fillText('Tap a buddy or a critter!', 320, 30); c.restore();
+    c.save(); c.font = '24px ' + FONT; c.textAlign = 'center'; c.globalAlpha = 0.65 + 0.35 * Math.sin(t * 3); c.lineWidth = 6; c.strokeStyle = '#eef6dc'; const _hint = LANG === 'da' ? 'Tryk på en hjælper eller et kryb!' : 'Tap a buddy or a critter!';
+    c.strokeText(_hint, 320, 30); c.fillStyle = INK; c.fillText(_hint, 320, 30); c.restore();
   }
   for (let i = 0; i < 3; i++) {
     const ph = i * 2.1, x = 320 + Math.sin(t * 0.35 + ph) * 280, y = 118 + Math.sin(t * 1.1 + ph * 2) * 26, f = 0.3 + 0.7 * Math.abs(Math.sin(t * 12 + ph));
@@ -3595,7 +3596,8 @@ function draw(t) {
     const hx0 = (g.hintCell.col + 0.5) * TILE, hy0 = (g.hintCell.row + 0.5) * TILE, pu = 0.5 + 0.5 * Math.sin(t * 4);
     c.save(); c.globalAlpha = 0.35 + 0.3 * pu; c.fillStyle = '#fff3a0'; c.beginPath(); c.arc(hx0, hy0, 26 + 5 * pu, 0, 7); c.fill();
     c.globalAlpha = 0.9; c.strokeStyle = INK; c.lineWidth = 2.5; c.setLineDash([6, 5]); c.beginPath(); c.arc(hx0, hy0, 27 + 4 * pu, 0, 7); c.stroke(); c.setLineDash([]);
-    c.font = '32px ' + FONT; c.textAlign = 'center'; c.lineWidth = 7; c.strokeStyle = '#eef4e0'; c.strokeText('Plant here', hx0, hy0 - 36 - 3 * pu); c.fillStyle = INK; c.fillText('Plant here', hx0, hy0 - 36 - 3 * pu);
+    c.font = '32px ' + FONT; c.textAlign = 'center'; c.lineWidth = 7; c.strokeStyle = '#eef4e0'; const _plant = LANG === 'da' ? 'Plant her' : 'Plant here';
+    c.strokeText(_plant, hx0, hy0 - 36 - 3 * pu); c.fillStyle = INK; c.fillText(_plant, hx0, hy0 - 36 - 3 * pu);
     c.restore();
   }
   const ep = g.path.pointAt(g.leakDist), pxv = ep.x + 2 + (patchShake > 0 && !RM ? Math.sin(t * 70) * patchShake * 5 : 0);
@@ -3634,7 +3636,8 @@ function draw(t) {
       c.beginPath(); c.arc((col + 0.5) * TILE, (row + 0.5) * TILE, 17 + 2 * pu, 0, 7); c.stroke();
     }
     c.restore();
-    c.save(); c.font = '30px ' + FONT; c.textAlign = 'center'; c.lineWidth = 7; c.strokeStyle = '#eef4e0'; c.strokeText('Dig where?', W / 2, H - 14); c.fillStyle = INK; c.fillText('Dig where?', W / 2, H - 14); c.restore();
+    c.save(); c.font = '30px ' + FONT; c.textAlign = 'center'; c.lineWidth = 7; c.strokeStyle = '#eef4e0'; const _dig = LANG === 'da' ? 'Grav hvor?' : 'Dig where?';
+    c.strokeText(_dig, W / 2, H - 14); c.fillStyle = INK; c.fillText(_dig, W / 2, H - 14); c.restore();
     const mcell = hover;
     if (mcell && g.canBuild(mcell.col, mcell.row)) {
       const gx = (mcell.col + 0.5) * TILE, gy2 = (mcell.row + 0.5) * TILE;

@@ -414,6 +414,15 @@
   #endBest { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .eb-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
   .mcard .acts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 4px; }
+  .setcard { width: min(100%, 460px); }
+  .setrow { display: flex; align-items: center; gap: 12px; width: 100%; }
+  .setrow label { flex: 0 0 112px; text-align: left; font-size: 17px; }
+  .setrow input[type=range] { flex: 1; min-width: 0; accent-color: var(--berry); height: 28px; }
+  .setrow output { flex: 0 0 46px; text-align: right; font-variant-numeric: tabular-nums; font-size: 15px; color: var(--ink-soft); }
+  .set-h { font-family: var(--f-display); font-weight: 400; font-size: 26px; margin: 8px 0 0; }
+  .langrow { display: flex; gap: 10px; }
+  .langrow .btn { min-width: 96px; }
+  .langrow .btn[aria-pressed="true"] { background: var(--honey); box-shadow: 1px 1px 0 var(--ink); }
   .gcard .ubuy { margin-top: 5px; min-height: 34px; padding: 0 10px; font-size: 15px; box-shadow: 2px 2px 0 var(--ink); }
   .unlockfx { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(38, 50, 77, .5); }
   .unlockfx[hidden] { display: none; }
@@ -454,8 +463,7 @@
       </div>
       <div class="mtools">
         <span class="totals" id="totals"></span>
-        <button class="btn toggle" id="mMusic" type="button" aria-pressed="true">Music</button>
-        <button class="btn toggle" id="mSfx" type="button" aria-pressed="true">Sfx</button>
+        <button class="btn" id="mSettings" type="button">Settings</button>
       </div>
     </div>
     <canvas class="scene" id="hero" role="img" aria-label="A sunny meadow where woodland buddies guard a garden path while critters crawl along it. Tap a buddy to make it shoot, tap a critter to startle it."></canvas>
@@ -607,13 +615,33 @@
     <span class="ufx-sparks" id="ufxSparks"></span>
   </div>
 </div>
+<div class="modal" id="setModal" hidden>
+  <div class="mcard setcard" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <h2 id="setTitle">Settings</h2>
+    <div class="setrow">
+      <label for="volMusic">Music</label>
+      <input id="volMusic" type="range" min="0" max="100" step="5" aria-describedby="volMusicOut">
+      <output id="volMusicOut" for="volMusic">50%</output>
+    </div>
+    <div class="setrow">
+      <label for="volSfx">Sound effects</label>
+      <input id="volSfx" type="range" min="0" max="100" step="5" aria-describedby="volSfxOut">
+      <output id="volSfxOut" for="volSfx">50%</output>
+    </div>
+    <h3 class="set-h">Language</h3>
+    <div class="langrow" role="group" aria-label="Language">
+      <button class="btn" id="langEn" type="button" aria-pressed="true">English</button>
+      <button class="btn" id="langDa" type="button" aria-pressed="false">Dansk</button>
+    </div>
+    <div class="acts"><button class="btn primary" id="setClose" type="button">Back</button></div>
+  </div>
+</div>
 <div class="modal" id="pauseModal" hidden>
   <div class="mcard" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
     <h2 id="pauseTitle">Paused</h2>
     <p>The critters are having a snack break.</p>
     <div class="acts">
-      <button class="btn toggle" id="btnMusic" type="button" aria-pressed="true">Music</button>
-      <button class="btn toggle" id="btnSfx" type="button" aria-pressed="true">Sfx</button>
+      <button class="btn" id="pSettings" type="button">Settings</button>
     </div>
     <div class="acts">
       <button class="btn primary" id="pResume" type="button">Resume</button>
@@ -1367,7 +1395,7 @@ function createGame(L, onEvent) {
 
 /* ===================== SAVE ===================== */
 const SAVE_KEY = 'hedgerow-hollow-v1';
-const defaultSave = () => ({ stars: {}, best: {}, endless: { wave: 0, score: 0 }, daily: { date: '', best: 0, streak: 0, lastWin: '' }, music: true, sfx: true, auto: false, tut: false, last: 0, gold: 0, owned: {}, skins: {}, skin: '', pulls: 0, pity: 0, migrated: false, pops: {}, contracts: {} });
+const defaultSave = () => ({ stars: {}, best: {}, endless: { wave: 0, score: 0 }, daily: { date: '', best: 0, streak: 0, lastWin: '' }, music: true, sfx: true, musicVol: 0.5, sfxVol: 0.5, lang: 'en', auto: false, tut: false, last: 0, gold: 0, owned: {}, skins: {}, skin: '', pulls: 0, pity: 0, migrated: false, pops: {}, contracts: {} });
 function loadSave() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
@@ -1382,7 +1410,8 @@ function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save));
 const Sound = (() => {
   let ctx = null, master, sfxG, musG, noiseBuf, timer = null, nextT = 0, step = 0, intense = false;
   const last = {};
-  const S = { music: save.music !== false, sfx: save.sfx !== false };
+  const S = { musicVol: save.music === false ? 0 : (typeof save.musicVol === 'number' ? save.musicVol : 0.5), sfxVol: save.sfx === false ? 0 : (typeof save.sfxVol === 'number' ? save.sfxVol : 0.5) };
+  S.music = S.musicVol > 0; S.sfx = S.sfxVol > 0;
   const midi = m => 440 * Math.pow(2, (m - 69) / 12);
   const STEP = 60 / 96 / 2;
   const CHORDS = [[48, 52, 55], [45, 48, 52], [41, 45, 48], [43, 47, 50]];
@@ -1395,8 +1424,8 @@ const Sound = (() => {
     if (!AC) return;
     try { ctx = new AC(); } catch (e) { ctx = null; return; }
     master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
-    sfxG = ctx.createGain(); sfxG.gain.value = S.sfx ? 0.5 : 0; sfxG.connect(master);
-    musG = ctx.createGain(); musG.gain.value = S.music ? 0.5 : 0; musG.connect(master);
+    sfxG = ctx.createGain(); sfxG.gain.value = S.sfxVol; sfxG.connect(master);
+    musG = ctx.createGain(); musG.gain.value = S.musicVol; musG.connect(master);
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
     const d = noiseBuf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -1494,14 +1523,14 @@ const Sound = (() => {
     last[name] = now;
     if (defs[name]) defs[name](now);
   }
-  function setMusic(on) { S.music = on; if (musG) musG.gain.setTargetAtTime(on ? 0.5 : 0, ctx.currentTime, 0.05); }
-  function setSfx(on) { S.sfx = on; if (sfxG) sfxG.gain.setTargetAtTime(on ? 0.5 : 0, ctx.currentTime, 0.05); }
+  function setMusicVol(v) { S.musicVol = Math.max(0, Math.min(1, v)); S.music = S.musicVol > 0; if (musG) musG.gain.setTargetAtTime(S.musicVol, ctx.currentTime, 0.05); }
+  function setSfxVol(v) { S.sfxVol = Math.max(0, Math.min(1, v)); S.sfx = S.sfxVol > 0; if (sfxG) sfxG.gain.setTargetAtTime(S.sfxVol, ctx.currentTime, 0.05); }
   document.addEventListener('visibilitychange', () => { if (document.hidden) { try { persist(); } catch (e) { /* ignore */ } } });
   document.addEventListener('visibilitychange', () => {
     if (!ctx) return;
     if (document.hidden) ctx.suspend(); else ctx.resume();
   });
-  return { init, play, setMusic, setSfx, setIntense: b => { intense = b; }, S };
+  return { init, play, setMusicVol, setSfxVol, setIntense: b => { intense = b; }, S };
 })();
 
 /* ===================== DRAWING ===================== */
@@ -2107,6 +2136,199 @@ const trayEl = $('tray'), infoEl = $('info'), toastEl = $('toast'), btnWave = $(
 const buyView = $('buyView'), towerView = $('towerView'), hintEl = $('hint');
 
 let game = null, levelIdx = 0, mode = 'menu', buildType = 'squirrel', sel = null, hover = null, pending = null, moving = null;
+
+/* ===================== SPROG / LANGUAGE ===================== */
+const DA = {
+  "Guard the veggie patch from snails, beetles and one very rude badger.": "Beskyt køkkenhaven mod snegle, biller og en rigtig fræk grævling.",
+  "Settings": "Indstillinger", "Music": "Musik", "Sound effects": "Lydeffekter", "Language": "Sprog",
+  "Back": "Tilbage", "Play": "Spil", "Daily garden": "Dagens have", "Endless meadow": "Uendelig eng",
+  "Gardens": "Haver", "Buddies": "Hjælpere", "Shop": "Butik", "Critters": "Kryb", "How to play": "Sådan spiller du",
+  "Menu sections": "Menu", "Previous four gardens": "De fire forrige haver", "Next four gardens": "De fire næste haver",
+  "Up next": "Næste", "Gentle": "Rolig", "Easy": "Let", "Tricky": "Drilsk", "Hard": "Svær", "Brutal": "Brutal",
+  "Stars": "Stjerner", "Best": "Bedste", "Goals": "Mål", "Garden": "Have", "Gardens 1–4 of 8": "Haver 1–4 af 8",
+  "Spring meadow": "Forårseng", "Pond side": "Ved dammen", "Autumn orchard": "Efterårsfrugthave",
+  "Frosty glade": "Frostlysning", "Moonlit meadow": "Måneeng", "Mossy hollow": "Moskløft",
+  "Sunflower field": "Solsikkemark", "Golden fields": "Gyldne marker", "Storm ridge": "Stormryg",
+  "Cabbage Patch": "Kålmarken", "One long loop past the cabbages. A gentle start.": "En lang runde forbi kålhovederne. En rolig start.",
+  "Pond Bend": "Damsvinget", "The path hugs the pond. Plenty of corners for brambles.": "Stien følger dammen. Masser af hjørner til brombær.",
+  "Windy Orchard": "Den blæsende frugthave", "A long zig-zag through the orchard. Two badgers come knocking.": "En lang zigzag gennem frugthaven. To grævlinger kommer på besøg.",
+  "Frosty Glade": "Frostlysningen", "Snow everywhere and a long winding path. The badgers bring friends.": "Sne overalt og en lang, snoet sti. Grævlingerne tager venner med.",
+  "Sunflower Run": "Solsikkeløbet", "The critters have had a good summer: everything runs 15% faster through the sunflowers.": "Krybene har haft en dejlig sommer: alt løber 15 % hurtigere gennem solsikkerne.",
+  "Mossy Hollow": "Moskløften", "Damp and winding, with only eight veggies to guard. The critters pay 40% more seeds for the trouble.": "Fugtigt og snoet med kun otte grøntsager at passe på. Krybene betaler 40 % flere frø for besværet.",
+  "Golden Fields": "De gyldne marker", "A gold-rush harvest: tougher critters, but every one of them drops half again as many seeds.": "En guldfeberhøst: sejere kryb, men de taber halvanden gang så mange frø.",
+  "Storm Ridge": "Stormryggen", "Rain over the ridge. Twelve veggies and a stingy purse: spend every seed like it matters.": "Regn over ryggen. Tolv grøntsager og en stram pengepung: brug hvert frø, som om det gælder.",
+  "Wild Meadow": "Vildengen", "No finish line. See how many waves you can survive.": "Ingen målstreg. Se hvor mange bølger du kan klare.",
+  "These are the critters that walk the path. Every one that reaches the patch eats a veggie.": "Det er krybene, der går på stien. Hver eneste, der når bedet, spiser en grøntsag.",
+  "Pick a buddy, then tap a patch of grass to plant it. Tap a planted buddy and a box pops up right over it with two upgrade paths.": "Vælg en hjælper, og tryk på et stykke græs for at plante den. Tryk på en plantet hjælper, og der dukker en boks op med to opgraderingsveje.",
+  "Press Send wave when you are ready, or switch on Auto. Rain, Thunder and Sunshine help in a tight spot.": "Tryk Send bølge, når du er klar, eller slå Auto til. Regn, Torden og Sollys hjælper, når det er tæt.",
+  "Win rounds to earn golden seeds. Spend them in the Shop on locked buddies; skins are sold by the mystery trader, who wanders into the garden with a new stock every hour. The Daily garden changes every day and keeps a streak. The Endless meadow never ends.": "Vind runder for at tjene gyldne frø. Brug dem i Butikken på låste hjælpere; skins sælges af den mystiske handelsmand, der dukker op i haven med ny lager hver time. Dagens have skifter hver dag og holder styr på din serie. Den uendelige eng slutter aldrig.",
+  "Now and then a mystery trader wanders onto the grass and sells skins for golden seeds, plus a lucky bundle that hands you one random skin. Each garden also has two goals that pay golden seeds the first time you meet them.": "Indimellem kommer en mystisk handelsmand forbi græsset og sælger skins for gyldne frø, plus en lykkepakke med en tilfældig skin. Hver have har også to mål, der giver gyldne frø første gang, du klarer dem.",
+  "Keyboard: arrows or WASD move the cursor, 1 to 9, 0, - and = pick a buddy, Enter plants, U and I buy upgrades, X sells, N sends the wave, Q E R use powers, T toggles Auto, P pauses, F changes speed.": "Tastatur: piletaster eller WASD flytter markøren, 1 til 9, 0, - og = vælger en hjælper, Enter planter, U og I køber opgraderinger, X sælger, N sender bølgen, Q E R bruger kræfter, T slår Auto til og fra, P pauser, F skifter fart.",
+  "Sound starts after your first tap. Progress is saved in this browser.": "Lyden starter efter dit første tryk. Fremskridt gemmes i denne browser.",
+  "Erase progress": "Slet fremskridt", "Tap again to erase": "Tryk igen for at slette",
+  "Pause": "Pause", "Paused": "Pause", "The critters are having a snack break.": "Krybene holder velfortjent pause.",
+  "Resume": "Fortsæt", "Restart level": "Start banen forfra", "Menu": "Menu",
+  "Auto": "Auto", "Send wave 1": "Send bølge 1",
+  "Arrows move, 1-0 pick, Enter plants, U or I upgrade, X sells, N waves, Q E R powers": "Pile flytter, 1-0 vælger, Enter planter, U eller I opgraderer, X sælger, N bølger, Q E R kræfter",
+  "Veggies saved!": "Grøntsagerne er reddet!", "Mystery trader": "Mystisk handelsmand",
+  "Trader exclusives only: three skins, new stock every hour.": "Kun handelsmandens egne: tre skins, ny lager hver time.",
+  "Golden seeds": "Gyldne frø", "These five skins are his alone. They never show up in the lucky bundle.": "De fem skins er hans alene. De dukker aldrig op i lykkepakken.",
+  "Close": "Luk",
+  "Pick a buddy in the bar, then tap the glowing grass to plant it.": "Vælg en hjælper i baren, og tryk på det lysende græs for at plante den.",
+  "Tap a planted buddy. A box pops up right over it with two upgrade paths.": "Tryk på en plantet hjælper. Der dukker en boks op med to opgraderingsveje.",
+  "A green arrow over a buddy means you can afford an upgrade.": "En grøn pil over en hjælper betyder, at du har råd til en opgradering.",
+  "Press Send wave. Critters follow the arrows to the veggie patch.": "Tryk Send bølge. Krybene følger pilene hen til grøntsagsbedet.",
+  "Rain, Thunder and Sunshine help in a tight spot.": "Regn, Torden og Sollys hjælper, når det er tæt.",
+  "Now and then a mystery trader wanders onto the grass. Tap him to buy one of his three skins with golden seeds, or to gamble for a random one.": "Indimellem kommer en mystisk handelsmand forbi græsset. Tryk på ham for at købe et af hans tre skins for gyldne frø.",
+  "Tap the corner button for full screen: a bigger map with a buddy strip you can scroll.": "Tryk på knappen i hjørnet for fuldskærm: et større kort med en bjælke af hjælpere, du kan rulle i.",
+  "Got it": "Forstået", "Buddy unlocked": "Hjælper låst op", "New buddy in your collection": "Ny hjælper i samlingen",
+  "Locked": "Låst", "Unlocked": "Låst op", "All-time pops": "Pops i alt",
+  "Acorn Squirrel": "Agern-egern", "Squirrel": "Egern", "Lobs acorns at the critter closest to the veggies. Cheap and steady.": "Kaster agern efter det kryb, der er tættest på grøntsagerne. Billig og stabil.",
+  "Honey Hive": "Honningkube", "Hive": "Kube", "Sticky honey slows critters in a small splash, so your other buddies get more shots.": "Klistret honning bremser kryb i et lille område, så dine andre hjælpere får flere skud.",
+  "Thorn Bramble": "Tornbrombær", "Bramble": "Brombær", "Pulses thorns that prick every critter on the ground in reach. Best at a corner. Cannot reach flyers.": "Sender torne ud, der prikker alle kryb på jorden inden for rækkevidde. Bedst i et hjørne. Kan ikke ramme flyvere.",
+  "Sticky Frog": "Klistret frø", "Frog": "Frø", "Flicks a sticky tongue at one critter, even flyers. Never misses.": "Snapper et kryb med den klistrede tunge, også flyvere. Rammer altid.",
+  "Firefly Jar": "Ildflueglas", "Firefly": "Ildflue", "Does not attack. Buddies in its glow shoot 20% faster. Upgrades add stunning flashes.": "Angriber ikke. Hjælpere i dens skær skyder 20 % hurtigere. Opgraderinger giver blændende glimt.",
+  "Night Owl": "Natugle", "Owl": "Ugle", "Huge reach and heavy feathers. Goes after the toughest critter in sight.": "Stor rækkevidde og tunge fjer. Går efter det sejeste kryb i syne.",
+  "Mortar Mole": "Mørtelmuldvarp", "Mole": "Muldvarp", "Lobs big dirt bombs that hurt every ground critter in the blast. Can dig under the ground and pop up somewhere else. Cannot hit flyers.": "Kaster store jordbomber, der rammer alle kryb på jorden i sprængningen. Kan grave under jorden og dukke op et andet sted. Kan ikke ramme flyvere.",
+  "Magpie Banker": "Skade-bankmand", "Magpie": "Skade", "Collects shiny seeds. Pays you 14 extra seeds every time a wave is cleared, and flicks small pebbles.": "Samler blanke frø. Giver dig 14 ekstra frø, hver gang en bølge er klaret, og kaster småsten.",
+  "Golden Dragonfly": "Gylden guldsmed", "Dragonfly": "Guldsmed", "Flies around the garden and follows the critters. Zaps one and the lightning jumps to 2 more. Hits flyers too.": "Flyver rundt i haven og følger krybene. Lyner ét og springer videre til 2 andre. Rammer også flyvere.",
+  "Sly Fox": "Snu ræv", "Fox": "Ræv", "Sharp arrows from far away that ignore armor. Aims at the critter closest to the veggies. Upgrades can mark critters so everyone hurts them more.": "Skarpe pile på lang afstand, der ignorerer panser. Sigter efter det kryb, der er tættest på grøntsagerne. Opgraderinger kan markere kryb, så alle gør mere skade.",
+  "Beaver Engineer": "Bæveringeniør", "Beaver": "Bæver", "Does not shoot. Opens its dam now and then and a flood shoves every ground critter back along the path and slows it. Great at buying time.": "Skyder ikke. Åbner sin dæmning indimellem, og en flodbølge skubber alle kryb tilbage ad stien og bremser dem. God til at købe tid.",
+  "Mother Hen": "Hønemor", "Hen": "Høne", "Lays a healing egg and brings back a lost veggie every 3 waves. Pecks critters that get close. Place her near the patch.": "Lægger et helbredende æg og henter en tabt grøntsag tilbage hver 3. bølge. Hakker efter kryb, der kommer tæt på. Sæt hende nær bedet.",
+  "Snail": "Snegl", "Beetle": "Bille", "Field Mouse": "Markmus", "Caterpillar": "Kålorm", "Grub": "Larve",
+  "Hedgehog": "Pindsvin", "Ladybug": "Mariehøne", "Crow": "Krage", "Badger": "Grævling",
+  "Slow and sturdy.": "Langsom og sej.", "Quick on its feet.": "Kvikt på fødderne.", "Very fast, very soft.": "Meget hurtig, meget blød.",
+  "Splits into two grubs when it falls.": "Deler sig i to larver, når den falder.", "Armored. Weak hits barely scratch it.": "Pansret. Svage slag ridser den næsten ikke.",
+  "Heals the critters around it.": "Helbreder krybene omkring sig.", "Flies. Bramble cannot reach it.": "Flyver. Brombær kan ikke nå den.",
+  "Boss. Huge and tough.": "Boss. Kæmpestor og sej.",
+  "Rain": "Regn", "Thunder": "Torden", "Sunshine": "Sollys",
+  "Slows every critter for 6 seconds": "Bremser alle kryb i 6 sekunder",
+  "Zaps every critter on the path": "Lyner alle kryb på stien",
+  "Every buddy shoots 50% faster for 8 seconds": "Alle hjælpere skyder 50 % hurtigere i 8 sekunder",
+  "Ready": "Klar",
+  "Speedy day": "Hurtig dag", "Critters run 25% faster. You start with extra seeds.": "Krybene løber 25 % hurtigere. Du starter med ekstra frø.",
+  "Tough day": "Sej dag", "Critters are 35% tougher but drop 30% more seeds.": "Krybene er 35 % sejere, men taber 30 % flere frø.",
+  "Rich day": "Rig dag", "Start with loads of seeds. Critters are 40% tougher.": "Start med masser af frø. Krybene er 40 % sejere.",
+  "Nibbly day": "Smagsdag", "Only 5 veggies to guard, but plenty of seeds to start.": "Kun 5 grøntsager at passe på, men masser af frø fra start.",
+  "Common": "Almindelig", "Rare": "Sjælden", "Epic": "Episk", "Legendary": "Legendarisk", "Mythic": "Mytisk",
+  "Frosty": "Frostig", "Sunset": "Solnedgang", "Minty": "Myntegrøn", "Candy": "Slik", "Midnight": "Midnat",
+  "Ember": "Glød", "Shadow": "Skygge", "Rainbow": "Regnbue", "Golden": "Guld", "Nebula": "Tåge", "Prismatic": "Prisme",
+  "Willow Wisp": "Pileblink", "Aurora": "Nordlys", "Eclipse": "Formørkelse", "Supernova": "Supernova", "Thorn King": "Tornekongen",
+  "Default": "Standard", "Skins": "Skins", "Your skins": "Dine skins", "Lucky bundle:": "Lykkepakke:",
+  " for one random skin, any rarity.": " for én tilfældig skin, uanset sjældenhed.",
+  "Open a bundle": "Åbn en pakke", "Owned": "Ejet", "Trader only": "Kun hos handelsmanden",
+  "Win without using a power": "Vind uden at bruge en kraft", "Save every veggie": "Red alle grøntsager",
+  "Win with 5 buddies or fewer": "Vind med 5 hjælpere eller færre",
+  "Slows every critter for 6 seconds": "Bremser alle kryb i 6 sekunder",
+  "No finish line": "Ingen målstreg", "new today": "nyt i dag", "done today": "klaret i dag",
+  "Auto waves on": "Auto-bølger til", "Auto waves off": "Auto-bølger fra",
+  "All critters go to the garden": "Alle kryb går mod haven",
+  "A rare trader wanders in. Tap him for his exclusive skins.": "En sjælden handelsmand kommer forbi. Tryk på ham for hans eksklusive skins.",
+  "Dig cancelled": "Gravning annulleret", "Moles can only dig up empty grass": "Muldvarpe kan kun grave i tomt græs",
+  "Nothing grows there": "Der vokser intet", "Tap a grass spot to dig there": "Tryk på et stykke græs for at grave der",
+  "Tap again to plant": "Tryk igen for at plante",
+  "Rain slows every critter": "Regnen bremser alle kryb", "Sunshine, buddies shoot faster": "Sollys, hjælperne skyder hurtigere",
+  "Thunder!": "Torden!", "Early start, +": "Tidlig start, +",
+  "Tap again to buy ": "Tryk igen for at købe ", " for ": " for ",
+  "You have": "Du har", "Win rounds to earn more.": "Vind runder for at tjene flere.",
+  "Auto waves": "Auto-bølger", "Seeds to spend": "Frø at bruge", "Veggies left": "Grøntsager tilbage", "Wave": "Bølge",
+  "Full screen": "Fuldskærm", "Game speed (F)": "Spilfart (F)", "Pause (P)": "Pause (P)",
+  "Send waves by itself (T)": "Sender bølger af sig selv (T)",
+  "Best score": "Bedste score", "Best": "Bedste",
+  "New best!": "Ny rekord!",
+  "Golden seeds left": "Gyldne frø tilbage",
+  "Badger down!": "Grævling ned!", "A badger is coming!": "En grævling er på vej!", "Wave cleared": "Bølge klaret"
+};
+const DA_PLURALS = { snails: 'snegle', beetles: 'biller', mice: 'mus', caterpillars: 'kålorme', grubs: 'larver', hedgehogs: 'pindsvin', ladybugs: 'mariehøns', crows: 'krager', badgers: 'grævlinger' };
+const DA_PATTERNS = [
+  [/^(\d+) waves · (.+)$/, m => m[1] + ' bølger · ' + (daText(m[2]) || m[2])],
+  [/^(\d+) waves$/, m => m[1] + ' bølger'],
+  [/^Garden (\d+)$/, m => 'Have ' + m[1]],
+  [/^Gardens (\d+)[–-](\d+) of (\d+)$/, m => 'Haver ' + m[1] + '–' + m[2] + ' af ' + m[3]],
+  [/^Stars (\d+) of (\d+) ·$/, m => 'Stjerner ' + m[1] + ' af ' + m[2] + ' ·'],
+  [/^Best (\d+)$/, m => 'Bedste ' + m[1]],
+  [/^Goals (\d+)\/(\d+)$/, m => 'Mål ' + m[1] + '/' + m[2]],
+  [/^Best (\d+) waves$/, m => 'Bedste ' + m[1] + ' bølger'],
+  [/^Your skins \((\d+) of (\d+)\)$/, m => 'Dine skins (' + m[1] + ' af ' + m[2] + ')'],
+  [/^All-time pops: (\d+)$/, m => 'Pops i alt: ' + m[1]],
+  [/^Unlock for (\d+)$/, m => 'Lås op for ' + m[1]],
+  [/^(\d+) seeds$/, m => m[1] + ' frø'],
+  [/^(\d+) golden seeds$/, m => m[1] + ' gyldne frø'],
+  [/^Need (\d+) golden seeds$/, m => 'Du mangler ' + m[1] + ' gyldne frø'],
+  [/^Need (\d+) more seeds$/, m => 'Du mangler ' + m[1] + ' frø'],
+  [/^Send wave (\d+)$/, m => 'Send bølge ' + m[1]],
+  [/^Wave (\d+)\/(\d+)$/, m => 'Bølge ' + m[1] + '/' + m[2]],
+  [/^Auto in (\d+)s, early bonus \+(\d+)$/, m => 'Auto om ' + m[1] + 's, tidlig bonus +' + m[2]],
+  [/^(\d+)s$/, m => m[1] + 's'],
+  [/^Tap again to buy (.+) for (\d+) golden seeds$/, m => 'Tryk igen for at købe ' + daText(m[1]) + ' for ' + m[2] + ' gyldne frø'],
+  [/^(.+) costs (\d+) golden seeds\. You have (\d+)\. Win rounds to earn more\.$/, m => daText(m[1]) + ' koster ' + m[2] + ' gyldne frø. Du har ' + m[3] + '. Vind runder for at tjene flere.'],
+  [/^(.+) is yours!?$/, m => daText(m[1]) + ' er din!'],
+  [/^You have (\d+) golden seeds\. Unlock a locked buddy right here, in the Shop tab, or by tapping it twice in the game\.$/, m => 'Du har ' + m[1] + ' gyldne frø. Lås en låst hjælper op her, i Butik-fanen, eller ved at trykke to gange på den i spillet.'],
+  [/^(\d+) (snails|beetles|mice|caterpillars|grubs|hedgehogs|ladybugs|crows|badgers)$/, m => m[1] + ' ' + (DA_PLURALS[m[2]] || m[2])],
+  [/^Wave (\d+)$/, m => 'Bølge ' + m[1]],
+  [/^\+(\d+) seeds$/, m => '+' + m[1] + ' frø'],
+  [/^Common ([\d.]+)% · Rare ([\d.]+)% · Epic ([\d.]+)% · Legendary ([\d.]+)% · Mythic ([\d.]+)%$/, m => 'Almindelig ' + m[1] + '% · Sjælden ' + m[2] + '% · Episk ' + m[3] + '% · Legendarisk ' + m[4] + '% · Mytisk ' + m[5] + '%'],
+  [/^(.+) · (new today|done today|streak \d+)$/, m => (daText(m[1]) || m[1]) + ' · ' + (m[2].startsWith('streak') ? 'serie ' + m[2].split(' ')[1] : m[2] === 'new today' ? 'nyt i dag' : 'klaret i dag')]
+];
+function daText(raw) {
+  if (!raw) return null;
+  const m = raw.match(/^(\s*)([\s\S]*?)(\s*)$/);
+  const core = m[2]; if (!core) return null;
+  let out = DA[core];
+  if (out == null) for (const [re, fn] of DA_PATTERNS) { const p = core.match(re); if (p) { out = fn(p); break; } }
+  return out == null ? null : m[1] + out + m[3];
+}
+const EN_TEXT = new WeakMap(), EN_ATTRS = new WeakMap();
+let LANG = save.lang === 'da' ? 'da' : 'en', i18nMO = null;
+function i18nText(node, lang, fresh) {
+  const cur = node.nodeValue;
+  let src = EN_TEXT.get(node);
+  if (fresh || src == null) { src = cur; EN_TEXT.set(node, src); }
+  if (lang === 'en') { if (cur !== src) node.nodeValue = src; return; }
+  const out = daText(src);
+  if (out != null && cur !== out) node.nodeValue = out;
+}
+function i18nAttrs(el, lang, fresh) {
+  let map = EN_ATTRS.get(el); if (fresh || !map) { map = {}; EN_ATTRS.set(el, map); }
+  for (const a of ['title', 'aria-label', 'placeholder', 'alt']) {
+    const v = el.getAttribute(a); if (v == null) continue;
+    if (fresh || map[a] == null) map[a] = v;
+    const src = map[a];
+    if (lang === 'en') { if (v !== src) el.setAttribute(a, src); continue; }
+    const out = daText(src);
+    if (out != null && v !== out) el.setAttribute(a, out);
+  }
+}
+function i18nTree(root, lang, fresh) {
+  if (root.nodeType === 3) { i18nText(root, lang, fresh); return; }
+  if (root.nodeType !== 1) return;
+  if (/^(SCRIPT|STYLE|TEXTAREA|CODE|PRE)$/.test(root.tagName)) return;
+  i18nAttrs(root, lang, fresh);
+  for (const n of root.childNodes) i18nTree(n, lang, fresh);
+}
+function applyLang(lang) {
+  LANG = lang === 'da' ? 'da' : 'en';
+  document.documentElement.lang = LANG === 'da' ? 'da' : 'en';
+  if (i18nMO) i18nMO.disconnect();
+  i18nTree(document.body, LANG, false);
+  if (!i18nMO) i18nMO = new MutationObserver(muts => {
+    i18nMO.disconnect();
+    for (const m of muts) {
+      if (m.type === 'characterData') { EN_TEXT.delete(m.target); if (LANG === 'da') i18nText(m.target, 'da', true); }
+      else for (const n of m.addedNodes) if (LANG === 'da') i18nTree(n, 'da', true);
+    }
+    i18nMO.observe(document.body, { childList: true, subtree: true, characterData: true });
+    i18nMO.takeRecords();
+  });
+  i18nMO.observe(document.body, { childList: true, subtree: true, characterData: true });
+  i18nMO.takeRecords();
+}
+function setLang(lang) {
+  save.lang = lang === 'da' ? 'da' : 'en';
+  persist();
+  applyLang(save.lang);
+}
+
 let kb = { on: false, col: 4, row: 3 }, speed = 1, bg = null, fxs = [], shake = 0, flashT = 0, time = 0, lastT = 0, lastPointer = 'mouse';
 let infoKey = '', tvKey = '';
 let amb = [], banner = null, patchShake = 0, tutSel = false;
@@ -2880,8 +3102,9 @@ function showBanner(txt, sub, col) { banner = { txt, sub, col: col || INK, t: 0,
 function drawBanner(c) {
   const p = banner.t / banner.max, a = p < 0.15 ? p / 0.15 : p > 0.75 ? (1 - p) / 0.25 : 1, sc = p < 0.15 ? 0.7 + 0.3 * (p / 0.15) : 1 + (p - 0.15) * 0.08;
   c.save(); c.globalAlpha = Math.max(0, a); c.translate(W / 2, H * 0.4); c.scale(sc, sc); c.rotate(-0.03); c.textAlign = 'center'; c.lineJoin = 'round';
-  c.font = '66px ' + DISPLAY; c.lineWidth = 10; c.strokeStyle = '#eef4e0'; c.strokeText(banner.txt, 0, 0); c.fillStyle = banner.col; c.fillText(banner.txt, 0, 0);
-  if (banner.sub) { c.font = '28px ' + FONT; c.lineWidth = 6; c.strokeText(banner.sub, 0, 36); c.fillStyle = INK; c.fillText(banner.sub, 0, 36); }
+  const btxt = (LANG === 'da' && daText(banner.txt)) || banner.txt, bsub = banner.sub && ((LANG === 'da' && daText(banner.sub)) || banner.sub);
+  c.font = '66px ' + DISPLAY; c.lineWidth = 10; c.strokeStyle = '#eef4e0'; c.strokeText(btxt, 0, 0); c.fillStyle = banner.col; c.fillText(btxt, 0, 0);
+  if (bsub) { c.font = '28px ' + FONT; c.lineWidth = 6; c.strokeText(bsub, 0, 36); c.fillStyle = INK; c.fillText(bsub, 0, 36); }
   c.restore();
 }
 
@@ -3175,14 +3398,48 @@ btnWave.addEventListener('click', () => { if (mode === 'play') game.sendWave(); 
 btnAuto.addEventListener('click', () => { if (mode === 'play') toggleAuto(); });
 $('btnPause').addEventListener('click', () => setPaused(mode !== 'paused'));
 $('btnSpeed').addEventListener('click', () => { speed = speed === 1 ? 2 : speed === 2 ? 3 : 1; $('btnSpeed').textContent = speed + 'x'; });
-function syncToggles() {
-  $('btnMusic').setAttribute('aria-pressed', String(Sound.S.music));
-  $('btnSfx').setAttribute('aria-pressed', String(Sound.S.sfx));
-  $('mMusic').setAttribute('aria-pressed', String(Sound.S.music));
-  $('mSfx').setAttribute('aria-pressed', String(Sound.S.sfx));
+function syncSettings() {
+  const mv = Math.round((save.musicVol == null ? 0.5 : save.musicVol) * 100), sv = Math.round((save.sfxVol == null ? 0.5 : save.sfxVol) * 100);
+  $('volMusic').value = mv; $('volMusicOut').textContent = mv + '%';
+  $('volSfx').value = sv; $('volSfxOut').textContent = sv + '%';
+  $('langEn').setAttribute('aria-pressed', String(save.lang !== 'da'));
+  $('langDa').setAttribute('aria-pressed', String(save.lang === 'da'));
 }
-$('btnMusic').addEventListener('click', () => { Sound.init(); Sound.setMusic(!Sound.S.music); save.music = Sound.S.music; persist(); syncToggles(); });
-$('btnSfx').addEventListener('click', () => { Sound.init(); Sound.setSfx(!Sound.S.sfx); save.sfx = Sound.S.sfx; persist(); syncToggles(); });
+function syncToggles() { syncSettings(); }
+let settingsOpen = false, settingsBack = 'menu';
+function openSettings() {
+  if (settingsOpen) return;
+  Sound.init();
+  settingsOpen = true;
+  settingsBack = game && mode === 'paused' ? 'paused' : (game && mode !== 'menu' ? 'play' : 'menu');
+  if (game && mode !== 'menu') { mode = 'settings'; $('pauseModal').hidden = true; }
+  syncSettings();
+  $('setModal').hidden = false;
+  $('setClose').focus();
+}
+function closeSettings() {
+  if (!settingsOpen) return;
+  settingsOpen = false; $('setModal').hidden = true;
+  if (game) {
+    mode = settingsBack === 'paused' ? 'paused' : 'play';
+    if (settingsBack === 'paused') $('pauseModal').hidden = false;
+  }
+  Sound.play('click');
+}
+function setVol(which, v) {
+  v = Math.max(0, Math.min(100, Number(v))) / 100;
+  Sound.init();
+  if (which === 'music') { Sound.setMusicVol(v); save.musicVol = v; save.music = v > 0; }
+  else { Sound.setSfxVol(v); save.sfxVol = v; save.sfx = v > 0; }
+  persist(); syncSettings();
+}
+$('mSettings').addEventListener('click', () => { Sound.play('click'); openSettings(); });
+$('pSettings').addEventListener('click', () => { Sound.play('click'); openSettings(); });
+$('setClose').addEventListener('click', closeSettings);
+$('volMusic').addEventListener('input', e => { setVol('music', e.target.value); });
+$('volSfx').addEventListener('input', e => { setVol('sfx', e.target.value); });
+$('langEn').addEventListener('click', () => { setLang('en'); Sound.play('click'); });
+$('langDa').addEventListener('click', () => { setLang('da'); Sound.play('click'); });
 $('pResume').addEventListener('click', () => setPaused(false));
 $('pRestart').addEventListener('click', () => startLevel(levelIdx));
 $('pMenu').addEventListener('click', toMenu);
@@ -3206,7 +3463,7 @@ $('btnErase').addEventListener('click', () => {
   const b = $('btnErase');
   if (!eraseT) { b.textContent = 'Tap again to erase'; eraseT = setTimeout(() => { eraseT = 0; b.textContent = 'Erase progress'; }, 3000); return; }
   clearTimeout(eraseT); eraseT = 0; b.textContent = 'Erase progress';
-  const keep = { music: save.music, sfx: save.sfx };
+  const keep = { music: save.music, sfx: save.sfx, musicVol: save.musicVol, sfxVol: save.sfxVol, lang: save.lang };
   save = Object.assign(defaultSave(), keep); persist(); buildMenu();
 });
 
@@ -3214,6 +3471,7 @@ window.addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   const k = e.key.toLowerCase();
   const onBtn = document.activeElement && document.activeElement.tagName === 'BUTTON';
+  if (settingsOpen) { if (k === 'escape') closeSettings(); else if (k === 'm') setVol('music', save.musicVol > 0 ? 0 : 50); return; }
   if (mode === 'menu') {
     if (k >= '1' && k <= '9' && Number(k) <= LEVELS.length && !onBtn) startLevel(Number(k) - 1);
     return;
@@ -3240,7 +3498,7 @@ window.addEventListener('keydown', e => {
   if (k === 'x' || k === 'delete' || k === 'backspace') { doSell(); return; }
   if (k === 'n') { game.sendWave(); return; }
   if (k === 'f') { $('btnSpeed').click(); return; }
-  if (k === 'm') { $('btnMusic').click(); return; }
+  if (k === 'm') { setVol('music', save.musicVol > 0 ? 0 : 50); return; }
   if (k === 't') { toggleAuto(); return; }
   if (k === 'q') { usePower('rain'); return; }
   if (k === 'e') { usePower('thunder'); return; }
@@ -3390,7 +3648,7 @@ $('gNext').addEventListener('click', () => {
   if (gardenPage >= pages - 1) return;
   gardenPage++; Sound.init(); Sound.play('click'); buildMenu();
 });
-buildTray(); buildPowers(); buildMenu(); buildGuide(); syncToggles();
+buildTray(); buildPowers(); buildMenu(); buildGuide(); syncSettings(); applyLang(save.lang);
 window.addEventListener('pointerdown', () => Sound.init(), { once: true });
 window.addEventListener('keydown', () => Sound.init(), { once: true });
 if (window.ResizeObserver) { const ro = new ResizeObserver(() => { fit(); }); ro.observe(stage); ro.observe($('dock')); ro.observe(document.querySelector('.main')); }

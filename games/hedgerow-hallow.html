@@ -311,9 +311,6 @@
   .tskin .pr .gold svg { width: 15px; height: 15px; }
   .tskin .buy { min-height: 40px; padding: 0 12px; font-size: 18px; }
   .tskin.owned { opacity: .78; }
-  .mcard #traderGambleBox { width: 100%; text-align: left; }
-  .mcard #traderGambleBox p { font-size: 15px; color: var(--ink-soft); }
-  .mcard #traderGambleBox .btn { width: 100%; justify-content: center; margin-top: 6px; }
   @media (max-width: 380px) { .tskin { grid-template-columns: 56px minmax(0, 1fr) auto; gap: 8px; } .tskin canvas { width: 52px; height: 52px; } .tskin .rn { font-size: 20px; } }
   @media (prefers-reduced-motion: reduce) { .pullcard { animation: none; } }
 
@@ -542,14 +539,11 @@
 <div class="modal" id="tradeModal" hidden>
   <div class="mcard" role="dialog" aria-modal="true" aria-labelledby="tradeTitle">
     <h2 id="tradeTitle">Mystery trader</h2>
-    <p>Skins only, and a new trio every hour.</p>
+    <p>Trader exclusives only: three skins, new stock every hour.</p>
     <div class="panel shopbal"><span>Golden seeds</span><b id="traderGold"></b></div>
     <div id="traderSkins" class="tlist"></div>
     <p id="traderSkinNote" class="tabnote"></p>
-    <div class="panel gamble" id="traderGambleBox">
-      <p>Lucky bundle: <b id="traderGamblePrice"></b> golden seeds for a random skin, any rarity. A duplicate pays seeds back.</p>
-      <button class="btn primary" id="traderGamble" type="button">Gamble</button>
-    </div>
+    <p class="tabnote">These five skins are his alone. They never show up in the lucky bundle.</p>
     <div class="acts"><button class="btn" id="tradeSkip" type="button">Close</button></div>
   </div>
 </div>
@@ -2103,7 +2097,13 @@ const SKINS = [
   { id: 'rainbow', name: 'Rainbow', rar: 2, f: tm => 'hue-rotate(' + ((tm * 80) % 360) + 'deg) saturate(1.5)', glow: '#ffffff', sparks: '#ffffff' },
   { id: 'golden', name: 'Golden', rar: 3, f: 'sepia(1) saturate(4) hue-rotate(-8deg) brightness(1.2)', glow: '#ffd24a', sparks: '#fff1a0' },
   { id: 'nebula', name: 'Nebula', rar: 4, f: tm => 'hue-rotate(' + (250 + Math.sin(tm * 1.2) * 60) + 'deg) saturate(2.4) brightness(' + (0.95 + Math.sin(tm * 3) * 0.1) + ')', glow: '#c04bff', sparks: '#ffd6ff' },
-  { id: 'prism', name: 'Prismatic', rar: 4, f: tm => 'hue-rotate(' + ((tm * 200) % 360) + 'deg) saturate(2.6) brightness(1.15) contrast(1.1)', glow: '#ffffff', sparks: '#ffffff' }
+  { id: 'prism', name: 'Prismatic', rar: 4, f: tm => 'hue-rotate(' + ((tm * 200) % 360) + 'deg) saturate(2.6) brightness(1.15) contrast(1.1)', glow: '#ffffff', sparks: '#ffffff' },
+  /* Trader exclusives: never in the lucky bundle, only sold when he wanders in. */
+  { id: 'wisp', name: 'Willow Wisp', rar: 4, exclusive: true, worth: 460, f: 'invert(.86) hue-rotate(150deg) saturate(1.7) brightness(1.45)', glow: '#a6f0ff', sparks: '#e8ffff', sigil: '#a6f0ff' },
+  { id: 'aurora', name: 'Aurora', rar: 4, exclusive: true, worth: 520, f: tm => 'hue-rotate(' + (115 + Math.sin(tm * 0.9) * 55) + 'deg) saturate(2.3) brightness(1.12)', glow: '#57f2c4', sparks: '#d8fff2', sigil: '#7dffd8' },
+  { id: 'eclipse', name: 'Eclipse', rar: 4, exclusive: true, worth: 620, f: 'grayscale(1) brightness(.34) contrast(2.2)', glow: '#ffb02e', sparks: '#ffd76a', sigil: '#ffcf5a' },
+  { id: 'supernova', name: 'Supernova', rar: 4, exclusive: true, worth: 720, f: tm => 'hue-rotate(' + ((tm * 130) % 360) + 'deg) saturate(3.2) contrast(1.15) brightness(' + (1.1 + Math.sin(tm * 5) * 0.1) + ')', glow: '#ff6a2a', sparks: '#fff0c0', sigil: '#ffa25a' },
+  { id: 'thorn', name: 'Thorn King', rar: 4, exclusive: true, worth: 820, f: 'sepia(.75) saturate(2.8) hue-rotate(245deg) brightness(.9) contrast(1.3)', glow: '#7a3bd6', sparks: '#d6b3ff', sigil: '#b07bff' }
 ];
 const CANVAS_FILTER = (() => { try { return typeof document.createElement('canvas').getContext('2d').filter === 'string'; } catch (e) { return false; } })();
 let skOff = null, skCtx = null;
@@ -2117,21 +2117,16 @@ function drawFiltered(c, f, fn) {
   c.save(); c.filter = f; c.drawImage(skOff, -65, -85, 130, 130); c.restore();
 }
 /* ---------- the mystery trader's hourly stock ---------- */
-const SKIN_PRICE = [60, 90, 140, 220, 400];
 function hourKey(d) {
   d = d || new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + '-' + String(d.getHours()).padStart(2, '0');
 }
 function traderStock() {
   const rnd = mulberry(hash('trader-' + hourKey()));
-  const pool = SKINS.slice(), out = [];
+  const pool = SKINS.filter(k => k.exclusive), out = [];
   while (pool.length && out.length < 3) {
-    let total = 0;
-    for (const k of pool) total += 5 - k.rar;
-    let r = rnd() * total, i = 0;
-    while (i < pool.length - 1 && r > (5 - pool[i].rar)) { r -= (5 - pool[i].rar); i++; }
-    const k = pool.splice(i, 1)[0];
-    out.push({ skin: k, price: Math.round(SKIN_PRICE[k.rar] * (0.85 + rnd() * 0.3)) });
+    const k = pool.splice(Math.floor(rnd() * pool.length), 1)[0];
+    out.push({ skin: k, price: Math.round(k.worth * (0.9 + rnd() * 0.2)) });
   }
   return out;
 }
@@ -2153,6 +2148,16 @@ function skinGlow(c, k, tm, id) {
     c.restore();
   }
   if (k.sparks) { c.save(); c.fillStyle = k.sparks; for (let i = 0; i < 3; i++) { const a = tm * 1.8 + i * 2.1 + id; c.globalAlpha = 0.5 + 0.4 * Math.sin(tm * 4 + i * 2); c.beginPath(); c.arc(Math.cos(a) * 24, Math.sin(a) * 9 + 2, 1.7, 0, 7); c.fill(); } c.restore(); }
+  if (k.sigil) {
+    c.save(); c.translate(0, -6); c.rotate(tm * 0.55);
+    c.strokeStyle = k.sigil; c.lineWidth = 1.7; c.globalAlpha = 0.9;
+    for (let i = 0; i < 5; i++) {
+      const a = i * 1.2566, x = Math.cos(a) * 31, y = Math.sin(a) * 37;
+      c.beginPath(); c.moveTo(x, y - 4.5); c.lineTo(x + 3.2, y); c.lineTo(x, y + 4.5); c.lineTo(x - 3.2, y); c.closePath(); c.stroke();
+    }
+    c.globalAlpha = 0.35; c.beginPath(); c.ellipse(0, 0, 31, 37, 0, 0, 7); c.stroke();
+    c.restore();
+  }
 }
 function nextLevelIdx() {
   for (let i = 0; i < LEVELS.length; i++) if (!LEVELS[i].endless && !LEVELS[i].daily && !(save.stars[LEVELS[i].id] > 0)) return i;
@@ -2250,7 +2255,16 @@ function buildShop() {
     }
     d.appendChild(b); list.appendChild(d);
   });
-  box.insertAdjacentHTML('beforeend', '<h3 class="shop-h">Skins</h3><p class="tabnote">Skins are sold by the mystery trader who wanders into the garden. Tap him when he shows up: his stock changes every hour.</p>');
+  box.insertAdjacentHTML('beforeend', '<h3 class="shop-h">Skins</h3><p class="tabnote">Every skin below except the trader\u2019s five exclusives comes from the lucky bundle. A duplicate pays golden seeds back.</p>');
+  box.insertAdjacentHTML('beforeend', '<div class="panel gamble" id="shopGambleBox"><p>Lucky bundle: <b>' + PULL_COST + ' ' + GOLD_SVG + '</b> for one random skin, any rarity.</p><p class="odds">' + RAR.map(r => r.name + ' ' + r.w + '%').join(' &middot; ') + '</p><button class="btn primary" id="shopGamble" type="button">Open a bundle</button></div>');
+  const gbtn = $('shopGamble');
+  if (gbtn) {
+    gbtn.disabled = save.gold < PULL_COST;
+    gbtn.addEventListener('click', () => {
+      if (save.gold < PULL_COST) { toast('Need ' + PULL_COST + ' golden seeds'); Sound.play('error'); return; }
+      Sound.play('click'); pullSkin();
+    });
+  }
   const owned = SKINS.filter(k => save.skins[k.id]).length;
   box.insertAdjacentHTML('beforeend', '<h3 class="shop-h">Your skins (' + owned + ' of ' + SKINS.length + ')</h3>');
   const grid = document.createElement('div'); grid.className = 'skins'; box.appendChild(grid);
@@ -2389,7 +2403,7 @@ function pullSkin() {
   else if (pity >= 9) r = Math.random() < 0.8 ? 2 : 3;
   else { const x = Math.random() * 100; let acc = 0; for (let i = 0; i < RAR.length; i++) { acc += RAR[i].w; if (x < acc) { r = i; break; } } }
   save.pity = r >= 2 ? 0 : pity + 1; save.mpity = r === 4 ? 0 : mp + 1;
-  const pool = SKINS.filter(k => k.rar === r), k = pool[Math.floor(Math.random() * pool.length)], dup = !!save.skins[k.id];
+  const pool = SKINS.filter(k => k.rar === r && !k.exclusive), k = pool[Math.floor(Math.random() * pool.length)], dup = !!save.skins[k.id];
   let refund = 0;
   if (dup) { refund = RAR[r].refund; save.gold += refund; } else { save.skins[k.id] = true; if (!save.skin) save.skin = k.id; }
   persist(); lastPull = { skin: k, dup, refund };
@@ -2947,11 +2961,13 @@ function showEnd(won, newBest) {
   $('endModal').hidden = false; (first || again).focus();
 }
 /* ---------- mystery trader ---------- */
-const MERCHANT_EVERY = 2;
+const MERCHANT_MIN_WAVE = 4;
+const MERCHANT_CHANCE = 0.14;
 let tradeOpen = false, traderSkinStock = [];
 function spawnTrader(d) {
   if (!game || game.merchant || !d) return;
-  if (d.wave % MERCHANT_EVERY !== 0 || game.wave >= game.L.waves) return;
+  if (game.wave < MERCHANT_MIN_WAVE || game.wave >= game.L.waves) return;
+  if (Math.random() > MERCHANT_CHANCE) return;
   const spots = [], near = [];
   for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
     if (!game.canBuild(c, r)) continue;
@@ -2961,8 +2977,8 @@ function spawnTrader(d) {
   const list = near.length ? near : spots;
   if (!list.length) return;
   const pick = list[Math.floor(Math.random() * list.length)];
-  game.merchant = { c: pick.c, r: pick.r, x: (pick.c + 0.5) * TILE, y: (pick.r + 0.5) * TILE, ttl: 120 };
-  toast('A mystery trader wanders in. Tap him for skins.');
+  game.merchant = { c: pick.c, r: pick.r, x: (pick.c + 0.5) * TILE, y: (pick.r + 0.5) * TILE, ttl: 105 };
+  toast('A rare trader wanders in. Tap him for his exclusive skins.');
   Sound.play('coin');
 }
 function openTrader() {
@@ -2981,7 +2997,7 @@ function renderTraderSkins() {
     row.style.setProperty('--rc', RAR[k.rar].col);
     const cvs = document.createElement('canvas'); cvs.width = cvs.height = 128; row.appendChild(cvs); drawSkinPreview(cvs, k, false);
     const info = document.createElement('div'); info.className = 'ti';
-    info.innerHTML = '<span class="rn">' + k.name + '</span><span class="rr">' + RAR[k.rar].name + '</span><span class="pr">' + (has ? 'Owned' : GOLD_SVG + ' ' + o.price) + '</span>';
+    info.innerHTML = '<span class="rn">' + k.name + '</span><span class="rr">' + RAR[k.rar].name + ' &middot; trader only</span><span class="pr">' + (has ? 'Owned' : GOLD_SVG + ' ' + o.price) + '</span>';
     row.appendChild(info);
     const b = document.createElement('button'); b.type = 'button'; b.className = 'btn buy';
     if (has) {
@@ -3001,13 +3017,6 @@ function renderTraderSkins() {
   const note = $('traderSkinNote');
   note.textContent = (traderSkinStock.some(o => !save.skins[o.skin.id]) ? '' : 'He has nothing you do not already own. ') + 'New stock in ' + mins + ' min.';
   note.hidden = false;
-  renderGamble();
-}
-function renderGamble() {
-  const b = $('traderGamble'); if (!b) return;
-  b.innerHTML = 'Gamble ' + GOLD_SVG + ' ' + PULL_COST;
-  b.disabled = save.gold < PULL_COST;
-  $('traderGamblePrice').textContent = PULL_COST;
 }
 function buySkin(i) {
   const o = traderSkinStock[i];
@@ -3018,11 +3027,6 @@ function buySkin(i) {
 }
 function closeTrade() { tradeOpen = false; $('tradeModal').hidden = true; if (game) mode = 'play'; }
 $('tradeSkip').addEventListener('click', () => { Sound.play('click'); closeTrade(); });
-$('traderGamble').addEventListener('click', () => {
-  if (!game || mode !== 'trading') return;
-  if (save.gold < PULL_COST) { toast('Need ' + PULL_COST + ' golden seeds'); Sound.play('error'); return; }
-  Sound.play('click'); pullSkin();
-});
 function toMenu() {
   setFs(false);
   recordEndless();

@@ -2297,10 +2297,10 @@ function buildShop() {
   const grid = document.createElement('div'); grid.className = 'skins'; box.appendChild(grid);
   const mk = (k) => {
     const has = !k || !!save.skins[k.id], b = document.createElement('button'); b.type = 'button'; b.className = 'btn skin' + (has ? '' : ' unk');
-    const rc = k ? RAR[k.rar].col : '#26324d'; b.style.setProperty('--rc', rc);
+    const rc = has && k ? RAR[k.rar].col : '#26324d'; b.style.setProperty('--rc', rc);
     b.setAttribute('aria-pressed', String(has && (k ? save.skin === k.id : !save.skin)));
     const cvs = document.createElement('canvas'); cvs.width = cvs.height = 124; b.appendChild(cvs); drawSkinPreview(cvs, k, !has);
-    b.insertAdjacentHTML('beforeend', '<span class="sn">' + (has ? (k ? k.name : 'Original') : '???') + '</span><span class="sr">' + (k ? RAR[k.rar].name : 'Default') + '</span>');
+    b.insertAdjacentHTML('beforeend', '<span class="sn">' + (has ? (k ? k.name : 'Original') : '???') + '</span><span class="sr">' + (has ? (k ? RAR[k.rar].name : 'Default') : '???') + '</span>');
     b.dataset.sk = k ? k.id : '';
     if (has) b.addEventListener('click', () => { save.skin = k ? k.id : ''; persist(); Sound.init(); Sound.play('click'); grid.querySelectorAll('.skin').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.sk === save.skin))); });
     else b.disabled = true;

@@ -816,13 +816,36 @@ const THEMES = {
   frost: { name: 'Frosty glade', grass: '#dcebf0', hi: '#ecf6f9', lo: '#c7dce6', tuft: '#8fb3c4', path: '#cdd5e6', pathHi: '#e1e7f2', pebble: '#aab6cc',
     petals: ['#ffffff', '#cfe6f5', '#ffffff', '#bcd7ea'], tree: ['#7fb3a6', '#6aa093', '#93c4b7'], fruit: '#ffffff', amb: 'snow', vig: 0.2, tint: null },
   dusk: { name: 'Moonlit meadow', grass: '#a2c58f', hi: '#b3d3a0', lo: '#92b67f', tuft: '#628f5a', path: '#d4bb90', pathHi: '#e2cfa8', pebble: '#a98f68',
-    petals: ['#c9b6f0', '#9fc3f0', '#f7e27a', '#ffffff'], tree: ['#5e8f6a', '#4e7f5c', '#6fa07a'], fruit: '#f2c14e', amb: 'fireflies', vig: 0.3, tint: 'rgba(70,64,150,0.13)' }
+    petals: ['#c9b6f0', '#9fc3f0', '#f7e27a', '#ffffff'], tree: ['#5e8f6a', '#4e7f5c', '#6fa07a'], fruit: '#f2c14e', amb: 'fireflies', vig: 0.3, tint: 'rgba(70,64,150,0.13)' },
+  moss: { name: 'Mossy hollow', grass: '#a8c49a', hi: '#bcd4ab', lo: '#96b789', tuft: '#5f8a55', path: '#cdbb92', pathHi: '#dccda6', pebble: '#a9926c',
+    petals: ['#e8f0b0', '#b7d49a', '#f2e08a', '#ffffff'], tree: ['#4f8a4f', '#417542', '#63a05e'], fruit: '#d65a45', amb: 'motes', vig: 0.26, tint: null },
+  gold: { name: 'Golden fields', grass: '#e3d6a0', hi: '#efe4b6', lo: '#d4c48c', tuft: '#b3a15c', path: '#dcc08a', pathHi: '#ecd6a8', pebble: '#b79a68',
+    petals: ['#f2c14e', '#e0a03a', '#fff1b0', '#d9822b'], tree: ['#d9a23a', '#c98f2c', '#e6b451'], fruit: '#c0392b', amb: 'leaves', vig: 0.22, tint: null },
+  storm: { name: 'Storm ridge', grass: '#9fb3a8', hi: '#b0c4b8', lo: '#8fa397', tuft: '#5f7a70', path: '#b9b39c', pathHi: '#c9c4ae', pebble: '#948f7a',
+    petals: ['#dfe8ec', '#a9c0cc', '#ffffff', '#c7d7de'], tree: ['#4f6f66', '#405c55', '#5d7f74'], fruit: '#a9c0cc', amb: 'snow', vig: 0.28, tint: null }
 };
-const THEME_OF = { l1: 'meadow', l2: 'pond', l3: 'autumn', l4: 'frost', endless: 'dusk' };
+const THEME_OF = { l1: 'meadow', l2: 'pond', l3: 'autumn', l4: 'frost', l5: 'gold', l6: 'moss', l7: 'gold', l8: 'storm', endless: 'dusk' };
 LEVELS.splice(3, 0, { id: 'l4', name: 'Frosty Glade', waves: 14, seeds: 170, hearts: 10, diff: 1.2,
   blurb: 'Snow everywhere and a long winding path. The badgers bring friends.',
   path: [[-1, 6], [1, 6], [1, 3], [4, 3], [4, 6], [7, 6], [7, 1], [9, 1], [9, 4], [10, 4]],
   decor: [{ k: 'tree', c: 0, r: 0 }, { k: 'tree', c: 5, r: 0 }, { k: 'pond', c: 2, r: 4, w: 2, h: 2 }, { k: 'rock', c: 5, r: 4 }, { k: 'stump', c: 8, r: 2 }, { k: 'mush', c: 9, r: 6 }] });
+LEVELS.splice(4, 0,
+  { id: 'l5', name: 'Sunflower Run', waves: 14, seeds: 150, hearts: 10, diff: 1.35, speedMul: 1.15,
+    blurb: 'The critters have had a good summer: everything runs 15% faster through the sunflowers.',
+    path: [[-1, 6], [2, 6], [2, 2], [5, 2], [5, 5], [8, 5], [8, 1], [10, 1]],
+    decor: [{ k: 'tree', c: 0, r: 0 }, { k: 'stump', c: 4, r: 0 }, { k: 'rock', c: 7, r: 3 }, { k: 'tree', c: 0, r: 3 }, { k: 'mush', c: 9, r: 6 }] },
+  { id: 'l6', name: 'Mossy Hollow', waves: 16, seeds: 160, hearts: 8, diff: 1.4, bountyMul: 1.4,
+    blurb: 'Damp and winding, with only eight veggies to guard. The critters pay 40% more seeds for the trouble.',
+    path: [[-1, 3], [1, 3], [1, 1], [3, 1], [3, 5], [5, 5], [5, 1], [7, 1], [7, 4], [9, 4], [9, 6], [10, 6]],
+    decor: [{ k: 'pond', c: 0, r: 5, w: 2, h: 2 }, { k: 'tree', c: 4, r: 3 }, { k: 'rock', c: 6, r: 3 }, { k: 'mush', c: 2, r: 6 }, { k: 'stump', c: 8, r: 6 }] },
+  { id: 'l7', name: 'Golden Fields', waves: 16, seeds: 130, hearts: 10, diff: 1.4, hpBase: 1.25, bountyMul: 1.5,
+    blurb: 'A gold-rush harvest: tougher critters, but every one of them drops half again as many seeds.',
+    path: [[-1, 0], [8, 0], [8, 2], [1, 2], [1, 4], [8, 4], [8, 6], [10, 6]],
+    decor: [{ k: 'tree', c: 9, r: 1 }, { k: 'rock', c: 4, r: 3 }, { k: 'pond', c: 3, r: 5, w: 2, h: 1 }, { k: 'stump', c: 6, r: 6 }, { k: 'mush', c: 0, r: 4 }] },
+  { id: 'l8', name: 'Storm Ridge', waves: 18, seeds: 120, hearts: 12, diff: 1.5, hpBase: 1.2,
+    blurb: 'Rain over the ridge. Twelve veggies and a stingy purse: spend every seed like it matters.',
+    path: [[-1, 1], [2, 1], [2, 5], [4, 5], [4, 1], [6, 1], [6, 5], [8, 5], [8, 2], [10, 2]],
+    decor: [{ k: 'tree', c: 0, r: 3 }, { k: 'tree', c: 9, r: 0 }, { k: 'rock', c: 5, r: 3 }, { k: 'stump', c: 1, r: 6 }, { k: 'mush', c: 7, r: 6 }] });
 for (const L of LEVELS) L.theme = THEMES[THEME_OF[L.id]];
 LEVELS.find(L => L.id === 'endless').blurb = 'Under the moon with no finish line. See how many waves you can survive.';
 
@@ -831,7 +854,11 @@ const CONTRACTS = {
   l1: [{ id: 'nopower', text: 'Win without using a power' }, { id: 'full', text: 'Save every veggie' }],
   l2: [{ id: 'nopower', text: 'Win without using a power' }, { id: 'lean', text: 'Win with 5 buddies or fewer' }],
   l3: [{ id: 'full', text: 'Save every veggie' }, { id: 'lean', text: 'Win with 5 buddies or fewer' }],
-  l4: [{ id: 'nopower', text: 'Win without using a power' }, { id: 'full', text: 'Save every veggie' }]
+  l4: [{ id: 'nopower', text: 'Win without using a power' }, { id: 'full', text: 'Save every veggie' }],
+  l5: [{ id: 'full', text: 'Save every veggie' }, { id: 'lean', text: 'Win with 5 buddies or fewer' }],
+  l6: [{ id: 'nopower', text: 'Win without using a power' }, { id: 'lean', text: 'Win with 5 buddies or fewer' }],
+  l7: [{ id: 'nopower', text: 'Win without using a power' }, { id: 'full', text: 'Save every veggie' }],
+  l8: [{ id: 'full', text: 'Save every veggie' }, { id: 'lean', text: 'Win with 5 buddies or fewer' }]
 };
 const CONTRACT_CHECK = {
   nopower: (g) => g.powersUsed === 0,

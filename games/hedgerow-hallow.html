@@ -307,42 +307,31 @@
   .skin .sn { font-family: var(--f-display); font-size: 18px; line-height: 1.05; }
   .skin .sr { font-size: 13px; color: var(--rc); text-transform: uppercase; letter-spacing: .05em; }
   .skin[aria-pressed="true"] { background: var(--honey); }
-  .skin.unk { opacity: 1; background: #1a202b; border-color: #1a202b; }
-  .skin.unk .sn, .skin.unk .sr { color: #9aa3b2; }
-  .skin.unk canvas { opacity: 1; filter: brightness(.35); }
+  .skin.unk { opacity: 1; background: #0b0f16; border-color: #0b0f16; }
+  .skin.unk .sn, .skin.unk .sr { color: #5f6878; }
+  .skin.unk canvas { opacity: 1; filter: brightness(0); }
+  .mpcard { width: min(700px, calc(100vw - 22px)); max-height: min(92vh, 900px); overflow-y: auto; }
+  #mpName { width: 100%; min-height: 42px; }
+  .mpmaps { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; max-height: 300px; overflow: auto; padding: 3px; }
+  .mpmap { display: flex; flex-direction: column; align-items: stretch; gap: 2px; padding: 4px; text-align: left; }
+  .mpmap canvas { width: 100%; height: auto; border: 2px solid var(--ink); border-radius: var(--wob); }
+  .mpmap .mpn { font-family: var(--f-display); font-size: 19px; line-height: 1.05; }
+  .mpmap .mps { font-size: 13px; color: var(--ink-soft); }
+  .mpmap[aria-pressed="true"] { background: var(--honey); }
+  .mprow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; width: 100%; }
+  .mprow input { flex: 1 1 110px; min-width: 0; min-height: 42px; }
+  .mpstatus { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 7px 10px; border: 2px solid var(--ink); border-radius: var(--wob); background: var(--paper); font-size: 16px; }
+  .mpstatus .dot { width: 10px; height: 10px; border-radius: 50%; background: #a9a89a; display: inline-block; margin-right: 6px; }
+  .mpstatus .dot.on { background: #4f9a4a; }
+  .mpcode { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 32px; letter-spacing: .18em; text-align: center; padding: 8px 12px; border: 3px dashed var(--ink); border-radius: var(--wob); background: var(--honey); }
+  .mpwait { text-align: center; padding: 10px 8px; font-size: 17px; color: var(--ink-soft); }
+  .mphud { position: absolute; z-index: 4; right: 8px; top: 52px; max-width: min(330px, calc(100% - 16px)); padding: 4px 10px; border: 2.5px solid var(--ink); border-radius: var(--wob); background: var(--paper-hi); box-shadow: 3px 3px 0 var(--ink); font-size: 15px; line-height: 1.2; text-align: left; }
+  .mphud b { font-family: var(--f-display); font-weight: 400; font-size: 18px; }
+  .fs .mphud { top: 46px; }
+  #endVersus { margin: 0; padding: 6px 10px; border: 2px solid var(--ink); border-radius: var(--wob); background: var(--paper); font-size: 16px; }
+  @media (max-width: 560px) { .mpmaps { grid-template-columns: repeat(2, minmax(0, 1fr)); } .mpcard { max-height: 94vh; } }
   .skin .sr.price { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .skin .sr.price .gold svg { width: 13px; height: 13px; }
-  .skin.locked canvas { opacity: .9; }
-  .tradecard { width: min(760px, calc(100vw - 22px)); max-height: min(92vh, 920px); overflow-y: auto; }
-  .stlobby { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
-  .stbox { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; text-align: left; }
-  .stbox h3, .stsection h3 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 22px; }
-  .stbox p { margin: 0; font-size: 15px; line-height: 1.15; color: var(--ink-soft); }
-  .stbox input, .stsection input { min-height: 42px; }
-  .strow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .strow input { flex: 1 1 120px; min-width: 0; }
-  .stcode { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 32px; letter-spacing: .18em; text-align: center; padding: 8px 12px; border: 3px dashed var(--ink); border-radius: var(--wob); background: var(--honey); }
-  .ststatus { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 7px 10px; border: 2px solid var(--ink); border-radius: var(--wob); background: var(--paper); font-size: 16px; }
-  .ststatus .dot { width: 10px; height: 10px; border-radius: 50%; background: #a9a89a; flex: none; margin-right: 6px; display: inline-block; }
-  .ststatus .dot.on { background: #4f9a4a; }
-  .stwait { text-align: center; padding: 12px 8px; font-size: 17px; color: var(--ink-soft); }
-  .stsection { display: grid; gap: 6px; width: 100%; }
-  .stsection .stnote { margin: 0 0 2px; font-size: 15px; color: var(--ink-soft); }
-  .tradecard .skins { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); }
-  .tradecard .skin { padding: 4px 2px; }
-  .tradecard .skin canvas { width: 52px; height: 52px; }
-  .tradecard .skin .sn { font-size: 15px; }
-  .tradecard .skin .sr { font-size: 11px; }
-  .stswap { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; width: 100%; }
-  .stswap .stgive, .stswap .stget { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 86px; }
-  .stswap canvas { width: 60px; height: 60px; }
-  .stswap .stgive span, .stswap .stget span { font-size: 14px; text-align: center; }
-  .stswap .arrow { font-size: 24px; }
-  .stincoming { display: grid; gap: 8px; width: 100%; padding: 10px 12px; border: 3px solid var(--ink); border-radius: var(--wob); background: var(--paper); }
-  .stincoming p { margin: 0; font-size: 16px; text-align: center; }
-  .stresult { display: grid; gap: 6px; width: 100%; padding: 10px 12px; border: 3px solid #4f9a4a; border-radius: var(--wob); background: color-mix(in srgb, #4f9a4a 12%, var(--paper)); }
-  .stresult p { margin: 0; text-align: center; font-size: 16px; }
-  @media (max-width: 560px) { .stlobby { grid-template-columns: 1fr; } .tradecard { max-height: 94vh; } }
   .mcard .tlist { display: grid; gap: 8px; width: 100%; }
   .tskin { --rc: var(--ink); display: grid; grid-template-columns: 70px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 6px 10px 6px 6px; text-align: left; background: var(--paper); border: 3px solid var(--rc); border-radius: var(--wob); box-shadow: 3px 3px 0 var(--ink); }
   .tskin canvas { width: 64px; height: 64px; display: block; }
@@ -506,6 +495,7 @@
         <button class="btn mode" id="btnDaily" type="button"><b>Daily garden</b><span id="dailySub"></span></button>
         <button class="btn mode" id="btnEndless" type="button"><b>Endless meadow</b><span id="endlessSub"></span></button>
       </div>
+      <button class="btn mode" id="btnMulti" type="button" style="margin-top:8px"><b>Multiplayer</b><span>Race a friend on any garden</span></button>
     </div>
     <div class="tabs" role="tablist" id="tabs" aria-label="Menu sections">
       <button class="btn tab" role="tab" type="button" data-tab="gardens" aria-selected="true">Gardens</button>
@@ -540,7 +530,7 @@
         <p>Press Send wave when you are ready, or switch on Auto. Rain, Thunder and Sunshine help in a tight spot.</p>
         <p>Win rounds to earn golden seeds. Spend them in the Shop on locked buddies; skins are sold by the mystery trader, who wanders into the garden with a new stock every hour. The Daily garden changes every day and keeps a streak. The Endless meadow never ends.</p>
         <p>Now and then a mystery trader wanders onto the grass and sells skins for golden seeds, plus a lucky bundle that hands you one random skin. Each garden also has two goals that pay golden seeds the first time you meet them.</p>
-        <p>In the Shop you can also trade skins online. One player starts a trade and shares the five-letter code; the other joins with it. Pick a skin to give and a skin to get, send the offer, and accept it together.</p>
+        <p>Multiplayer races a friend on the same garden. Pick a map, share the five-letter room code, and play at the same time. The highest score wins.</p>
         <p class="kb-only">Keyboard: arrows or WASD move the cursor, 1 to 9, 0, - and = pick a buddy, Enter plants, U and I buy upgrades, X sells, N sends the wave, Q E R use powers, T toggles Auto, P pauses, F changes speed.</p>
       </div>
     </div>
@@ -579,6 +569,7 @@
           <canvas id="cv" role="img" aria-label="The garden. Plant buddies on the grass to stop critters walking along the path."></canvas>
         </div>
         <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        <div class="mphud" id="mpHud" hidden aria-live="polite"></div>
         <div class="panel uppanel" id="towerView" hidden></div>
       </div>
 
@@ -609,6 +600,7 @@
     <p id="endMsg"></p>
     <p class="big" id="endScore"></p>
     <p id="endBest"></p>
+    <p id="endVersus" hidden></p>
     <p id="endGoals" class="goals" hidden></p>
     <div class="acts" id="endActs"></div>
   </div>
@@ -624,40 +616,30 @@
     <div class="acts"><button class="btn" id="tradeSkip" type="button">Close</button></div>
   </div>
 </div>
-<div class="modal" id="skinTradeModal" hidden>
-  <div class="mcard tradecard" role="dialog" aria-modal="true" aria-labelledby="stTitle">
-    <h2 id="stTitle">Trade skins online</h2>
-    <p class="tabnote">Start a trade and send the code to a friend. You both need to have the game open.</p>
-    <div id="stLobby">
-      <p class="stnote" id="stLobbyMsg" role="status"></p>
-      <label class="stsection"><span class="stnote">Your name</span><input id="stName" maxlength="16" autocomplete="nickname" placeholder="Player"></label>
-      <div class="stlobby">
-        <div class="panel stbox">
-          <h3>Start a trade</h3>
-          <p>Get a code your friend can type.</p>
-          <button class="btn primary" id="stHost" type="button">Start trade</button>
-        </div>
-        <div class="panel stbox">
-          <h3>Join a trade</h3>
-          <p>Type the code your friend sent you.</p>
-          <div class="strow"><input id="stCode" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="CODE"><button class="btn" id="stJoin" type="button">Join</button></div>
-        </div>
+<div class="modal" id="mpModal" hidden>
+  <div class="mcard mpcard" role="dialog" aria-modal="true" aria-labelledby="mpTitle">
+    <h2 id="mpTitle">Multiplayer</h2>
+    <p class="tabnote">Race a friend on the same garden. Pick the map, share the code, and play at the same time. The highest score wins.</p>
+    <div id="mpLobby">
+      <label class="tabnote" for="mpName">Your name</label>
+      <input id="mpName" maxlength="16" autocomplete="nickname" placeholder="Player">
+      <h3 class="shop-h">Choose a map</h3>
+      <div class="mpmaps" id="mpMaps"></div>
+      <p class="tabnote">The host chooses the map. The guest joins with the host's code.</p>
+      <div class="mprow">
+        <button class="btn primary" id="mpHost" type="button">Host race</button>
+        <input id="mpCode" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="CODE">
+        <button class="btn" id="mpJoin" type="button">Join race</button>
       </div>
+      <p class="tabnote" id="mpMsg" role="status"></p>
     </div>
-    <div id="stRoom" hidden>
-      <div class="ststatus"><span><i class="dot" id="stDot"></i><span id="stStatus">Connecting…</span></span><button class="btn" id="stLeave" type="button">Leave</button></div>
-      <div class="stcode" id="stCodeShow" hidden></div>
-      <div class="stwait" id="stWaiting" hidden>Waiting for a friend…</div>
-      <div class="stsection" id="stPeerBox" hidden><p class="stnote" id="stPeer"></p></div>
-      <div class="stsection" id="stBuild" hidden>
-        <h3>You give</h3><div class="skins" id="stGive"></div>
-        <h3>You get</h3><div class="skins" id="stWant"></div>
-        <button class="btn primary" id="stOffer" type="button" disabled>Send offer</button>
-      </div>
-      <div class="stincoming" id="stIncoming" hidden></div>
-      <div class="stresult" id="stResult" hidden></div>
+    <div id="mpRoom" hidden>
+      <div class="mpstatus"><span><i class="dot" id="mpDot"></i><span id="mpStatus">Connecting…</span></span><button class="btn" id="mpLeave" type="button">Leave</button></div>
+      <div class="mpcode" id="mpCodeShow"></div>
+      <p class="mpwait" id="mpWait">Waiting for a friend…</p>
+      <p class="tabnote" id="mpPeer"></p>
     </div>
-    <div class="acts"><button class="btn" id="stClose" type="button">Close</button></div>
+    <div class="acts"><button class="btn" id="mpClose" type="button">Close</button></div>
   </div>
 </div>
 <div class="modal" id="helpModal" hidden>
@@ -1465,7 +1447,7 @@ function createGame(L, onEvent) {
 
 /* ===================== SAVE ===================== */
 const SAVE_KEY = 'hedgerow-hollow-v1';
-const defaultSave = () => ({ stars: {}, best: {}, endless: { wave: 0, score: 0 }, daily: { date: '', best: 0, streak: 0, lastWin: '' }, music: true, sfx: true, musicVol: 0.5, sfxVol: 0.5, lang: 'en', auto: false, tut: false, last: 0, gold: 0, owned: {}, skins: {}, skin: '', pulls: 0, pity: 0, migrated: false, pops: {}, contracts: {}, tradeName: '' });
+const defaultSave = () => ({ stars: {}, best: {}, endless: { wave: 0, score: 0 }, daily: { date: '', best: 0, streak: 0, lastWin: '' }, music: true, sfx: true, musicVol: 0.5, sfxVol: 0.5, lang: 'en', auto: false, tut: false, last: 0, gold: 0, owned: {}, skins: {}, skin: '', pulls: 0, pity: 0, migrated: false, pops: {}, contracts: {}, mpName: '' });
 function loadSave() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
@@ -2341,9 +2323,7 @@ const DA = {
   "Thunder feather": "Tordenfjer", "Blast hurts nearby critters": "Sprængning rammer kryb i nærheden", "Keen eyes": "Skarpe øjne", "Faster, longer reach": "Hurtigere, længere rækkevidde",
   "Twin talons": "Dobbeltkløer", "Moon owl": "Måneugle", "Much faster, hits 3": "Meget hurtigere, rammer 3", "Bigger boom": "Større brag", "Bigger blast, +50% damage": "Større sprængning, +50 % skade",
   "Heavy shells": "Tunge granater", "Earthquake": "Jordskælv", "Big blast that stuns": "Stor sprængning, der lammer", "Quick dig": "Hurtig gravning", "Fires 25% faster": "Skyder 25 % hurtigere",
-  "Trade skins online": "Byt skins online", "Start a trade and send the code to a friend. You both need to have the game open.": "Start et bytte, og send koden til en ven. I skal begge have spillet åbent.",
   "Your name": "Dit navn", "Player": "Spiller", "Start a trade": "Start et bytte", "Get a code your friend can type.": "Få en kode, som din ven kan skrive.",
-  "Join a trade": "Join et bytte", "Type the code your friend sent you.": "Skriv koden, din ven sendte dig.", "CODE": "KODE",
   "Start trade": "Start bytte", "Join": "Join", "Leave": "Forlad", "Connecting…": "Forbinder…", "Waiting for a friend…": "Venter på en ven…",
   "You give": "Du giver", "You get": "Du får", "Send offer": "Send tilbud", "Offer sent": "Tilbud sendt",
   "Trade skins": "Byt skins", "Trade": "Byt", "Trade complete!": "Byttet er gennemført!"
@@ -2640,7 +2620,7 @@ function drawSkinPreview(cv2, k, locked) {
   const pf = locked ? (CANVAS_FILTER ? 'grayscale(1) brightness(.035) contrast(.55)' : 'none') : (k ? skinFilter(k, 0.6) : 'none');
   drawFiltered(c, pf, cc => drawTowerBody(cc, { type: 'squirrel', lvl: 1, id: 2, aimX: 1, aimY: 0, flash: 0 }, 0)); c.restore();
   if (locked && !CANVAS_FILTER) {
-    c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#0b0f16'; c.fillRect(0, 0, cv2.width, cv2.height); c.restore();
+    c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#05080d'; c.fillRect(0, 0, cv2.width, cv2.height); c.restore();
   }
 }
 let unlockT1 = 0, unlockT2 = 0;
@@ -2707,9 +2687,6 @@ function buildShop() {
   }
   const owned = SKINS.filter(k => save.skins[k.id]).length;
   box.insertAdjacentHTML('beforeend', '<h3 class="shop-h">Your skins (' + owned + ' of ' + SKINS.length + ')</h3>');
-  box.insertAdjacentHTML('beforeend', '<div class="panel stbox" style="margin-bottom:8px"><div><strong style="font-family:var(--f-display);font-weight:400;font-size:22px">' + TR('Trade skins online', 'Byt skins online') + '</strong><p>' + TR('Swap skins with another player right now. Start a trade, send the code, and pick your skins.', 'Byt skins med en anden spiller lige nu. Start et bytte, send koden, og vælg jeres skins.') + '</p></div><button class="btn primary" id="shopTrade" type="button">' + TR('Trade', 'Byt') + '</button></div>');
-  const openTradeBtn = $('shopTrade');
-  if (openTradeBtn) openTradeBtn.addEventListener('click', () => { Sound.play('click'); openSkinTrade(); });
   const grid = document.createElement('div'); grid.className = 'skins'; box.appendChild(grid);
   const mk = (k) => {
     const has = !k || !!save.skins[k.id], b = document.createElement('button'); b.type = 'button'; b.className = 'btn skin' + (has ? '' : ' unk locked');
@@ -3339,13 +3316,15 @@ $('ctrls').addEventListener('click', ev => { if (!ev.target.closest('#btnFs')) {
 document.addEventListener('pointerdown', e => { if (gameScreen.classList.contains('menuopen') && !e.target.closest('#ctrls, #btnMore')) { gameScreen.classList.remove('menuopen'); $('btnMore').setAttribute('aria-expanded', 'false'); } });
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && fsApi) { fsApi = false; setFs(false); } });
 function startLevel(i) {
+  if (!mp.starting) mpLeave(true);
+  $('endVersus').hidden = true;
   Sound.init();
   levelIdx = i; game = createGame(LEVELS[i], onGameEvent);
   game.autoWave = !!save.auto; game.autoT = game.autoDelay;
   fxs = []; sel = null; moving = null; buildType = 'squirrel'; hover = null; pending = null; kb = { on: false, col: 4, row: 3 }; speed = 1; infoKey = ''; tvKey = ''; shake = 0; flashT = 0;
   for (const k in hudCache) delete hudCache[k];
   save.last = i; persist(); buildTray(); initAmb(); game.hintCell = bestCell(game); banner = null; patchShake = 0; tutSel = false;
-  mode = 'play'; menuScreen.hidden = true; gameScreen.hidden = false; $('endModal').hidden = true; $('pauseModal').hidden = true; $('helpModal').hidden = true; $('tradeModal').hidden = true; tradeOpen = false;
+  mode = 'play'; menuScreen.hidden = true; gameScreen.hidden = false; $('endModal').hidden = true; $('pauseModal').hidden = true; $('helpModal').hidden = true; $('tradeModal').hidden = true; $('mpHud').hidden = true; tradeOpen = false;
   document.body.classList.add('playing');
   $('btnSpeed').textContent = '1x';
   Sound.setIntense(false);
@@ -3360,6 +3339,7 @@ function recordEndless() {
 }
 function endGame(won) {
   persist(); mode = 'ended'; Sound.setIntense(false); Sound.play(won ? 'win' : 'lose');
+  if (mp.active) setTimeout(mpSendProgress, 0);
   const g = game, L = g.L; let newBest = false;
   const prevStars = save.stars[L.id] || 0; let goldGain = 0;
   if (won && L.daily) {
@@ -3400,6 +3380,7 @@ function showEnd(won, newBest) {
     goals.innerHTML = '<b>Garden goals</b>' + g.contractWins.map(c => '<span class="g"><span class="tick' + (c.pass ? '' : ' off') + '">' + (c.pass ? '\u2713' : '\u2717') + '</span><span>' + c.text + (c.fresh ? ' <b>+' + CONTRACT_GOLD + ' ' + GOLD_SVG + '</b>' : '') + '</span></span>').join('');
     goals.hidden = false;
   } else { goals.hidden = true; goals.innerHTML = ''; }
+  if (mp.active) mpUpdateEndLine(); else $('endVersus').hidden = true;
   const acts = $('endActs'); acts.innerHTML = '';
   const add = (txt, fn, primary) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (primary ? ' primary' : ''); b.textContent = txt; b.addEventListener('click', fn); acts.appendChild(b); return b; };
   let first;
@@ -3476,454 +3457,269 @@ function buySkin(i) {
 }
 function closeTrade() { tradeOpen = false; $('tradeModal').hidden = true; if (game) mode = 'play'; }
 
-/* ---------- live skin trading ---------- */
-function TR(en, da) { return LANG === 'da' ? da : en; }
-function skinById(id) { return SKINS.find(k => k.id === id) || null; }
-function mySkinIds() { return SKINS.filter(k => !!save.skins[k.id]).map(k => k.id); }
-const tradeState = {
-  ws: null, role: '', code: '', peer: '', peerSkins: [], offer: null,
-  pickGive: '', pickWant: '', sent: false, leaving: false
-};
+/* ---------- multiplayer race ---------- */
+const mp = { ws: null, role: '', code: '', level: -1, peer: '', progress: null, active: false, starting: false, timer: null, startT: null, leaving: false, peerLeft: false };
+let mpPick = 0;
 
-function openSkinTrade() {
-  $('skinTradeModal').hidden = false;
-  $('stName').value = save.tradeName || '';
-  if (tradeState.ws && tradeState.ws.readyState < 2) showTradeRoom();
-  else showTradeLobby();
-}
-
-function closeSkinTrade() {
-  $('skinTradeModal').hidden = true;
-  leaveTradeRoom(true);
-}
-
-function showTradeLobby() {
-  $('stLobby').hidden = false;
-  $('stRoom').hidden = true;
-  $('stHost').disabled = false;
-  $('stJoin').disabled = false;
-  $('stLobbyMsg').textContent = '';
-}
-
-function showTradeRoom() {
-  $('stLobby').hidden = true;
-  $('stRoom').hidden = false;
-  $('stCodeShow').hidden = false;
-  $('stCodeShow').textContent = TR('Code: ', 'Kode: ') + tradeState.code;
-  $('stWaiting').hidden = !!(tradeState.peer);
-  $('stBuild').hidden = true;
-  $('stIncoming').hidden = true;
-  $('stResult').hidden = true;
-  $('stPeerBox').hidden = !tradeState.peer;
-}
-
-function setTradeStatus(text, on) {
-  $('stStatus').textContent = text;
-  $('stDot').classList.toggle('on', !!on);
-}
-
-function setTradeLobbyMsg(text) {
-  $('stLobbyMsg').textContent = text || '';
-}
-
-function randomTradeCode() {
+function mpName() { return (($('mpName').value || '').trim() || 'Player').slice(0, 16); }
+function mpCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const a = new Uint8Array(5);
   if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(a);
   else for (let i = 0; i < a.length; i++) a[i] = Math.floor(Math.random() * 256);
   return Array.from(a, n => chars[n % chars.length]).join('');
 }
+function mpAvailable() { return LEVELS.map((L, i) => ({ L, i })).filter(o => !o.L.daily); }
 
-function beginTrade(role) {
-  if (tradeState.ws) leaveTradeRoom(true);
-  const name = ($('stName').value.trim() || TR('Player', 'Spiller')).slice(0, 16);
-  save.tradeName = name; persist();
+function mpBuildMaps() {
+  const box = $('mpMaps');
+  if (!box) return;
+  box.innerHTML = '';
+  mpAvailable().forEach(({ L, i }) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'btn mpmap';
+    b.setAttribute('aria-pressed', String(i === mpPick));
+    const cvs = document.createElement('canvas');
+    cvs.width = 200; cvs.height = 140; drawThumb(cvs, L); b.appendChild(cvs);
+    b.insertAdjacentHTML('beforeend', '<span class="mpn">' + L.name + '</span><span class="mps">' + (L.endless ? 'Endless' : L.waves + ' waves') + ' &middot; ' + L.theme.name + '</span>');
+    b.addEventListener('click', () => {
+      if (mp.ws) return;
+      mpPick = i;
+      mpBuildMaps();
+      Sound.play('click');
+    });
+    box.appendChild(b);
+  });
+}
+
+function openMultiplayer() {
+  $('mpModal').hidden = false;
+  $('mpName').value = save.mpName || '';
+  if (!mp.ws) {
+    const avail = mpAvailable();
+    if (mpPick < 0 || !avail.some(o => o.i === mpPick)) {
+      const last = avail.find(o => o.i === save.last);
+      mpPick = last ? last.i : (avail[0] ? avail[0].i : 0);
+    }
+    showMpLobby();
+    mpBuildMaps();
+  } else {
+    showMpRoom();
+  }
+}
+
+function closeMultiplayer() {
+  $('mpModal').hidden = true;
+  mpLeave(true);
+}
+
+function showMpLobby() {
+  $('mpLobby').hidden = false;
+  $('mpRoom').hidden = true;
+  $('mpHost').disabled = false;
+  $('mpJoin').disabled = false;
+  $('mpMsg').textContent = '';
+}
+
+function showMpRoom() {
+  $('mpLobby').hidden = true;
+  $('mpRoom').hidden = false;
+  $('mpCodeShow').textContent = 'Code: ' + mp.code;
+  $('mpWait').hidden = !!mp.peer;
+  $('mpPeer').textContent = mp.peer ? 'Racing with ' + mp.peer : '';
+}
+
+function mpSetStatus(text, on) {
+  $('mpStatus').textContent = text;
+  $('mpDot').classList.toggle('on', !!on);
+}
+
+function mpSend(obj) {
+  if (mp.ws && mp.ws.readyState === 1) {
+    try { mp.ws.send(JSON.stringify(obj)); } catch (error) { /* gone */ }
+  }
+}
+
+function mpProgress() {
+  if (!mp.active || !game) return null;
+  return { t: 'p', name: save.mpName || 'Player', score: game.score || 0, wave: game.wave || 0, hearts: game.hearts || 0, cleared: game.cleared || 0, ended: mode === 'ended' || game.state === 'won' || game.state === 'lost' };
+}
+
+function mpSendProgress() {
+  const p = mpProgress();
+  if (p) mpSend(p);
+}
+
+function mpHudText() {
+  const p = mp.progress;
+  if (!mp.active) return '';
+  if (mp.peerLeft) return (mp.peer || 'Your friend') + ' left the race.';
+  if (!p) return 'Racing with ' + (mp.peer || 'a friend') + '…';
+  return (mp.peer || 'Friend') + ' · wave ' + (p.cleared || p.wave || 0) + ' · ' + (p.hearts || 0) + ' hearts · ' + (p.score || 0) + ' pts' + (p.ended ? ' · finished' : '');
+}
+
+function mpUpdateHud() {
+  const el = $('mpHud');
+  if (!el) return;
+  el.hidden = !mp.active;
+  if (mp.active) el.textContent = mpHudText();
+}
+
+function mpUpdateEndLine() {
+  const el = $('endVersus');
+  if (!el || !mp.active || !game) return;
+  const p = mp.progress;
+  if (!p) { el.hidden = false; el.textContent = 'Waiting for ' + (mp.peer || 'your friend') + ' to finish…'; return; }
+  const mine = game.score || 0, theirs = p.score || 0;
+  let verdict;
+  if (mine > theirs) verdict = 'You are ahead on points.';
+  else if (mine < theirs) verdict = (mp.peer || 'Your friend') + ' is ahead on points.';
+  else verdict = 'You are level on points.';
+  if (p.ended) verdict = mine > theirs ? 'You won the race!' : mine < theirs ? (mp.peer || 'Your friend') + ' won the race.' : 'The race was a tie.';
+  el.textContent = (mp.peer || 'Friend') + ': wave ' + (p.cleared || p.wave || 0) + ' · ' + (p.hearts || 0) + ' hearts · ' + theirs + ' pts. ' + verdict;
+  el.hidden = false;
+}
+
+function mpConnect(role) {
+  if (mp.ws) mpLeave(true);
+  const name = mpName();
+  save.mpName = name; persist();
   let code = '';
-  if (role === 'host') code = randomTradeCode();
-  else code = ($('stCode').value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (role === 'host') code = mpCode();
+  else code = (($('mpCode') && $('mpCode').value) || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!/^[A-Z0-9]{5}$/.test(code)) {
-    setTradeLobbyMsg(TR('The code is five letters or numbers.', 'Koden er fem bogstaver eller tal.'));
+    $('mpMsg').textContent = 'The code is five letters or numbers.';
     return;
   }
   if (!location.host || location.protocol === 'file:') {
-    setTradeLobbyMsg(TR('Online trading only works on the website, not from a local file.', 'Online byt virker kun på hjemmesiden, ikke fra en lokal fil.'));
+    $('mpMsg').textContent = 'Multiplayer only works on the website, not from a local file.';
     return;
   }
-  tradeState.role = role;
-  tradeState.code = code;
-  tradeState.peer = '';
-  tradeState.peerSkins = [];
-  tradeState.offer = null;
-  tradeState.pickGive = '';
-  tradeState.pickWant = '';
-  tradeState.sent = false;
-  tradeState.leaving = false;
-  $('stHost').disabled = true;
-  $('stJoin').disabled = true;
-  showTradeRoom();
-  setTradeStatus(role === 'host' ? TR('Waiting for a friend…', 'Venter på en ven…') : TR('Connecting…', 'Forbinder…'), false);
+  mp.role = role; mp.code = code; mp.peer = ''; mp.progress = null; mp.peerLeft = false;
+  if (role === 'host') mp.level = mpPick;
+  $('mpHost').disabled = true; $('mpJoin').disabled = true;
+  showMpRoom();
+  mpSetStatus(role === 'host' ? 'Waiting for a friend…' : 'Connecting…', false);
   try {
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(proto + '//' + location.host + '/api/room/T' + code + '?role=' + role);
-    tradeState.ws = ws;
+    const ws = new WebSocket(proto + '//' + location.host + '/api/room/M' + code + '?role=' + role);
+    mp.ws = ws;
     ws.addEventListener('open', () => {
-      if (tradeState.ws !== ws) return;
-      setTradeStatus(role === 'host' ? TR('Waiting for a friend…', 'Venter på en ven…') : TR('Waiting for the host…', 'Venter på værten…'), false);
+      if (mp.ws !== ws) return;
+      mpSetStatus(role === 'host' ? 'Waiting for a friend…' : 'Waiting for the host…', false);
     });
     ws.addEventListener('message', (event) => {
-      if (tradeState.ws === ws) handleTradeMessage(event.data);
+      if (mp.ws === ws) mpHandle(event.data);
     });
     ws.addEventListener('error', () => {
-      if (tradeState.ws !== ws || tradeState.leaving) return;
-      setTradeStatus(TR('Could not connect. Try again.', 'Kunne ikke forbinde. Prøv igen.'), false);
+      if (mp.ws === ws) mpSetStatus('Could not connect. Try again.', false);
     });
     ws.addEventListener('close', () => {
-      if (tradeState.ws !== ws) return;
-      tradeState.ws = null;
-      if (!tradeState.leaving) {
-        setTradeStatus(TR('Connection closed. Start a new trade.', 'Forbindelsen blev afbrudt. Start et nyt bytte.'), false);
-        $('stWaiting').hidden = true;
-        $('stBuild').hidden = true;
-        $('stIncoming').hidden = true;
+      if (mp.ws !== ws) return;
+      mp.ws = null;
+      if (mp.active) {
+        mp.peerLeft = true;
+        mpUpdateHud();
+        toast((mp.peer || 'Your friend') + ' left the race');
+      } else if (!$('mpModal').hidden) {
+        mpSetStatus('Connection closed.', false);
       }
-      $('stHost').disabled = false;
-      $('stJoin').disabled = false;
+      $('mpHost').disabled = false; $('mpJoin').disabled = false;
     });
   } catch (error) {
-    tradeState.ws = null;
-    setTradeStatus(TR('Could not connect. Try again.', 'Kunne ikke forbinde. Prøv igen.'), false);
-    $('stHost').disabled = false;
-    $('stJoin').disabled = false;
+    mp.ws = null;
+    $('mpMsg').textContent = 'Could not connect. Try again.';
+    $('mpHost').disabled = false; $('mpJoin').disabled = false;
   }
 }
 
-function leaveTradeRoom(silent) {
-  const ws = tradeState.ws;
-  tradeState.leaving = true;
-  tradeState.ws = null;
-  if (ws && ws.readyState === 1) {
-    try { ws.send(JSON.stringify({ t: 'leave' })); } catch (error) { /* gone */ }
-  }
-  if (ws) { try { ws.close(); } catch (error) { /* gone */ } }
-  tradeState.role = '';
-  tradeState.code = '';
-  tradeState.peer = '';
-  tradeState.peerSkins = [];
-  tradeState.offer = null;
-  tradeState.pickGive = '';
-  tradeState.pickWant = '';
-  tradeState.sent = false;
-  tradeState.leaving = false;
-  if (!silent) showTradeLobby();
-}
-
-function tradeSend(obj) {
-  const ws = tradeState.ws;
-  if (ws && ws.readyState === 1) {
-    try { ws.send(JSON.stringify(obj)); } catch (error) { /* gone */ }
-  }
-}
-
-function sendTradeHello() {
-  tradeSend({ t: 'hello', name: save.tradeName || TR('Player', 'Spiller'), skins: mySkinIds() });
-}
-
-function handleTradeMessage(raw) {
+function mpHandle(raw) {
   let m = null;
   try { m = JSON.parse(raw); } catch (error) { return; }
   if (!m || typeof m !== 'object') return;
-  if (m.t === 'waiting') {
-    $('stWaiting').hidden = false;
-    setTradeStatus(TR('Waiting for a friend…', 'Venter på en ven…'), false);
-    return;
-  }
+  if (m.t === 'waiting') { mpSetStatus('Waiting for a friend…', false); $('mpWait').hidden = false; return; }
   if (m.t === 'peer') {
-    setTradeStatus(TR('Friend found. Getting their skins…', 'Ven fundet. Henter deres skins…'), true);
-    sendTradeHello();
+    mpSetStatus('Friend found. Getting ready…', true);
+    mpSend({ t: 'hello', name: save.mpName || 'Player', level: mp.level });
     return;
   }
-  if (m.t === 'full') {
-    setTradeStatus(TR('That trade room is full.', 'Det bytterum er allerede fyldt.'), false);
-    return;
-  }
-  if (m.t === 'empty') {
-    setTradeStatus(TR('No trade with that code. Check the code and try again.', 'Der er intet bytte med den kode. Tjek koden og prøv igen.'), false);
-    return;
-  }
+  if (m.t === 'full') { mpSetStatus('That race room is full.', false); return; }
+  if (m.t === 'empty') { mpSetStatus('No race with that code. Check the code.', false); return; }
   if (m.t === 'hello') {
-    tradeState.peer = String(m.name || TR('Player', 'Spiller')).slice(0, 16);
-    const seen = {};
-    tradeState.peerSkins = (Array.isArray(m.skins) ? m.skins : []).filter(id => {
-      if (typeof id !== 'string' || seen[id] || !skinById(id)) return false;
-      seen[id] = true;
-      return true;
-    });
-    $('stPeerBox').hidden = false;
-    $('stPeer').textContent = TR('Trading with ', 'Bytter med ') + tradeState.peer;
-    $('stWaiting').hidden = true;
-    setTradeStatus(tradeState.role === 'host' ? TR('Connected. Pick a skin to offer.', 'Forbundet. Vælg en skin at tilbyde.') : TR('Connected. Waiting for an offer…', 'Forbundet. Venter på et tilbud…'), true);
-    renderTradeBuild();
-    if (tradeState.offer) renderTradeIncoming();
-    return;
-  }
-  if (m.t === 'offer') {
-    if (tradeState.role !== 'guest') return;
-    const give = skinById(m.give), want = skinById(m.want);
-    if (!give || !want || give.id === want.id) return;
-    if (!tradeState.peerSkins.includes(give.id)) return;
-    tradeState.offer = { give: give.id, want: want.id };
-    tradeState.sent = false;
-    $('stResult').hidden = true;
-    setTradeStatus(TR('You have an offer.', 'Du har fået et tilbud.'), true);
-    renderTradeIncoming();
-    return;
-  }
-  if (m.t === 'accept') {
-    if (tradeState.role !== 'host' || !tradeState.offer) return;
-    const o = tradeState.offer;
-    if (m.give !== o.give || m.want !== o.want) return;
-    if (!save.skins[o.give] || save.skins[o.want]) {
-      setTradeStatus(TR('The trade could not be completed.', 'Byttet kunne ikke gennemføres.'), false);
-      tradeSend({ t: 'decline' });
-      tradeState.offer = null; tradeState.sent = false;
-      renderTradeBuild();
-      return;
+    mp.peer = String(m.name || 'Player').slice(0, 16);
+    $('mpPeer').textContent = 'Racing with ' + mp.peer;
+    $('mpWait').hidden = true;
+    mpSetStatus('Ready. Starting the race…', true);
+    if (mp.role === 'host') {
+      const level = mp.level;
+      mpSend({ t: 'start', level: level });
+      clearTimeout(mp.startT);
+      mp.startT = setTimeout(() => beginMpRace(level), 350);
     }
-    if (!applyTrade(o.give, o.want)) {
-      setTradeStatus(TR('The trade could not be completed.', 'Byttet kunne ikke gennemføres.'), false);
-      tradeSend({ t: 'decline' });
-      tradeState.offer = null; tradeState.sent = false;
-      renderTradeBuild();
-      return;
-    }
-    tradeState.peerSkins = tradeState.peerSkins.filter(id => id !== o.want);
-    if (!tradeState.peerSkins.includes(o.give)) tradeState.peerSkins.push(o.give);
-    tradeState.offer = null; tradeState.sent = false;
-    tradeSend({ t: 'done', give: o.give, want: o.want });
-    showTradeResult(o.give, o.want);
-    setTradeStatus(TR('Trade complete.', 'Byttet er gennemført.'), true);
     return;
   }
-  if (m.t === 'decline') {
-    if (tradeState.role !== 'host') return;
-    tradeState.offer = null; tradeState.sent = false;
-    setTradeStatus(TR('Your offer was declined.', 'Dit tilbud blev afvist.'), true);
-    renderTradeBuild();
+  if (m.t === 'start') {
+    if (mp.role === 'guest' && Number.isInteger(m.level) && LEVELS[m.level]) beginMpRace(m.level);
     return;
   }
-  if (m.t === 'done') {
-    if (tradeState.role !== 'guest' || !tradeState.offer) return;
-    const o = tradeState.offer;
-    if (m.give !== o.give || m.want !== o.want) return;
-    tradeState.offer = null; tradeState.sent = false;
-    setTradeStatus(TR('Trade complete.', 'Byttet er gennemført.'), true);
+  if (m.t === 'p') {
+    mp.progress = m;
+    mpUpdateHud();
+    if (mode === 'ended') mpUpdateEndLine();
     return;
   }
   if (m.t === 'leave') {
-    tradeState.peer = '';
-    tradeState.peerSkins = [];
-    tradeState.offer = null;
-    tradeState.sent = false;
-    $('stPeerBox').hidden = true;
-    $('stBuild').hidden = true;
-    $('stIncoming').hidden = true;
-    $('stResult').hidden = true;
-    $('stWaiting').hidden = false;
-    setTradeStatus(TR('Your friend left the trade.', 'Din ven forlod byttet.'), false);
+    mp.peerLeft = true;
+    mpUpdateHud();
+    if (mode === 'ended') mpUpdateEndLine();
   }
 }
 
-function tradeSkinCard(k, selected, locked, onClick) {
-  const b = document.createElement('button');
-  b.type = 'button';
-  b.className = 'btn skin' + (locked ? ' unk locked' : '');
-  b.setAttribute('aria-pressed', String(!!selected));
-  b.style.setProperty('--rc', locked ? '#26324d' : RAR[k.rar].col);
-  const cvs = document.createElement('canvas');
-  cvs.width = cvs.height = 124;
-  b.appendChild(cvs);
-  drawSkinPreview(cvs, k, !!locked);
-  const name = document.createElement('span'); name.className = 'sn'; name.textContent = locked ? '???' : k.name; b.appendChild(name);
-  const rar = document.createElement('span'); rar.className = 'sr'; rar.textContent = locked ? '???' : RAR[k.rar].name; b.appendChild(rar);
-  if (onClick) b.addEventListener('click', onClick);
-  else b.disabled = true;
-  return b;
+function beginMpRace(level) {
+  if (mp.active) return;
+  mp.level = level;
+  mp.active = true;
+  mp.starting = true;
+  mp.progress = null;
+  mp.peerLeft = false;
+  $('mpModal').hidden = true;
+  startLevel(level);
+  mp.starting = false;
+  $('mpHud').hidden = false;
+  mpUpdateHud();
+  clearInterval(mp.timer);
+  mp.timer = setInterval(mpSendProgress, 600);
+  mpSendProgress();
 }
 
-function renderTradeBuild() {
-  const host = tradeState.role === 'host' && !!tradeState.peer;
-  $('stBuild').hidden = !host;
-  if (!host) return;
-  const giveBox = $('stGive'), wantBox = $('stWant');
-  giveBox.innerHTML = '';
-  wantBox.innerHTML = '';
-  const mine = mySkinIds();
-  if (tradeState.pickGive && !mine.includes(tradeState.pickGive)) tradeState.pickGive = '';
-  if (!mine.length) {
-    giveBox.innerHTML = '<p class="stnote">' + TR('You do not own any skins yet.', 'Du ejer ikke nogen skins endnu.') + '</p>';
-  } else {
-    mine.forEach(id => {
-      const k = skinById(id);
-      giveBox.appendChild(tradeSkinCard(k, tradeState.pickGive === id, false, () => {
-        if (tradeState.sent) return;
-        tradeState.pickGive = tradeState.pickGive === id ? '' : id;
-        renderTradeBuild();
-        Sound.play('click');
-      }));
-    });
-  }
-  const wants = tradeState.peerSkins.map(skinById).filter(k => k && !save.skins[k.id]);
-  if (!tradeState.pickWant || !wants.some(k => k.id === tradeState.pickWant)) tradeState.pickWant = '';
-  if (!wants.length) {
-    wantBox.innerHTML = '<p class="stnote">' + TR('Your friend has no skins that you are missing.', 'Din ven har ingen skins, som du mangler.') + '</p>';
-  } else {
-    wants.forEach(k => {
-      wantBox.appendChild(tradeSkinCard(k, tradeState.pickWant === k.id, false, () => {
-        if (tradeState.sent) return;
-        tradeState.pickWant = tradeState.pickWant === k.id ? '' : k.id;
-        renderTradeBuild();
-        Sound.play('click');
-      }));
-    });
-  }
-  const offerBtn = $('stOffer');
-  offerBtn.disabled = tradeState.sent || !tradeState.pickGive || !tradeState.pickWant;
-  offerBtn.textContent = tradeState.sent ? TR('Offer sent', 'Tilbud sendt') : TR('Send offer', 'Send tilbud');
+function mpLeave(silent) {
+  clearInterval(mp.timer);
+  clearTimeout(mp.startT);
+  const ws = mp.ws;
+  mp.ws = null; mp.active = false; mp.leaving = true; mp.progress = null;
+  if (ws && ws.readyState === 1) { try { ws.send(JSON.stringify({ t: 'leave' })); } catch (error) { /* gone */ } }
+  if (ws) { try { ws.close(); } catch (error) { /* gone */ } }
+  mp.leaving = false;
+  const hud = $('mpHud'); if (hud) hud.hidden = true;
+  const vs = $('endVersus'); if (vs) vs.hidden = true;
+  if (!silent) showMpLobby();
 }
 
-function renderTradeIncoming() {
-  const box = $('stIncoming');
-  box.innerHTML = '';
-  if (!tradeState.offer) { box.hidden = true; return; }
-  if (tradeState.role !== 'guest') { box.hidden = true; return; }
-  const o = tradeState.offer, give = skinById(o.give), want = skinById(o.want);
-  if (!give || !want) { box.hidden = true; return; }
-  box.hidden = false;
-  const p = document.createElement('p');
-  p.textContent = tradeState.peer + ' ' + TR('gives', 'giver') + ' ' + give.name + ' ' + TR('and wants', 'og vil have') + ' ' + want.name + '.';
-  box.appendChild(p);
-  const swap = document.createElement('div'); swap.className = 'stswap';
-  const side = (label, k) => {
-    const d = document.createElement('div'); d.className = 'stgive';
-    const cvs = document.createElement('canvas'); cvs.width = cvs.height = 124;
-    drawSkinPreview(cvs, k, false); d.appendChild(cvs);
-    const n = document.createElement('span'); n.textContent = label + ': ' + k.name; d.appendChild(n);
-    return d;
-  };
-  swap.appendChild(side(TR('You give', 'Du giver'), want));
-  const arrow = document.createElement('span'); arrow.className = 'arrow'; arrow.textContent = '→'; swap.appendChild(arrow);
-  swap.appendChild(side(TR('You get', 'Du får'), give));
-  box.appendChild(swap);
-  const acts = document.createElement('div'); acts.className = 'acts';
-  const yes = document.createElement('button'); yes.type = 'button'; yes.className = 'btn primary'; yes.textContent = TR('Accept trade', 'Accepter bytte');
-  yes.addEventListener('click', acceptIncomingTrade);
-  const no = document.createElement('button'); no.type = 'button'; no.className = 'btn'; no.textContent = TR('Decline', 'Afvis');
-  no.addEventListener('click', declineIncomingTrade);
-  acts.appendChild(yes); acts.appendChild(no); box.appendChild(acts);
-}
-
-function acceptIncomingTrade() {
-  const o = tradeState.offer;
-  if (!o || tradeState.role !== 'guest') return;
-  if (!save.skins[o.want] || save.skins[o.give] || !tradeState.peerSkins.includes(o.give)) {
-    setTradeStatus(TR('You cannot take that trade anymore.', 'Du kan ikke tage det bytte længere.'), false);
-    tradeSend({ t: 'decline' });
-    tradeState.offer = null;
-    renderTradeIncoming();
-    return;
-  }
-  if (!applyTrade(o.want, o.give)) {
-    setTradeStatus(TR('You cannot take that trade anymore.', 'Du kan ikke tage det bytte længere.'), false);
-    tradeSend({ t: 'decline' });
-    tradeState.offer = null;
-    renderTradeIncoming();
-    return;
-  }
-  tradeState.peerSkins = tradeState.peerSkins.filter(id => id !== o.give);
-  if (!tradeState.peerSkins.includes(o.want)) tradeState.peerSkins.push(o.want);
-  tradeSend({ t: 'accept', give: o.give, want: o.want });
-  showTradeResult(o.want, o.give);
-  tradeState.offer = null;
-  setTradeStatus(TR('Trade complete.', 'Byttet er gennemført.'), true);
-}
-
-function declineIncomingTrade() {
-  if (tradeState.role !== 'guest' || !tradeState.offer) return;
-  tradeSend({ t: 'decline' });
-  tradeState.offer = null;
-  renderTradeIncoming();
-  setTradeStatus(TR('You declined the offer.', 'Du afviste tilbudet.'), true);
-}
-
-function sendTradeOffer() {
-  if (tradeState.role !== 'host' || tradeState.sent || !tradeState.peer) return;
-  const give = tradeState.pickGive, want = tradeState.pickWant;
-  if (!save.skins[give] || save.skins[want] || !tradeState.peerSkins.includes(want)) return;
-  tradeState.offer = { give: give, want: want };
-  tradeState.sent = true;
-  $('stResult').hidden = true;
-  tradeSend({ t: 'offer', give: give, want: want });
-  setTradeStatus(TR('Offer sent. Waiting for an answer…', 'Tilbud sendt. Venter på svar…'), true);
-  renderTradeBuild();
-}
-
-function applyTrade(myGive, myGet) {
-  if (!save.skins[myGive] || !skinById(myGet) || save.skins[myGet]) return false;
-  delete save.skins[myGive];
-  save.skins[myGet] = true;
-  if (save.skin === myGive) save.skin = myGet;
-  persist();
-  buildMenu();
-  Sound.play('egg');
-  return true;
-}
-
-function showTradeResult(myGive, myGet) {
-  const box = $('stResult');
-  box.hidden = false; box.innerHTML = '';
-  $('stBuild').hidden = true;
-  $('stIncoming').hidden = true;
-  const p = document.createElement('p');
-  p.textContent = TR('Trade complete!', 'Byttet er gennemført!');
-  box.appendChild(p);
-  const swap = document.createElement('div'); swap.className = 'stswap';
-  const side = (label, k, cls) => {
-    const d = document.createElement('div'); d.className = cls;
-    const cvs = document.createElement('canvas'); cvs.width = cvs.height = 124;
-    drawSkinPreview(cvs, k, false); d.appendChild(cvs);
-    const n = document.createElement('span'); n.textContent = label + ': ' + k.name; d.appendChild(n);
-    return d;
-  };
-  const a = skinById(myGive), b = skinById(myGet);
-  if (a) swap.appendChild(side(TR('You gave', 'Du gav'), a, 'stgive'));
-  const arrow = document.createElement('span'); arrow.className = 'arrow'; arrow.textContent = '→'; swap.appendChild(arrow);
-  if (b) swap.appendChild(side(TR('You got', 'Du fik'), b, 'stget'));
-  box.appendChild(swap);
-  if (tradeState.role === 'host') {
-    const again = document.createElement('button'); again.type = 'button'; again.className = 'btn'; again.textContent = TR('Make another offer', 'Lav et nyt tilbud');
-    again.addEventListener('click', () => { box.hidden = true; renderTradeBuild(); });
-    const acts = document.createElement('div'); acts.className = 'acts'; acts.appendChild(again); box.appendChild(acts);
-  }
-}
-
-$('stClose').addEventListener('click', () => { Sound.play('click'); closeSkinTrade(); });
-$('stLeave').addEventListener('click', () => { Sound.play('click'); leaveTradeRoom(false); });
-$('stHost').addEventListener('click', () => { Sound.play('click'); beginTrade('host'); });
-$('stJoin').addEventListener('click', () => { Sound.play('click'); beginTrade('guest'); });
-$('stOffer').addEventListener('click', () => { Sound.play('click'); sendTradeOffer(); });
-$('stCode').addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); beginTrade('guest'); } });
-$('stName').addEventListener('input', (event) => {
-  save.tradeName = event.target.value.slice(0, 16); persist();
-});
-$('skinTradeModal').addEventListener('click', (event) => {
-  if (event.target === $('skinTradeModal')) closeSkinTrade();
-});
+$('btnMulti').addEventListener('click', () => { Sound.play('click'); openMultiplayer(); });
+$('mpClose').addEventListener('click', () => { Sound.play('click'); closeMultiplayer(); });
+$('mpHost').addEventListener('click', () => { Sound.play('click'); mpConnect('host'); });
+$('mpJoin').addEventListener('click', () => { Sound.play('click'); mpConnect('guest'); });
+$('mpLeave').addEventListener('click', () => { Sound.play('click'); mpLeave(false); });
+$('mpCode').addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); mpConnect('guest'); } });
+$('mpName').addEventListener('input', (event) => { save.mpName = event.target.value.slice(0, 16); persist(); });
+$('mpModal').addEventListener('click', (event) => { if (event.target === $('mpModal')) closeMultiplayer(); });
 window.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && !$('skinTradeModal').hidden) { event.preventDefault(); closeSkinTrade(); }
+  if (event.key === 'Escape' && !$('mpModal').hidden) { event.preventDefault(); closeMultiplayer(); }
 });
-window.addEventListener('pagehide', () => { leaveTradeRoom(true); });
-$('tradeSkip').addEventListener('click', () => { Sound.play('click'); closeTrade(); });
+window.addEventListener('pagehide', () => { if (mp.ws) mpSend({ t: 'leave' }); });
+
 function toMenu() {
+  mpLeave(true);
   setFs(false);
   recordEndless();
   mode = 'menu'; game = null; $('endModal').hidden = true; $('pauseModal').hidden = true; $('helpModal').hidden = true; $('tradeModal').hidden = true; tradeOpen = false;

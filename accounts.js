@@ -646,6 +646,9 @@
       fb = { a: parts[1], f: parts[2], auth: parts[1].getAuth(app), db: parts[2].getFirestore(app) };
       fb.a.onAuthStateChanged(fb.auth, function (who) {
         user = who;
+        const accountName = who ? shownName(who) : "";
+        window.dampUser = who ? { name: accountName } : null;
+        try { localStorage.setItem("damp-name", accountName); } catch (error) { /* storage off */ }
         try { localStorage.setItem("damp-in", who ? "1" : "0"); } catch (error) { /* storage off */ }
         if (!user) { clearInterval(autosave); current = null; synced = null; }
         if (who) { startPresence(); watchMessages(); }

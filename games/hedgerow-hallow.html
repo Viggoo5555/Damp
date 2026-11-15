@@ -363,7 +363,14 @@
   .skin.unk .sn, .skin.unk .sr { color: #5f6878; }
   .skin.unk canvas { opacity: 1; filter: brightness(0); }
   .mpcard { width: min(700px, calc(100vw - 22px)); max-height: min(92vh, 900px); overflow-y: auto; }
-  #mpName { width: 100%; min-height: 42px; }
+  .mpentry { display: flex; align-items: center; justify-content: space-between; gap: 12px 18px; margin-top: 16px; flex-wrap: wrap; }
+  .mpentry-copy { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .mpentry b { font-family: var(--f-display); font-weight: 400; font-size: 27px; line-height: 1; }
+  .mpentry span { color: var(--ink-soft); font-size: 16px; line-height: 1.15; }
+  .mpentry-btn { flex: none; min-height: 48px; padding: 0 20px; font-family: var(--f-display); font-size: 22px; }
+  .mpwho { margin: 0; font-size: 17px; }
+  .mpwho b { font-family: var(--f-display); font-weight: 400; font-size: 21px; }
+  @media (max-width: 560px) { .mpentry { flex-direction: column; align-items: stretch; } .mpentry-btn { width: 100%; } }
   .mpmaps { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; max-height: 300px; overflow: auto; padding: 3px; }
   .mpmap { display: flex; flex-direction: column; align-items: stretch; gap: 2px; padding: 4px; text-align: left; }
   .mpmap canvas { width: 100%; height: auto; border: 2px solid var(--ink); border-radius: var(--wob); }
@@ -547,7 +554,6 @@
         <button class="btn mode" id="btnDaily" type="button"><b>Daily garden</b><span id="dailySub"></span></button>
         <button class="btn mode" id="btnEndless" type="button"><b>Endless meadow</b><span id="endlessSub"></span></button>
       </div>
-      <button class="btn mode" id="btnMulti" type="button" style="margin-top:8px"><b>Multiplayer</b><span>Race a friend on any garden</span></button>
     </div>
     <div class="tabs" role="tablist" id="tabs" aria-label="Menu sections">
       <button class="btn tab" role="tab" type="button" data-tab="gardens" aria-selected="true">Gardens</button>
@@ -565,6 +571,13 @@
         </div>
       </div>
       <div class="levels" id="levels"></div>
+      <div class="mpentry panel">
+        <div class="mpentry-copy">
+          <b>Multiplayer</b>
+          <span>Race a friend on the same garden. Pick a map, share a code, and play at the same time.</span>
+        </div>
+        <button class="btn primary mpentry-btn" id="btnMulti" type="button">Race a friend</button>
+      </div>
     </div>
     <div class="tabpanel" id="tab-buddies" role="tabpanel" hidden>
       <p class="tabnote" id="buddyNote"></p>
@@ -673,8 +686,7 @@
     <h2 id="mpTitle">Multiplayer</h2>
     <p class="tabnote">Race a friend on the same garden. Pick the map, share the code, and play at the same time. The highest score wins.</p>
     <div id="mpLobby">
-      <label class="tabnote" for="mpName">Your name</label>
-      <input id="mpName" maxlength="16" autocomplete="nickname" placeholder="Player">
+      <p class="mpwho">Playing as <b id="mpWho">Player</b></p>
       <h3 class="shop-h">Choose a map</h3>
       <div class="mpmaps" id="mpMaps"></div>
       <p class="tabnote">The host chooses the map. The guest joins with the host's code.</p>
@@ -3516,7 +3528,17 @@ function closeTrade() { tradeOpen = false; $('tradeModal').hidden = true; if (ga
 const mp = { ws: null, role: '', code: '', level: -1, peer: '', progress: null, active: false, starting: false, timer: null, startT: null, leaving: false, peerLeft: false };
 let mpPick = 0;
 
-function mpName() { return (($('mpName').value || '').trim() || 'Player').slice(0, 16); }
+function playerName() {
+  let name = '';
+  try {
+    const w = window.parent && window.parent !== window ? window.parent : window;
+    name = (w.dampUser && w.dampUser.name) || '';
+  } catch (error) { /* the frame may not be same-origin */ }
+  if (!name) { try { name = localStorage.getItem('damp-name') || ''; } catch (error) { /* storage off */ } }
+  name = String(name || '').trim().replace(/[\u0000-\u001f]/g, '').slice(0, 16);
+  return name || 'Player';
+}
+function mpName() { return playerName(); }
 function mpCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const a = new Uint8Array(5);
@@ -3549,7 +3571,8 @@ function mpBuildMaps() {
 
 function openMultiplayer() {
   $('mpModal').hidden = false;
-  $('mpName').value = save.mpName || '';
+  save.mpName = mpName(); persist();
+  $('mpWho').textContent = save.mpName;
   if (!mp.ws) {
     const avail = mpAvailable();
     if (mpPick < 0 || !avail.some(o => o.i === mpPick)) {
@@ -3639,6 +3662,7 @@ function mpConnect(role) {
   if (mp.ws) mpLeave(true);
   const name = mpName();
   save.mpName = name; persist();
+  $('mpWho').textContent = name;
   let code = '';
   if (role === 'host') code = mpCode();
   else code = (($('mpCode') && $('mpCode').value) || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -3766,7 +3790,6 @@ $('mpHost').addEventListener('click', () => { Sound.play('click'); mpConnect('ho
 $('mpJoin').addEventListener('click', () => { Sound.play('click'); mpConnect('guest'); });
 $('mpLeave').addEventListener('click', () => { Sound.play('click'); mpLeave(false); });
 $('mpCode').addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); mpConnect('guest'); } });
-$('mpName').addEventListener('input', (event) => { save.mpName = event.target.value.slice(0, 16); persist(); });
 $('mpModal').addEventListener('click', (event) => { if (event.target === $('mpModal')) closeMultiplayer(); });
 window.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && !$('mpModal').hidden) { event.preventDefault(); closeMultiplayer(); }

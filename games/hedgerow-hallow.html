@@ -232,6 +232,58 @@
     .tcard .tn { display: block; font-size: 16px; white-space: nowrap; }
   }
 
+  /* phone layout: one compact HUD row, the meadow at full width, and a
+     horizontally scrolling buddy strip so the dock cannot squeeze the map. */
+  @media (max-width: 820px), (max-width: 1024px) and (orientation: portrait) {
+    .game:not(.fs) { gap: 6px; }
+    .game:not(.fs) .hud { position: relative; z-index: 5; flex-wrap: nowrap; gap: 6px; }
+    .game:not(.fs) .stats { flex: 1 1 auto; flex-wrap: nowrap; gap: 4px; min-width: 0; }
+    .game:not(.fs) .stat { flex: 1 1 0; justify-content: center; min-width: 0; min-height: 34px; padding: 0 4px; gap: 3px; font-size: 16px; }
+    .game:not(.fs) .stat svg { width: 16px; height: 16px; flex: none; }
+    .game:not(.fs) .stat b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .game:not(.fs) .ctrls { display: contents; }
+    .game:not(.fs) .ctrls #btnFs, .game:not(.fs) .ctrls #btnHelp, .game:not(.fs) .ctrls #btnSpeed { display: none; }
+    .game:not(.fs) .ctrls #btnPause { display: inline-flex; align-items: center; justify-content: center; order: 1; flex: none; width: auto; min-width: 58px; min-height: 40px; padding: 0 9px; font-size: 15px; box-shadow: 2px 2px 0 var(--ink); }
+    .game:not(.fs).menuopen .ctrls { display: flex; position: absolute; right: 0; top: calc(100% + 6px); z-index: 9; flex-direction: column; align-items: stretch; gap: 6px; padding: 8px; background: var(--paper-hi); border: 2.5px solid var(--ink); border-radius: var(--wob); box-shadow: 3px 3px 0 var(--ink); }
+    .game:not(.fs).menuopen .ctrls .btn { display: flex; min-height: 44px; width: auto; min-width: 150px; justify-content: flex-start; padding: 0 14px; font-size: 17px; text-align: left; }
+    .game:not(.fs).menuopen .ctrls #btnFs, .game:not(.fs).menuopen .ctrls #btnHelp, .game:not(.fs).menuopen .ctrls #btnSpeed { display: flex; }
+    .game:not(.fs).menuopen .ctrls #btnPause { display: flex; min-height: 44px; width: auto; min-width: 150px; padding: 0 14px; font-size: 17px; }
+    .game:not(.fs).menuopen .ctrls #btnFs { width: auto; }
+    .game:not(.fs).menuopen .ctrls #btnFs::after { content: 'Full screen'; margin-left: 8px; font-size: 16px; }
+    .game:not(.fs).menuopen .ctrls #btnHelp { font-size: 0; }
+    .game:not(.fs).menuopen .ctrls #btnHelp::after { content: 'How to play'; font-size: 16px; }
+    .game:not(.fs) #btnMore { display: inline-flex; align-items: center; justify-content: center; order: 2; flex: none; width: 42px; min-height: 40px; padding: 0; box-shadow: 2px 2px 0 var(--ink); }
+    .game:not(.fs) .main { flex: 1 1 0; min-height: 0; gap: 6px; }
+    .game:not(.fs) .stage { flex: 1 1 0; min-height: 0; }
+    .game:not(.fs) .dock { gap: 6px; }
+    .game:not(.fs) .dock .hint { padding: 3px 10px; font-size: 14px; line-height: 1.15; }
+    .game:not(.fs) .shop { min-height: 0; gap: 4px; }
+    .game:not(.fs) #buyView { gap: 4px; }
+    .game:not(.fs) .tray { display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 7px; scrollbar-width: none; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent); }
+    .game:not(.fs) .tray::-webkit-scrollbar { display: none; }
+    .game:not(.fs) .tcard { flex: 0 0 66px; min-height: 64px; padding: 3px 2px 2px; }
+    .game:not(.fs) .tcard canvas { width: 36px; height: 36px; }
+    .game:not(.fs) .tcard .tn { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-size: 14px; line-height: 1; }
+    .game:not(.fs) .tcard .tc { font-size: 13px; }
+    .game:not(.fs) .tcard .kbd { display: none; }
+    .game:not(.fs) .info { padding: 4px 8px; gap: 0; }
+    .game:not(.fs) .info .ih strong { font-size: 18px; }
+    .game:not(.fs) .info .lv { font-size: 13px; }
+    .game:not(.fs) .info p { font-size: 13px; line-height: 1.1; }
+    .game:not(.fs) .info .bl { -webkit-line-clamp: 1; }
+    .game:not(.fs) .powers { gap: 5px; }
+    .game:not(.fs) .pw { min-height: 40px; }
+    .game:not(.fs) .pw .pn { font-size: 17px; }
+    .game:not(.fs) .pw .pt { font-size: 12px; }
+    .game:not(.fs) .waverow { gap: 6px; }
+    .game:not(.fs) #btnAuto { min-width: 58px; min-height: 48px; padding: 0 8px; font-size: 16px; }
+    .game:not(.fs) #btnWave { min-height: 48px; padding: 2px 8px; }
+    .game:not(.fs) #btnWave .w1 { font-size: 22px; }
+    .game:not(.fs) #btnWave .w2 { font-size: 13px; }
+    .game:not(.fs) .mphud { top: 42px; padding: 3px 8px; font-size: 13px; }
+    .game:not(.fs) .mphud b { font-size: 16px; }
+  }
+
   /* full screen layout: thin top line, big map, scrolling buddy strip */
   #btnMore, .fsbar { display: none; }
   .game.fs { position: fixed; inset: 0; z-index: 10; height: auto; gap: 4px; background-color: var(--paper);
@@ -653,6 +705,7 @@
       <li>Rain, Thunder and Sunshine help in a tight spot.</li>
       <li>Now and then a mystery trader wanders onto the grass. Tap him to buy one of his three skins with golden seeds, or to gamble for a random one.</li>
       <li>Tap the corner button for full screen: a bigger map with a buddy strip you can scroll.</li>
+      <li>On a phone the meadow uses the full width and the buddy strip scrolls sideways. The ... button holds speed, help and full screen.</li>
     </ol>
     <div class="acts"><button class="btn primary" id="hClose" type="button">Got it</button></div>
   </div>
@@ -3275,15 +3328,17 @@ function onGameEvent(k, d) {
 /* ---------- start / end ---------- */
 function fit() {
   if (gameScreen.hidden || !game) return;
-  const land = gameScreen.classList.contains('fs') || window.matchMedia('(min-aspect-ratio: 5/4)').matches, mainEl = document.querySelector('.main');
-  if (land) { stage.style.flex = ''; stage.style.height = ''; }
-  const aw = stage.clientWidth, ah = land ? stage.clientHeight : mainEl.clientHeight - $('dock').offsetHeight - 8;
+  const fs = gameScreen.classList.contains('fs');
+  const phone = !fs && window.matchMedia('(max-width: 820px), (max-width: 1024px) and (orientation: portrait)').matches;
+  const land = fs || window.matchMedia('(min-aspect-ratio: 5/4)').matches, mainEl = document.querySelector('.main');
+  if (land || phone) { stage.style.flex = ''; stage.style.height = ''; }
+  const aw = stage.clientWidth, ah = (land || phone) ? stage.clientHeight : mainEl.clientHeight - $('dock').offsetHeight - 8;
   if (!aw || ah < 60) return;
   const edge = 6 + 6; // border plus shadow room
   let cw = Math.floor(Math.min(aw - edge, (ah - edge) / 0.7));
   cw = Math.max(160, cw);
   const ch = Math.round(cw * 0.7);
-  if (!land) { stage.style.flex = '0 0 auto'; stage.style.height = (ch + 14) + 'px'; }
+  if (!land && !phone) { stage.style.flex = '0 0 auto'; stage.style.height = (ch + 14) + 'px'; }
   frame.style.width = (cw + 6) + 'px'; frame.style.height = (ch + 6) + 'px';
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   cv.width = Math.round(cw * dpr); cv.height = Math.round(cw * dpr * 0.7);
@@ -3764,7 +3819,6 @@ function activateCell(col, row, touch) {
   const tw = game.towerAt(col, row);
   if (tw) { sel = tw; pending = null; Sound.play('click'); return; }
   if (!game.canBuild(col, row)) { sel = null; toast('Nothing grows there'); Sound.play('error'); return; }
-  if (touch && !(pending && pending.col === col && pending.row === row)) { sel = null; pending = { col, row }; toast('Tap again to plant'); Sound.play('click'); return; }
   sel = null;
   const r = game.place(col, row, buildType);
   if (!r.ok) { if (r.reason === 'seeds') toast('Need ' + r.need + ' more seeds'); Sound.play('error'); return; }

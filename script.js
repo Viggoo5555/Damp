@@ -101,6 +101,30 @@ function makeCard(game) {
   return item;
 }
 
+function showHero() {
+  const feature = $("hero-feature");
+  if (!feature) return;
+  const game = shelfPick();
+  if (!game) { feature.hidden = true; return; }
+  const id = slug(game);
+  if (feature.dataset.id === id) return;
+  feature.dataset.id = id;
+  feature.href = "#play=" + id;
+  feature.setAttribute("aria-label", "Play " + game.title);
+  $("hero-game-title").textContent = game.title;
+  $("hero-game-desc").textContent = game.description || "";
+  $("hero-game-cat").textContent = game.category || "Game";
+  const art = $("hero-art");
+  art.hidden = !game.image;
+  if (game.image) {
+    art.src = encodeURI(game.image);
+    art.onerror = function () { art.hidden = true; };
+  } else {
+    art.removeAttribute("src");
+  }
+  feature.hidden = false;
+}
+
 function showGames() {
   const query = search.value.trim().toLowerCase();
 
@@ -114,16 +138,14 @@ function showGames() {
     list.reverse();
   } else if ($("sort").value === "az") {
     list.sort(function (a, b) { return a.title.localeCompare(b.title); });
+  } else {
+    const ordered = forYouOrder(list);
+    list.length = 0;
+    list.push.apply(list, ordered);
   }
 
-  // With no filter on, the featured game (or else the first one) gets the large window
-  const lead = category === "All" && query === "" && $("sort").value === "default" && list.length >= 3;
-  if (lead) {
-    const star = list.findIndex(function (game) { return game.featured; });
-    if (star > 0) list.unshift(list.splice(star, 1)[0]);
-  }
   grid.replaceChildren(...list.map(makeCard));
-  grid.classList.toggle("has-lead", lead);
+  grid.classList.remove("has-lead");
   $("heading").textContent = category === "All" ? "All games" : category;
   $("count").textContent = list.length + (list.length === 1 ? " game" : " games");
 
@@ -134,6 +156,7 @@ function showGames() {
   }
   $("empty").hidden = list.length > 0;
   showShelf();
+  showHero();
 }
 
 function showChips() {
@@ -161,6 +184,15 @@ function showChips() {
 
 search.addEventListener("input", showGames);
 
+function playRandom() {
+  if (!games.length) return;
+  const game = games[Math.floor(Math.random() * games.length)];
+  location.hash = "play=" + slug(game);
+}
+
+$("random").addEventListener("click", playRandom);
+$("hero-random").addEventListener("click", playRandom);
+
 // ----- Recently played (remembered on this device) -----
 function getRecent() {
   try { return JSON.parse(localStorage.getItem("damp-recent")) || []; } catch (error) { return []; }
@@ -168,6 +200,38 @@ function getRecent() {
 
 function recentGames() {
   return getRecent().filter(function (id) { return games.some(function (g) { return slug(g) === id; }); });
+}
+
+// There is no global play counter in the project, so the curated games.json order
+// is the popularity baseline. Recent plays and their categories bend it locally.
+function forYouScore(game, recents, categoryCounts) {
+  const position = games.indexOf(game);
+  let score = position < 0 ? 0 : games.length - position;
+  if (game.featured) score += 12;
+
+  const recentIndex = recents.indexOf(slug(game));
+  if (recentIndex > -1) score += Math.max(2, 8 - recentIndex);
+  if (game.category) score += Math.min(4, (categoryCounts[game.category] || 0) * 2);
+  return score;
+}
+
+function forYouOrder(list) {
+  const recents = recentGames();
+  const categoryCounts = {};
+  recents.forEach(function (id) {
+    const game = games.find(function (g) { return slug(g) === id; });
+    if (game && game.category) categoryCounts[game.category] = (categoryCounts[game.category] || 0) + 1;
+  });
+
+  return list.slice().sort(function (a, b) {
+    const difference = forYouScore(b, recents, categoryCounts) - forYouScore(a, recents, categoryCounts);
+    return difference || a.title.localeCompare(b.title);
+  });
+}
+
+function shelfPick() {
+  if (recentGames().length) return forYouOrder(games)[0] || games[0];
+  return games.find(function (g) { return g.featured; }) || games[0];
 }
 
 function addRecent(game) {

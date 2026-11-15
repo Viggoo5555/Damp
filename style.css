@@ -2126,3 +2126,6 @@ label input[type="file"] { height: auto; border-radius: 10px; }
 }
 
 .player.pseudo-fullscreen #player-fullscreen .player-action-label { display: inline; }
+
+#player-stage:fullscreen { width: 100vw; height: 100vh; background: var(--deep); }
+#player-stage:fullscreen #player-frame { width: 100%; height: 100%; }

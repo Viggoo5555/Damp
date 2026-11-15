@@ -21,6 +21,7 @@ const grid = $("games-grid");
 const search = $("search");
 const chips = $("chips");
 const player = $("player");
+const stage = $("player-stage");
 const frame = $("player-frame");
 const ext = $("ext");
 const editor = $("editor");
@@ -377,11 +378,11 @@ function toggleFullscreen() {
     return;
   }
 
-  const request = frame.requestFullscreen || frame.webkitRequestFullscreen || frame.webkitRequestFullScreen;
+  const request = stage.requestFullscreen || stage.webkitRequestFullscreen || stage.webkitRequestFullScreen;
   if (request) {
     let pending;
     try {
-      pending = request.call(frame);
+      pending = request.call(stage);
     } catch (error) {
       setPseudoFullscreen(true);
       return;

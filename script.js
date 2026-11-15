@@ -291,7 +291,10 @@ function finishLoading() {
 }
 
 frame.addEventListener("load", function () {
-  if (frame.src && frame.src !== "about:blank") finishLoading();
+  const loaded = Boolean(frame.src && frame.src !== "about:blank");
+  playerLanguageReady = loaded;
+  if (loaded) finishLoading();
+  syncLanguageControls();
 });
 
 // Starts fetching a game's file as soon as someone points at its tile
@@ -309,6 +312,7 @@ function warm(game) {
 function openPlayer(game) {
   if (playing !== slug(game)) {
     playing = slug(game);
+    playerLanguageReady = false;
     startLoading(game);
     addRecent(game);
     // Gets the saved progress from the account first, then starts the game
@@ -325,6 +329,7 @@ function openPlayer(game) {
   $("player-newtab").href = encodeURI(game.file);
   player.hidden = false;
   document.body.classList.add("locked");
+  syncLanguageControls();
 }
 
 function closePlayer() {
@@ -335,9 +340,11 @@ function closePlayer() {
   if (window.dampSaves) dampSaves.stop();
   frame.src = "about:blank";
   playing = "";
+  playerLanguageReady = false;
   stopLoading();
   player.hidden = true;
   document.body.classList.remove("locked");
+  syncLanguageControls();
   showChips();
   showGames();
 }
@@ -768,6 +775,155 @@ $("editor-form").addEventListener("submit", async function (event) {
   }
   $("save").disabled = false;
 });
+
+// ----- Language: one default for the games -----
+const LANGUAGE_KEY = "damp.lang";
+const LANGUAGE_GAMES = new Set(["battleship", "hedgerow-hallow", "ordle"]);
+let playerLanguageReady = false;
+
+function browserLanguage() {
+  return (navigator.language || "en").toLowerCase().indexOf("da") === 0 ? "da" : "en";
+}
+
+function preferredLanguage() {
+  try {
+    const saved = localStorage.getItem(LANGUAGE_KEY);
+    if (saved === "da" || saved === "en") return saved;
+  } catch (error) { /* storage off */ }
+  return browserLanguage();
+}
+
+function savedStringLanguage(key) {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved === "da" || saved === "en" ? saved : "";
+  } catch (error) { return ""; }
+}
+
+function savedJsonLanguage(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return "";
+    const saved = JSON.parse(raw);
+    return saved && (saved.lang === "da" || saved.lang === "en") ? saved.lang : "";
+  } catch (error) { return ""; }
+}
+
+function gameLanguage(id) {
+  let saved = "";
+  if (id === "battleship") saved = savedStringLanguage("bs-lang");
+  else if (id === "hedgerow-hallow") saved = savedJsonLanguage("hedgerow-hollow-v1");
+  else if (id === "ordle") saved = savedJsonLanguage("ordle-set");
+  return saved || preferredLanguage();
+}
+
+// Game saves are plain JSON. Only the language field is touched here.
+function updateSavedLanguage(key, language) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (!saved || typeof saved !== "object" || Array.isArray(saved)) return;
+    saved.lang = language;
+    localStorage.setItem(key, JSON.stringify(saved));
+  } catch (error) { /* storage or save format unavailable */ }
+}
+
+function syncSwitch(group, language, disabled) {
+  if (!group) return;
+  group.classList.toggle("is-loading", Boolean(disabled));
+  group.querySelectorAll("button").forEach(function (button) {
+    button.setAttribute("aria-pressed", String(button.dataset.lang === language));
+    button.disabled = Boolean(disabled);
+  });
+}
+
+function syncLanguageControls() {
+  syncSwitch(document.querySelector(".header-language"), preferredLanguage(), false);
+  const group = $("player-language");
+  if (!playing || !LANGUAGE_GAMES.has(playing) || player.hidden) {
+    group.hidden = true;
+    return;
+  }
+  group.hidden = false;
+  syncSwitch(group, gameLanguage(playing), !playerLanguageReady);
+}
+
+function setGlobalLanguage(language) {
+  const next = language === "da" ? "da" : "en";
+  try {
+    localStorage.setItem(LANGUAGE_KEY, next);
+    localStorage.setItem("bs-lang", next);
+  } catch (error) { /* storage off */ }
+  updateSavedLanguage("hedgerow-hollow-v1", next);
+  updateSavedLanguage("ordle-set", next);
+  syncLanguageControls();
+}
+
+// Use the game's own language control, so the current game changes without a reload.
+function clickGameLanguage(language) {
+  if (!playing) return false;
+  let doc;
+  try { doc = frame.contentDocument; } catch (error) { return false; }
+  if (!doc) return false;
+
+  if (playing === "battleship") {
+    const button = doc.getElementById(language === "da" ? "lDa" : "lEn");
+    if (!button) return false;
+    button.click();
+    return true;
+  }
+
+  if (playing === "hedgerow-hallow") {
+    const button = doc.getElementById(language === "da" ? "langDa" : "langEn");
+    if (!button) return false;
+    button.click();
+    return true;
+  }
+
+  if (playing === "ordle") {
+    const settingsButton = doc.getElementById("sb");
+    if (!settingsButton) return false;
+    settingsButton.click();
+    const label = language === "da" ? "Dansk" : "English";
+    const button = Array.prototype.find.call(doc.querySelectorAll("#langs button"), function (option) {
+      return option.getAttribute("aria-label") === label;
+    });
+    const panel = doc.getElementById("set");
+    if (!button) {
+      if (panel) panel.style.display = "none";
+      return false;
+    }
+    button.click();
+    if (panel) panel.style.display = "none";
+    return true;
+  }
+
+  return false;
+}
+
+function setPlayerLanguage(language) {
+  if (!playing || player.hidden) return;
+  clickGameLanguage(language);
+  setGlobalLanguage(language);
+  syncLanguageControls();
+}
+
+document.querySelectorAll(".header-language button").forEach(function (button) {
+  button.addEventListener("click", function () { setGlobalLanguage(button.dataset.lang); });
+});
+
+document.querySelectorAll(".player-language button").forEach(function (button) {
+  button.addEventListener("click", function () { setPlayerLanguage(button.dataset.lang); });
+});
+
+window.addEventListener("storage", function (event) {
+  if (event.key === LANGUAGE_KEY || event.key === "bs-lang" || event.key === "ordle-set" || event.key === "hedgerow-hollow-v1") {
+    syncLanguageControls();
+  }
+});
+
+syncLanguageControls();
 
 // ----- Start -----
 async function start() {

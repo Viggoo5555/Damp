@@ -90,7 +90,8 @@ const $=id=>document.getElementById(id);
 const board=$("board"),kb=$("kb"),again=$("again");
 const FLAG={da:`<svg viewBox="0 0 37 28" aria-hidden="true"><rect width="37" height="28" fill="#C8102E"/><path d="M14 0v28M0 14h37" stroke="#fff" stroke-width="4"/></svg>`,en:`<svg viewBox="0 0 60 30" aria-hidden="true"><clipPath id="ujA"><path d="M0,0 v30 h60 v-30 z"/></clipPath><clipPath id="ujB"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath><g clip-path="url(#ujA)"><path d="M0,0 v30 h60 v-30 z" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#ujB)" stroke="#C8102E" stroke-width="4"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/><path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/></g></svg>`};
 const has=l=>Object.keys(DATA[l]||{}).length>0;
-let lang="da",N=5,target,row,cur,over,busy,daily=true,keys={},VALID,WORDS;
+const globalLang=(()=>{try{const saved=localStorage.getItem("damp.lang");if(saved==="da"||saved==="en")return saved}catch(e){}return (navigator.language||"").toLowerCase().startsWith("da")?"da":"en"})();
+let lang=globalLang,N=5,target,row,cur,over,busy,daily=true,keys={},VALID,WORDS;
 try{const s=JSON.parse(localStorage.getItem("ordle-set")||"{}");if(s.lang&&has(s.lang)&&DATA[s.lang][s.len]){lang=s.lang;N=s.len}}catch(e){}
 const T_=()=>T[lang];
 const letter=k=>lang==="da"?/^[a-zæøå]$/.test(k):/^[a-z]$/.test(k);

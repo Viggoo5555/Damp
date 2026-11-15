@@ -2129,3 +2129,63 @@ label input[type="file"] { height: auto; border-radius: 10px; }
 
 #player-stage:fullscreen { width: 100vw; height: 100vh; background: var(--deep); }
 #player-stage:fullscreen #player-frame { width: 100%; height: 100%; }
+
+
+/* ---------- Language switch ---------- */
+.language-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  height: 44px;
+  padding: 3px;
+  border: 1px solid rgba(215, 233, 236, 0.17);
+  border-radius: 999px;
+  background: rgba(15, 31, 39, 0.3);
+}
+
+.language-switch button {
+  min-width: 34px;
+  height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fog);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+
+.language-switch button:hover { background: var(--pane-hi); color: var(--mist); }
+.language-switch button[aria-pressed="true"] { background: var(--lamp); color: var(--lamp-ink); }
+.language-switch button:focus-visible { outline: 2px solid var(--lamp); outline-offset: 2px; }
+.language-switch button:disabled { cursor: wait; }
+
+.player-language { height: 34px; background: rgba(7, 17, 22, 0.4); }
+.player-language button { min-width: 28px; height: 26px; padding: 0 6px; font-size: 0.64rem; }
+.player-language[hidden] { display: none; }
+.player-language.is-loading { opacity: 0.55; }
+
+.player.pseudo-fullscreen #player-language { display: none; }
+
+@media (max-width: 760px) {
+  .bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "logo actions" "search language";
+  }
+  .bar-actions { grid-area: actions; }
+  .header-language { grid-area: language; justify-self: end; align-self: center; height: 42px; }
+  .header-language button { height: 34px; }
+  #account { max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+  .player-language { height: 32px; }
+  .player-language button { height: 24px; }
+}
+
+@media (max-width: 420px) {
+  .header-language { height: 38px; padding: 2px; }
+  .header-language button { min-width: 30px; height: 32px; padding: 0 6px; font-size: 0.67rem; }
+}

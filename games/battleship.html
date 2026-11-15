@@ -672,7 +672,10 @@ const I18N = {
   }
 };
 let LANG = 'en';
-try { LANG = localStorage.getItem('bs-lang') || ((navigator.language || 'en').toLowerCase().indexOf('da') === 0 ? 'da' : 'en'); } catch (e) { }
+try {
+  LANG = localStorage.getItem('bs-lang') || localStorage.getItem('damp.lang') || ((navigator.language || 'en').toLowerCase().indexOf('da') === 0 ? 'da' : 'en');
+  if (LANG !== 'da' && LANG !== 'en') LANG = 'en';
+} catch (e) { }
 const t = (k, v) => { let s = (I18N[LANG] && I18N[LANG][k]) || I18N.en[k] || k; if (v) for (const x in v) s = s.replace('{' + x + '}', v[x]); return s; };
 // A ship inside a sentence: Danish needs the definite form ("ubåden"), English the plain name
 const shipWord = type => t((LANG === 'da' ? 'd_' : 'n_') + type);

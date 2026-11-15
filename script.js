@@ -24,6 +24,8 @@ const player = $("player");
 const frame = $("player-frame");
 const ext = $("ext");
 const editor = $("editor");
+const fullscreenButton = $("player-fullscreen");
+const fullscreenLabel = fullscreenButton.querySelector(".player-action-label");
 
 let games = [];
 let loadFailed = false;
@@ -327,6 +329,8 @@ function openPlayer(game) {
 function closePlayer() {
   if (player.hidden) return;
   if (document.fullscreenElement) document.exitFullscreen();
+  player.classList.remove("pseudo-fullscreen");
+  syncFullscreenButton();
   if (window.dampSaves) dampSaves.stop();
   frame.src = "about:blank";
   playing = "";
@@ -350,9 +354,55 @@ $("player-share").addEventListener("click", function () {
   else ask();
 });
 
-$("player-fullscreen").addEventListener("click", function () {
-  if (frame.requestFullscreen) frame.requestFullscreen();
-});
+function syncFullscreenButton() {
+  if (document.fullscreenElement) player.classList.remove("pseudo-fullscreen");
+  const on = Boolean(document.fullscreenElement) || player.classList.contains("pseudo-fullscreen");
+  fullscreenLabel.textContent = on ? "Exit fullscreen" : "Fullscreen";
+  fullscreenButton.setAttribute("aria-label", on ? "Exit fullscreen" : "Fullscreen");
+  fullscreenButton.setAttribute("aria-pressed", on ? "true" : "false");
+}
+
+function setPseudoFullscreen(on) {
+  player.classList.toggle("pseudo-fullscreen", on);
+  syncFullscreenButton();
+}
+
+function toggleFullscreen() {
+  if (document.fullscreenElement) {
+    if (document.exitFullscreen) document.exitFullscreen();
+    return;
+  }
+  if (player.classList.contains("pseudo-fullscreen")) {
+    setPseudoFullscreen(false);
+    return;
+  }
+
+  const request = frame.requestFullscreen || frame.webkitRequestFullscreen || frame.webkitRequestFullScreen;
+  if (request) {
+    let pending;
+    try {
+      pending = request.call(frame);
+    } catch (error) {
+      setPseudoFullscreen(true);
+      return;
+    }
+    syncFullscreenButton();
+    if (pending && pending.catch) pending.catch(function () { setPseudoFullscreen(true); });
+    // Some mobile browsers expose the API but never enter fullscreen.
+    setTimeout(function () {
+      if (!document.fullscreenElement && !player.classList.contains("pseudo-fullscreen")) {
+        setPseudoFullscreen(true);
+      }
+    }, 300);
+    return;
+  }
+
+  setPseudoFullscreen(true);
+}
+
+fullscreenButton.addEventListener("click", toggleFullscreen);
+document.addEventListener("fullscreenchange", syncFullscreenButton);
+document.addEventListener("webkitfullscreenchange", syncFullscreenButton);
 
 // The address after # decides what shows
 function route() {
@@ -412,8 +462,12 @@ document.addEventListener("keydown", function (event) {
     event.preventDefault();
     search.focus();
   }
-  if (event.key === "Escape" && !player.hidden && !document.fullscreenElement) {
-    location.hash = "";
+  if (event.key === "Escape" && !player.hidden) {
+    if (player.classList.contains("pseudo-fullscreen")) {
+      setPseudoFullscreen(false);
+      return;
+    }
+    if (!document.fullscreenElement) location.hash = "";
   }
 });
 

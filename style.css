@@ -1763,6 +1763,10 @@ label input[type="file"] { height: auto; border-radius: 10px; }
 #toast { border-radius: 12px; background: rgba(17, 34, 43, 0.98); box-shadow: 0 16px 46px rgba(0, 0, 0, 0.4); }
 
 .player { z-index: 40; background: var(--deep); }
+.player-bar button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.player-icon { display: inline-block; width: 18px; height: 18px; flex: none; line-height: 1; text-align: center; }
+.player-bar svg.player-icon { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.player-action-label { display: inline; }
 .player-bar {
   padding: 11px 20px;
   gap: 9px 16px;
@@ -1939,10 +1943,38 @@ label input[type="file"] { height: auto; border-radius: 10px; }
   .dlg-head h2 { font-size: 1.8rem; }
   .msg { max-width: 90%; }
 
-  .player-bar { padding: 10px 12px; gap: 7px 10px; }
-  .player-title { order: 3; flex-basis: 100%; font-size: 1.3rem; }
-  .player-actions { order: 2; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
-  .player-actions a { font-size: 0.8rem; }
+  .player-bar {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px 8px;
+    padding: 8px 10px;
+  }
+  #player-close { flex: 0 0 40px; width: 40px; height: 40px; padding: 0; }
+  .player-title {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-right: 48px;
+    overflow: hidden;
+    font-size: 1.2rem;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #player-fullscreen { position: absolute; top: 8px; right: 10px; width: 40px; height: 40px; padding: 0; }
+  #player-close .player-action-label,
+  #player-fullscreen .player-action-label { display: none; }
+  .player-actions {
+    flex: 0 0 100%;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  #player-share { height: 34px; padding: 0 12px; font-size: 0.8rem; }
+  #player-newtab { display: inline-flex; align-items: center; height: 34px; padding: 0 10px; font-size: 0.8rem; }
 }
 
 @media (max-width: 420px) {
@@ -2056,3 +2088,41 @@ label input[type="file"] { height: auto; border-radius: 10px; }
   }
   .shelf-grid .game { flex: 0 0 auto; }
 }
+
+/* Phones without the Fullscreen API get a maximized game with one clear exit. */
+.player.pseudo-fullscreen .player-bar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  left: auto;
+  z-index: 2;
+  display: block;
+  width: auto;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.player.pseudo-fullscreen .player-bar > #player-close,
+.player.pseudo-fullscreen .player-title,
+.player.pseudo-fullscreen #player-share,
+.player.pseudo-fullscreen #player-newtab { display: none; }
+
+.player.pseudo-fullscreen .player-actions { display: flex; margin: 0; gap: 0; }
+
+.player.pseudo-fullscreen #player-fullscreen {
+  position: static;
+  display: inline-flex;
+  width: auto;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 12px;
+  border-color: rgba(215, 233, 236, 0.3);
+  background: rgba(7, 17, 22, 0.86);
+  color: var(--mist);
+}
+
+.player.pseudo-fullscreen #player-fullscreen .player-action-label { display: inline; }

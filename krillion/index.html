@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Krillion · det daglige dyk</title>
+<style>
+@font-face{font-family:VT323;src:url(fonts/pixel.woff2)format("woff2");font-display:swap}
+:root{
+  --tier-plankton:#8fa3c4;--tier-tooclever:#ff9f43;--tier-schooler:#4de3ff;--tier-rare:#ff5252;
+  --tier-deepcut:#9d7bff;--tier-krillion:#ffd166;--tier-miss:#3d4f6e;
+  --hairline:#7d93b838;--ink:#e8f1ff;--dim:#8fa7c4;--pink:#ff5d8f;--cyan:#4de3ff;
+  --bg:#04070d;--pod:#081726;--panel:#0a1a28;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:VT323,ui-monospace,monospace;overflow:hidden;
+  -webkit-font-smoothing:none;image-rendering:pixelated}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.screen{position:fixed;inset:0;display:none}
+.screen.on{display:block}
+
+/* ---------- home ---------- */
+#home{background:linear-gradient(#8fd3ea 0%,#bfe6f2 38%,#e9f6fb 55%,#0b3d56 55.2%,#062b41 70%,#03121d 100%)}
+#home .sun{position:absolute;right:12%;top:9%;width:130px;height:130px;background:#ffd166;
+  box-shadow:0 0 0 14px #ffe08a55,0 0 90px #ffd16688}
+#home .cloud{position:absolute;background:#fff;opacity:.85;height:18px}
+#home .c1{left:6%;top:22%;width:210px;box-shadow:0 -22px 0 10px #fff,60px -12px 0 6px #fff}
+#home .c2{right:8%;top:34%;width:160px;box-shadow:0 -18px 0 8px #fff}
+#home .boat{position:absolute;left:50%;top:48.5%;width:150px;height:46px;transform:translateX(-50%);
+  background:#06222f;clip-path:polygon(0 40%,100% 40%,88% 100%,10% 100%)}
+#home .mast{position:absolute;left:50%;top:41.5%;width:4px;height:52px;background:#06222f}
+#home .flag{position:absolute;left:calc(50% + 4px);top:41.5%;width:34px;height:18px;background:var(--pink)}
+#home .wrap{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:24px;text-align:center;gap:6px}
+.wordmark{font-size:clamp(56px,15vw,132px);letter-spacing:.14em;line-height:.9;color:#08202c;
+  text-shadow:-3px 0 #4de3ff,3px 0 #ff5d8f,0 0 30px #ffffff88}
+.tagline{margin-top:2px;letter-spacing:.34em;font-size:clamp(16px,3.4vw,26px);color:#0b3143}
+.pitch{margin-top:10px;font-size:clamp(15px,2.8vw,21px);color:#123f52;max-width:560px;line-height:1.25}
+.begin{margin-top:26px;border:2px solid var(--cyan);background:#041521ee;color:#dff6ff;
+  padding:18px 34px;font-size:clamp(22px,4.4vw,34px);letter-spacing:.12em;min-width:min(560px,86vw);
+  box-shadow:0 0 26px #4de3ff33;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+.begin:hover{background:#062434;box-shadow:0 0 34px #4de3ff66}
+.secondary{margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.secondary button{border:1px solid #0b314377;background:#e8f7fbd9;color:#08202c;padding:11px 20px;
+  font-size:clamp(15px,2.6vw,20px);letter-spacing:.08em;min-width:200px}
+.secondary button:hover{background:#fff}
+.stats{margin-top:20px;color:#0e3a4d;font-size:16px;letter-spacing:.06em;line-height:1.5}
+.foot{position:absolute;left:0;right:0;bottom:14px;text-align:center;color:#7fb3c6;font-size:14px;letter-spacing:.24em}
+
+/* ---------- play ---------- */
+#play{background:var(--bg);overflow:hidden}
+.sea{position:absolute;inset:0;background:linear-gradient(#0a3550,#062135 40%,#03101c 72%,#01060c)}
+.sea::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,#4de3ff1f,transparent 60%)}
+.bub{position:absolute;border:1px solid #bcd8ff44;border-radius:50%;animation:rise linear infinite}
+@keyframes rise{0%{transform:translateY(0);opacity:0}12%{opacity:.7}100%{transform:translateY(-92vh);opacity:0}}
+.hud{position:absolute;left:0;right:0;top:0;display:grid;grid-template-columns:1fr auto 1fr;
+  gap:8px;padding:14px;align-items:start;z-index:5}
+.pod{background:var(--pod);border:1px solid var(--hairline);padding:8px 14px 10px;
+  clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);min-width:118px}
+.pod .label{font-size:12px;letter-spacing:.22em;color:#7f9ab5}
+.pod b{display:block;font-size:clamp(26px,6vw,40px);line-height:1;font-weight:400}
+.pod.depth b{color:var(--cyan)}.pod.score{justify-self:end;text-align:right}
+.pod.score b{color:var(--pink)}
+.hud-mid{display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:4px}
+.dots{display:flex;gap:5px}
+.dots i{width:9px;height:9px;border:1px solid #7f9ab5;display:block}
+.dots i.done{background:#7f9ab5}.dots i.cur{background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.count{font-size:13px;letter-spacing:.24em;color:#9fb6cf}
+.world{position:absolute;inset:0;z-index:2}
+.surface{position:absolute;left:0;right:0;top:64px;text-align:center;pointer-events:none}
+.surface h1{font-size:clamp(34px,8vw,64px);letter-spacing:.18em;color:#cfefff;font-weight:400;
+  text-shadow:-2px 0 #4de3ff,2px 0 #ff5d8f}
+.surface p{margin-top:2px;letter-spacing:.3em;color:#8fc6dd;font-size:14px}
+.card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(620px,90vw);
+  background:#061827f2;border:1px solid var(--hairline);padding:22px 24px 18px;z-index:4;
+  clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);
+  box-shadow:0 20px 60px #000a}
+.card .rnd{font-size:13px;letter-spacing:.26em;color:#ff8fb3}
+.card .prompt{font-size:clamp(26px,5.4vw,40px);line-height:1.08;margin:8px 0 10px}
+.card .hint{font-size:13px;letter-spacing:.12em;color:#8fa7c4}
+.card.gone{animation:cardout .6s ease-in forwards}
+@keyframes cardout{to{opacity:0;filter:blur(2px);transform:translate(-50%,-58%) scale(.9)}}
+@keyframes cardin{from{opacity:0;transform:translate(-50%,-44%) scale(.94)}}
+.dock{position:absolute;left:0;right:0;bottom:0;padding:14px;z-index:6;background:linear-gradient(#04070d00,#04070de6 38%)}
+.dock form{display:flex;gap:10px;width:min(720px,94vw);margin:0 auto;align-items:stretch}
+.correction{display:none;width:min(720px,94vw);margin:0 auto 8px;border:1px solid #3d7088;background:#061827f5;
+  padding:7px 12px;text-align:center;font-size:16px}
+.correction.show{display:block}
+.correction b{color:#ffc0d4;font-weight:400}.correction .arrow{color:var(--cyan);margin:0 6px}
+.correction small{display:block;color:#8fb0c9;font-size:12px;letter-spacing:.1em;margin-top:2px}
+.clock{width:58px;height:58px;border:1px solid #3d7088;border-radius:50%;display:grid;place-items:center;
+  font-size:26px;color:var(--cyan);flex:none}
+.clock.low{color:var(--pink);border-color:var(--pink)}
+.answer{flex:1;background:#020a12;border:1px solid #3d7088;color:var(--ink);font:inherit;font-size:26px;
+  padding:10px 14px;min-width:0}
+.answer:focus{outline:2px solid var(--cyan);outline-offset:1px}
+.dive{background:var(--pink);color:#1a0310;font-size:26px;letter-spacing:.14em;padding:0 26px;border:1px solid #ff9dbb}
+.dive:hover{filter:brightness(1.08)}
+.skip{display:block;margin:8px auto 0;color:#8fa7c4;font-size:15px;letter-spacing:.08em}
+.skip:hover{color:#cfefff}
+
+/* reveal */
+.landed{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:min(560px,90vw);
+  text-align:center;z-index:5;opacity:0;pointer-events:none}
+.landed.on{opacity:1;pointer-events:auto;animation:bannerin .8s cubic-bezier(.2,1.7,.4,1)}
+@keyframes bannerin{from{opacity:0;transform:translate(-50%,-50%) scale(.5)}}
+.landed .icon{width:56px;height:56px;image-rendering:pixelated;filter:drop-shadow(0 0 12px var(--tc))}
+.landed .tname{font-size:clamp(30px,7vw,48px);letter-spacing:.12em;color:var(--tc);margin-top:4px;
+  text-shadow:0 0 22px color-mix(in srgb,var(--tc) 60%,transparent)}
+.landed .tans{font-size:clamp(22px,4.6vw,30px);color:#eaf6ff;margin-top:6px}
+.landed .tpts{font-size:18px;color:#cfe1f2;margin-top:6px;letter-spacing:.08em}
+.landed .tpts b{color:var(--tc)}
+.landed .tsub{font-size:15px;color:#9fb6cf;margin-top:4px}
+.next{display:inline-block;margin-top:16px;border:1px solid var(--cyan);color:#dff6ff;padding:10px 22px;
+  font-size:22px;letter-spacing:.12em;background:#041521ee}
+.next:hover{background:#062434}
+.divebar{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;text-align:center;display:none}
+.divebar.on{display:block}
+.divebar .big{font-size:64px;color:var(--cyan);text-shadow:0 0 30px #4de3ff66}
+.divebar .sub{font-size:14px;letter-spacing:.3em;color:#8fa7c4}
+.shake{animation:shake .3s}
+@keyframes shake{25%{transform:translate(-52%,-50%)}75%{transform:translate(-48%,-50%)}}
+
+/* results */
+#done{background:linear-gradient(#062135,#03101c)}
+#done .wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px}
+#done h2{font-size:clamp(30px,6vw,44px);letter-spacing:.16em;color:var(--cyan);font-weight:400}
+#done .total{font-size:64px;color:var(--gold,#ffd166);line-height:1}
+#done .total small{font-size:22px;color:#9fb6cf;display:block;letter-spacing:.2em}
+.rows{width:min(620px,94vw);margin-top:8px;display:flex;flex-direction:column;gap:4px;max-height:46vh;overflow:auto}
+.row{display:grid;grid-template-columns:20px 1fr auto;gap:8px;align-items:center;border-bottom:1px solid #ffffff12;
+  padding:5px 2px;font-size:16px;text-align:left}
+.row .dot{width:9px;height:9px;background:var(--tc);box-shadow:0 0 8px var(--tc)}
+.row .q{color:#cfe1f2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .p{color:var(--tc)}
+.again{margin-top:14px;border:1px solid var(--cyan);padding:10px 22px;font-size:22px;letter-spacing:.12em}
+</style>
+</head>
+<body data-view="home">
+
+<!-- HOME -->
+<section class="screen on" id="home">
+  <div class="sun"></div><div class="cloud c1"></div><div class="cloud c2"></div>
+  <div class="mast"></div><div class="flag"></div><div class="boat"></div>
+  <div class="wrap">
+    <div class="wordmark">KRILLION</div>
+    <div class="tagline">DET DAGLIGE DYK</div>
+    <p class="pitch">7 spørgsmål · 25 sekunder hver · jo sjældnere svar, jo dybere</p>
+    <button class="begin" id="begin">▼ BEGYND NEDSTIGNING ▼</button>
+    <div class="secondary">
+      <button id="howto">SÅDAN SPILLER DU</button>
+      <button id="statsBtn">STATISTIK</button>
+    </div>
+    <div class="stats" id="homeStats">…</div>
+  </div>
+  <div class="foot">ONE IN A KRILLION.</div>
+</section>
+
+<!-- PLAY -->
+<section class="screen" id="play">
+  <div class="sea"></div>
+  <div class="hud">
+    <div class="pod depth"><span class="label">DYBDE</span><b id="depth">0m</b></div>
+    <div class="hud-mid"><div class="dots" id="dots"></div><div class="count" id="count">OVERFLADEN</div></div>
+    <div class="pod score"><span class="label">POINT</span><b id="score">0</b></div>
+  </div>
+  <div class="world">
+    <div class="surface"><h1>KRILLION</h1><p>DET DAGLIGE DYK</p></div>
+  </div>
+  <div class="divebar" id="divebar"><div class="big" id="diveDepth">0m</div><div class="sub">SYNKER</div></div>
+  <div class="landed" id="landed">
+    <img class="icon" id="landedIcon" alt="">
+    <div class="tname" id="landedName"></div>
+    <div class="tans" id="landedAns"></div>
+    <div class="tpts" id="landedPts"></div>
+    <div class="tsub" id="landedSub"></div>
+    <button class="next" id="next">NÆSTE ▼</button>
+  </div>
+  <div class="dock">
+    <div class="correction" id="correction"></div>
+    <form id="form">
+      <div class="clock" id="clock">25</div>
+      <input class="answer" id="answer" autocomplete="off" spellcheck="false" maxlength="120" placeholder="skriv ét svar…">
+      <button class="dive" id="dyk" type="submit">DYK</button>
+    </form>
+    <button class="skip" id="skip">spring over →</button>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section class="screen" id="done">
+  <div class="wrap">
+    <h2>DYKKET ER SLUT</h2>
+    <div class="total"><span id="finalScore">0</span> point<small id="finalDepth"></small></div>
+    <div class="rows" id="rows"></div>
+    <button class="again" id="again">DYRK IGEN I MORGEN</button>
+  </div>
+</section>
+
+<script src="data.js"></script>
+<script>
+const CATS=[
+ {id:'plankton',name:'Plankton',points:10,color:'#8fa3c4',frac:.08},
+ {id:'too-clever',name:'For klog',points:15,color:'#ff9f43',frac:.18},
+ {id:'schooler',name:'Skolefisk',points:30,color:'#4de3ff',frac:.36},
+ {id:'rare',name:'Sjælden',points:60,color:'#ff5252',frac:.60},
+ {id:'deep-cut',name:'Dyb skæring',points:85,color:'#9d7bff',frac:.82},
+ {id:'krillion',name:'Én ud af en krillion',points:100,color:'#ffd166',frac:.97}
+];
+const byId=Object.fromEntries(CATS.map(c=>[c.id,c]));
+const $=s=>document.querySelector(s);
+const DATA=window.KRILLION_DATA||[];
+const DAY=Math.floor((Date.now()-Date.UTC(2026,0,1))/864e5)+1;
+
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuffle(a,r){a=a.slice();for(let i=a.length-1;i>0;i--){const j=r()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+const DECK=shuffle(DATA,rng(20260101));
+const OFF=(DAY*7)%DECK.length;
+const TODAY=Array.from({length:7},(_,i)=>DECK[(OFF+i)%DECK.length]);
+
+const norm=s=>s.normalize('NFKC').toLowerCase().trim().replace(/\s+/g,' ');
+const loose=s=>norm(s).replace(/[^a-zæøåéü0-9]/g,'');
+function fold(t){return norm(t).replace(/ä/g,'æ').replace(/ö/g,'ø').replace(/ü/g,'u').replace(/ss/g,'s').replace(/[éèê]/g,'e').replace(/aa/g,'å').replace(/ae/g,'æ').replace(/oe/g,'ø').replace(/ph/g,'f').replace(/ck/g,'k').replace(/w/g,'v').replace(/[^a-zæøå0-9]/g,'').replace(/(.)\1+/g,'$1')}
+function dd(a,b){const m=[];for(let i=0;i<=a.length;i++){m[i]=[i];for(let j=1;j<=b.length;j++)m[i][j]=i?Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]==b[j-1]?0:1),i>1&&j>1&&a[i-1]==b[j-2]&&a[i-2]==b[j-1]?m[i-2][j-2]+1:9):j}return m[a.length][b.length]}
+
+let run=null,timer=null,sink=null,sinkEase=bez(.5,0,.85,.6);
+function bez(x1,y1,x2,y2){const A=(a,b)=>1-3*b+3*a,B=(a,b)=>3*b-6*a,C=a=>3*a;
+ const cv=(t,a,b)=>((A(a,b)*t+B(a,b))*t+C(a))*t,sl=(t,a,b)=>3*A(a,b)*t*t+2*B(a,b)*t+C(a);
+ return t=>{if(t<=0)return 0;if(t>=1)return 1;let u=t;for(let i=0;i<8;i++){const x=cv(u,x1,x2)-t;if(Math.abs(x)<1e-5)break;const d=sl(u,x1,x2);if(Math.abs(d)<1e-6)break;u-=x/d}return cv(u,y1,y2)}}
+
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));document.body.dataset.view=id}
+function bubbles(){const play=$('#play');for(let i=0;i<26;i++){const b=document.createElement('div');b.className='bub';
+ const s=2+Math.random()*5;b.style.width=s+'px';b.style.height=s+'px';b.style.left=Math.random()*100+'%';
+ b.style.top=(60+Math.random()*45)+'%';b.style.animationDuration=(9+Math.random()*14)+'s';
+ b.style.animationDelay=(-Math.random()*18)+'s';play.appendChild(b)}}
+
+function homeStats(){
+ const total=DATA.reduce((n,q)=>n+q.answers.length,0);
+ $('#homeStats').innerHTML=DATA.length+' spørgsmål · '+total.toLocaleString('da-DK')+' svar i alt<br>DYK #'+DAY+' · ÉN FIL · INGEN KONTO';
+}
+
+function start(){
+ show('play');run={i:0,total:0,rows:[],phase:'read',correction:null};
+ $('#landed').classList.remove('on');$('#divebar').classList.remove('on');
+ drawDots();$('#score').textContent='0';$('#depth').textContent='0m';
+ $('#count').textContent='OVERFLADEN';
+ $('#answer').value='';$('#answer').disabled=true;$('#dyk').disabled=true;
+ $('#correction').classList.remove('show');$('#correction').innerHTML='';
+ let n=3;const cd=setInterval(()=>{n--;if(n>0){$('#count').textContent='SYNKER · URET STARTER OM '+n;return}
+  clearInterval(cd);$('#answer').disabled=false;$('#dyk').disabled=false;$('#answer').focus();ask()},800);
+}
+function drawDots(){const d=$('#dots');d.innerHTML='';for(let i=0;i<7;i++){const e=document.createElement('i');e.className=i<run.i?'done':i===run.i?'cur':'';d.appendChild(e)}}
+function ask(){
+ if(!run)return;
+ if(run.i>=7)return finish();
+ const q=TODAY[run.i];
+ run.phase='answer';run.correction=null;run.deadline=performance.now()+25000;
+ $('#count').textContent='SPØRGSMÅL '+(run.i+1)+' AF 7';
+ $('#correction').classList.remove('show');$('#correction').innerHTML='';
+ const card=document.createElement('div');
+ card.className='card';card.id='card';
+ card.innerHTML='<div class="rnd">SPØRGSMÅL '+(run.i+1)+' AF 7</div><div class="prompt"></div><div class="hint">▼ jo sjældnere svar, jo dybere ▼</div>';
+ card.querySelector('.prompt').textContent=q.prompt;
+ const old=$('#card');if(old)old.remove();
+ $('#play').insertBefore(card,$('#landed').nextSibling);
+ clearInterval(timer);timer=setInterval(tick,100);tick();
+}
+function tick(){
+ if(!run||run.phase!=='answer')return;
+ const left=Math.max(0,run.deadline-performance.now());
+ $('#clock').textContent=Math.ceil(left/1000);
+ $('#clock').classList.toggle('low',left<6000);
+ if(left<=0){clearInterval(timer);submit(true)}
+}
+function showCorrection(raw,ans){
+ run.correction={from:raw,to:ans.text};
+ const box=$('#correction');
+ box.innerHTML='<span>“'+esc(raw)+'”<span class="arrow">→</span><b>“'+esc(ans.text)+'”</b></span><small>tryk DYK igen for at bekræfte · eller ret svaret</small>';
+ box.classList.add('show');
+ const inp=$('#answer');inp.value=ans.text;inp.focus();inp.select();
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function submit(timeout){
+ if(!run||run.phase!=='answer')return;
+ const raw=$('#answer').value.trim();
+ if(!raw&&!timeout){shake();return}
+ if(!raw&&timeout)return land(null,raw,'Tiden løb ud');
+ if(run.correction)return land(run.correction.ans,run.correction.answer,'Stavefejl rettet. Svar låst.');
+ const q=TODAY[run.i];
+ const exact=q.answers.find(a=>norm(a.text)===norm(raw))||q.answers.find(a=>loose(a.text)===loose(raw));
+ if(exact)return land(exact,raw);
+ const f=fold(raw);let best=99,out=[];
+ for(const a of q.answers){const k=fold(a.text);if(Math.abs(k.length-f.length)>2)continue;const d=dd(f,k);if(d<best){best=d;out=[a]}else if(d===best)out.push(a)}
+ if(!out.length||best>1)return land(null,raw,'Ikke i ordbogen — prøv igen');
+ const ans=out[0];run.correction={ans,answer:raw};showCorrection(raw,ans);
+}
+function shake(){const c=$('#card');if(!c)return;c.classList.remove('shake');void c.offsetWidth;c.classList.add('shake')}
+function land(ans,raw,sub){
+ if(!run||run.phase!=='answer')return;
+ run.phase='dive';clearInterval(timer);
+ const cat=ans&&byId[ans.category]?byId[ans.category]:null;
+ const pts=cat?cat.points:0;
+ const depthFrom=run.depth||0;
+ const depthTo=cat?Math.round(cat.frac*9700):0;
+ const card=$('#card');if(card){card.classList.add('gone');setTimeout(()=>card.remove(),650)}
+ $('#correction').classList.remove('show');
+ $('#divebar').classList.add('on');
+ const t0=performance.now();
+ sink={t0,depthFrom,depthTo};
+ setTimeout(()=>reveal(ans,cat,raw,sub,pts,depthTo),950);
+ const step=()=>{
+  const p=Math.min(1,(performance.now()-t0)/900),e=sinkEase(p);
+  const d=Math.round(depthFrom+(depthTo-depthFrom)*e);
+  $('#depth').textContent=d.toLocaleString('da-DK')+'m';
+  $('#diveDepth').textContent=d.toLocaleString('da-DK')+'m';
+  if(p<1)requestAnimationFrame(step);
+ };
+ requestAnimationFrame(step);
+ run.pending={ans,cat,raw,sub,pts,depthTo};
+}
+function reveal(ans,cat,raw,sub,pts,depthTo){
+ const box=$('#landed');
+ box.style.setProperty('--tc',cat?cat.color:'#3d4f6e');
+ $('#landedIcon').style.display=cat?'block':'none';
+ if(cat)$('#landedIcon').src='tiers/'+cat.id+'.png';
+ $('#landedName').textContent=cat?cat.name.toUpperCase():'INTET LANDEDE';
+ $('#landedAns').textContent=ans?'“'+ans.text+'”':'—';
+ $('#landedPts').innerHTML=cat?'<b>+'+pts+' PTS</b> · synk '+(pts*10).toLocaleString('da-DK')+'m':'';
+ $('#landedSub').textContent=sub||'';
+ box.classList.add('on');
+ $('#divebar').classList.remove('on');
+ run.total+=pts;run.depth=depthTo;
+ $('#score').textContent=run.total;
+ run.rows.push({q:TODAY[run.i].prompt,a:ans?ans.text:'—',cat,pts});
+ setTimeout(()=>{const c=$('#card');if(c)c.remove()},0);
+}
+function nextQ(){if(!run)return;const box=$('#landed');box.classList.remove('on');run.i++;drawDots();if(run.i>=7)finish();else ask()}
+function finish(){
+ if(!run||run.phase==='done')return;run.phase='done';clearInterval(timer);
+ const box=$('#landed');box.classList.remove('on');
+ $('#finalScore').textContent=run.total;
+ $('#finalDepth').textContent='SYNKEDE '+((run.depth||0)/1000).toFixed(2)+' KM';
+ const rows=$('#rows');rows.innerHTML='';
+ for(const r of run.rows){
+  const el=document.createElement('div');el.className='row';
+  el.style.setProperty('--tc',r.cat?r.cat.color:'#3d4f6e');
+  el.innerHTML='<span class="dot"></span><span class="q"></span><span class="p"></span>';
+  el.querySelector('.q').textContent=r.q+' · '+r.a;
+  el.querySelector('.p').textContent=r.pts>0?'+'+r.pts:'0';
+  rows.appendChild(el);
+ }
+ show('done');
+}
+
+$('#begin').onclick=start;
+$('#again').onclick=()=>{start()};
+$('#howto').onclick=()=>alert('Skriv ét svar pr. spørgsmål. Jo sjældnere svar, jo dybere synker du.\n\n7 spørgsmål · 25 sekunder hver.\nStavefejl rettes automatisk — tryk DYK igen for at bekræfte.');
+$('#statsBtn').onclick=()=>alert('Dagens dyk er nr. '+DAY+'.\n'+TODAY.map((q,i)=>(i+1)+'. '+q.prompt).join('\n'));
+$('#form').addEventListener('submit',e=>{e.preventDefault();submit(false)});
+$('#skip').onclick=()=>{if(run&&run.phase==='answer'){run.correction=null;land(null,$('#answer').value,'Sprunget over')}};
+$('#next').onclick=nextQ;
+$('#answer').addEventListener('input',()=>{if(run&&run.correction){run.correction=null;$('#correction').classList.remove('show');$('#correction').innerHTML=''}});
+homeStats();bubbles();
+</script>
+</body>
+</html>

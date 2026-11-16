@@ -21,18 +21,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .screen.on{display:block}
 
 /* ---------- home ---------- */
-#home{background:linear-gradient(#8fd3ea 0%,#bfe6f2 38%,#e9f6fb 55%,#0b3d56 55.2%,#062b41 70%,#03121d 100%)}
-#home .sun{position:absolute;right:12%;top:9%;width:130px;height:130px;background:#ffd166;
-  box-shadow:0 0 0 14px #ffe08a55,0 0 90px #ffd16688}
-#home .cloud{position:absolute;background:#fff;opacity:.85;height:18px}
-#home .c1{left:6%;top:22%;width:210px;box-shadow:0 -22px 0 10px #fff,60px -12px 0 6px #fff}
-#home .c2{right:8%;top:34%;width:160px;box-shadow:0 -18px 0 8px #fff}
-#home .boat{position:absolute;left:50%;top:48.5%;width:150px;height:46px;transform:translateX(-50%);
-  background:#06222f;clip-path:polygon(0 40%,100% 40%,88% 100%,10% 100%)}
-#home .mast{position:absolute;left:50%;top:41.5%;width:4px;height:52px;background:#06222f}
-#home .flag{position:absolute;left:calc(50% + 4px);top:41.5%;width:34px;height:18px;background:var(--pink)}
+#home{background:linear-gradient(#8fd3ea 0%,#bfe6f2 30%,#e9f6fb 46%,#0b3d56 46.2%,#062b41 66%,#03121d 100%)}
+#home .sun{position:absolute;right:8%;top:5%;width:64px;height:64px;background:#ffd166;
+  box-shadow:0 0 0 7px #ffe08a44,0 0 40px #ffd16655}
+
 #home .wrap{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;padding:24px;text-align:center;gap:6px}
+  justify-content:flex-start;padding:11vh 24px 24px;text-align:center;gap:4px}
 .wordmark{font-size:clamp(56px,15vw,132px);letter-spacing:.14em;line-height:.9;color:#08202c;
   text-shadow:-3px 0 #4de3ff,3px 0 #ff5d8f,0 0 30px #ffffff88}
 .tagline{margin-top:2px;letter-spacing:.34em;font-size:clamp(16px,3.4vw,26px);color:#0b3143}
@@ -41,11 +35,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   padding:18px 34px;font-size:clamp(22px,4.4vw,34px);letter-spacing:.12em;min-width:min(560px,86vw);
   box-shadow:0 0 26px #4de3ff33;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
 .begin:hover{background:#062434;box-shadow:0 0 34px #4de3ff66}
-.secondary{margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
-.secondary button{border:1px solid #0b314377;background:#e8f7fbd9;color:#08202c;padding:11px 20px;
-  font-size:clamp(15px,2.6vw,20px);letter-spacing:.08em;min-width:200px}
+.secondary{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;width:min(560px,86vw)}
+.secondary button{border:1px solid #0b314377;background:#eaf8fc;color:#08202c;padding:11px 10px;
+  font-size:clamp(14px,2.4vw,19px);letter-spacing:.06em;min-width:0}
 .secondary button:hover{background:#fff}
-.stats{margin-top:20px;color:#0e3a4d;font-size:16px;letter-spacing:.06em;line-height:1.5}
+.stats{margin-top:18px;color:#a9c9d8;font-size:16px;letter-spacing:.06em;line-height:1.5}
 .foot{position:absolute;left:0;right:0;bottom:14px;text-align:center;color:#7fb3c6;font-size:14px;letter-spacing:.24em}
 
 /* ---------- play ---------- */
@@ -68,8 +62,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .dots i.done{background:#7f9ab5}.dots i.cur{background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 8px var(--cyan)}
 .count{font-size:13px;letter-spacing:.24em;color:#9fb6cf}
 .world{position:absolute;inset:0;z-index:2}
-.surface{position:absolute;left:0;right:0;top:64px;text-align:center;pointer-events:none}
-.surface h1{font-size:clamp(34px,8vw,64px);letter-spacing:.18em;color:#cfefff;font-weight:400;
+.surface{position:absolute;left:0;right:0;top:126px;text-align:center;pointer-events:none;opacity:.9}
+.surface h1{font-size:clamp(24px,5vw,40px);letter-spacing:.2em;color:#cfefff;font-weight:400;
   text-shadow:-2px 0 #4de3ff,2px 0 #ff5d8f}
 .surface p{margin-top:2px;letter-spacing:.3em;color:#8fc6dd;font-size:14px}
 .card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(620px,90vw);
@@ -95,17 +89,19 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .answer{flex:1;background:#020a12;border:1px solid #3d7088;color:var(--ink);font:inherit;font-size:26px;
   padding:10px 14px;min-width:0}
 .answer:focus{outline:2px solid var(--cyan);outline-offset:1px}
+.answer::placeholder{color:#5f7c96}
 .dive{background:var(--pink);color:#1a0310;font-size:26px;letter-spacing:.14em;padding:0 26px;border:1px solid #ff9dbb}
 .dive:hover{filter:brightness(1.08)}
 .skip{display:block;margin:8px auto 0;color:#8fa7c4;font-size:15px;letter-spacing:.08em}
 .skip:hover{color:#cfefff}
+.dock.locked{opacity:.35;pointer-events:none}
 
 /* reveal */
 .landed{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:min(560px,90vw);
   text-align:center;z-index:5;opacity:0;pointer-events:none}
 .landed.on{opacity:1;pointer-events:auto;animation:bannerin .8s cubic-bezier(.2,1.7,.4,1)}
 @keyframes bannerin{from{opacity:0;transform:translate(-50%,-50%) scale(.5)}}
-.landed .icon{width:56px;height:56px;image-rendering:pixelated;filter:drop-shadow(0 0 12px var(--tc))}
+.landed .icon{display:block;margin:0 auto 6px;width:56px;height:56px;image-rendering:pixelated;filter:drop-shadow(0 0 12px var(--tc))}
 .landed .tname{font-size:clamp(30px,7vw,48px);letter-spacing:.12em;color:var(--tc);margin-top:4px;
   text-shadow:0 0 22px color-mix(in srgb,var(--tc) 60%,transparent)}
 .landed .tans{font-size:clamp(22px,4.6vw,30px);color:#eaf6ff;margin-top:6px}
@@ -141,8 +137,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 <!-- HOME -->
 <section class="screen on" id="home">
-  <div class="sun"></div><div class="cloud c1"></div><div class="cloud c2"></div>
-  <div class="mast"></div><div class="flag"></div><div class="boat"></div>
+  <div class="sun"></div>
   <div class="wrap">
     <div class="wordmark">KRILLION</div>
     <div class="tagline">DET DAGLIGE DYK</div>
@@ -264,6 +259,7 @@ function ask(){
  card.querySelector('.prompt').textContent=q.prompt;
  const old=$('#card');if(old)old.remove();
  $('#play').insertBefore(card,$('#landed').nextSibling);
+ $('.dock').classList.remove('locked');$('#clock').textContent='25';
  clearInterval(timer);timer=setInterval(tick,100);tick();
 }
 function tick(){
@@ -305,6 +301,7 @@ function land(ans,raw,sub){
  const depthTo=cat?Math.round(cat.frac*9700):0;
  const card=$('#card');if(card){card.classList.add('gone');setTimeout(()=>card.remove(),650)}
  $('#correction').classList.remove('show');
+ $('.dock').classList.add('locked');
  $('#divebar').classList.add('on');
  const t0=performance.now();
  sink={t0,depthFrom,depthTo};
@@ -313,6 +310,7 @@ function land(ans,raw,sub){
   const p=Math.min(1,(performance.now()-t0)/900),e=sinkEase(p);
   const d=Math.round(depthFrom+(depthTo-depthFrom)*e);
   $('#depth').textContent=d.toLocaleString('da-DK')+'m';
+  const sf=$('#play .surface');if(sf){sf.style.opacity=d>500?'0':'.9';sf.style.transform='translateY('+(-d*0.02)+'px)'};
   $('#diveDepth').textContent=d.toLocaleString('da-DK')+'m';
   if(p<1)requestAnimationFrame(step);
  };

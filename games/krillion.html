@@ -1087,8 +1087,6 @@ Z("Nævn noget man siger, når man er sulten","maden er klar@.12,jeg kunne spise
 Z("Nævn noget man siger, når man er træt","jeg falder snart sammen@.12,jeg skal have kaffe@.30,mine øjne er tunge@.50,jeg gider ikke mere@.70,jeg går i seng@.86");
 Z("Nævn noget man kan købe i en kiosk","banan@.12,sandwich@.30,slikpose@.50,dåse sodavand@.70,frugt@.86");
 const C=[...LF.map(([t,f])=>[t,LAND.filter(f).map(c=>c.n)]),...HL].filter(a=>a[1].length>=30).map(a=>mk(a[0],a[1],a[0]=="Nævn en berømt dansker"));
-/* Keep country and state city questions to the well-known places. */
-C.forEach(q=>{ if(/^Nævn en (amerikansk )?by i |^Nævn en dansk by$|^Nævn en amerikansk by$/.test(q.prompt)) q.answers=q.answers.slice(0,60); });
 const dt=w=>{let r=(w.match(/[zxqwcyåæø]/g)||[]).length,s=w.length+3*r-(/(erne|ernes|ens|ets|er|et|en|es|s)$/.test(w)?2:0);return Math.max(0,Math.min(5,Math.floor((s-6)/2.7)))};
 const VO=w=>new Set(w.match(/[aeiouyæøå]/g)||[]).size;
 const PT=[["Skriv et ord der indeholder både «y» og «ø»",w=>/y/.test(w)&&/ø/.test(w)&&w.length>=5],["Skriv et ord på mindst 9 bogstaver, der kun har én slags vokal",w=>w.length>=9&&VO(w)==1],["Skriv et ord på mindst 6 bogstaver, der starter og slutter med samme bogstav",w=>w.length>=6&&w[0]==w.at(-1)],["Skriv et ord der slutter på «ning» og indeholder et «å»",w=>/ning$/.test(w)&&/å/.test(w)],["Skriv et ord med dobbelt-«k» og mindst 8 bogstaver",w=>/kk/.test(w)&&w.length>=8],["Skriv et ord der starter med «ps», «ks» eller «gn»",w=>/^(ps|ks|gn)/.test(w)],["Skriv et ord med præcis to «æ» og mindst 8 bogstaver",w=>(w.match(/æ/g)||[]).length==2&&w.length>=8]].map(([t,f])=>({text:t,f,judge(v){const w=norm(v);return f(w)&&ok(w)?{t:dt(w),a:w}:null}}));

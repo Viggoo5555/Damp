@@ -2502,6 +2502,7 @@ const DA_PATTERNS = [
   [/^(.+) left the garden\.$/, m => m[1] + ' forlod haven.'],
   [/^(.+) · wave (\d+) · (\d+) hearts · team (\d+) pts( · finished)?$/, m => m[1] + ' · bølge ' + m[2] + ' · ' + m[3] + ' hjerter · hold ' + m[4] + ' pt' + (m[5] ? ' · færdig' : '')],
   [/^Your friend sent wave (\d+)$/, m => 'Din ven sendte bølge ' + m[1]],
+  [/^Your friend set speed (\d+)x$/, m => 'Din ven satte farten til ' + m[1] + 'x'],
   [/^Team score (\d+)\. Keep the garden standing\.$/, m => 'Holdscore ' + m[1] + '. Hold haven stående.'],
   [/^Planted by (.+) · skin (.+)$/, m => 'Plantet af ' + m[1] + ' · skin ' + m[2]]
 ];
@@ -3220,6 +3221,7 @@ function usePower(id) {
   if (!game || mode !== 'play') return;
   const r = game.usePower(id);
   if (!r.ok) { toast(r.reason === 'idle' ? 'Powers work during a wave' : r.reason === 'cool' ? 'Still cooling down' : ''); Sound.play('error'); }
+  else if (mp.active) mpSend({ t: 'power', id: id });
 }
 function toggleAuto() {
   if (!game) return;
@@ -3607,7 +3609,7 @@ $('tradeSkip').addEventListener('click', () => { closeTrade(); try { Sound.play(
 $('tradeModal').addEventListener('click', e => { if (e.target === $('tradeModal')) closeTrade(); });
 
 /* ---------- multiplayer race ---------- */
-const mp = { ws: null, role: '', code: '', level: -1, peer: '', progress: null, active: false, starting: false, timer: null, startT: null, leaving: false, peerLeft: false, peerSkin: '', peerSkinSynced: false, pending: [], pid: '', uidN: 0 };
+const mp = { ws: null, role: '', code: '', level: -1, peer: '', progress: null, active: false, starting: false, timer: null, startT: null, leaving: false, peerLeft: false, peerSkin: '', peerSkinSynced: false, pending: [], pid: '', uidN: 0, waveTarget: 0 };
 let mpPick = 0;
 
 function playerName() {
@@ -3709,6 +3711,7 @@ function mpNewUid() {
 function mpTowerOut(msg) {
   if (mp.active && msg && msg.uid) mpSend(Object.assign({ t: 'tw' }, msg));
 }
+function mpSpeedOut(n) { if (mp.active) mpSend({ t: 'speed', n: n }); }
 
 function mpProgress() {
   if (!mp.active || !game) return null;
@@ -3841,9 +3844,20 @@ function mpHandle(raw) {
     return;
   }
   if (m.t === 'tw') { mpTowerIn(m); return; }
+  if (m.t === 'speed') {
+    const n = Number(m.n);
+    if (n === 1 || n === 2 || n === 3) { setSpeed(n); toast('Your friend set speed ' + n + 'x'); }
+    return;
+  }
+  if (m.t === 'power') {
+    if (mp.active && game) game.usePower(m.id);
+    return;
+  }
   if (m.t === 'wave') {
-    if (!mp.active || !game || game.state !== 'idle' || mp.applyingWave) return;
-    if (!(m.n > game.wave)) return;
+    if (!mp.active || !game || mp.applyingWave) return;
+    const n = Number(m.n) || 0;
+    if (n > mp.waveTarget) mp.waveTarget = n;
+    if (game.state !== 'idle' || !(n > game.wave)) return;
     mp.applyingWave = true;
     game.sendWave();
     mp.applyingWave = false;
@@ -3889,7 +3903,13 @@ function mpTowerIn(m) {
 }
 
 function mpDrain() {
-  if (!mp.pending.length || !mp.active || !game) return;
+  if (!mp.active || !game) return;
+  if (mp.waveTarget > game.wave && game.state === 'idle' && !mp.applyingWave) {
+    mp.applyingWave = true;
+    game.sendWave();
+    mp.applyingWave = false;
+  }
+  if (!mp.pending.length) return;
   const now = Date.now(), keep = [];
   for (const q of mp.pending) {
     if (now > q.until) continue;
@@ -3911,6 +3931,7 @@ function beginMpRace(level) {
   mp.pending = [];
   mp.peerSkin = '';
   mp.peerSkinSynced = false;
+  mp.waveTarget = 0;
   $('mpModal').hidden = true;
   startLevel(level);
   mp.starting = false;
@@ -3925,7 +3946,7 @@ function mpLeave(silent) {
   clearInterval(mp.timer);
   clearTimeout(mp.startT);
   const ws = mp.ws;
-  mp.ws = null; mp.active = false; mp.leaving = true; mp.progress = null; mp.pending = []; mp.peerSkin = ''; mp.peerSkinSynced = false;
+  mp.ws = null; mp.active = false; mp.leaving = true; mp.progress = null; mp.pending = []; mp.peerSkin = ''; mp.peerSkinSynced = false; mp.waveTarget = 0;
   if (ws && ws.readyState === 1) { try { ws.send(JSON.stringify({ t: 'leave' })); } catch (error) { /* gone */ } }
   if (ws) { try { ws.close(); } catch (error) { /* gone */ } }
   mp.leaving = false;
@@ -4004,7 +4025,11 @@ function activateCell(col, row, touch) {
 btnWave.addEventListener('click', () => { if (mode === 'play') game.sendWave(); });
 btnAuto.addEventListener('click', () => { if (mode === 'play') toggleAuto(); });
 $('btnPause').addEventListener('click', () => setPaused(mode !== 'paused'));
-$('btnSpeed').addEventListener('click', () => { speed = speed === 1 ? 2 : speed === 2 ? 3 : 1; $('btnSpeed').textContent = speed + 'x'; });
+function setSpeed(n) {
+  speed = n === 2 ? 2 : n === 3 ? 3 : 1;
+  $('btnSpeed').textContent = speed + 'x';
+}
+$('btnSpeed').addEventListener('click', () => { setSpeed(speed === 1 ? 2 : speed === 2 ? 3 : 1); mpSpeedOut(speed); });
 function syncSettings() {
   const mv = Math.round((save.musicVol == null ? 0.5 : save.musicVol) * 100), sv = Math.round((save.sfxVol == null ? 0.5 : save.sfxVol) * 100);
   $('volMusic').value = mv; $('volMusicOut').textContent = mv + '%';

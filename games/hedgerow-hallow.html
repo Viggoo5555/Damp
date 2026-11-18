@@ -595,7 +595,7 @@
         <p>Press Send wave when you are ready, or switch on Auto. Rain, Thunder and Sunshine help in a tight spot.</p>
         <p>Win rounds to earn golden seeds. Spend them in the Shop on locked buddies; skins are sold by the mystery trader, who wanders into the garden with a new stock every hour. The Daily garden changes every day and keeps a streak. The Endless meadow never ends.</p>
         <p>Now and then a mystery trader wanders onto the grass and sells skins for golden seeds, plus a lucky bundle that hands you one random skin. Each garden also has two goals that pay golden seeds the first time you meet them.</p>
-        <p>Multiplayer races a friend on the same garden. Pick a map, share the five-letter room code, and play at the same time. The highest score wins.</p>
+        <p>Play a garden together. Pick a map, share the five-letter room code, and stop the same waves. You win or fall as a team, and your scores add up.</p>
         <p class="kb-only">Keyboard: arrows or WASD move the cursor, 1 to 9, 0, - and = pick a buddy, Enter plants, U and I buy upgrades, X sells, N sends the wave, Q E R use powers, T toggles Auto, P pauses, F changes speed.</p>
       </div>
     </div>
@@ -684,16 +684,16 @@
 <div class="modal" id="mpModal" hidden>
   <div class="mcard mpcard" role="dialog" aria-modal="true" aria-labelledby="mpTitle">
     <h2 id="mpTitle">Multiplayer</h2>
-    <p class="tabnote">Race a friend on the same garden. Pick the map, share the code, and play at the same time. The highest score wins.</p>
+    <p class="tabnote">Play a garden together. Pick the map, share the five-letter code, and stop the same waves. You hold the garden or lose it as a team.</p>
     <div id="mpLobby">
       <p class="mpwho">Playing as <b id="mpWho">Player</b></p>
       <h3 class="shop-h">Choose a map</h3>
       <div class="mpmaps" id="mpMaps"></div>
       <p class="tabnote">The host chooses the map. The guest joins with the host's code.</p>
       <div class="mprow">
-        <button class="btn primary" id="mpHost" type="button">Host race</button>
+        <button class="btn primary" id="mpHost" type="button">Start together</button>
         <input id="mpCode" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="CODE">
-        <button class="btn" id="mpJoin" type="button">Join race</button>
+        <button class="btn" id="mpJoin" type="button">Join together</button>
       </div>
       <p class="tabnote" id="mpMsg" role="status"></p>
     </div>
@@ -1205,6 +1205,7 @@ function createGame(L, onEvent) {
     }
     g.wave++; g.queue = waveSpawns(g.wave, L.diff); g.clock = 0; g.state = 'wave';
     emit('waveStart', g.wave);
+    if (window.mpWaveOut) window.mpWaveOut(g.wave);
     return true;
   };
   g.remaining = () => g.enemies.length + g.queue.length;
@@ -2266,6 +2267,12 @@ const DA = {
   "Guard the veggie patch from snails, beetles and one very rude badger.": "Beskyt køkkenhaven mod snegle, biller og en rigtig fræk grævling.",
   "Settings": "Indstillinger", "Music": "Musik", "Sound effects": "Lydeffekter", "Language": "Sprog",
   "Back": "Tilbage", "Play": "Spil", "Daily garden": "Dagens have", "Endless meadow": "Uendelig eng",
+  "Play a garden together. Pick a map, share the five-letter room code, and stop the same waves. You win or fall as a team, and your scores add up.": "Spil en have sammen. Vælg en bane, del den femtegns kode, og stop de samme bølger. I vinder eller falder som et hold, og jeres point lægges sammen.",
+  "Start together": "Start sammen", "Join together": "Vær med",
+  "Play a garden together. Pick the map, share the five-letter code, and stop the same waves. You hold the garden or lose it as a team.": "Spil en have sammen. Vælg banen, del den femtegns kode, og stop de samme bølger. I holder haven — eller taber den sammen.",
+  "That garden is full.": "Den have er fuld.", "No garden with that code. Check the code.": "Ingen have med den kode. Tjek koden.",
+  "Ready. Starting together…": "Klar. Starter sammen…", "The garden fell. You lost together.": "Haven faldt. I tabte sammen.",
+  "You held the garden together!": "I holdt haven sammen!", "Your friend's garden fell — you fall together": "Din vens have faldt — I falder sammen",
   "Gardens": "Haver", "Buddies": "Hjælpere", "Shop": "Butik", "Critters": "Kryb", "How to play": "Sådan spiller du",
   "Menu sections": "Menu", "Previous four gardens": "De fire forrige haver", "Next four gardens": "De fire næste haver",
   "Up next": "Næste", "Gentle": "Rolig", "Easy": "Let", "Tricky": "Drilsk", "Hard": "Svær", "Brutal": "Brutal",
@@ -2445,7 +2452,13 @@ const DA_PATTERNS = [
   [/^(\d+) golden seeds\. Unlock a locked buddy right here, in the Shop tab, or by tapping it twice in the game\.$/, m => m[1] + ' gyldne frø. Lås en låst hjælper op her, i Butik-fanen, eller ved at trykke to gange på den i spillet.'],
   [/^\+(\d+) seeds$/, m => '+' + m[1] + ' frø'],
   [/^Common ([\d.]+)% · Rare ([\d.]+)% · Epic ([\d.]+)% · Legendary ([\d.]+)% · Mythic ([\d.]+)%$/, m => 'Almindelig ' + m[1] + '% · Sjælden ' + m[2] + '% · Episk ' + m[3] + '% · Legendarisk ' + m[4] + '% · Mytisk ' + m[5] + '%'],
-  [/^(.+) · (new today|done today|streak \d+)$/, m => (daText(m[1]) || m[1]) + ' · ' + (m[2].startsWith('streak') ? 'serie ' + m[2].split(' ')[1] : m[2] === 'new today' ? 'nyt i dag' : 'klaret i dag')]
+  [/^(.+) · (new today|done today|streak \d+)$/, m => (daText(m[1]) || m[1]) + ' · ' + (m[2].startsWith('streak') ? 'serie ' + m[2].split(' ')[1] : m[2] === 'new today' ? 'nyt i dag' : 'klaret i dag')],
+  [/^Playing with (.+)…$/, m => 'Spiller med ' + m[1] + '…'],
+  [/^Playing with (.+)$/, m => 'Spiller med ' + m[1]],
+  [/^(.+) left the garden\.$/, m => m[1] + ' forlod haven.'],
+  [/^(.+) · wave (\d+) · (\d+) hearts · team (\d+) pts( · finished)?$/, m => m[1] + ' · bølge ' + m[2] + ' · ' + m[3] + ' hjerter · hold ' + m[4] + ' pt' + (m[5] ? ' · færdig' : '')],
+  [/^Your friend sent wave (\d+)$/, m => 'Din ven sendte bølge ' + m[1]],
+  [/^Team score (\d+)\. Keep the garden standing\.$/, m => 'Holdscore ' + m[1] + '. Hold haven stående.']
 ];
 function daText(raw) {
   if (!raw) return null;
@@ -3613,7 +3626,7 @@ function showMpRoom() {
   $('mpRoom').hidden = false;
   $('mpCodeShow').textContent = 'Code: ' + mp.code;
   $('mpWait').hidden = !!mp.peer;
-  $('mpPeer').textContent = mp.peer ? 'Racing with ' + mp.peer : '';
+  $('mpPeer').textContent = mp.peer ? 'Playing with ' + mp.peer : '';
 }
 
 function mpSetStatus(text, on) {
@@ -3629,9 +3642,13 @@ function mpSend(obj) {
 
 function mpProgress() {
   if (!mp.active || !game) return null;
-  return { t: 'p', name: save.mpName || 'Player', score: game.score || 0, wave: game.wave || 0, hearts: game.hearts || 0, cleared: game.cleared || 0, ended: mode === 'ended' || game.state === 'won' || game.state === 'lost' };
+  return { t: 'p', name: save.mpName || 'Player', score: game.score || 0, wave: game.wave || 0, hearts: game.hearts || 0, cleared: game.cleared || 0, lost: game.state === 'lost', won: game.state === 'won', ended: mode === 'ended' || game.state === 'won' || game.state === 'lost' };
 }
 
+function mpWaveOut(n) {
+  if (mp.active && !mp.applyingWave) mpSend({ t: 'wave', n: n });
+}
+window.mpWaveOut = mpWaveOut;
 function mpSendProgress() {
   const p = mpProgress();
   if (p) mpSend(p);
@@ -3640,9 +3657,10 @@ function mpSendProgress() {
 function mpHudText() {
   const p = mp.progress;
   if (!mp.active) return '';
-  if (mp.peerLeft) return (mp.peer || 'Your friend') + ' left the race.';
-  if (!p) return 'Racing with ' + (mp.peer || 'a friend') + '…';
-  return (mp.peer || 'Friend') + ' · wave ' + (p.cleared || p.wave || 0) + ' · ' + (p.hearts || 0) + ' hearts · ' + (p.score || 0) + ' pts' + (p.ended ? ' · finished' : '');
+  if (mp.peerLeft) return (mp.peer || 'Your friend') + ' left the garden.';
+  if (!p) return 'Playing with ' + (mp.peer || 'a friend') + '…';
+  const team = (game && game.score || 0) + (p.score || 0);
+  return (mp.peer || 'Friend') + ' · wave ' + (p.cleared || p.wave || 0) + ' · ' + (p.hearts || 0) + ' hearts · team ' + team + ' pts' + (p.ended ? ' · finished' : '');
 }
 
 function mpUpdateHud() {
@@ -3657,13 +3675,15 @@ function mpUpdateEndLine() {
   if (!el || !mp.active || !game) return;
   const p = mp.progress;
   if (!p) { el.hidden = false; el.textContent = 'Waiting for ' + (mp.peer || 'your friend') + ' to finish…'; return; }
-  const mine = game.score || 0, theirs = p.score || 0;
-  let verdict;
-  if (mine > theirs) verdict = 'You are ahead on points.';
-  else if (mine < theirs) verdict = (mp.peer || 'Your friend') + ' is ahead on points.';
-  else verdict = 'You are level on points.';
-  if (p.ended) verdict = mine > theirs ? 'You won the race!' : mine < theirs ? (mp.peer || 'Your friend') + ' won the race.' : 'The race was a tie.';
-  el.textContent = (mp.peer || 'Friend') + ': wave ' + (p.cleared || p.wave || 0) + ' · ' + (p.hearts || 0) + ' hearts · ' + theirs + ' pts. ' + verdict;
+  const team = (game.score || 0) + (p.score || 0);
+  const bothOver = p.ended && (mode === 'ended' || game.state === 'won' || game.state === 'lost');
+  if (!bothOver) {
+    el.textContent = 'Team score ' + team + '. Keep the garden standing.';
+  } else if (game.state === 'lost' || p.lost) {
+    el.textContent = 'The garden fell. You lost together.';
+  } else {
+    el.textContent = 'You held the garden together!';
+  }
   el.hidden = false;
 }
 
@@ -3708,7 +3728,7 @@ function mpConnect(role) {
       if (mp.active) {
         mp.peerLeft = true;
         mpUpdateHud();
-        toast((mp.peer || 'Your friend') + ' left the race');
+        toast((mp.peer || 'Your friend') + ' left the garden.');
       } else if (!$('mpModal').hidden) {
         mpSetStatus('Connection closed.', false);
       }
@@ -3731,13 +3751,13 @@ function mpHandle(raw) {
     mpSend({ t: 'hello', name: save.mpName || 'Player', level: mp.level });
     return;
   }
-  if (m.t === 'full') { mpSetStatus('That race room is full.', false); return; }
-  if (m.t === 'empty') { mpSetStatus('No race with that code. Check the code.', false); return; }
+  if (m.t === 'full') { mpSetStatus('That garden is full.', false); return; }
+  if (m.t === 'empty') { mpSetStatus('No garden with that code. Check the code.', false); return; }
   if (m.t === 'hello') {
     mp.peer = String(m.name || 'Player').slice(0, 16);
-    $('mpPeer').textContent = 'Racing with ' + mp.peer;
+    $('mpPeer').textContent = 'Playing with ' + mp.peer;
     $('mpWait').hidden = true;
-    mpSetStatus('Ready. Starting the race…', true);
+    mpSetStatus('Ready. Starting together…', true);
     if (mp.role === 'host') {
       const level = mp.level;
       mpSend({ t: 'start', level: level });
@@ -3750,10 +3770,24 @@ function mpHandle(raw) {
     if (mp.role === 'guest' && Number.isInteger(m.level) && LEVELS[m.level]) beginMpRace(m.level);
     return;
   }
+  if (m.t === 'wave') {
+    if (!mp.active || !game || game.state !== 'idle' || mp.applyingWave) return;
+    if (!(m.n > game.wave)) return;
+    mp.applyingWave = true;
+    game.sendWave();
+    mp.applyingWave = false;
+    toast('Your friend sent wave ' + game.wave);
+    return;
+  }
   if (m.t === 'p') {
     mp.progress = m;
     mpUpdateHud();
     if (mode === 'ended') mpUpdateEndLine();
+    if (m.lost && mp.active && game && game.state !== 'lost' && game.state !== 'won' && !mp.fell) {
+      mp.fell = true;
+      toast("Your friend's garden fell — you fall together");
+      endGame(false);
+    }
     return;
   }
   if (m.t === 'leave') {
@@ -3770,6 +3804,8 @@ function beginMpRace(level) {
   mp.starting = true;
   mp.progress = null;
   mp.peerLeft = false;
+  mp.fell = false;
+  mp.applyingWave = false;
   $('mpModal').hidden = true;
   startLevel(level);
   mp.starting = false;

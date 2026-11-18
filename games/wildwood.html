@@ -1,0 +1,2158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Wildwood</title>
+<meta name="description" content="A hand-drawn 2D survival game. Gather, hunt, fish, build a fire and craft everything by hand.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Patrick+Hand&display=swap">
+<style>
+  :root {
+    --paper: #ece4cf;
+    --paper2: #f8f2e0;
+    --ink: #2b3a33;
+    --ink-soft: #51635a;
+    --moss: #7c9a63;
+    --moss-deep: #4f6b48;
+    --bark: #9a7448;
+    --water: #7fb2bb;
+    --berry: #b8484f;
+    --honey: #e7b34a;
+    --amber: #d9823f;
+    --line: #2b3a33;
+    --shadow: 3px 3px 0 var(--ink);
+    --wob: 14px 22px 12px 20px / 20px 12px 22px 14px;
+    --f-display: 'Caveat Brush', 'Chalkboard SE', 'Comic Sans MS', cursive;
+    --f-body: 'Patrick Hand', 'Chalkboard SE', 'Comic Sans MS', cursive;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; overflow: hidden; color: var(--ink);
+    font-family: var(--f-body); font-size: 17px; line-height: 1.2;
+    background: var(--paper);
+    -webkit-user-select: none; user-select: none; touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px dashed var(--berry); outline-offset: 2px; }
+  #cv { position: fixed; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; }
+
+  .panel {
+    background: var(--paper2);
+    border: 2.5px solid var(--ink);
+    border-radius: var(--wob);
+    box-shadow: var(--shadow);
+  }
+  .btn {
+    background: var(--paper2); border: 2.5px solid var(--ink); border-radius: var(--wob);
+    padding: 4px 12px; min-height: 38px; box-shadow: 3px 3px 0 var(--ink);
+    cursor: pointer; transition: transform .08s, box-shadow .08s, background .15s;
+    display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  }
+  .btn:hover { background: #fffdf5; }
+  .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn.primary { background: var(--honey); }
+  .btn.small { min-height: 32px; padding: 2px 10px; font-size: 15px; }
+  .btn[disabled] { opacity: .45; cursor: not-allowed; box-shadow: none; }
+
+  /* ---------- HUD ---------- */
+  #hud { position: fixed; left: 10px; top: 10px; z-index: 4; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+  .bar { display: flex; align-items: center; gap: 6px; font-size: 15px; }
+  .bar .ico { width: 22px; height: 22px; flex: 0 0 22px; }
+  .bar .track {
+    width: 128px; height: 14px; border: 2px solid var(--ink); border-radius: 8px 12px 9px 11px / 11px 9px 12px 8px;
+    background: #d9cfb6; overflow: hidden; box-shadow: 2px 2px 0 rgba(43,58,51,.25);
+  }
+  .bar .fill { display: block; height: 100%; width: 100%; border-radius: 6px; transition: width .25s linear, background .3s; }
+  .bar.low .fill { animation: pulse .9s infinite; }
+  @keyframes pulse { 50% { filter: brightness(1.35); } }
+  #clock { position: fixed; left: 50%; top: 10px; transform: translateX(-50%); z-index: 4; padding: 3px 14px; display: flex; gap: 10px; align-items: baseline; pointer-events: none; }
+  #clock b { font-family: var(--f-display); font-weight: 400; font-size: 24px; line-height: 1; }
+  #clock span { font-size: 15px; color: var(--ink-soft); }
+  #clock.night { background: #cfd6df; }
+
+  #topRight { position: fixed; right: 10px; top: 10px; z-index: 5; display: flex; gap: 6px; align-items: flex-start; flex-direction: column; }
+  #topRight .row { display: flex; gap: 6px; }
+  #quests { width: 216px; padding: 8px 10px 9px; font-size: 14.5px; }
+  #quests h2 { margin: 0 0 3px; font-family: var(--f-display); font-weight: 400; font-size: 20px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  #quests h2 small { font-family: var(--f-body); font-size: 13px; color: var(--ink-soft); }
+  #quests ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  #quests li { display: flex; gap: 6px; align-items: flex-start; color: var(--ink-soft); }
+  #quests li::before { content: '○'; font-size: 13px; line-height: 1.35; color: var(--ink-soft); }
+  #quests li.done { color: var(--ink); text-decoration: line-through; text-decoration-color: rgba(43,58,51,.35); }
+  #quests li.done::before { content: '●'; color: var(--moss-deep); }
+  #quests.min ul { display: none; }
+  #quests.min { padding-bottom: 4px; }
+
+  #bagWrap { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 5; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  #bag { display: flex; gap: 6px; padding: 7px 9px; max-width: calc(100vw - 20px); overflow-x: auto; scrollbar-width: none; }
+  #bag::-webkit-scrollbar { display: none; }
+  .slot { position: relative; width: 58px; height: 58px; flex: 0 0 58px; border: 2.5px solid var(--ink); border-radius: 12px 16px 11px 15px / 15px 11px 16px 12px; background: #f1e9d4; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 2px 2px 0 rgba(43,58,51,.35); transition: transform .08s, background .15s; }
+  .slot:hover { background: #fffdf3; }
+  .slot.equipped { background: #f7e3ad; box-shadow: 0 0 0 3px var(--honey) inset, 2px 2px 0 rgba(43,58,51,.35); }
+  .slot.empty { opacity: .35; cursor: default; }
+  .slot canvas { width: 44px; height: 44px; pointer-events: none; }
+  .slot .n { position: absolute; right: 2px; bottom: 1px; font-size: 14px; background: var(--paper2); padding: 0 3px; border: 1.5px solid var(--ink); border-radius: 6px; line-height: 1.15; }
+  .slot .k { position: absolute; left: 3px; top: 0; font-size: 11px; color: var(--ink-soft); }
+  #handLine { font-size: 14px; color: var(--ink-soft); min-height: 17px; text-align: center; }
+  #hint { position: fixed; left: 50%; bottom: 118px; transform: translateX(-50%); z-index: 6; font-size: 15.5px; text-align: center; padding: 3px 12px; max-width: min(92vw, 620px); pointer-events: none; opacity: 0; transition: opacity .2s; background: rgba(248,242,224,.94); border: 2px solid var(--ink); border-radius: var(--wob); }
+  #hint.show { opacity: 1; }
+
+  body.crafting #bagWrap { z-index: 26; }
+  body.crafting #craft .card { padding-bottom: 104px; }
+  #toast { position: fixed; left: 50%; top: 62px; transform: translateX(-50%); z-index: 30; padding: 4px 16px; font-size: 17px; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; text-align: center; max-width: 90vw; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(2px); }
+
+  /* ---------- modals ---------- */
+  .modal { position: fixed; inset: 0; z-index: 20; background: rgba(43,58,51,.42); display: flex; align-items: center; justify-content: center; padding: 14px; }
+  .modal .card { background: var(--paper2); border: 3px solid var(--ink); border-radius: 22px 30px 20px 28px / 28px 20px 30px 22px; box-shadow: 5px 5px 0 var(--ink); width: min(760px, 100%); max-height: calc(100vh - 28px); overflow: auto; padding: 18px 20px; }
+  .modal h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(42px, 9vw, 74px); line-height: .95; margin: 0; letter-spacing: 1px; }
+  .modal h2 { font-family: var(--f-display); font-weight: 400; font-size: 30px; margin: 0 0 4px; }
+  .modal p { margin: 8px 0; }
+  .modal .lead { color: var(--ink-soft); font-size: 18px; max-width: 56ch; }
+  .tagline { display: inline-block; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--ink-soft); margin-bottom: 2px; }
+  .menu-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; align-items: center; }
+  .langswitch { display: flex; gap: 4px; margin-left: auto; }
+  .langswitch button { padding: 3px 10px; min-height: 32px; border: 2px solid var(--ink); background: transparent; border-radius: 10px; cursor: pointer; font-size: 14px; }
+  .langswitch button[aria-pressed="true"] { background: var(--honey); }
+  .keys { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 16px; margin-top: 10px; }
+  .keys kbd { border: 2px solid var(--ink); border-bottom-width: 3px; border-radius: 6px; padding: 0 6px; font-family: var(--f-body); font-size: 14px; background: #efe6cf; }
+
+  /* ---------- crafting mat ---------- */
+  #craft .card { width: min(880px, 100%); }
+  #craftHead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  #craftWhere { font-size: 14px; color: var(--ink-soft); }
+  #craftWhere.away { color: var(--berry); }
+  #mat {
+    position: relative; height: 300px; margin-top: 8px; border: 3px dashed var(--ink-soft);
+    border-radius: 16px 26px 18px 24px / 24px 18px 26px 16px;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(154,116,72,.10) 0 18%, transparent 19%),
+      radial-gradient(circle at 78% 68%, rgba(154,116,72,.09) 0 14%, transparent 15%),
+      repeating-linear-gradient(90deg, rgba(154,116,72,.10) 0 2px, transparent 2px 26px),
+      repeating-linear-gradient(0deg, rgba(154,116,72,.10) 0 2px, transparent 2px 26px),
+      #efe3c6;
+    overflow: hidden; touch-action: none;
+  }
+  #matHint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--ink-soft); font-size: 17px; padding: 20px; pointer-events: none; }
+  #matHint.hide { display: none; }
+  .token {
+    position: absolute; transform: translate(-50%, -50%); width: 66px; height: 66px;
+    border: 2.5px solid var(--ink); border-radius: 14px 20px 13px 19px / 19px 13px 20px 14px;
+    background: #fbf5e4; box-shadow: 3px 3px 0 rgba(43,58,51,.5); cursor: grab;
+    display: flex; align-items: center; justify-content: center; touch-action: none;
+  }
+  .token canvas { width: 50px; height: 50px; pointer-events: none; }
+  .token .n { position: absolute; right: -5px; bottom: -5px; background: var(--paper2); border: 2px solid var(--ink); border-radius: 8px; font-size: 14px; padding: 0 4px; line-height: 1.2; }
+  .token.drag { cursor: grabbing; z-index: 6; box-shadow: 6px 8px 0 rgba(43,58,51,.35); }
+  #craftWorkWrap { margin-top: 8px; display: flex; align-items: center; gap: 10px; }
+  #craftWorkTrack { flex: 1; height: 18px; border: 2.5px solid var(--ink); border-radius: 10px; background: #ded2b6; overflow: hidden; }
+  #craftWork { height: 100%; width: 0%; background: repeating-linear-gradient(45deg, var(--honey) 0 8px, #f0c464 8px 16px); transition: width .08s linear; }
+  #craftState { min-width: 96px; font-size: 15px; text-align: right; }
+  #recipes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .recipe { display: flex; align-items: center; gap: 6px; font-size: 14px; border: 2px solid var(--ink); border-radius: 12px; padding: 2px 8px 2px 4px; background: #fbf5e4; opacity: .95; }
+  .recipe.locked { opacity: .45; text-decoration: line-through; }
+  .recipe.missing { opacity: .74; }
+  .recipe canvas { width: 30px; height: 30px; }
+  .recipe small { color: var(--ink-soft); }
+  #craftFoot { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+
+  #ghost { position: fixed; z-index: 15; width: 66px; height: 66px; pointer-events: none; opacity: .9; transform: translate(-50%, -60%) rotate(-4deg); filter: drop-shadow(2px 4px 0 rgba(43,58,51,.35)); }
+  #ghost canvas { width: 100%; height: 100%; }
+
+  .over-card { text-align: center; }
+  .over-card .big { font-family: var(--f-display); font-size: 46px; line-height: 1.05; }
+  .scoreline { display: flex; justify-content: center; gap: 22px; flex-wrap: wrap; margin-top: 10px; }
+  .scoreline div { min-width: 90px; }
+  .scoreline b { display: block; font-family: var(--f-display); font-weight: 400; font-size: 28px; }
+
+  @media (max-width: 700px) {
+    body { font-size: 16px; }
+    #quests { width: 168px; font-size: 13px; }
+    #quests h2 { font-size: 17px; }
+    .bar .track { width: 84px; }
+    .bar { font-size: 13px; }
+    .slot { width: 52px; height: 52px; flex: 0 0 52px; }
+    .slot canvas { width: 38px; height: 38px; }
+    #topRight .btn.small { padding: 2px 8px; }
+    #mat { height: 250px; }
+    .token { width: 58px; height: 58px; }
+    .token canvas { width: 44px; height: 44px; }
+  }
+  @media (max-width: 520px) {
+    #quests { width: 156px; font-size: 12.5px; padding: 5px 8px 6px; }
+    #quests h2 { font-size: 15px; cursor: pointer; }
+    #quests li { font-size: 12px; }
+    #clock b { font-size: 21px; }
+    #hint { bottom: 96px; font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="The forest. Move with WASD or tap where you want to go."></canvas>
+
+<div id="hud" aria-live="off">
+  <div class="bar" data-bar="hp"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21C5 15 3 11.5 3 8.5A4.5 4.5 0 0 1 12 6.5 4.5 4.5 0 0 1 21 8.5C21 11.5 19 15 12 21z" fill="#cc4a5d" stroke="#2b3a33" stroke-width="2" stroke-linejoin="round"/></svg><span class="track"><span class="fill" id="barHp" style="background:#cc4a5d"></span></span></div>
+  <div class="bar" data-bar="food"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3c3 3 3 6 0 9M11 3c3 3 3 6 0 9M16 3c3 3 3 6 0 9M3 15h18l-2 6H5z" fill="#d9823f" stroke="#2b3a33" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="track"><span class="fill" id="barFood" style="background:#d9823f"></span></span></div>
+  <div class="bar" data-bar="water"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c4 6 7 9 7 13a7 7 0 0 1-14 0c0-4 3-7 7-13z" fill="#7fb2bb" stroke="#2b3a33" stroke-width="2" stroke-linejoin="round"/></svg><span class="track"><span class="fill" id="barWater" style="background:#7fb2bb"></span></span></div>
+  <div class="bar" data-bar="warm"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 4 5 6 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-5 .5 1.5 1.5 2 2.5 2 1.5-2 .5-4 .5-7z" fill="#e7b34a" stroke="#2b3a33" stroke-width="2" stroke-linejoin="round"/></svg><span class="track"><span class="fill" id="barWarm" style="background:#e7b34a"></span></span></div>
+  <div class="bar" data-bar="stam"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="#7c9a63" stroke="#2b3a33" stroke-width="2" stroke-linejoin="round"/></svg><span class="track"><span class="fill" id="barStam" style="background:#7c9a63"></span></span></div>
+</div>
+
+<div id="clock" class="panel"><b id="clockDay">Day 1</b><span id="clockTime">07:00</span><span id="clockPhase">Morning</span></div>
+
+<div id="topRight">
+  <div class="row">
+    <button class="btn small" id="btnCraft" type="button" data-t="craft">Hands</button>
+    <button class="btn small" id="btnHelp" type="button" aria-label="How to play" data-t="helpShort">?</button>
+    <button class="btn small" id="btnMenu" type="button" data-t="menuShort">Menu</button>
+  </div>
+  <div id="quests" class="panel">
+    <h2><span data-t="goalTitle">Signal for rescue</span><small id="questCount">0/8</small></h2>
+    <ul id="questList"></ul>
+  </div>
+</div>
+
+<div id="bagWrap">
+  <div id="bag" class="panel" aria-label="Your bag"></div>
+  <div id="handLine"></div>
+</div>
+<div id="hint" role="status"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<div class="modal" id="menu" hidden>
+  <div class="card">
+    <span class="tagline" data-t="tagline">A hand-drawn survival game</span>
+    <h1>Wildwood</h1>
+    <p class="lead" data-t="menuLead">You wake on a green shore with nothing but your hands. Gather, hunt, fish, build a fire and craft your way to a rescue beacon — before the nights get the better of you.</p>
+    <div class="menu-actions">
+      <button class="btn primary" id="btnContinue" type="button" data-t="continue_">Continue</button>
+      <button class="btn" id="btnNew" type="button" data-t="newGame">New game</button>
+      <div class="langswitch" id="menuLang" role="group" aria-label="Language">
+        <button type="button" id="langDa" data-lang="da">DA</button><button type="button" id="langEn" data-lang="en">EN</button>
+      </div>
+    </div>
+    <div class="keys" id="menuKeys"></div>
+  </div>
+</div>
+
+<div class="modal" id="help" hidden>
+  <div class="card">
+    <h2 data-t="helpTitle">How to survive</h2>
+    <div id="helpBody"></div>
+    <div class="menu-actions"><button class="btn primary" id="btnHelpClose" type="button" data-t="close">Close</button></div>
+  </div>
+</div>
+
+<div class="modal" id="craft" hidden>
+  <div class="card">
+    <div id="craftHead">
+      <h2 data-t="craftTitle">Craft</h2>
+      <span id="craftWhere"></span>
+      <span style="margin-left:auto"></span>
+      <button class="btn small" id="btnCraftClose" type="button" data-t="close">Close</button>
+    </div>
+    <p class="lead" style="margin:4px 0 6px;font-size:16px" data-t="craftLead">Drag things from your bag onto the mat, then rub the mat with your finger or mouse to work them into something new.</p>
+    <div id="mat">
+      <div id="matHint"></div>
+    </div>
+    <div id="craftWorkWrap">
+      <div id="craftWorkTrack"><div id="craftWork"></div></div>
+      <div id="craftState"></div>
+    </div>
+    <div id="recipes"></div>
+    <div id="craftFoot">
+      <span style="font-size:14px;color:var(--ink-soft)" data-t="craftTake">Tap a thing on the mat to put it back.</span>
+      <button class="btn small" id="btnTakeAll" type="button" data-t="takeAll">Take it all back</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="over" hidden>
+  <div class="card over-card">
+    <div class="big" id="overBig"></div>
+    <h2 id="overTitle" style="margin-top:6px"></h2>
+    <p id="overText" style="max-width:46ch;margin:8px auto"></p>
+    <div class="scoreline" id="overScore"></div>
+    <div class="menu-actions" style="justify-content:center">
+      <button class="btn primary" id="btnAgain" type="button" data-t="newGame">New game</button>
+      <button class="btn" id="btnOverMenu" type="button" data-t="menuShort">Menu</button>
+    </div>
+  </div>
+</div>
+
+<div id="ghost" hidden></div>
+
+<script>
+'use strict';
+/* ============================================================
+   Wildwood — a hand-drawn 2D survival game.
+   Gather, hunt, fish, build and craft everything by hand.
+   ============================================================ */
+
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const lerp = (a, b, k) => a + (b - a) * k;
+const TAU = Math.PI * 2;
+const rr = (a, b) => a + Math.random() * (b - a);
+
+/* ---------------- language ---------------- */
+const I18N = {
+  en: {
+    tagline: 'A hand-drawn survival game',
+    menuLead: 'You wake on a green shore with nothing but your hands. Gather, hunt, fish, build a fire and craft your way to a rescue beacon — before the nights get the better of you.',
+    continue_: 'Continue', newGame: 'New game', menuShort: 'Menu', helpShort: '?', helpTitle: 'How to survive',
+    close: 'Close', craft: 'Hands', craftTitle: 'Craft', goalTitle: 'Signal for rescue',
+    craftLead: 'Drag things from your bag onto the mat, then rub the mat with your finger or mouse to work them into something new.',
+    craftTake: 'Tap a thing on the mat to put it back.', takeAll: 'Take it all back',
+    controls: 'Move: WASD, arrows, or tap the ground. Gather: tap a tree, rock, bush or reeds — you walk there yourself. Craft: C. Bag: 1–9. Run: hold Shift.',
+    help1: 'Everything you need comes from the forest. Tap a tree for wood, a rock for stone, tall grass or reeds for fiber, and bushes for berries.',
+    help2: 'Your hands can make rope, a torch, a campfire, a workbench and walls. Drag the materials onto the crafting mat and rub the mat to work them together.',
+    help3: 'A workbench opens the harder recipes: axe, spear, fishing rod and the rescue beacon. The beacon is your way home.',
+    help4: 'Tap water to drink. With a fishing rod in hand, tap the water to cast, and tap again the moment the float dips.',
+    help5: 'Night drains your warmth. Stand by a fire, carry a torch, or you will freeze. Wolves come out after dark — a spear keeps them off.',
+    q_gather: 'Gather 5 wood, 3 stone, 3 fiber', q_rope: 'Craft a rope', q_bench: 'Build a workbench',
+    q_axe: 'Craft a stone axe', q_fire: 'Build a campfire', q_cook: 'Cook meat on the fire',
+    q_spear: 'Craft a spear', q_night: 'Survive a night', q_beacon: 'Build the rescue beacon',
+    emptyHands: 'Empty hands', handLine: 'Hands: {x}',
+    atBench: 'At the workbench', handsOnly: 'Working with your hands', benchNeeded: 'needs a workbench',
+    matEmpty: 'Drag wood, stone, fiber or anything else from your bag onto the mat.',
+    matNoMatch: 'Nothing yet. Try other things together.', matReady: 'Rub the mat to work it',
+    matWork: 'Working…', crafted: 'Crafted {x}', objectiveDone: 'Goal complete: {x}',
+    placed: 'Placed {x}', cantPlace: 'No room for that here', tooFar: 'Too far away',
+    needSpear: 'You need a spear to hunt', needRod: 'You need a fishing rod to fish',
+    drink: 'You drink from the water', noWater: 'That is not water',
+    gatherWood: '+3 wood', gatherStone: '+2 stone', gatherFiber: '+2 fiber', gatherBerries: '+2 berries',
+    fishingCast: 'Cast the line…', fishingBite: 'Something is biting — tap!', fishingCatch: '+1 fish', fishingMiss: 'It got away',
+    cookStart: 'Cooking over the fire…', cooked: 'Cooked {x}', fuelAdded: 'The fire grows', fireLit: 'The fire is lit',
+    litBeacon: 'The beacon burns. Hold on…', rescue: 'Rescued!', died: 'You did not make it',
+    nightFalls: 'Night falls. Get to a fire.', newDay: 'Day {n}',
+    wolfNear: 'A wolf smells you', day: 'Day {n}', phaseMorning: 'Morning', phaseDay: 'Day', phaseDusk: 'Dusk', phaseNight: 'Night', phaseDawn: 'Dawn',
+    overRescue: 'Smoke on the horizon. A boat is coming for you.', overDead: 'The forest keeps what it takes.',
+    scoreDays: 'Days', scoreGoals: 'Goals', scoreScore: 'Score', again: 'New game',
+    hintGather: 'Tap a tree, rock, bush or reeds to gather. Walk with WASD or tap the ground.',
+    hintCraft: 'Press C to craft with your hands. Drag materials onto the mat, then rub.',
+    hintFire: 'Build a campfire from 3 wood and 2 stone before dark.',
+    hintFish: 'Craft a fishing rod, walk to the water and tap it to cast.',
+    hintBeacon: 'Build the rescue beacon to get home. It needs a workbench.',
+    hintNight: 'Night is coming. Stay near fire, or carry a torch.',
+    saved: 'Saved', loaded: 'Welcome back'
+  },
+  da: {
+    tagline: 'Et håndtegnet overlevelsesspil',
+    menuLead: 'Du vågner på en grøn kyst med kun dine hænder. Saml, jægt, fisk, tænd bål og byg dig frem til et redningsbål — før nætterne tager dig.',
+    continue_: 'Fortsæt', newGame: 'Nyt spil', menuShort: 'Menu', helpShort: '?', helpTitle: 'Sådan overlever du',
+    close: 'Luk', craft: 'Hænder', craftTitle: 'Håndværk', goalTitle: 'Kald på redning',
+    craftLead: 'Træk ting fra tasken ind på måtten, og gnid derefter på måtten med fingeren eller musen, så de bliver til noget nyt.',
+    craftTake: 'Tryk på en ting på måtten for at lægge den tilbage.', takeAll: 'Tag det hele tilbage',
+    controls: 'Gå: WASD, piletaster eller tryk på jorden. Saml: tryk på et træ, en sten, en busk eller siv — du går selv derhen. Håndværk: C. Taske: 1–9. Løb: hold Shift.',
+    help1: 'Alt du har brug for, kommer fra skoven. Tryk på et træ for træ, en sten for sten, højt græs eller siv for fiber, og buske for bær.',
+    help2: 'Dine hænder kan lave reb, en fakkel, et bål, en arbejdsbænk og vægge. Træk materialerne ind på måtten og gnid på måtten for at samle dem.',
+    help3: 'En arbejdsbænk åbner de svære opskrifter: økse, spyd, fiskestang og redningsbålet. Bålet er din vej hjem.',
+    help4: 'Tryk på vand for at drikke. Med en fiskestang i hånden trykker du på vandet for at kaste ud, og trykker igen i det øjeblik flådet dykker.',
+    help5: 'Om natten forsvinder varmen. Stå ved et bål, bær en fakkel — ellers fryser du. Ulve kommer frem i mørket; et spyd holder dem væk.',
+    q_gather: 'Saml 5 træ, 3 sten og 3 fiber', q_rope: 'Lav et reb', q_bench: 'Byg en arbejdsbænk',
+    q_axe: 'Lav en stenøkse', q_fire: 'Byg et bål', q_cook: 'Steg kød over bålet',
+    q_spear: 'Lav et spyd', q_night: 'Overlev en nat', q_beacon: 'Byg redningsbålet',
+    emptyHands: 'Tomme hænder', handLine: 'Hænder: {x}',
+    atBench: 'Ved arbejdsbænken', handsOnly: 'Du arbejder med hænderne', benchNeeded: 'kræver en arbejdsbænk',
+    matEmpty: 'Træk træ, sten, fiber eller noget andet fra tasken ind på måtten.',
+    matNoMatch: 'Ikke noget endnu. Prøv nogle andre ting sammen.', matReady: 'Gnid på måtten for at samle det',
+    matWork: 'Arbejder…', crafted: 'Lavede {x}', objectiveDone: 'Mål klaret: {x}',
+    placed: 'Satte {x}', cantPlace: 'Der er ikke plads her', tooFar: 'For langt væk',
+    needSpear: 'Du skal have et spyd for at jage', needRod: 'Du skal have en fiskestang for at fiske',
+    drink: 'Du drikker af vandet', noWater: 'Det er ikke vand',
+    gatherWood: '+3 træ', gatherStone: '+2 sten', gatherFiber: '+2 fiber', gatherBerries: '+2 bær',
+    fishingCast: 'Kaster ud…', fishingBite: 'Der er nappet — tryk!', fishingCatch: '+1 fisk', fishingMiss: 'Den slap væk',
+    cookStart: 'Steger over bålet…', cooked: 'Stegte {x}', fuelAdded: 'Bålet vokser', fireLit: 'Bålet er tændt',
+    litBeacon: 'Redningsbålet brænder. Hold ud…', rescue: 'Reddet!', died: 'Du klarede den ikke',
+    nightFalls: 'Natten falder. Kom til et bål.', newDay: 'Dag {n}',
+    wolfNear: 'En ulv har din færd', day: 'Dag {n}', phaseMorning: 'Morgen', phaseDay: 'Dag', phaseDusk: 'Skumring', phaseNight: 'Nat', phaseDawn: 'Daggry',
+    overRescue: 'Røg i horisonten. En båd er på vej efter dig.', overDead: 'Skoven beholder, hvad den tager.',
+    scoreDays: 'Dage', scoreGoals: 'Mål', scoreScore: 'Point', again: 'Nyt spil',
+    hintGather: 'Tryk på et træ, en sten, en busk eller siv for at samle. Gå med WASD eller tryk på jorden.',
+    hintCraft: 'Tryk C for at arbejde med hænderne. Træk materialer ind på måtten, og gnid.',
+    hintFire: 'Byg et bål af 3 træ og 2 sten, før det bliver mørkt.',
+    hintFish: 'Lav en fiskestang, gå til vandet og tryk på det for at kaste ud.',
+    hintBeacon: 'Byg redningsbålet for at komme hjem. Det kræver en arbejdsbænk.',
+    hintNight: 'Natten kommer. Bliv ved ilden, eller bær en fakkel.',
+    saved: 'Gemt', loaded: 'Velkommen tilbage'
+  }
+};
+let LANG = (() => {
+  try { const s = localStorage.getItem('damp.lang'); if (s === 'da' || s === 'en') return s; } catch (e) { /* off */ }
+  return (navigator.language || 'en').toLowerCase().indexOf('da') === 0 ? 'da' : 'en';
+})();
+function tr(key, a) {
+  let s = (I18N[LANG] && I18N[LANG][key]) || I18N.en[key] || key;
+  if (a !== undefined) s = s.replace('{x}', a).replace('{n}', a);
+  return s;
+}
+
+/* ---------------- items ---------------- */
+const ITEMS = {
+  wood:        { en: 'Wood',          da: 'Træ',            kind: 'mat' },
+  stone:       { en: 'Stone',         da: 'Sten',           kind: 'mat' },
+  fiber:       { en: 'Fiber',         da: 'Fiber',          kind: 'mat' },
+  berries:     { en: 'Berries',       da: 'Bær',            kind: 'food', food: 12 },
+  meat_raw:    { en: 'Raw meat',      da: 'Råt kød',        kind: 'food', food: 16 },
+  meat_cooked: { en: 'Cooked meat',   da: 'Stegt kød',      kind: 'food', food: 42 },
+  fish_raw:    { en: 'Raw fish',      da: 'Rå fisk',        kind: 'food', food: 14 },
+  fish_cooked: { en: 'Cooked fish',   da: 'Stegt fisk',     kind: 'food', food: 30 },
+  hide:        { en: 'Hide',          da: 'Skind',          kind: 'mat' },
+  rope:        { en: 'Rope',          da: 'Reb',            kind: 'mat' },
+  axe:         { en: 'Stone axe',     da: 'Stenøkse',       kind: 'tool' },
+  spear:       { en: 'Spear',         da: 'Spyd',           kind: 'tool' },
+  rod:         { en: 'Fishing rod',   da: 'Fiskestang',     kind: 'tool' },
+  torch:       { en: 'Torch',         da: 'Fakkel',         kind: 'tool', light: 150 },
+  campfire:    { en: 'Campfire',      da: 'Bål',            kind: 'place' },
+  bench:       { en: 'Workbench',     da: 'Arbejdsbænk',    kind: 'place' },
+  wall:        { en: 'Wall',          da: 'Væg',            kind: 'place' },
+  beacon:      { en: 'Rescue beacon', da: 'Redningsbål',    kind: 'place' }
+};
+const iname = (id) => (ITEMS[id] ? (ITEMS[id][LANG] || ITEMS[id].en) : id);
+
+const RECIPES = [
+  { id: 'rope',     bench: false, work: 34, need: { fiber: 2 },                       out: 'rope' },
+  { id: 'torch',    bench: false, work: 34, need: { wood: 1, fiber: 1 },              out: 'torch' },
+  { id: 'campfire', bench: false, work: 52, need: { wood: 3, stone: 2 },              out: 'campfire' },
+  { id: 'bench',    bench: false, work: 62, need: { wood: 4, stone: 2 },              out: 'bench' },
+  { id: 'wall',     bench: false, work: 40, need: { wood: 2, fiber: 1 },              out: 'wall' },
+  { id: 'axe',      bench: true,  work: 56, need: { wood: 1, stone: 2, rope: 1 },     out: 'axe' },
+  { id: 'spear',    bench: true,  work: 56, need: { wood: 2, stone: 1, rope: 1 },     out: 'spear' },
+  { id: 'rod',      bench: true,  work: 52, need: { wood: 1, fiber: 2, rope: 1 },     out: 'rod' },
+  { id: 'beacon',   bench: true,  work: 120, need: { wood: 6, stone: 4, rope: 2, hide: 1 }, out: 'beacon' }
+];
+
+const QUESTS = [
+  { id: 'gather', en: 'Gather 5 wood, 3 stone, 3 fiber', da: 'Saml 5 træ, 3 sten og 3 fiber' },
+  { id: 'rope',   en: 'Craft a rope', da: 'Lav et reb' },
+  { id: 'bench',  en: 'Build a workbench', da: 'Byg en arbejdsbænk' },
+  { id: 'axe',    en: 'Craft a stone axe', da: 'Lav en stenøkse' },
+  { id: 'fire',   en: 'Build a campfire', da: 'Byg et bål' },
+  { id: 'cook',   en: 'Cook meat on the fire', da: 'Steg kød over bålet' },
+  { id: 'spear',  en: 'Craft a spear', da: 'Lav et spyd' },
+  { id: 'night',  en: 'Survive a night', da: 'Overlev en nat' },
+  { id: 'beacon', en: 'Build the rescue beacon', da: 'Byg redningsbålet' }
+];
+const questText = (q) => (LANG === 'da' ? q.da : q.en);
+
+/* ---------------- world ---------------- */
+const WORLD = { w: 1900, h: 1400 };
+const SPAWN = { x: 960, y: 720 };
+const DAY = 300;
+const SAVE_KEY = 'wildwood-v1';
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function landAt(x, y) {
+  if (x < 24 || y < 24 || x > WORLD.w - 24 || y > WORLD.h - 24) return false;
+  const nx = (x - WORLD.w / 2) / (WORLD.w * 0.47);
+  const ny = (y - WORLD.h / 2) / (WORLD.h * 0.47);
+  let d = Math.sqrt(nx * nx + ny * ny);
+  d += Math.sin(x * 0.0062 + 1.3) * 0.05 + Math.sin(y * 0.0071 + 0.4) * 0.045 + Math.sin((x + y) * 0.0038) * 0.035;
+  if (Math.hypot(x - 520, y - 430) < 168 + Math.sin(x * 0.02) * 14) return false;
+  if (Math.hypot(x - 1460, y - 1010) < 132 + Math.cos(y * 0.02) * 12) return false;
+  if (Math.hypot(x - SPAWN.x, y - SPAWN.y) < 120) return true;
+  return d < 0.93;
+}
+
+function makeWorld(seed) {
+  const rnd = mulberry32(seed);
+  const terrain = document.createElement('canvas');
+  terrain.width = WORLD.w; terrain.height = WORLD.h;
+  const c = terrain.getContext('2d');
+  const TS = 40;
+  const cols = Math.ceil(WORLD.w / TS), rows = Math.ceil(WORLD.h / TS);
+  c.fillStyle = '#7fb2bb'; c.fillRect(0, 0, WORLD.w, WORLD.h);
+  const land = [];
+  for (let j = 0; j < rows; j++) {
+    land[j] = [];
+    for (let i = 0; i < cols; i++) land[j][i] = landAt((i + 0.5) * TS, (j + 0.5) * TS);
+  }
+  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+    if (!land[j][i]) continue;
+    const x = (i + 0.5) * TS, y = (j + 0.5) * TS;
+    let shore = false;
+    for (let dj = -1; dj <= 1 && !shore; dj++) for (let di = -1; di <= 1; di++) {
+      const nj = j + dj, ni = i + di;
+      if (!land[nj] || !land[nj][ni]) shore = true;
+    }
+    if (shore) {
+      c.fillStyle = '#e3d2a6';
+      c.beginPath(); c.ellipse(x, y, TS * 0.74, TS * 0.74, 0, 0, TAU); c.fill();
+    }
+    c.fillStyle = (i * 7 + j * 13) % 3 === 0 ? '#8fb273' : '#86a96b';
+    c.beginPath(); c.ellipse(x, y, TS * 0.71, TS * 0.71, (i * 0.3) % 0.4, 0, TAU); c.fill();
+  }
+  const spots = Math.floor(WORLD.w * WORLD.h / 2400);
+  for (let k = 0; k < spots; k++) {
+    const x = rnd() * WORLD.w, y = rnd() * WORLD.h;
+    if (!landAt(x, y)) continue;
+    c.strokeStyle = rnd() < 0.5 ? 'rgba(63,92,54,.30)' : 'rgba(96,129,78,.40)';
+    c.lineWidth = 1.6; c.beginPath();
+    c.moveTo(x, y); c.quadraticCurveTo(x + (rnd() - 0.5) * 6, y - 5, x + (rnd() - 0.5) * 9, y - 9);
+    c.stroke();
+    if (rnd() < 0.1) {
+      c.fillStyle = rnd() < 0.5 ? '#e9f0d8' : '#f0d98a';
+      c.beginPath(); c.arc(x + 3, y - 7, 2.2, 0, TAU); c.fill();
+    }
+  }
+  for (let k = 0; k < 300; k++) {
+    const x = rnd() * WORLD.w, y = rnd() * WORLD.h;
+    if (landAt(x, y)) continue;
+    c.strokeStyle = 'rgba(255,255,255,.40)'; c.lineWidth = 2; c.beginPath();
+    c.moveTo(x - 8, y); c.quadraticCurveTo(x - 2, y - 4, x + 6, y);
+    c.stroke();
+  }
+  c.fillStyle = 'rgba(154,116,72,.28)';
+  for (let k = 0; k < 900; k++) {
+    const x = rnd() * WORLD.w, y = rnd() * WORLD.h;
+    if (landAt(x, y)) continue;
+    if (!(landAt(x + 46, y) || landAt(x - 46, y) || landAt(x, y + 46) || landAt(x, y - 46))) continue;
+    c.beginPath(); c.ellipse(x, y, 2 + rnd() * 3, 1.4 + rnd() * 2, rnd() * 3, 0, TAU); c.fill();
+  }
+
+  let nid = 1;
+  const nodes = [];
+  const nearWater = (x, y) => !landAt(x, y) || !landAt(x + 52, y) || !landAt(x - 52, y) || !landAt(x, y + 52) || !landAt(x, y - 52);
+  const place = (kind, count, filter, r) => {
+    for (let k = 0, guard = 0; k < count && guard < count * 40; guard++) {
+      const x = 60 + rnd() * (WORLD.w - 120), y = 60 + rnd() * (WORLD.h - 120);
+      if (!filter(x, y)) continue;
+      if (Math.hypot(x - SPAWN.x, y - SPAWN.y) < 74) continue;
+      if (nodes.some(n => Math.hypot(n.x - x, n.y - y) < 46)) continue;
+      nodes.push({ id: nid++, kind: kind, x: x, y: y, left: kind === 'tree' || kind === 'rock' ? 3 : 1, until: 0, r: r, seed: rnd() * 100 });
+      k++;
+    }
+  };
+  place('tree', 118, (x, y) => landAt(x, y), 17);
+  place('rock', 46, (x, y) => landAt(x, y), 15);
+  place('bush', 40, (x, y) => landAt(x, y), 14);
+  place('reed', 64, (x, y) => landAt(x, y) && nearWater(x, y), 13);
+  place('tuft', 110, (x, y) => landAt(x, y) && !nearWater(x, y), 11);
+  return { seed: seed, terrain: terrain, nodes: nodes };
+}
+
+/* ---------------- game state ---------------- */
+let G = null;
+let world = null;
+let mode = 'menu';
+let keys = {};
+let ghostItem = null;
+let bagDrag = null;
+let lastFrame = 0;
+let hintUntil = 0;
+
+function toast(msg) {
+  const el = $('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove('show'), 2100);
+}
+function hint(msg, ms) {
+  const el = $('hint');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(hint._t);
+  hint._t = setTimeout(() => el.classList.remove('show'), ms || 4200);
+}
+
+function addItem(id, n) {
+  if (!ITEMS[id]) return;
+  G.inv[id] = (G.inv[id] || 0) + (n || 1);
+  buildBag();
+}
+function takeItem(id, n) {
+  if (!G.inv[id]) return false;
+  G.inv[id] -= (n || 1);
+  if (G.inv[id] <= 0) { delete G.inv[id]; if (G.hand === id) setHand(null); }
+  buildBag();
+  return true;
+}
+function itemCount(id) { return (G && G.inv[id]) || 0; }
+
+function setHand(id) {
+  G.hand = id || null;
+  if (!G.hand && ghostItem) hideGhost();
+  for (const el of document.querySelectorAll('#bag .slot')) el.classList.toggle('equipped', !!G.hand && el.dataset.item === G.hand);
+  updateHandLine();
+  if (G.hand && ITEMS[G.hand] && ITEMS[G.hand].kind === 'place') showGhostFor(G.hand); else hideGhost();
+}
+function updateHandLine() {
+  const el = $('handLine');
+  if (!el) return;
+  el.textContent = G && G.hand ? tr('handLine', iname(G.hand)) : tr('emptyHands');
+}
+
+/* ---------------- new / load / save ---------------- */
+function newGame(seed) {
+  world = makeWorld(seed || ((Date.now() ^ Math.floor(Math.random() * 1e9)) | 0));
+  G = {
+    seed: world.seed, clock: 12, day: 1, lang: LANG,
+    inv: {}, hand: null,
+    player: { x: SPAWN.x, y: SPAWN.y + 10, hp: 100, food: 100, water: 100, warm: 100, stam: 100, face: 1, walk: 0, step: 0, atk: 0 },
+    structs: [], animals: [], goals: {}, gathered: { wood: 0, stone: 0, fiber: 0 },
+    job: null, moveTo: null, fish: null, winT: 0, wasNight: false, lastPhase: ''
+  };
+  seedAnimals();
+  mode = 'play';
+  $('menu').hidden = true; $('over').hidden = true; $('help').hidden = true; $('craft').hidden = true;
+  buildBag(); buildQuests(); updateHUD();
+  hint(tr('hintGather'), 6000);
+  persist();
+}
+
+function saveData() {
+  if (!G) return null;
+  const nodes = {};
+  for (const n of world.nodes) if (n.left <= 0 || n.until > 0) nodes[n.id] = [n.left, n.until];
+  return {
+    v: 1, seed: G.seed, clock: G.clock, day: G.day, lang: LANG,
+    player: { x: G.player.x, y: G.player.y, hp: G.player.hp, food: G.player.food, water: G.player.water, warm: G.player.warm, stam: G.player.stam },
+    inv: G.inv, hand: G.hand, goals: G.goals, gathered: G.gathered,
+    structs: G.structs.map(s => ({ type: s.type, x: s.x, y: s.y, fuel: s.fuel || 0, lit: !!s.lit, cook: s.cook || null })),
+    nodes: nodes
+  };
+}
+function persist() {
+  if (mode === 'over') return;
+  try { const d = saveData(); if (d) localStorage.setItem(SAVE_KEY, JSON.stringify(d)); } catch (e) { /* off */ }
+}
+function hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } }
+
+function loadGame() {
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch (e) { /* off */ }
+  if (!d || !d.seed) return false;
+  world = makeWorld(d.seed);
+  if (d.nodes) for (const n of world.nodes) { const s = d.nodes[n.id]; if (s) { n.left = s[0]; n.until = s[1] || 0; } }
+  const p = d.player || {};
+  G = {
+    seed: d.seed, clock: d.clock || 0, day: d.day || 1, lang: d.lang || LANG,
+    inv: d.inv || {}, hand: d.hand || null,
+    player: { x: p.x || SPAWN.x, y: p.y || SPAWN.y, hp: p.hp == null ? 100 : p.hp, food: p.food == null ? 100 : p.food, water: p.water == null ? 100 : p.water, warm: p.warm == null ? 100 : p.warm, stam: p.stam == null ? 100 : p.stam, face: 1, walk: 0, step: 0, atk: 0 },
+    structs: (d.structs || []).map(s => ({ type: s.type, x: s.x, y: s.y, fuel: s.fuel || 0, lit: !!s.lit, cook: s.cook || null })),
+    animals: [], goals: d.goals || {}, gathered: d.gathered || { wood: 0, stone: 0, fiber: 0 },
+    job: null, moveTo: null, fish: null, winT: 0, wasNight: false, lastPhase: ''
+  };
+  if (G.lang === 'da' || G.lang === 'en') LANG = G.lang;
+  seedAnimals();
+  mode = 'play';
+  $('menu').hidden = true; $('over').hidden = true; $('help').hidden = true; $('craft').hidden = true;
+  applyLang();
+  buildBag(); buildQuests(); updateHUD();
+  toast(tr('loaded'));
+  return true;
+}
+
+/* ---------------- HUD ---------------- */
+function updateHUD() {
+  if (!G) return;
+  const p = G.player;
+  const map = [['barHp', p.hp], ['barFood', p.food], ['barWater', p.water], ['barWarm', p.warm], ['barStam', p.stam]];
+  for (const [id, v] of map) {
+    const el = $(id);
+    if (!el) continue;
+    const w = Math.max(0, Math.min(100, v));
+    el.style.width = w.toFixed(0) + '%';
+    el.parentNode.parentNode.classList.toggle('low', w < 22);
+  }
+  const info = timeInfo();
+  $('clockDay').textContent = tr('day', G.day);
+  const hh = Math.floor(info.hour), mm = Math.floor((info.hour - hh) * 60);
+  $('clockTime').textContent = String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+  $('clockPhase').textContent = tr(info.night ? 'phaseNight' : info.dusk ? 'phaseDusk' : info.dawn ? 'phaseDawn' : info.hour < 11 ? 'phaseMorning' : 'phaseDay');
+  $('clock').classList.toggle('night', info.night);
+}
+function buildQuests() {
+  const ul = $('questList');
+  if (!ul) return;
+  ul.innerHTML = '';
+  let done = 0;
+  for (const q of QUESTS) {
+    const li = document.createElement('li');
+    const ok = !!(G && G.goals[q.id]);
+    if (ok) done++;
+    li.textContent = questText(q);
+    li.classList.toggle('done', ok);
+    ul.appendChild(li);
+  }
+  $('questCount').textContent = done + '/' + QUESTS.length;
+}
+function completeQuest(id) {
+  if (!G || G.goals[id]) return;
+  const q = QUESTS.find(x => x.id === id);
+  if (!q) return;
+  G.goals[id] = true;
+  toast(tr('objectiveDone', questText(q)));
+  buildQuests();
+  persist();
+}
+
+/* ---------------- bag ---------------- */
+function buildBag() {
+  const bag = $('bag');
+  if (!bag) return;
+  bag.innerHTML = '';
+  const items = G ? Object.keys(G.inv).filter(k => G.inv[k] > 0 && ITEMS[k]) : [];
+  const total = Math.max(9, items.length);
+  for (let i = 0; i < total; i++) {
+    const id = items[i];
+    const slot = document.createElement('button');
+    slot.type = 'button';
+    slot.className = 'slot' + (id ? '' : ' empty');
+    slot.dataset.item = id || '';
+    if (id) {
+      slot.title = iname(id);
+      const cv = document.createElement('canvas');
+      cv.width = cv.height = 48;
+      drawIcon(cv.getContext('2d'), id, 48);
+      slot.appendChild(cv);
+      if (G.inv[id] > 1) { const n = document.createElement('span'); n.className = 'n'; n.textContent = G.inv[id]; slot.appendChild(n); }
+      if (G.hand === id) slot.classList.add('equipped');
+      const k = document.createElement('span'); k.className = 'k'; k.textContent = String(i + 1); slot.appendChild(k);
+    }
+    slot.addEventListener('pointerdown', onBagDown);
+    bag.appendChild(slot);
+  }
+  updateHandLine();
+}
+
+function onBagDown(e) {
+  if (!G || (mode !== 'play' && mode !== 'craft')) return;
+  const slot = e.currentTarget;
+  const id = slot.dataset.item;
+  if (!id) return;
+  e.preventDefault();
+  bagDrag = { id: id, x: e.clientX, y: e.clientY, moved: false, slot: slot };
+  window.addEventListener('pointermove', onBagMove);
+  window.addEventListener('pointerup', onBagUp, { once: true });
+}
+function onBagMove(e) {
+  if (!bagDrag) return;
+  if (!bagDrag.moved && Math.hypot(e.clientX - bagDrag.x, e.clientY - bagDrag.y) > 8) {
+    bagDrag.moved = true;
+    const g = $('ghost');
+    g.innerHTML = '';
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 66;
+    drawIcon(cv.getContext('2d'), bagDrag.id, 66);
+    g.appendChild(cv);
+    g.hidden = false;
+  }
+  if (bagDrag.moved) {
+    const g = $('ghost');
+    g.style.left = e.clientX + 'px';
+    g.style.top = e.clientY + 'px';
+  }
+}
+function onBagUp(e) {
+  window.removeEventListener('pointermove', onBagMove);
+  const d = bagDrag; bagDrag = null;
+  hideGhost();
+  if (!d) return;
+  if (!d.moved) { useBagItem(d.id); return; }
+  const mat = $('mat');
+  if (mat && !$('craft').hidden && mode === 'craft') {
+    const r = mat.getBoundingClientRect();
+    if (e.clientX > r.left && e.clientX < r.right && e.clientY > r.top && e.clientY < r.bottom) {
+      addPileToMat(d.id, e.clientX - r.left, e.clientY - r.top);
+      return;
+    }
+    return;
+  }
+  if (mode === 'play' && overCanvas(e.clientX, e.clientY)) {
+    const w = screenToWorld(e.clientX, e.clientY);
+    dropToWorld(d.id, w.x, w.y);
+  }
+}
+
+function useBagItem(id) {
+  const it = ITEMS[id];
+  if (!it) return;
+  if (it.kind === 'tool' || it.kind === 'place') {
+    setHand(G.hand === id ? null : id);
+    if (G.hand && it.kind === 'place') hint(tr('placed', iname(id)), 1800);
+    return;
+  }
+  if (it.kind === 'food') {
+    if (G.player.food > 96) { return; }
+    takeItem(id, 1);
+    G.player.food = clamp(G.player.food + (it.food || 10), 0, 100);
+    if (id === 'meat_raw' || id === 'fish_raw') G.player.hp = clamp(G.player.hp - 4, 0, 100);
+    toast(iname(id));
+    return;
+  }
+  hint(tr('craftTake'), 2600);
+}
+
+function dropToWorld(id, x, y) {
+  const it = ITEMS[id];
+  if (!it) return;
+  if (it.kind === 'place') { placeFromHand(id, x, y); return; }
+  const fire = G.structs.find(s => s.type === 'campfire' && Math.hypot(s.x - x, s.y - y) < 46);
+  if (fire && id === 'wood') { fire.fuel = (fire.fuel || 0) + 50; fire.lit = true; toast(tr('fuelAdded')); return; }
+  if (fire && fire.lit && (id === 'meat_raw' || id === 'fish_raw')) { startCooking(fire, id); return; }
+  const bench = G.structs.find(s => s.type === 'bench' && Math.hypot(s.x - x, s.y - y) < 52);
+  if (bench) { openCraft(true); return; }
+  hint(tr('craftTake'), 2600);
+}
+
+/* ---------------- world interaction ---------------- */
+function screenToWorld(cx, cy) { return { x: cx + cam.x, y: cy + cam.y }; }
+function overCanvas(cx, cy) { const r = $('cv').getBoundingClientRect(); return cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom; }
+
+function nodeAt(x, y, pad) {
+  let best = null, bd = 1e9;
+  const p = pad || 0;
+  for (const n of world.nodes) {
+    if (n.left <= 0) continue;
+    let hit = false, d = 0;
+    if (n.kind === 'tree') {
+      hit = x > n.x - n.r - p && x < n.x + n.r + p && y > n.y - 52 - p && y < n.y + 14 + p;
+      d = Math.hypot(n.x - x, (n.y - 18) - y);
+    } else {
+      d = Math.hypot(n.x - x, n.y - y);
+      hit = d < n.r + p;
+    }
+    if (hit && d < bd) { bd = d; best = n; }
+  }
+  return best;
+}
+function animalAt(x, y, pad) {
+  let best = null, bd = 1e9;
+  for (const a of G.animals) {
+    if (a.hp <= 0) continue;
+    const d = Math.hypot(a.x - x, a.y - y);
+    if (d < a.r + (pad || 0) && d < bd) { bd = d; best = a; }
+  }
+  return best;
+}
+function structAt(x, y, pad) {
+  let best = null, bd = 1e9;
+  for (const s of G.structs) {
+    const d = Math.hypot(s.x - x, s.y - y);
+    if (d < 28 + (pad || 0) && d < bd) { bd = d; best = s; }
+  }
+  return best;
+}
+
+function clickWorld(cx, cy) {
+  if (!G || mode !== 'play') return;
+  const w = screenToWorld(cx, cy);
+  if (bagDrag) return;
+  if (G.hand && ITEMS[G.hand] && ITEMS[G.hand].kind === 'place') { placeFromHand(G.hand, w.x, w.y); return; }
+  if (G.fish) {
+    if (G.fish.state === 'bite') { catchFish(); return; }
+    G.fish = null;
+  }
+  const node = nodeAt(w.x, w.y, 8);
+  if (node) { startJob('node', node, node.x, node.y); return; }
+  const an = animalAt(w.x, w.y, 10);
+  if (an) { startJob('animal', an, an.x, an.y); return; }
+  const st = structAt(w.x, w.y, 8);
+  if (st) { startJob('struct', st, st.x, st.y); return; }
+  if (!landAt(w.x, w.y)) {
+    startJob(G.hand === 'rod' ? 'fish' : 'water', null, w.x, w.y);
+    return;
+  }
+  G.job = null;
+  G.moveTo = { x: w.x, y: w.y };
+}
+
+function startJob(kind, ref, x, y) {
+  G.job = { kind: kind, ref: ref, x: x, y: y, t: 0 };
+  G.moveTo = { x: x, y: y };
+  G.fish = null;
+}
+
+function gatherTime(node) {
+  const withAxe = G.hand === 'axe';
+  if (node.kind === 'tree') return withAxe ? 0.55 : 1.15;
+  if (node.kind === 'rock') return withAxe ? 0.5 : 0.75;
+  return 0.45;
+}
+
+function doGather(node) {
+  if (node.left <= 0) return;
+  const kind = node.kind;
+  if (kind === 'tree') { addItem('wood', 1); G.gathered.wood++; }
+  else if (kind === 'rock') { addItem('stone', 1); G.gathered.stone++; }
+  else if (kind === 'bush') { addItem('berries', 1); }
+  else { addItem('fiber', 1); G.gathered.fiber++; }
+  node.left--;
+  puffs(node.x, node.y - 12, kind === 'tree' ? '#c9a97a' : kind === 'rock' ? '#b9b4a6' : '#9fbe7a', 5);
+  if (node.left <= 0) node.until = G.clock + (kind === 'tree' ? 75 : kind === 'rock' ? 95 : 40);
+  buildBag();
+  if (G.gathered.wood >= 5 && G.gathered.stone >= 3 && G.gathered.fiber >= 3) completeQuest('gather');
+}
+
+function startFishing(wx, wy) {
+  if (G.hand !== 'rod') return;
+  if (G.fish) return;
+  G.job = null;
+  G.moveTo = null;
+  const d = Math.hypot(wx - G.player.x, wy - G.player.y);
+  if (d > 420) { hint(tr('tooFar')); return; }
+  const k = Math.min(1, 110 / Math.max(1, d));
+  G.fish = { bx: G.player.x + (wx - G.player.x) * k, by: G.player.y + (wy - G.player.y) * k, t: 0, state: 'cast', bite: rr(2, 4.6) };
+  toast(tr('fishingCast'));
+}
+function catchFish() {
+  if (!G.fish) return;
+  G.fish = null;
+  addItem('fish_raw', 1);
+  toast(tr('fishingCatch'));
+  completeQuestExtra('fish');
+}
+function completeQuestExtra() { /* fishing is not a tracked goal */ }
+
+function woodNeededForFire() { return !!(G.structs.find(s => s.type === 'campfire')); }
+
+function startCooking(fire, item) {
+  if (fire.cook) { hint(tr('cookStart'), 2000); return; }
+  if (!takeItem(item, 1)) return;
+  fire.cook = { item: item, t: 0 };
+  toast(tr('cookStart'));
+}
+
+function canPlaceAt(x, y) {
+  if (!landAt(x, y)) return false;
+  if (G.structs.some(s => Math.hypot(s.x - x, s.y - y) < 42)) return false;
+  if (world.nodes.some(n => n.left > 0 && (n.kind === 'tree' || n.kind === 'rock') && (n.kind === 'tree' ? Math.hypot(n.x - x, (n.y - 22) - y) < n.r + 10 : Math.hypot(n.x - x, n.y - y) < n.r + 10))) return false;
+  if (G.animals.some(a => a.hp > 0 && Math.hypot(a.x - x, a.y - y) < 30)) return false;
+  return true;
+}
+function placeFromHand(id, x, y) {
+  const it = ITEMS[id];
+  if (!it || it.kind !== 'place') return;
+  if (Math.hypot(x - G.player.x, y - G.player.y) > 118) { hint(tr('tooFar')); return; }
+  if (!canPlaceAt(x, y)) {
+    let found = false;
+    for (let r = 14; r <= 92 && !found; r += 14) {
+      for (let i = 0; i < 16; i++) {
+        const a = (i / 16) * Math.PI * 2;
+        const tx = x + Math.cos(a) * r, ty = y + Math.sin(a) * r;
+        if (Math.hypot(tx - G.player.x, ty - G.player.y) > 116) continue;
+        if (canPlaceAt(tx, ty)) { x = tx; y = ty; found = true; break; }
+      }
+    }
+    if (!found) { hint(tr('cantPlace')); return; }
+  }
+  if (!takeItem(id, 1)) return;
+  const s = { type: id, x: x, y: y, fuel: id === 'campfire' ? 130 : 0, lit: id === 'campfire', cook: null };
+  G.structs.push(s);
+  puffs(x, y, '#e7d3a4', 10);
+  toast(tr('placed', iname(id)));
+  if (id === 'campfire') completeQuest('fire');
+  if (id === 'bench') completeQuest('bench');
+  if (id === 'beacon') { completeQuest('beacon'); }
+  if (!G.inv[id]) setHand(null);
+  persist();
+}
+
+function useStruct(s) {
+  if (s.type === 'bench') { openCraft(true); return; }
+  if (s.type === 'campfire') {
+    if (G.hand === 'wood' && takeItem('wood', 1)) { s.fuel = (s.fuel || 0) + 50; s.lit = true; toast(tr('fuelAdded')); return; }
+    if (G.hand && (G.hand === 'meat_raw' || G.hand === 'fish_raw') && s.lit) { startCooking(s, G.hand); return; }
+    hint(s.lit ? tr('cookStart') : tr('fuelAdded'), 2600);
+    return;
+  }
+  if (s.type === 'beacon') {
+    if (s.lit) { hint(tr('litBeacon'), 2200); return; }
+    if (G.hand === 'torch' || G.hand === 'axe') { s.lit = true; G.winT = 0; toast(tr('litBeacon')); return; }
+    hint(tr('hintBeacon'), 3200);
+    return;
+  }
+  if (s.type === 'wall') { hint(tr('placed', iname('wall')), 1400); }
+}
+
+function nearestFire() {
+  let best = null, bd = 1e9;
+  for (const s of G.structs) {
+    if (s.type !== 'campfire' || !s.lit) continue;
+    const d = Math.hypot(s.x - G.player.x, s.y - G.player.y);
+    if (d < 165 && d < bd) { bd = d; best = s; }
+  }
+  return best;
+}
+
+/* ---------------- animals ---------------- */
+const ANIMALS = {
+  rabbit: { hp: 16, speed: 96, r: 9, meat: 1, hide: 0, flee: 150, color: '#c9b39a' },
+  deer:   { hp: 52, speed: 118, r: 14, meat: 2, hide: 1, flee: 175, color: '#b98d5e' },
+  wolf:   { hp: 74, speed: 122, r: 13, meat: 1, hide: 1, dmg: 9, color: '#8b8f96' }
+};
+function spawnAnimal(kind, x, y) {
+  const A = ANIMALS[kind];
+  let px = x, py = y, guard = 0;
+  while ((px == null || !landAt(px, py)) && guard++ < 80) {
+    const a = Math.random() * TAU, d = 160 + Math.random() * 620;
+    px = G.player.x + Math.cos(a) * d; py = G.player.y + Math.sin(a) * d;
+  }
+  if (!landAt(px, py)) return null;
+  const an = { kind: kind, x: px, y: py, hp: A.hp, max: A.hp, face: 1, wander: 0, wx: px, wy: py, cd: 0, hop: Math.random() * 3 };
+  G.animals.push(an);
+  return an;
+}
+function seedAnimals() {
+  G.animals = [];
+  for (let i = 0; i < 11; i++) spawnAnimal('rabbit');
+  for (let i = 0; i < 4; i++) spawnAnimal('deer');
+}
+
+function updateAnimals(dt) {
+  const info = timeInfo();
+  const night = info.night;
+  const p = G.player;
+  for (const a of G.animals) {
+    const A = ANIMALS[a.kind];
+    a.cd = Math.max(0, a.cd - dt);
+    a.hop += dt;
+    const pd = Math.hypot(p.x - a.x, p.y - a.y);
+    let vx = 0, vy = 0;
+    if (a.kind === 'wolf') {
+      const fire = nearestFireTo(a.x, a.y, 135);
+      if (fire) { const fd = Math.hypot(a.x - fire.x, a.y - fire.y) || 1; vx = (a.x - fire.x) / fd; vy = (a.y - fire.y) / fd; }
+      else if (pd < 520) {
+        vx = (p.x - a.x) / Math.max(1, pd); vy = (p.y - a.y) / Math.max(1, pd);
+        if (pd < a.r + 16 && a.cd <= 0) {
+          a.cd = 1.1;
+          p.hp = clamp(p.hp - A.dmg, 0, 100);
+          shake = 0.4;
+          toast(tr('wolfNear'));
+        }
+      } else { wander(a, dt, A, night); vx = a.vx || 0; vy = a.vy || 0; }
+    } else if (pd < A.flee) {
+      vx = (a.x - p.x) / Math.max(1, pd); vy = (a.y - p.y) / Math.max(1, pd);
+    } else { wander(a, dt, A, night); vx = a.vx || 0; vy = a.vy || 0; }
+    if (vx || vy) {
+      a.face = vx < 0 ? -1 : 1;
+      const sp = A.speed * (a.kind === 'wolf' && pd > 420 ? 0.35 : 1);
+      moveCreature(a, vx * sp * dt, vy * sp * dt);
+    }
+  }
+  // night wolves
+  if (night && G.animals.filter(a => a.kind === 'wolf' && a.hp > 0).length < Math.min(4, 1 + G.day)) {
+    G.wolfT = (G.wolfT || 0) + dt;
+    if (G.wolfT > 6) { G.wolfT = 0; spawnAnimal('wolf'); }
+  } else G.wolfT = 0;
+  G.animals = G.animals.filter(a => a.hp > 0 && Math.hypot(a.x - p.x, a.y - p.y) < 1400);
+}
+
+function nearestFireTo(x, y, r) {
+  for (const s of G.structs) if (s.type === 'campfire' && s.lit && Math.hypot(s.x - x, s.y - y) < r) return s;
+  return null;
+}
+function wander(a, dt, A, night) {
+  a.wander -= dt;
+  if (a.wander <= 0) {
+    a.wander = 1.6 + Math.random() * 2.6;
+    if (Math.random() < 0.35) { a.vx = 0; a.vy = 0; }
+    else {
+      const ang = Math.random() * TAU;
+      a.vx = Math.cos(ang) * 0.6; a.vy = Math.sin(ang) * 0.6;
+      a.wx = a.x; a.wy = a.y;
+    }
+  }
+  if (!isWalkable(a.x + (a.vx || 0) * 26, a.y + (a.vy || 0) * 26, null, true)) { a.vx = -(a.vx || 0); a.vy = -(a.vy || 0); }
+}
+function moveCreature(a, dx, dy) {
+  if (isWalkable(a.x + dx, a.y, a, false)) a.x += dx;
+  if (isWalkable(a.x, a.y + dy, a, false)) a.y += dy;
+  a.x = clamp(a.x, 30, WORLD.w - 30); a.y = clamp(a.y, 30, WORLD.h - 30);
+}
+function isWalkable(x, y, ignore, forAnimal) {
+  if (!landAt(x, y)) return false;
+  for (const s of G.structs) {
+    if (s.type === 'wall' || s.type === 'bench' || s.type === 'beacon' || s.type === 'campfire') {
+      if (Math.hypot(s.x - x, s.y - y) < 30) return false;
+    }
+  }
+  for (const n of world.nodes) {
+    if (n.left <= 0) continue;
+    if (n.kind !== 'tree' && n.kind !== 'rock') continue;
+    if (Math.hypot(n.x - x, n.y - y) < n.r * 0.72 + 8) return false;
+  }
+  return true;
+}
+
+function hurtAnimal(a, dmg) {
+  a.hp -= dmg;
+  puffs(a.x, a.y - 10, '#c05a4a', 7);
+  if (a.hp <= 0) {
+    const A = ANIMALS[a.kind];
+    for (let i = 0; i < A.meat; i++) addItem('meat_raw', 1);
+    for (let i = 0; i < A.hide; i++) addItem('hide', 1);
+    toast(iname('meat_raw') + ' +' + A.meat + (A.hide ? ' · ' + iname('hide') + ' +' + A.hide : ''));
+    shake = 0.3;
+  }
+}
+
+/* ---------------- crafting ---------------- */
+const craft = { bench: false, tokens: [], work: 0, pick: null, drag: null, rub: false, lx: 0, ly: 0 };
+let matMoved = 0;
+
+function openCraft(bench) {
+  if (!G || mode !== 'play') return;
+  craft.bench = !!bench;
+  craft.tokens = []; craft.work = 0; craft.pick = null;
+  mode = 'craft';
+  $('craft').hidden = false;
+  document.body.classList.add('crafting');
+  renderCraft();
+}
+function closeCraft() {
+  if (craft.tokens.length) {
+    for (const t of craft.tokens) addItem(t.item, t.qty);
+    craft.tokens = [];
+  }
+  craft.work = 0; craft.pick = null;
+  $('craft').hidden = true;
+  document.body.classList.remove('crafting');
+  mode = G ? 'play' : 'menu';
+  buildBag();
+}
+function craftTotals() {
+  const tot = {};
+  for (const t of craft.tokens) tot[t.item] = (tot[t.item] || 0) + t.qty;
+  return tot;
+}
+function addPileToMat(item, x, y) {
+  if (!G.inv[item]) return;
+  const qty = G.inv[item];
+  delete G.inv[item];
+  const tok = craft.tokens.find(t => t.item === item);
+  if (tok) tok.qty += qty;
+  else {
+    const mat = $('mat');
+    craft.tokens.push({ item: item, qty: qty, x: clamp(x, 44, Math.max(44, mat.clientWidth - 44)), y: clamp(y, 44, Math.max(44, mat.clientHeight - 44)) });
+  }
+  craft.work = 0;
+  buildBag();
+  renderCraft();
+  persist();
+}
+function takeBackToken(i) {
+  const t = craft.tokens[i];
+  if (!t) return;
+  addItem(t.item, t.qty);
+  craft.tokens.splice(i, 1);
+  craft.work = 0;
+  renderCraft();
+}
+function takeAllBack() {
+  for (const t of craft.tokens) addItem(t.item, t.qty);
+  craft.tokens = [];
+  craft.work = 0;
+  renderCraft();
+}
+function usableRecipe(r) { return !r.bench || craft.bench; }
+function matchingRecipes() {
+  const tot = craftTotals();
+  return RECIPES.filter(r => usableRecipe(r) && Object.keys(r.need).every(k => (tot[k] || 0) >= r.need[k]));
+}
+function currentRecipe() {
+  if (!craft.pick) return null;
+  return RECIPES.find(r => r.id === craft.pick && usableRecipe(r)) || null;
+}
+function renderCraft() {
+  if (!G) return;
+  $('craftWhere').textContent = craft.bench ? tr('atBench') : tr('handsOnly');
+  $('craftWhere').classList.toggle('away', !craft.bench);
+  const mat = $('mat');
+  for (const old of mat.querySelectorAll('.token')) old.remove();
+  craft.tokens.forEach((t, i) => {
+    const el = document.createElement('div');
+    el.className = 'token';
+    el.dataset.i = String(i);
+    el.style.left = t.x + 'px';
+    el.style.top = t.y + 'px';
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 48;
+    drawIcon(cv.getContext('2d'), t.item, 48);
+    el.appendChild(cv);
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = t.qty; el.appendChild(n);
+    el.title = iname(t.item);
+    mat.appendChild(el);
+  });
+  const matches = matchingRecipes();
+  if (!craft.pick || !RECIPES.some(r => r.id === craft.pick && usableRecipe(r))) craft.pick = matches.length ? matches[0].id : null;
+  const rec = currentRecipe();
+  const hintEl = $('matHint');
+  hintEl.classList.toggle('hide', craft.tokens.length > 0 && !!rec);
+  hintEl.textContent = !craft.tokens.length ? tr('matEmpty')
+    : !rec ? (matches.length ? tr('matReady') : tr('matNoMatch'))
+    : iname(rec.out) + ' — ' + tr('matReady');
+  // recipes
+  const box = $('recipes');
+  box.innerHTML = '';
+  for (const r of RECIPES) {
+    const matched = matches.some(m => m.id === r.id);
+    const usable = usableRecipe(r);
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'recipe' + (matched ? '' : usable ? ' missing' : ' locked') + (craft.pick === r.id ? ' sel' : '');
+    chip.style.cursor = usable ? 'pointer' : 'not-allowed';
+    if (craft.pick === r.id) chip.style.outline = '3px solid var(--honey)';
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 30;
+    drawIcon(cv.getContext('2d'), r.out, 30);
+    chip.appendChild(cv);
+    const label = document.createElement('span');
+    label.textContent = iname(r.out);
+    chip.appendChild(label);
+    const small = document.createElement('small');
+    small.textContent = Object.keys(r.need).map(k => r.need[k] + ' ' + iname(k)).join(' + ') + (usableRecipe(r) ? '' : ' · ' + tr('benchNeeded'));
+    chip.appendChild(small);
+    if (usable) chip.addEventListener('click', () => { craft.pick = r.id; craft.work = 0; renderCraft(); });
+    box.appendChild(chip);
+  }
+  const recNow = currentRecipe();
+  const pct = recNow ? Math.min(100, (craft.work / recNow.work) * 100) : 0;
+  $('craftWork').style.width = pct + '%';
+  $('craftState').textContent = recNow ? (craft.work > 0 ? Math.floor(pct) + '%' : tr('matReady')) : '';
+}
+function finishCraft() {
+  const r = currentRecipe();
+  if (!r) return;
+  const tot = craftTotals();
+  if (!Object.keys(r.need).every(k => (tot[k] || 0) >= r.need[k])) return;
+  for (const k of Object.keys(r.need)) {
+    let need = r.need[k];
+    for (const t of craft.tokens) {
+      if (t.item !== k || need <= 0) continue;
+      const use = Math.min(t.qty, need);
+      t.qty -= use; need -= use;
+    }
+  }
+  craft.tokens = craft.tokens.filter(t => t.qty > 0);
+  addItem(r.out, 1);
+  toast(tr('crafted', iname(r.out)));
+  if (r.id === 'rope') completeQuest('rope');
+  if (r.out === 'axe') completeQuest('axe');
+  if (r.out === 'spear') completeQuest('spear');
+  craft.work = 0; craft.pick = null;
+  renderCraft();
+  persist();
+}
+
+function onMatDown(e) {
+  if (mode !== 'craft') return;
+  const token = e.target.closest('.token');
+  const rect = $('mat').getBoundingClientRect();
+  matMoved = 0;
+  if (token) {
+    const i = Number(token.dataset.i);
+    const t = craft.tokens[i];
+    if (!t) return;
+    craft.drag = { i: i, ox: (e.clientX - rect.left) - t.x, oy: (e.clientY - rect.top) - t.y };
+    token.classList.add('drag');
+    token.setPointerCapture && token.setPointerCapture(e.pointerId);
+  } else {
+    craft.rub = true; craft.lx = e.clientX; craft.ly = e.clientY;
+  }
+}
+function onMatMove(e) {
+  if (mode !== 'craft') return;
+  const rect = $('mat').getBoundingClientRect();
+  if (craft.drag) {
+    const t = craft.tokens[craft.drag.i];
+    if (!t) return;
+    const nx = clamp(e.clientX - rect.left - craft.drag.ox, 36, rect.width - 36);
+    const ny = clamp(e.clientY - rect.top - craft.drag.oy, 36, rect.height - 36);
+    matMoved += Math.abs(nx - t.x) + Math.abs(ny - t.y);
+    t.x = nx; t.y = ny;
+    const el = $('mat').querySelector('.token[data-i="' + craft.drag.i + '"]');
+    if (el) { el.style.left = nx + 'px'; el.style.top = ny + 'px'; }
+    return;
+  }
+  if (!craft.rub) return;
+  const r = currentRecipe();
+  if (!r) return;
+  if (!matchingRecipes().some(m => m.id === r.id)) return;
+  const d = Math.abs(e.clientX - craft.lx) + Math.abs(e.clientY - craft.ly);
+  craft.lx = e.clientX; craft.ly = e.clientY;
+  if (d > 46) return; // ignore teleports
+  craft.work += d * 0.115;
+  $('craftWork').style.width = Math.min(100, (craft.work / r.work) * 100) + '%';
+  $('craftState').textContent = Math.floor(Math.min(100, (craft.work / r.work) * 100)) + '%';
+  if (craft.work >= r.work) finishCraft();
+}
+function onMatUp(e) {
+  if (craft.drag) {
+    const t = craft.tokens[craft.drag.i];
+    const wasDrag = matMoved > 8;
+    craft.drag = null;
+    for (const el of $('mat').querySelectorAll('.token')) el.classList.remove('drag');
+    if (t && !wasDrag) takeBackToken(craft.tokens.indexOf(t));
+  }
+  craft.rub = false;
+}
+
+/* ---------------- time, survival, update ---------------- */
+function timeInfo() {
+  const f = ((G ? G.clock : 0) % DAY) / DAY;
+  const hour = (7 + f * 24) % 24;
+  const night = hour >= 19.5 || hour < 5.5;
+  const dusk = hour >= 17.4 && hour < 19.5;
+  const dawn = hour >= 5.5 && hour < 7.2;
+  let dark = 0;
+  if (night) dark = 0.82;
+  else if (dusk) dark = 0.5 * clamp((hour - 17.4) / 2.1, 0, 1);
+  else if (dawn) dark = 0.42 * clamp(1 - (hour - 5.5) / 1.7, 0, 1);
+  return { f: f, hour: hour, night: night, dusk: dusk, dawn: dawn, dark: clamp(dark, 0, 0.82) };
+}
+
+function stepPlayer(dx, dy) {
+  const p = G.player;
+  if (isWalkable(p.x + dx, p.y + dy, p, false)) { p.x += dx; p.y += dy; return; }
+  if (isWalkable(p.x + dx, p.y, p, false)) p.x += dx;
+  if (isWalkable(p.x, p.y + dy, p, false)) p.y += dy;
+  p.x = clamp(p.x, 30, WORLD.w - 30); p.y = clamp(p.y, 30, WORLD.h - 30);
+}
+
+function doJob(dt) {
+  const p = G.player, job = G.job;
+  if (!job) return;
+  if (job.kind === 'node' && (!job.ref || job.ref.left <= 0)) { G.job = null; return; }
+  if (job.kind === 'animal' && (!job.ref || job.ref.hp <= 0)) { G.job = null; return; }
+  const reach = (job.kind === 'water' || job.kind === 'fish') ? 120 : job.kind === 'struct' ? 62 : 44;
+  const d = Math.hypot(job.x - p.x, job.y - p.y);
+  if (d > reach) {
+    const sp = 112;
+    stepPlayer((job.x - p.x) / Math.max(1, d) * sp * dt, (job.y - p.y) / Math.max(1, d) * sp * dt);
+    p.face = job.x < p.x ? -1 : 1;
+    p.walk += dt * 5;
+    return;
+  }
+  if (job.kind === 'node') {
+    job.t += dt;
+    if (job.t >= gatherTime(job.ref)) { job.t = 0; doGather(job.ref); }
+    return;
+  }
+  if (job.kind === 'animal') {
+    job.t += dt;
+    if (job.t >= 0.62) {
+      job.t = 0;
+      const spear = G.hand === 'spear', axe = G.hand === 'axe';
+      if (!spear && !axe) hint(tr('needSpear'), 2000);
+      hurtAnimal(job.ref, spear ? 34 : axe ? 20 : 5);
+      p.face = job.ref.x < p.x ? -1 : 1;
+      if (job.ref.hp <= 0) G.job = null;
+    }
+    return;
+  }
+  if (job.kind === 'struct') { const s = job.ref; G.job = null; useStruct(s); return; }
+  if (job.kind === 'fish') { G.job = null; startFishing(job.x, job.y); return; }
+  if (job.kind === 'water') {
+    job.t += dt;
+    if (job.t > 1.1) {
+      G.job = null;
+      p.water = clamp(p.water + 30, 0, 100);
+      toast(tr('drink'));
+      puffs(p.x + p.face * 12, p.y + 6, '#9fd0d8', 4);
+    }
+  }
+}
+
+function updatePlayer(dt) {
+  const p = G.player;
+  let ix = 0, iy = 0;
+  if (keys['a'] || keys['arrowleft']) ix--;
+  if (keys['d'] || keys['arrowright']) ix++;
+  if (keys['w'] || keys['arrowup']) iy--;
+  if (keys['s'] || keys['arrowdown']) iy++;
+  p.atk = Math.max(0, p.atk - dt);
+  if (ix || iy) {
+    G.job = null; G.moveTo = null; G.fish = null;
+    const len = Math.hypot(ix, iy); ix /= len; iy /= len;
+    const sprint = (keys['shift'] || keys['shiftleft'] || keys['shiftright']) && p.stam > 1;
+    const sp = sprint ? 176 : 114;
+    if (sprint) p.stam = clamp(p.stam - 22 * dt, 0, 100);
+    else p.stam = clamp(p.stam + 11 * dt, 0, 100);
+    stepPlayer(ix * sp * dt, iy * sp * dt);
+    if (ix) p.face = ix < 0 ? -1 : 1;
+    p.walk += dt * (sprint ? 11 : 7);
+  } else {
+    p.stam = clamp(p.stam + 13 * dt, 0, 100);
+    if (G.job) doJob(dt);
+    else if (G.moveTo) {
+      const dx = G.moveTo.x - p.x, dy = G.moveTo.y - p.y, d = Math.hypot(dx, dy);
+      if (d < 9) G.moveTo = null;
+      else { stepPlayer(dx / d * 112 * dt, dy / d * 112 * dt); if (dx) p.face = dx < 0 ? -1 : 1; p.walk += dt * 5; }
+    }
+  }
+  if (G.fish) {
+    G.fish.t += dt;
+    if (G.fish.state === 'cast' && G.fish.t >= G.fish.bite) { G.fish.state = 'bite'; G.fish.t = 0; toast(tr('fishingBite')); }
+    else if (G.fish.state === 'bite' && G.fish.t > 1.7) { G.fish = null; toast(tr('fishingMiss')); }
+  }
+}
+
+function updateWorld(dt) {
+  G.clock += dt;
+  const info = timeInfo();
+  const p = G.player;
+  // day bookkeeping
+  const day = Math.floor(G.clock / DAY) + 1;
+  if (day !== G.day) {
+    G.day = day;
+    if (G.wasNight) completeQuest('night');
+    G.wasNight = false;
+    toast(tr('newDay', day));
+  }
+  if (info.night) G.wasNight = true;
+  // nodes regrow
+  for (const n of world.nodes) {
+    if (n.left <= 0 && n.until > 0 && G.clock > n.until) { n.left = n.kind === 'tree' || n.kind === 'rock' ? 3 : 1; n.until = 0; }
+  }
+  // fires, cooking
+  const fire = nearestFire();
+  for (const s of G.structs) {
+    if (s.type !== 'campfire') continue;
+    if (s.lit) {
+      s.fuel = (s.fuel || 0) - dt;
+      if (s.fuel <= 0) { s.fuel = 0; s.lit = false; }
+      if (s.cook) {
+        s.cook.t += dt;
+        if (s.cook.t >= 4) {
+          const cooked = s.cook.item === 'meat_raw' ? 'meat_cooked' : 'fish_cooked';
+          const wasMeat = s.cook.item === 'meat_raw';
+          s.cook = null;
+          addItem(cooked, 1);
+          toast(tr('cooked', iname(cooked)));
+          if (wasMeat) completeQuest('cook');
+        }
+      }
+    }
+  }
+  // warmth, food, water
+  const torch = G.hand === 'torch';
+  let warmRate = info.night ? -4.6 : info.dusk ? -1.3 : 3.4;
+  if (fire) warmRate = 26;
+  else if (torch && (info.night || info.dusk)) warmRate += 2.8;
+  p.warm = clamp(p.warm + warmRate * dt, 0, 100);
+  p.food = clamp(p.food - 0.32 * dt, 0, 100);
+  p.water = clamp(p.water - 0.48 * dt, 0, 100);
+  let dmg = 0;
+  if (p.food <= 0) dmg += 2.0;
+  if (p.water <= 0) dmg += 2.4;
+  if (p.warm <= 0) dmg += 3.4;
+  if (!dmg && p.food > 55 && p.water > 55 && p.warm > 35) p.hp = clamp(p.hp + 1.1 * dt, 0, 100);
+  if (dmg) p.hp = clamp(p.hp - dmg * dt, 0, 100);
+  if (p.hp <= 0) { die(); return; }
+  updateAnimals(dt);
+  // beacon
+  const beacon = G.structs.find(s => s.type === 'beacon' && s.lit);
+  if (beacon) { G.winT += dt; if (G.winT > 6) { showOver(true); return; } }
+  updateHUD();
+}
+
+function die() {
+  if (mode === 'over') return;
+  showOver(false);
+}
+
+function showOver(win) {
+  if (!G) return;
+  mode = 'over';
+  persistBest(win);
+  const goals = Object.keys(G.goals).filter(k => G.goals[k]).length;
+  const days = Math.floor(G.clock / DAY) + (win ? 1 : 0);
+  const score = Math.floor(G.clock / DAY) * 100 + goals * 50;
+  $('overBig').textContent = win ? tr('rescue') : tr('died');
+  $('overTitle').textContent = win ? tr('overRescue') : tr('overDead');
+  $('overText').textContent = win ? tr('day', G.day) : tr('day', G.day);
+  $('overScore').innerHTML = '<div><b>' + days + '</b><span>' + tr('scoreDays') + '</span></div>' +
+    '<div><b>' + goals + '/' + QUESTS.length + '</b><span>' + tr('scoreGoals') + '</span></div>' +
+    '<div><b>' + score + '</b><span>' + tr('scoreScore') + '</span></div>';
+  $('over').hidden = false;
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* off */ }
+  buildMenu();
+}
+function persistBest(win) {
+  try {
+    const raw = localStorage.getItem('wildwood-best');
+    const best = raw ? JSON.parse(raw) : { days: 0, score: 0, wins: 0 };
+    const goals = G ? Object.keys(G.goals).filter(k => G.goals[k]).length : 0;
+    const days = G ? Math.floor(G.clock / DAY) : 0;
+    best.days = Math.max(best.days || 0, days);
+    best.score = Math.max(best.score || 0, days * 100 + goals * 50);
+    if (win) best.wins = (best.wins || 0) + 1;
+    localStorage.setItem('wildwood-best', JSON.stringify(best));
+  } catch (e) { /* off */ }
+}
+
+/* ---------------- ghost / placement cursor ---------------- */
+function showGhostFor(id) {
+  const g = $('ghost');
+  g.innerHTML = '';
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 66;
+  drawIcon(cv.getContext('2d'), id, 66);
+  g.appendChild(cv);
+  g.hidden = !hoverScreen.on;
+  if (hoverScreen.on) { g.style.left = hoverScreen.x + 'px'; g.style.top = hoverScreen.y + 'px'; }
+}
+function hideGhost() { const g = $('ghost'); if (g) { g.hidden = true; g.innerHTML = ''; } }
+
+/* ---------------- menus and wiring ---------------- */
+function buildMenu() {
+  $('btnContinue').textContent = tr('continue_');
+  $('btnContinue').disabled = !G && !hasSave();
+  $('btnNew').textContent = tr('newGame');
+  buildMenuKeys();
+  const best = (() => { try { return JSON.parse(localStorage.getItem('wildwood-best') || 'null'); } catch (e) { return null; } })();
+  const el = $('menuBest');
+  if (el) el.textContent = best && best.score ? tr('scoreScore') + ' ' + best.score + ' · ' + tr('scoreDays') + ' ' + best.days : '';
+}
+function buildMenuKeys() {
+  const el = $('menuKeys');
+  if (el) el.innerHTML = '<p style="margin:0;color:var(--ink-soft)">' + tr('controls') + '</p>';
+}
+function buildHelp() {
+  const el = $('helpBody');
+  if (!el) return;
+  el.innerHTML = '';
+  for (const k of ['help1', 'help2', 'help3', 'help4', 'help5']) {
+    const p = document.createElement('p');
+    p.textContent = tr(k);
+    el.appendChild(p);
+  }
+  const p = document.createElement('p');
+  p.style.color = 'var(--ink-soft)';
+  p.textContent = tr('controls');
+  el.appendChild(p);
+}
+function openMenu() {
+  if (!G) { $('menu').hidden = false; mode = 'menu'; buildMenu(); return; }
+  mode = mode === 'menu' ? 'play' : 'menu';
+  $('menu').hidden = mode !== 'menu';
+  if (mode === 'menu') buildMenu();
+  else if (craft.tokens.length) { mode = 'craft'; }
+}
+function closeMenu() {
+  if ($('menu').hidden) return;
+  $('menu').hidden = true;
+  mode = G ? 'play' : 'menu';
+  if (craft.tokens.length && !$('craft').hidden) mode = 'craft';
+}
+function openHelp() {
+  if (!G) return;
+  mode = 'help';
+  $('help').hidden = false;
+  buildHelp();
+}
+function closeHelp() {
+  $('help').hidden = true;
+  mode = $('craft').hidden ? 'play' : 'craft';
+}
+function setLang(lang) {
+  LANG = lang === 'da' ? 'da' : 'en';
+  applyLang();
+  buildMenu(); buildHelp(); buildQuests(); buildBag(); updateHUD();
+  if (!$('craft').hidden) renderCraft();
+}
+function applyLang() {
+  document.documentElement.lang = LANG;
+  for (const el of document.querySelectorAll('[data-t]')) {
+    const v = tr(el.dataset.t);
+    if (v) el.textContent = v;
+  }
+  for (const b of document.querySelectorAll('[data-lang]')) b.setAttribute('aria-pressed', String(b.dataset.lang === LANG));
+  try { localStorage.setItem('damp.lang', LANG); } catch (e) { /* off */ }
+  buildMenuKeys(); buildHelp();
+  if (G) { buildBag(); buildQuests(); updateHandLine(); updateHUD(); if (!$('craft').hidden) renderCraft(); }
+}
+
+function onKeyDown(e) {
+  const k = (e.key || '').toLowerCase();
+  if (k === 'shift') keys['shift'] = true;
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+  if (k === 'escape') {
+    if (!$('craft').hidden) { closeCraft(); return; }
+    if (!$('help').hidden) { closeHelp(); return; }
+    if (!$('menu').hidden) { closeMenu(); return; }
+    if (G && G.hand) { setHand(null); return; }
+    if (G && mode === 'play') { openMenu(); return; }
+  }
+  if (!$('menu').hidden || !$('help').hidden || mode === 'over') return;
+  if (k === 'c') {
+    if (mode === 'play') { Sound.click && Sound.click(); openCraft(false); }
+    return;
+  }
+  if (k === 'm') { openMenu(); return; }
+  if (mode !== 'play') return;
+  if (k === '1' || k === '2' || k === '3' || k === '4' || k === '5' || k === '6' || k === '7' || k === '8' || k === '9') {
+    const items = Object.keys(G.inv).filter(x => G.inv[x] > 0);
+    const id = items[Number(k) - 1];
+    if (id) useBagItem(id);
+    return;
+  }
+  if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { keys[k] = true; e.preventDefault(); }
+}
+function onKeyUp(e) {
+  const k = (e.key || '').toLowerCase();
+  if (k === 'shift') keys['shift'] = false;
+  keys[k] = false;
+}
+
+function bindUI() {
+  const cv = $('cv');
+  cv.addEventListener('click', (e) => { if (mode === 'play') clickWorld(e.clientX, e.clientY); });
+  cv.addEventListener('pointermove', (e) => {
+    if (mode !== 'play') return;
+    hoverScreen.x = e.clientX; hoverScreen.y = e.clientY; hoverScreen.on = true;
+    if (G && G.hand && ITEMS[G.hand] && ITEMS[G.hand].kind === 'place') {
+      const g = $('ghost');
+      g.style.left = e.clientX + 'px';
+      g.style.top = e.clientY + 'px';
+      g.hidden = false;
+    }
+  });
+  cv.addEventListener('pointerleave', () => { hoverScreen.on = false; if (!bagDrag) hideGhost(); });
+  $('btnCraft').addEventListener('click', () => { if (mode === 'play') openCraft(false); });
+  $('quests').addEventListener('click', () => { if (innerWidth < 560) $('quests').classList.toggle('min'); });
+  $('btnHelp').addEventListener('click', openHelp);
+  $('btnMenu').addEventListener('click', () => { Sound.click && Sound.click(); openMenu(); });
+  $('btnHelpClose').addEventListener('click', closeHelp);
+  $('btnCraftClose').addEventListener('click', closeCraft);
+  $('btnTakeAll').addEventListener('click', takeAllBack);
+  $('mat').addEventListener('pointerdown', onMatDown);
+  window.addEventListener('pointermove', onMatMove);
+  window.addEventListener('pointerup', onMatUp);
+  $('btnContinue').addEventListener('click', () => {
+    if (G) { closeMenu(); return; }
+    if (loadGame()) { $('menu').hidden = true; }
+  });
+  $('btnNew').addEventListener('click', () => { newGame(); buildMenu(); });
+  $('btnAgain').addEventListener('click', () => { $('over').hidden = true; newGame(); });
+  $('btnOverMenu').addEventListener('click', () => { $('over').hidden = true; G = null; $('menu').hidden = false; mode = 'menu'; buildMenu(); });
+  $('menu').addEventListener('click', (e) => { if (e.target === $('menu') && G) closeMenu(); });
+  for (const b of document.querySelectorAll('[data-lang]')) b.addEventListener('click', () => setLang(b.dataset.lang));
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
+  window.addEventListener('blur', () => { keys = {}; });
+  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('pagehide', persist);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) persist(); });
+  setInterval(() => { if (G && mode === 'play') persist(); }, 12000);
+}
+
+/* ---------------- rendering ---------------- */
+const cv = $('cv');
+const ctx = cv.getContext('2d');
+const view = { w: 0, h: 0 };
+let dpr = 1;
+const cam = { x: 0, y: 0 };
+const hoverScreen = { x: 0, y: 0, on: false };
+let shake = 0;
+const fxs = [];
+const INK = '#2b3a33';
+const PAPER = '#ece4cf';
+const Sound = { click: function () {} };
+
+function resizeCanvas() {
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  view.w = window.innerWidth;
+  view.h = window.innerHeight;
+  cv.width = Math.round(view.w * dpr);
+  cv.height = Math.round(view.h * dpr);
+  cv.style.width = view.w + 'px';
+  cv.style.height = view.h + 'px';
+  if (lightCv) { lightCv.width = cv.width; lightCv.height = cv.height; }
+}
+let lightCv = document.createElement('canvas');
+
+function puffs(x, y, col, n) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * TAU, v = 18 + Math.random() * 40;
+    fxs.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 18, life: 0.5 + Math.random() * 0.4, max: 0.9, r: 1.6 + Math.random() * 2.4, col: col });
+  }
+}
+function updateFx(dt) {
+  for (const f of fxs) {
+    f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 34 * dt; f.life -= dt;
+  }
+  for (let i = fxs.length - 1; i >= 0; i--) if (fxs[i].life <= 0) fxs.splice(i, 1);
+}
+
+/* ---------- item icons ---------- */
+function drawIcon(c, id, size) {
+  const s = size / 48;
+  c.save();
+  c.scale(s, s);
+  c.strokeStyle = INK; c.fillStyle = INK; c.lineWidth = 2.2; c.lineJoin = 'round'; c.lineCap = 'round';
+  const w = '#b07b45', wd = '#8a5c32', st = '#a8a89c', st2 = '#8d8d82', gr = '#6f9a55', be = '#b8484f';
+  switch (id) {
+    case 'wood':
+      c.save(); c.translate(24, 16); c.rotate(-0.35); c.fillStyle = w; c.strokeRect(-15, -6, 30, 12);
+      c.beginPath(); c.ellipse(15, 0, 4.5, 6, 0, 0, TAU); c.fillStyle = '#d8b384'; c.fill(); c.stroke(); c.restore();
+      c.save(); c.translate(24, 31); c.rotate(0.22); c.fillStyle = wd; c.strokeRect(-15, -6, 30, 12);
+      c.beginPath(); c.ellipse(-15, 0, 4.5, 6, 0, 0, TAU); c.fillStyle = '#d8b384'; c.fill(); c.stroke(); c.restore();
+      break;
+    case 'stone':
+      c.fillStyle = st; c.beginPath();
+      c.moveTo(9, 30); c.quadraticCurveTo(6, 18, 18, 12); c.quadraticCurveTo(33, 8, 39, 22); c.quadraticCurveTo(41, 33, 28, 37); c.quadraticCurveTo(14, 39, 9, 30); c.closePath(); c.fill(); c.stroke();
+      c.strokeStyle = '#c9c9bf'; c.beginPath(); c.moveTo(17, 22); c.lineTo(24, 19); c.stroke();
+      break;
+    case 'fiber':
+      for (let i = 0; i < 4; i++) {
+        c.strokeStyle = i % 2 ? '#7ea85f' : '#5f8a49'; c.beginPath();
+        c.moveTo(12 + i * 7, 38); c.quadraticCurveTo(8 + i * 9, 22, 16 + i * 6, 9); c.stroke();
+      }
+      c.strokeStyle = '#c9a06a'; c.lineWidth = 3; c.beginPath(); c.moveTo(13, 29); c.lineTo(35, 26); c.stroke();
+      break;
+    case 'berries':
+      c.fillStyle = gr; c.beginPath(); c.ellipse(24, 17, 13, 7, -0.25, 0, TAU); c.fill(); c.stroke();
+      for (const p of [[17, 27], [27, 30], [33, 23]]) { c.fillStyle = be; c.beginPath(); c.arc(p[0], p[1], 6, 0, TAU); c.fill(); c.stroke(); }
+      break;
+    case 'meat_raw':
+      c.fillStyle = '#cf7a7a'; c.beginPath();
+      c.moveTo(11, 26); c.quadraticCurveTo(12, 14, 25, 13); c.quadraticCurveTo(39, 14, 38, 27); c.quadraticCurveTo(36, 38, 23, 38); c.quadraticCurveTo(12, 37, 11, 26); c.closePath(); c.fill(); c.stroke();
+      c.strokeStyle = '#f0c9c0'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(17, 22); c.quadraticCurveTo(24, 18, 31, 23); c.stroke();
+      c.fillStyle = '#efe6cf'; c.beginPath(); c.arc(34, 31, 4, 0, TAU); c.fill(); c.stroke();
+      break;
+    case 'meat_cooked':
+      c.fillStyle = '#9a6236'; c.beginPath();
+      c.moveTo(11, 26); c.quadraticCurveTo(12, 14, 25, 13); c.quadraticCurveTo(39, 14, 38, 27); c.quadraticCurveTo(36, 38, 23, 38); c.quadraticCurveTo(12, 37, 11, 26); c.closePath(); c.fill(); c.stroke();
+      c.strokeStyle = '#5d3a1e'; c.lineWidth = 2.2; c.beginPath(); c.moveTo(16, 24); c.lineTo(32, 24); c.moveTo(17, 30); c.lineTo(31, 30); c.stroke();
+      break;
+    case 'fish_raw':
+    case 'fish_cooked': {
+      const body = id === 'fish_raw' ? '#8fc0c9' : '#c39a62';
+      c.fillStyle = body; c.beginPath(); c.ellipse(25, 26, 15, 9, -0.1, 0, TAU); c.fill(); c.stroke();
+      c.beginPath(); c.moveTo(10, 26); c.lineTo(3, 19); c.lineTo(4, 32); c.closePath(); c.fillStyle = id === 'fish_raw' ? '#7fb0ba' : '#a9824f'; c.fill(); c.stroke();
+      c.fillStyle = INK; c.beginPath(); c.arc(34, 23, 1.9, 0, TAU); c.fill();
+      if (id === 'fish_cooked') { c.strokeStyle = '#6c4a26'; c.beginPath(); c.moveTo(18, 20); c.lineTo(22, 32); c.moveTo(25, 19); c.lineTo(29, 31); c.stroke(); }
+      break;
+    }
+    case 'hide':
+      c.fillStyle = '#c9a276'; c.beginPath();
+      c.moveTo(12, 14); c.quadraticCurveTo(24, 8, 36, 14); c.quadraticCurveTo(42, 24, 36, 36); c.quadraticCurveTo(24, 42, 12, 36); c.quadraticCurveTo(6, 24, 12, 14); c.closePath(); c.fill(); c.stroke();
+      c.strokeStyle = '#a37f57'; c.beginPath(); c.moveTo(18, 20); c.lineTo(29, 30); c.moveTo(29, 20); c.lineTo(18, 30); c.stroke();
+      break;
+    case 'rope':
+      c.strokeStyle = '#c9a06a'; c.lineWidth = 4;
+      c.beginPath(); c.arc(23, 25, 11, 0, TAU); c.stroke();
+      c.strokeStyle = '#9a7448'; c.lineWidth = 2;
+      for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; c.beginPath(); c.moveTo(23 + Math.cos(a) * 8, 25 + Math.sin(a) * 8); c.lineTo(23 + Math.cos(a) * 13, 25 + Math.sin(a) * 13); c.stroke(); }
+      c.beginPath(); c.moveTo(32, 32); c.quadraticCurveTo(38, 38, 33, 42); c.stroke();
+      break;
+    case 'axe':
+      c.strokeStyle = '#8a5c32'; c.lineWidth = 4.4; c.beginPath(); c.moveTo(16, 40); c.lineTo(30, 12); c.stroke();
+      c.fillStyle = st2; c.beginPath(); c.moveTo(26, 14); c.quadraticCurveTo(36, 8, 41, 16); c.quadraticCurveTo(36, 22, 27, 21); c.closePath(); c.fill(); c.stroke();
+      c.strokeStyle = '#c9a06a'; c.lineWidth = 2; c.beginPath(); c.moveTo(24, 18); c.lineTo(30, 21); c.stroke();
+      break;
+    case 'spear':
+      c.strokeStyle = '#8a5c32'; c.lineWidth = 3.6; c.beginPath(); c.moveTo(12, 42); c.lineTo(34, 10); c.stroke();
+      c.fillStyle = st2; c.beginPath(); c.moveTo(33, 12); c.lineTo(42, 5); c.lineTo(39, 17); c.closePath(); c.fill(); c.stroke();
+      c.strokeStyle = '#c9a06a'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(28, 14); c.lineTo(34, 18); c.moveTo(26, 18); c.lineTo(32, 22); c.stroke();
+      break;
+    case 'rod':
+      c.strokeStyle = '#8a5c32'; c.lineWidth = 3.4; c.beginPath(); c.moveTo(12, 40); c.quadraticCurveTo(24, 22, 38, 12); c.stroke();
+      c.strokeStyle = '#5b6b70'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(38, 12); c.quadraticCurveTo(42, 26, 38, 34); c.stroke();
+      c.beginPath(); c.arc(37, 36, 3, 0.4, 4.4); c.stroke();
+      c.fillStyle = '#e7b34a'; c.beginPath(); c.arc(38, 12, 2.4, 0, TAU); c.fill();
+      break;
+    case 'torch':
+      c.strokeStyle = '#8a5c32'; c.lineWidth = 4.2; c.beginPath(); c.moveTo(21, 42); c.lineTo(28, 22); c.stroke();
+      c.fillStyle = '#e7b34a'; c.beginPath(); c.moveTo(29, 20); c.quadraticCurveTo(20, 12, 27, 4); c.quadraticCurveTo(38, 12, 32, 21); c.closePath(); c.fill(); c.stroke();
+      c.fillStyle = '#d9823f'; c.beginPath(); c.moveTo(29, 18); c.quadraticCurveTo(24, 13, 28, 9); c.quadraticCurveTo(33, 14, 31, 19); c.closePath(); c.fill();
+      c.strokeStyle = '#c9a06a'; c.lineWidth = 2; c.beginPath(); c.moveTo(24, 25); c.lineTo(31, 27); c.stroke();
+      break;
+    case 'campfire':
+      for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; c.fillStyle = st; c.beginPath(); c.ellipse(24 + Math.cos(a) * 16, 34 + Math.sin(a) * 7, 4.4, 3.4, a, 0, TAU); c.fill(); c.stroke(); }
+      c.strokeStyle = '#8a5c32'; c.lineWidth = 4; c.beginPath(); c.moveTo(14, 37); c.lineTo(34, 31); c.moveTo(15, 31); c.lineTo(33, 37); c.stroke();
+      c.fillStyle = '#e7b34a'; c.beginPath(); c.moveTo(24, 10); c.quadraticCurveTo(15, 21, 24, 31); c.quadraticCurveTo(34, 22, 24, 10); c.fill(); c.stroke();
+      c.fillStyle = '#d9823f'; c.beginPath(); c.moveTo(24, 18); c.quadraticCurveTo(19, 24, 24, 29); c.quadraticCurveTo(29, 24, 24, 18); c.fill();
+      break;
+    case 'bench':
+      c.fillStyle = w; c.strokeRect(6, 19, 36, 9);
+      c.strokeStyle = '#8a5c32'; c.lineWidth = 3.4; c.beginPath(); c.moveTo(10, 28); c.lineTo(9, 41); c.moveTo(38, 28); c.lineTo(39, 41); c.stroke();
+      c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.moveTo(12, 19); c.lineTo(12, 28); c.moveTo(36, 19); c.lineTo(36, 28); c.stroke();
+      c.fillStyle = st2; c.beginPath(); c.moveTo(17, 14); c.lineTo(27, 12); c.lineTo(25, 19); c.closePath(); c.fill(); c.stroke();
+      c.strokeStyle = '#8a5c32'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(26, 16); c.lineTo(35, 13); c.stroke();
+      break;
+    case 'wall':
+      c.fillStyle = w;
+      for (let i = 0; i < 3; i++) { c.beginPath(); c.rect(8 + i * 11, 13 + (i % 2) * 2, 10, 26); c.fill(); c.stroke(); }
+      c.fillStyle = wd; c.fillRect(6, 34, 36, 6); c.strokeRect(6, 34, 36, 6);
+      c.fillStyle = '#e3d2a6'; c.beginPath(); c.arc(13, 22, 1.6, 0, TAU); c.arc(24, 30, 1.6, 0, TAU); c.arc(35, 21, 1.6, 0, TAU); c.fill();
+      break;
+    case 'beacon':
+      c.strokeStyle = '#8a5c32'; c.lineWidth = 4;
+      for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(12 + i * 7, 40); c.lineTo(19 + i * 6, 16); c.stroke(); }
+      c.fillStyle = '#e7b34a'; c.beginPath(); c.moveTo(24, 6); c.quadraticCurveTo(16, 13, 24, 20); c.quadraticCurveTo(32, 13, 24, 6); c.fill(); c.stroke();
+      c.strokeStyle = '#b8484f'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(24, 6); c.lineTo(37, 10); c.lineTo(24, 13); c.stroke();
+      c.fillStyle = '#a8a89c'; c.beginPath(); c.ellipse(24, 42, 16, 3.4, 0, 0, TAU); c.fill(); c.stroke();
+      break;
+    default:
+      c.fillStyle = '#c9c0a8'; c.beginPath(); c.arc(24, 24, 12, 0, TAU); c.fill(); c.stroke();
+  }
+  c.restore();
+}
+
+/* ---------- world drawing ---------- */
+function drawStump(c, n, t) {
+  c.save(); c.translate(n.x, n.y);
+  c.fillStyle = '#a9773f'; c.strokeStyle = INK; c.lineWidth = 2;
+  c.beginPath(); c.ellipse(0, 0, 12, 7, 0, 0, TAU); c.fill(); c.stroke();
+  c.fillStyle = '#d8b384'; c.beginPath(); c.ellipse(0, -3, 9, 4.6, 0, 0, TAU); c.fill(); c.stroke();
+  c.restore();
+}
+function drawTree(c, n, t) {
+  c.save(); c.translate(n.x, n.y);
+  const sway = Math.sin(t * 0.9 + n.seed) * 1.6;
+  c.globalAlpha = 0.16; c.fillStyle = INK; c.beginPath(); c.ellipse(4, 8, 22, 8, 0, 0, TAU); c.fill(); c.globalAlpha = 1;
+  c.strokeStyle = '#6b4f36'; c.lineWidth = 3; c.beginPath(); c.moveTo(0, 4); c.quadraticCurveTo(-2, -14, sway, -26); c.stroke();
+  const tone = n.seed > 50 ? '#5f8a49' : '#6d9a55';
+  c.fillStyle = tone; c.strokeStyle = INK; c.lineWidth = 2.4;
+  c.beginPath(); c.ellipse(sway - 12, -30, 16, 13, -0.3, 0, TAU); c.fill(); c.stroke();
+  c.beginPath(); c.ellipse(sway + 12, -34, 15, 12, 0.2, 0, TAU); c.fill(); c.stroke();
+  c.beginPath(); c.ellipse(sway, -45, 15, 13, 0, 0, TAU); c.fill(); c.stroke();
+  c.fillStyle = 'rgba(255,255,255,.16)'; c.beginPath(); c.ellipse(sway - 4, -48, 8, 5, -0.3, 0, TAU); c.fill();
+  c.restore();
+}
+function drawRock(c, n) {
+  c.save(); c.translate(n.x, n.y);
+  c.globalAlpha = 0.15; c.fillStyle = INK; c.beginPath(); c.ellipse(2, 5, n.r + 4, 6, 0, 0, TAU); c.fill(); c.globalAlpha = 1;
+  c.fillStyle = '#a8a89c'; c.strokeStyle = INK; c.lineWidth = 2.2;
+  c.beginPath();
+  c.moveTo(-n.r, 2); c.quadraticCurveTo(-n.r - 2, -n.r * 0.7, -n.r * 0.2, -n.r);
+  c.quadraticCurveTo(n.r * 0.9, -n.r * 0.9, n.r, -1); c.quadraticCurveTo(n.r + 1, n.r * 0.7, 0, n.r * 0.8);
+  c.quadraticCurveTo(-n.r * 0.9, n.r * 0.8, -n.r, 2); c.closePath(); c.fill(); c.stroke();
+  c.strokeStyle = '#c9c9bf'; c.lineWidth = 2; c.beginPath(); c.moveTo(-n.r * 0.4, -n.r * 0.4); c.lineTo(n.r * 0.2, -n.r * 0.2); c.stroke();
+  c.restore();
+}
+function drawBush(c, n) {
+  c.save(); c.translate(n.x, n.y);
+  c.fillStyle = '#5f8a49'; c.strokeStyle = INK; c.lineWidth = 2.2;
+  c.beginPath(); c.ellipse(0, -6, n.r + 3, n.r * 0.8, 0, 0, TAU); c.fill(); c.stroke();
+  if (n.left > 0) {
+    for (let i = 0; i < 3; i++) {
+      const a = i * 2.1 + n.seed;
+      c.fillStyle = '#b8484f'; c.beginPath(); c.arc(Math.cos(a) * 8, -8 + Math.sin(a) * 5, 3.2, 0, TAU); c.fill(); c.stroke();
+    }
+  }
+  c.restore();
+}
+function drawReed(c, n, t) {
+  c.save(); c.translate(n.x, n.y);
+  for (let i = 0; i < 4; i++) {
+    const sway = Math.sin(t * 1.4 + i + n.seed) * 3;
+    c.strokeStyle = i % 2 ? '#7ea85f' : '#5f8a49'; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(-6 + i * 4, 4); c.quadraticCurveTo(-8 + i * 4 + sway, -12, -4 + i * 4 + sway, -24 - (i % 2) * 5); c.stroke();
+  }
+  c.restore();
+}
+function drawTuft(c, n, t) {
+  c.save(); c.translate(n.x, n.y);
+  for (let i = 0; i < 3; i++) {
+    c.strokeStyle = '#6f9a55'; c.lineWidth = 1.8;
+    const sway = Math.sin(t * 1.6 + i + n.seed) * 2;
+    c.beginPath(); c.moveTo(-4 + i * 4, 2); c.quadraticCurveTo(-6 + i * 4 + sway, -6, -3 + i * 4 + sway, -12); c.stroke();
+  }
+  c.restore();
+}
+function drawStructure(c, s, t) {
+  c.save(); c.translate(s.x, s.y);
+  c.globalAlpha = 0.16; c.fillStyle = INK; c.beginPath(); c.ellipse(3, 8, 24, 8, 0, 0, TAU); c.fill(); c.globalAlpha = 1;
+  if (s.type === 'campfire') {
+    c.fillStyle = '#a8a89c'; c.strokeStyle = INK; c.lineWidth = 2;
+    for (let i = 0; i < 7; i++) { const a = i / 7 * TAU; c.beginPath(); c.ellipse(Math.cos(a) * 20, 8 + Math.sin(a) * 8, 4.6, 3.4, a, 0, TAU); c.fill(); c.stroke(); }
+    c.strokeStyle = '#8a5c32'; c.lineWidth = 4;
+    c.beginPath(); c.moveTo(-11, 10); c.lineTo(11, 4); c.moveTo(-10, 4); c.lineTo(12, 10); c.stroke();
+    if (s.lit) {
+      const fl = 1 + Math.sin(t * 9 + s.x) * 0.12;
+      c.save(); c.translate(0, -2); c.scale(fl, fl);
+      c.fillStyle = '#e7b34a'; c.strokeStyle = INK; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(0, -22); c.quadraticCurveTo(-13, -8, 0, 6); c.quadraticCurveTo(13, -8, 0, -22); c.fill(); c.stroke();
+      c.fillStyle = '#d9823f'; c.beginPath(); c.moveTo(0, -12); c.quadraticCurveTo(-7, -4, 0, 4); c.quadraticCurveTo(7, -4, 0, -12); c.fill();
+      c.restore();
+      if (s.cook) {
+        c.fillStyle = '#9a6236'; c.beginPath(); c.ellipse(0, -14, 7, 3.4, 0, 0, TAU); c.fill(); c.stroke();
+      }
+    } else {
+      c.strokeStyle = '#a8a89c'; c.lineWidth = 2.4;
+      c.beginPath(); c.moveTo(-2, 2); c.quadraticCurveTo(-6, -8, 2, -12); c.quadraticCurveTo(8, -6, 4, 2); c.stroke();
+    }
+  } else if (s.type === 'bench') {
+    c.fillStyle = '#b07b45'; c.strokeStyle = INK; c.lineWidth = 2.4;
+    c.beginPath(); c.rect(-24, -4, 48, 10); c.fill(); c.stroke();
+    c.strokeStyle = '#8a5c32'; c.lineWidth = 4;
+    c.beginPath(); c.moveTo(-18, 6); c.lineTo(-20, 20); c.moveTo(18, 6); c.lineTo(20, 20); c.stroke();
+    c.fillStyle = '#a8a89c'; c.strokeStyle = INK; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(-8, -6); c.lineTo(2, -10); c.lineTo(0, -3); c.closePath(); c.fill(); c.stroke();
+    c.strokeStyle = '#8a5c32'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(1, -7); c.lineTo(12, -10); c.stroke();
+  } else if (s.type === 'wall') {
+    c.fillStyle = '#b07b45'; c.strokeStyle = INK; c.lineWidth = 2.4;
+    for (let i = 0; i < 3; i++) { c.beginPath(); c.rect(-20 + i * 14, -22 + (i % 2) * 3, 13, 38); c.fill(); c.stroke(); }
+    c.fillStyle = '#8a5c32'; c.fillRect(-23, 12, 46, 7); c.strokeRect(-23, 12, 46, 7);
+  } else if (s.type === 'beacon') {
+    c.strokeStyle = '#8a5c32'; c.lineWidth = 5;
+    for (let i = 0; i < 5; i++) { c.beginPath(); c.moveTo(-22 + i * 10, 18); c.lineTo(-8 + i * 8, -26 - (i % 2) * 6); c.stroke(); }
+    c.fillStyle = '#a8a89c'; c.strokeStyle = INK; c.lineWidth = 2;
+    c.beginPath(); c.ellipse(0, 20, 28, 7, 0, 0, TAU); c.fill(); c.stroke();
+    if (s.lit) {
+      const fl = 1 + Math.sin(t * 11) * 0.18;
+      c.save(); c.translate(0, -30); c.scale(fl, fl);
+      c.fillStyle = '#e7b34a'; c.beginPath(); c.moveTo(0, -18); c.quadraticCurveTo(-10, -4, 0, 4); c.quadraticCurveTo(10, -4, 0, -18); c.fill(); c.stroke();
+      c.restore();
+      c.globalAlpha = 0.5; c.fillStyle = '#e9e2d0';
+      for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(Math.sin(t + i * 2) * 8, -58 - i * 16, 8 + i * 3, 0, TAU); c.fill(); }
+      c.globalAlpha = 1;
+    }
+  }
+  c.restore();
+}
+function drawAnimal(c, a, t) {
+  const A = ANIMALS[a.kind];
+  c.save(); c.translate(a.x, a.y);
+  const bob = a.hop * (a.kind === 'rabbit' ? 6 : 3);
+  c.globalAlpha = 0.15; c.fillStyle = INK; c.beginPath(); c.ellipse(2, a.r * 0.7, a.r + 3, 4, 0, 0, TAU); c.fill(); c.globalAlpha = 1;
+  c.scale(a.face < 0 ? -1 : 1, 1);
+  c.strokeStyle = INK; c.lineWidth = 2;
+  if (a.kind === 'rabbit') {
+    c.fillStyle = A.color;
+    c.beginPath(); c.ellipse(0, -4 - Math.abs(Math.sin(bob)) * 2, 9, 7, 0, 0, TAU); c.fill(); c.stroke();
+    c.beginPath(); c.arc(7, -9, 4.6, 0, TAU); c.fill(); c.stroke();
+    c.beginPath(); c.ellipse(7, -16, 1.8, 5.5, -0.2, 0, TAU); c.fill(); c.stroke();
+    c.fillStyle = '#f2e6d2'; c.beginPath(); c.arc(9, -9, 1.6, 0, TAU); c.fill();
+  } else if (a.kind === 'deer') {
+    c.fillStyle = A.color;
+    c.beginPath(); c.ellipse(0, -8, 15, 9, 0, 0, TAU); c.fill(); c.stroke();
+    c.beginPath(); c.arc(13, -16, 6, 0, TAU); c.fill(); c.stroke();
+    c.strokeStyle = '#6b4f36'; c.lineWidth = 2.4;
+    c.beginPath(); c.moveTo(13, -21); c.lineTo(10, -28); c.moveTo(10, -25); c.lineTo(6, -27); c.moveTo(15, -21); c.lineTo(19, -27); c.stroke();
+    c.strokeStyle = INK; c.lineWidth = 2.4;
+    c.beginPath(); c.moveTo(-8, 0); c.lineTo(-9, 8); c.moveTo(6, 0); c.lineTo(7, 8); c.stroke();
+  } else {
+    c.fillStyle = A.color;
+    c.beginPath(); c.ellipse(0, -6, 15, 8, 0, 0, TAU); c.fill(); c.stroke();
+    c.beginPath(); c.arc(13, -12, 6, 0, TAU); c.fill(); c.stroke();
+    c.beginPath(); c.moveTo(-13, -6); c.quadraticCurveTo(-24, -10, -22, 0); c.stroke();
+    c.fillStyle = '#e7b34a'; c.beginPath(); c.arc(15, -14, 1.7, 0, TAU); c.fill();
+    c.strokeStyle = INK; c.beginPath(); c.moveTo(-7, 1); c.lineTo(-8, 8); c.moveTo(7, 1); c.lineTo(8, 8); c.stroke();
+  }
+  if (a.hp < a.max) {
+    c.fillStyle = '#d9cfb6'; c.strokeStyle = INK; c.lineWidth = 1.4;
+    c.fillRect(-14, -a.r - 16, 28, 4); c.strokeRect(-14, -a.r - 16, 28, 4);
+    c.fillStyle = '#b8484f'; c.fillRect(-14, -a.r - 16, 28 * (a.hp / a.max), 4);
+  }
+  c.restore();
+}
+function drawPlayer(c, t) {
+  const p = G.player;
+  const moving = !!(G.job || G.moveTo) || keys['w'] || keys['a'] || keys['s'] || keys['d'] || keys['arrowup'] || keys['arrowdown'] || keys['arrowleft'] || keys['arrowright'];
+  const bob = moving ? Math.sin(p.walk * 2) * 2 : Math.sin(t * 2) * 0.8;
+  c.save(); c.translate(p.x, p.y);
+  c.globalAlpha = 0.2; c.fillStyle = INK; c.beginPath(); c.ellipse(2, 12, 15, 6, 0, 0, TAU); c.fill(); c.globalAlpha = 1;
+  c.save(); c.translate(0, bob);
+  c.scale(p.face < 0 ? -1 : 1, 1);
+  // legs
+  c.strokeStyle = INK; c.lineWidth = 3; c.lineCap = 'round';
+  const stride = moving ? Math.sin(p.walk * 2) * 4 : 0;
+  c.beginPath(); c.moveTo(-4, 8); c.lineTo(-5 + stride, 16); c.moveTo(4, 8); c.lineTo(5 - stride, 16); c.stroke();
+  // body
+  c.fillStyle = '#7c9a63'; c.beginPath();
+  c.moveTo(-10, -2); c.quadraticCurveTo(0, -8, 10, -2); c.lineTo(9, 9); c.quadraticCurveTo(0, 12, -9, 9); c.closePath(); c.fill(); c.stroke();
+  // backpack
+  c.fillStyle = '#a9773f'; c.beginPath(); c.roundRect ? c.roundRect(-15, -3, 8, 12, 3) : c.rect(-15, -3, 8, 12); c.fill(); c.stroke();
+  // head
+  c.fillStyle = '#e8c39a'; c.beginPath(); c.arc(1, -13, 8.4, 0, TAU); c.fill(); c.stroke();
+  // hair
+  c.fillStyle = '#5b4632'; c.beginPath(); c.arc(0, -16, 8.4, Math.PI * 1.05, Math.PI * 2.0); c.fill();
+  // face
+  c.fillStyle = INK; c.beginPath(); c.arc(5, -13, 1.2, 0, TAU); c.fill();
+  // hand item
+  const hand = G.hand;
+  if (hand && ITEMS[hand]) {
+    c.save(); c.translate(11, -2); c.rotate(hand === 'rod' ? -0.5 : hand === 'spear' ? -0.3 : 0.5);
+    c.scale(0.72, 0.72); c.translate(-24, -24);
+    drawIcon(c, hand, 48);
+    c.restore();
+  }
+  c.restore();
+  c.restore();
+}
+
+function drawWorld() {
+  const c = ctx;
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  c.fillStyle = '#7fb2bb'; c.fillRect(0, 0, view.w, view.h);
+  if (!world || !G) return;
+  updateCam();
+  c.save(); c.translate(-cam.x + (shake > 0 ? (Math.random() - 0.5) * 6 : 0), -cam.y + (shake > 0 ? (Math.random() - 0.5) * 6 : 0));
+  c.drawImage(world.terrain, 0, 0);
+  const t = performance.now() / 1000;
+  const items = [];
+  for (const n of world.nodes) {
+    if (n.x < cam.x - 80 || n.x > cam.x + view.w + 80 || n.y < cam.y - 120 || n.y > cam.y + view.h + 80) continue;
+    if (n.left <= 0 && (n.kind === 'tree' || n.kind === 'rock')) { items.push([n.y, () => drawStump(c, n, t)]); continue; }
+    if (n.left <= 0) continue;
+    const fn = n.kind === 'tree' ? () => drawTree(c, n, t) : n.kind === 'rock' ? () => drawRock(c, n) : n.kind === 'bush' ? () => drawBush(c, n) : n.kind === 'reed' ? () => drawReed(c, n, t) : () => drawTuft(c, n, t);
+    items.push([n.y + (n.kind === 'tree' ? 0 : 6), fn]);
+  }
+  for (const s of G.structs) items.push([s.y + 14, () => drawStructure(c, s, t)]);
+  for (const a of G.animals) items.push([a.y + 8, () => drawAnimal(c, a, t)]);
+  items.push([G.player.y + 12, () => drawPlayer(c, t)]);
+  items.sort((a, b) => a[0] - b[0]);
+  for (const it of items) it[1]();
+  // fishing line + float
+  if (G.fish) {
+    const bob = Math.sin(t * 6) * (G.fish.state === 'bite' ? 5 : 1.6);
+    c.strokeStyle = 'rgba(43,58,51,.55)'; c.lineWidth = 1.4;
+    c.beginPath(); c.moveTo(G.player.x + 10 * G.player.face, G.player.y - 18); c.quadraticCurveTo((G.player.x + G.fish.bx) / 2, Math.min(G.player.y, G.fish.by) - 30, G.fish.bx, G.fish.by + bob); c.stroke();
+    c.fillStyle = '#e7b34a'; c.strokeStyle = INK; c.lineWidth = 1.8;
+    c.beginPath(); c.arc(G.fish.bx, G.fish.by + bob, 4.4, 0, TAU); c.fill(); c.stroke();
+    if (G.fish.state === 'bite') { c.strokeStyle = '#b8484f'; c.lineWidth = 2; c.beginPath(); c.arc(G.fish.bx, G.fish.by + bob, 9 + Math.sin(t * 12) * 3, 0, TAU); c.stroke(); }
+  }
+  // hover ring on a resource
+  if (hoverScreen.on && mode === 'play') {
+    const w = screenToWorld(hoverScreen.x, hoverScreen.y);
+    const n = nodeAt(w.x, w.y, 8) || animalAt(w.x, w.y, 10) || structAt(w.x, w.y, 8);
+    if (n) {
+      c.save(); c.strokeStyle = 'rgba(43,58,51,.55)'; c.lineWidth = 2; c.setLineDash([5, 5]);
+      const ry = n.kind === 'tree' ? -26 : 6, rx = (n.r || 20) + 6;
+      c.beginPath(); c.ellipse(n.x, n.y + ry, rx, n.kind === 'tree' ? 34 : (n.r || 20) * 0.5 + 6, 0, 0, TAU); c.stroke(); c.restore();
+    }
+  }
+  // placement preview
+  if (G.hand && ITEMS[G.hand] && ITEMS[G.hand].kind === 'place' && hoverScreen.on && mode === 'play') {
+    const w = screenToWorld(hoverScreen.x, hoverScreen.y);
+    const ok = landAt(w.x, w.y) && Math.hypot(w.x - G.player.x, w.y - G.player.y) <= 118 && !G.structs.some(s => Math.hypot(s.x - w.x, s.y - w.y) < 44);
+    c.save(); c.globalAlpha = 0.5; c.strokeStyle = ok ? '#4f8f3d' : '#b8484f'; c.lineWidth = 2.5; c.setLineDash([7, 6]);
+    c.beginPath(); c.arc(w.x, w.y, 30, 0, TAU); c.stroke();
+    c.globalAlpha = 0.75; c.translate(w.x - 24, w.y - 34); drawIcon(c, G.hand, 48);
+    c.restore();
+  }
+  // particles
+  for (const f of fxs) {
+    c.globalAlpha = Math.max(0, f.life / f.max);
+    c.fillStyle = f.col; c.beginPath(); c.arc(f.x, f.y, f.r, 0, TAU); c.fill();
+  }
+  c.globalAlpha = 1;
+  c.restore();
+
+  // darkness and lights
+  const info = timeInfo();
+  if (info.dark > 0.02) drawNight(info.dark, t);
+  // vignette
+  const g = c.createRadialGradient(view.w / 2, view.h / 2, Math.min(view.w, view.h) * 0.35, view.w / 2, view.h / 2, Math.max(view.w, view.h) * 0.78);
+  g.addColorStop(0, 'rgba(43,58,51,0)');
+  g.addColorStop(1, 'rgba(43,58,51,.22)');
+  c.fillStyle = g; c.fillRect(0, 0, view.w, view.h);
+}
+
+function drawNight(dark, t) {
+  const c = ctx;
+  if (!lightCv.width) { lightCv.width = cv.width; lightCv.height = cv.height; }
+  const o = lightCv.getContext('2d');
+  o.setTransform(dpr, 0, 0, dpr, 0, 0);
+  o.clearRect(0, 0, view.w, view.h);
+  o.fillStyle = 'rgba(14,22,44,' + dark.toFixed(3) + ')';
+  o.fillRect(0, 0, view.w, view.h);
+  o.globalCompositeOperation = 'destination-out';
+  const lights = [];
+  for (const s of G.structs) if (s.lit && s.type === 'campfire') lights.push([s.x, s.y, 165 + Math.sin(t * 6 + s.x) * 7]);
+  if (G.structs.some(s => s.type === 'beacon' && s.lit)) {
+    const b = G.structs.find(s => s.type === 'beacon');
+    lights.push([b.x, b.y, 300]);
+  }
+  if (G.hand === 'torch') lights.push([G.player.x, G.player.y, 130 + Math.sin(t * 9) * 5]);
+  for (const l of lights) {
+    const sx = l[0] - cam.x, sy = l[1] - cam.y;
+    const grd = o.createRadialGradient(sx, sy, l[2] * 0.18, sx, sy, l[2]);
+    grd.addColorStop(0, 'rgba(0,0,0,0.95)');
+    grd.addColorStop(0.55, 'rgba(0,0,0,0.6)');
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    o.fillStyle = grd;
+    o.beginPath(); o.arc(sx, sy, l[2], 0, TAU); o.fill();
+  }
+  o.globalCompositeOperation = 'source-over';
+  c.drawImage(lightCv, 0, 0, view.w, view.h);
+}
+
+function drawMenuBackdrop() {
+  const c = ctx;
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const g = c.createLinearGradient(0, 0, 0, view.h);
+  g.addColorStop(0, '#dfe7cf'); g.addColorStop(1, '#cbd9b8');
+  c.fillStyle = g; c.fillRect(0, 0, view.w, view.h);
+  c.fillStyle = 'rgba(255,255,255,.25)';
+  for (let i = 0; i < 40; i++) { c.beginPath(); c.arc((i * 137) % view.w, (i * 89) % view.h, 1.6, 0, TAU); c.fill(); }
+  c.save();
+  c.translate(view.w * 0.5, view.h * 0.62);
+  const scale = Math.min(view.w, view.h) / 700;
+  c.scale(scale, scale);
+  c.strokeStyle = 'rgba(43,58,51,.20)'; c.lineWidth = 12; c.lineCap = 'round';
+  for (const [x, y, s] of [[-260, 40, 1], [230, 70, 0.85], [-60, 120, 1.2], [330, 150, 0.7], [-330, 170, 0.6]]) {
+    c.save(); c.translate(x, y); c.scale(s, s);
+    c.beginPath(); c.moveTo(0, 60); c.quadraticCurveTo(-6, -20, 0, -90); c.stroke();
+    c.beginPath(); c.arc(-40, -60, 52, 0, TAU); c.arc(30, -80, 60, 0, TAU); c.arc(10, -30, 46, 0, TAU); c.fillStyle = 'rgba(43,58,51,.10)'; c.fill();
+    c.restore();
+  }
+  c.restore();
+}
+
+/* ---------------- camera + loop ---------------- */
+function updateCam() {
+  const px = G.player.x, py = G.player.y;
+  const maxX = Math.max(0, WORLD.w - view.w), maxY = Math.max(0, WORLD.h - view.h);
+  cam.x = clamp(px - view.w / 2, 0, maxX);
+  cam.y = clamp(py - view.h / 2, 0, maxY);
+  if (view.w > WORLD.w) cam.x = (WORLD.w - view.w) / 2;
+  if (view.h > WORLD.h) cam.y = (WORLD.h - view.h) / 2;
+}
+
+let last = 0;
+function frame(ts) {
+  if (!last) last = ts;
+  let dt = (ts - last) / 1000;
+  last = ts;
+  dt = Math.min(0.06, Math.max(0, dt));
+  shake = Math.max(0, shake - dt * 2);
+  updateFx(dt);
+  if (G && mode === 'play') {
+    updatePlayer(dt);
+    if (G) updateWorld(dt);
+  } else if (G) {
+    updateHUD();
+  }
+  if (world && G) drawWorld(); else drawMenuBackdrop();
+  requestAnimationFrame(frame);
+}
+
+/* ---------------- boot ---------------- */
+function boot() {
+  resizeCanvas();
+  buildBag(); buildQuests(); buildMenu(); buildHelp(); bindUI(); applyLang();
+  if (innerWidth < 560) $('quests').classList.add('min');
+  $('menu').hidden = false;
+  $('over').hidden = true;
+  mode = 'menu';
+  requestAnimationFrame(frame);
+}
+boot();
+
+</script>
+</body>
+</html>

@@ -98,5 +98,12 @@
     "file": "games/krillion.html",
     "category": "Guessing",
     "image": "img/krillion.png"
+  },
+  {
+    "title": "Wildwood",
+    "description": "Hand-drawn 2D survival. Gather, hunt, fish and rub materials on the crafting mat to raise a fire, a workbench and a rescue beacon before the nights get you.",
+    "file": "games/wildwood.html",
+    "category": "Survival",
+    "image": "img/wildwood.png"
   }
 ]

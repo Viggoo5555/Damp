@@ -170,6 +170,20 @@
   .scoreline div { min-width: 90px; }
   .scoreline b { display: block; font-family: var(--f-display); font-weight: 400; font-size: 28px; }
 
+  #fishPanel { position: fixed; left: 50%; bottom: 106px; transform: translateX(-50%); z-index: 24; }
+  #fishPanel .fcard { background: #fbf5e4; border: 3px solid var(--ink); border-radius: var(--wob); box-shadow: 4px 5px 0 rgba(43,58,51,.55); padding: 7px 12px 10px; width: min(86vw, 340px); }
+  #fishPanel h3 { margin: 0 0 6px; font-family: var(--f-display); font-weight: 400; font-size: 21px; text-align: center; }
+  #fishPanel .fbody { display: flex; gap: 12px; align-items: stretch; }
+  .ftrack { position: relative; width: 46px; height: 152px; border: 2px solid var(--ink); border-radius: 12px; background: #dfe7cf; overflow: hidden; flex: 0 0 46px; touch-action: none; }
+  .ftrack.hot { box-shadow: inset 0 0 0 3px rgba(79,143,61,.75); }
+  .fzone { position: absolute; left: 3px; right: 3px; border-radius: 9px; background: rgba(124,154,99,.5); border: 2px solid #4f8f3d; }
+  .ffish { position: absolute; left: 8px; width: 26px; height: 26px; }
+  .fside { flex: 1; display: flex; flex-direction: column; gap: 7px; justify-content: center; min-width: 0; }
+  .fbar { height: 14px; border: 2px solid var(--ink); border-radius: 8px; background: #e9e0c8; overflow: hidden; }
+  .fprog { display: block; height: 100%; width: 0; background: #7c9a63; transition: width .1s linear, background .2s; }
+  .fhint { margin: 0; font-size: 13.5px; color: var(--ink-soft); line-height: 1.35; }
+  #fishPanel .small { font-size: 12.5px; opacity: .8; }
+
   @media (max-width: 700px) {
     body { font-size: 16px; }
     #quests { width: 168px; font-size: 13px; }
@@ -180,6 +194,8 @@
     .slot canvas { width: 38px; height: 38px; }
     #topRight .btn.small { padding: 2px 8px; }
     #mat { height: 250px; }
+    #fishPanel { bottom: 96px; }
+    .ftrack { height: 132px; }
     .token { width: 58px; height: 58px; }
     .token canvas { width: 44px; height: 44px; }
   }
@@ -285,6 +301,23 @@
   </div>
 </div>
 
+<div id="fishPanel" hidden>
+  <div class="fcard">
+    <h3 data-t="fishTitle">Reel it in</h3>
+    <div class="fbody">
+      <div class="ftrack" id="fishTrack">
+        <div class="fzone" id="fishZone"></div>
+        <canvas class="ffish" id="fishDot" width="26" height="26"></canvas>
+      </div>
+      <div class="fside">
+        <div class="fbar"><span class="fprog" id="fishProg"></span></div>
+        <p class="fhint" data-t="fishHold">Hold to lift the hook. Keep the fish in the green band until the bar is full.</p>
+        <p class="fhint small" data-t="fishCancel">Esc lets it go.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="ghost" hidden></div>
 
 <script>
@@ -313,7 +346,7 @@ const I18N = {
     help1: 'Everything you need comes from the forest. Tap a tree for wood, a rock for stone, tall grass or reeds for fiber, and bushes for berries.',
     help2: 'Your hands can make rope, a torch, a campfire, a workbench and walls. Drag the materials onto the crafting mat and rub the mat to work them together.',
     help3: 'A workbench opens the harder recipes: axe, spear, fishing rod and the rescue beacon. The beacon is your way home.',
-    help4: 'Tap water to drink. With a fishing rod in hand, tap the water to cast, and tap again the moment the float dips.',
+    help4: 'Tap water to drink. With a fishing rod in hand, tap the water to cast, and tap again the moment the float dips. Then hold to reel: keep the fish inside the green band until the bar fills.',
     help5: 'Night drains your warmth. Stand by a fire, carry a torch, or you will freeze. Wolves come out after dark — a spear keeps them off.',
     q_gather: 'Gather 5 wood, 3 stone, 3 fiber', q_rope: 'Craft a rope', q_bench: 'Build a workbench',
     q_axe: 'Craft a stone axe', q_fire: 'Build a campfire', q_cook: 'Cook meat on the fire',
@@ -328,6 +361,9 @@ const I18N = {
     drink: 'You drink from the water', noWater: 'That is not water',
     gatherWood: '+3 wood', gatherStone: '+2 stone', gatherFiber: '+2 fiber', gatherBerries: '+2 berries',
     fishingCast: 'Cast the line…', fishingBite: 'Something is biting — tap!', fishingCatch: '+1 fish', fishingMiss: 'It got away',
+    fishingHook: 'Hooked! Hold to reel it in', fishTitle: 'Reel it in',
+    fishHold: 'Hold to lift the hook. Keep the fish in the green band until the bar is full.',
+    fishCancel: 'Esc lets it go.', fishBig: '+{n} fish — a big one!',
     cookStart: 'Cooking over the fire…', cooked: 'Cooked {x}', fuelAdded: 'The fire grows', fireLit: 'The fire is lit',
     litBeacon: 'The beacon burns. Hold on…', rescue: 'Rescued!', died: 'You did not make it',
     nightFalls: 'Night falls. Get to a fire.', newDay: 'Day {n}',
@@ -353,7 +389,7 @@ const I18N = {
     help1: 'Alt du har brug for, kommer fra skoven. Tryk på et træ for træ, en sten for sten, højt græs eller siv for fiber, og buske for bær.',
     help2: 'Dine hænder kan lave reb, en fakkel, et bål, en arbejdsbænk og vægge. Træk materialerne ind på måtten og gnid på måtten for at samle dem.',
     help3: 'En arbejdsbænk åbner de svære opskrifter: økse, spyd, fiskestang og redningsbålet. Bålet er din vej hjem.',
-    help4: 'Tryk på vand for at drikke. Med en fiskestang i hånden trykker du på vandet for at kaste ud, og trykker igen i det øjeblik flådet dykker.',
+    help4: 'Tryk på vand for at drikke. Med en fiskestang i hånden trykker du på vandet for at kaste ud, og trykker igen i det øjeblik flådet dykker. Hold derefter for at hive ind: hold fisken inde i det grønne felt, til bjælken er fuld.',
     help5: 'Om natten forsvinder varmen. Stå ved et bål, bær en fakkel — ellers fryser du. Ulve kommer frem i mørket; et spyd holder dem væk.',
     q_gather: 'Saml 5 træ, 3 sten og 3 fiber', q_rope: 'Lav et reb', q_bench: 'Byg en arbejdsbænk',
     q_axe: 'Lav en stenøkse', q_fire: 'Byg et bål', q_cook: 'Steg kød over bålet',
@@ -368,6 +404,9 @@ const I18N = {
     drink: 'Du drikker af vandet', noWater: 'Det er ikke vand',
     gatherWood: '+3 træ', gatherStone: '+2 sten', gatherFiber: '+2 fiber', gatherBerries: '+2 bær',
     fishingCast: 'Kaster ud…', fishingBite: 'Der er nappet — tryk!', fishingCatch: '+1 fisk', fishingMiss: 'Den slap væk',
+    fishingHook: 'Fast! Hold for at hive den ind', fishTitle: 'Hiv den ind',
+    fishHold: 'Hold for at løfte krogen. Hold fisken inde i det grønne felt, til bjælken er fuld.',
+    fishCancel: 'Esc lader den gå.', fishBig: '+{n} fisk — en stor en!',
     cookStart: 'Steger over bålet…', cooked: 'Stegte {x}', fuelAdded: 'Bålet vokser', fireLit: 'Bålet er tændt',
     litBeacon: 'Redningsbålet brænder. Hold ud…', rescue: 'Reddet!', died: 'Du klarede den ikke',
     nightFalls: 'Natten falder. Kom til et bål.', newDay: 'Dag {n}',
@@ -602,12 +641,13 @@ function updateHandLine() {
 /* ---------------- new / load / save ---------------- */
 function newGame(seed) {
   world = makeWorld(seed || ((Date.now() ^ Math.floor(Math.random() * 1e9)) | 0));
+  navBuild();
   G = {
     seed: world.seed, clock: 12, day: 1, lang: LANG,
     inv: {}, hand: null,
     player: { x: SPAWN.x, y: SPAWN.y + 10, hp: 100, food: 100, water: 100, warm: 100, stam: 100, face: 1, walk: 0, step: 0, atk: 0 },
     structs: [], animals: [], goals: {}, gathered: { wood: 0, stone: 0, fiber: 0 },
-    job: null, moveTo: null, fish: null, winT: 0, wasNight: false, lastPhase: ''
+    job: null, moveTo: null, fish: null, fishg: null, path: null, winT: 0, wasNight: false, lastPhase: ''
   };
   seedAnimals();
   mode = 'play';
@@ -640,6 +680,7 @@ function loadGame() {
   try { d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch (e) { /* off */ }
   if (!d || !d.seed) return false;
   world = makeWorld(d.seed);
+  navBuild();
   if (d.nodes) for (const n of world.nodes) { const s = d.nodes[n.id]; if (s) { n.left = s[0]; n.until = s[1] || 0; } }
   const p = d.player || {};
   G = {
@@ -648,7 +689,7 @@ function loadGame() {
     player: { x: p.x || SPAWN.x, y: p.y || SPAWN.y, hp: p.hp == null ? 100 : p.hp, food: p.food == null ? 100 : p.food, water: p.water == null ? 100 : p.water, warm: p.warm == null ? 100 : p.warm, stam: p.stam == null ? 100 : p.stam, face: 1, walk: 0, step: 0, atk: 0 },
     structs: (d.structs || []).map(s => ({ type: s.type, x: s.x, y: s.y, fuel: s.fuel || 0, lit: !!s.lit, cook: s.cook || null })),
     animals: [], goals: d.goals || {}, gathered: d.gathered || { wood: 0, stone: 0, fiber: 0 },
-    job: null, moveTo: null, fish: null, winT: 0, wasNight: false, lastPhase: ''
+    job: null, moveTo: null, fish: null, fishg: null, path: null, winT: 0, wasNight: false, lastPhase: ''
   };
   if (G.lang === 'da' || G.lang === 'en') LANG = G.lang;
   seedAnimals();
@@ -857,8 +898,9 @@ function clickWorld(cx, cy) {
   const w = screenToWorld(cx, cy);
   if (bagDrag) return;
   if (G.hand && ITEMS[G.hand] && ITEMS[G.hand].kind === 'place') { placeFromHand(G.hand, w.x, w.y); return; }
+  if (G.fishg) return;
   if (G.fish) {
-    if (G.fish.state === 'bite') { catchFish(); return; }
+    if (G.fish.state === 'bite') { fishStartGame(); return; }
     G.fish = null;
   }
   const an = animalAt(w.x, w.y, 10);
@@ -872,10 +914,12 @@ function clickWorld(cx, cy) {
     return;
   }
   G.job = null;
+  G.path = null;
   G.moveTo = { x: w.x, y: w.y };
 }
 
 function startJob(kind, ref, x, y) {
+  G.path = null;
   G.job = { kind: kind, ref: ref, x: x, y: y, t: 0 };
   G.moveTo = { x: x, y: y };
   G.fish = null;
@@ -910,15 +954,78 @@ function startFishing(wx, wy) {
   const d = Math.hypot(wx - G.player.x, wy - G.player.y);
   if (d > 420) { hint(tr('tooFar')); return; }
   const k = Math.min(1, 110 / Math.max(1, d));
-  G.fish = { bx: G.player.x + (wx - G.player.x) * k, by: G.player.y + (wy - G.player.y) * k, t: 0, state: 'cast', bite: rr(2, 4.6) };
+  G.fish = { bx: G.player.x + (wx - G.player.x) * k, by: G.player.y + (wy - G.player.y) * k, t: 0, state: 'cast', bite: rr(1.8, 4.4), size: rr(0.05, 1) };
   toast(tr('fishingCast'));
 }
-function catchFish() {
-  if (!G.fish) return;
-  G.fish = null;
-  addItem('fish_raw', 1);
-  toast(tr('fishingCatch'));
-  completeQuestExtra('fish');
+let fishHold = false;
+function fishStartGame() {
+  if (!G.fish || G.fish.state !== 'bite' || G.fishg) return;
+  const hard = clamp(G.fish.size, 0, 1);
+  G.fishg = { hard: hard, h: 0.4 - 0.12 * hard, zone: 0.5, zv: 0, fish: 0.5, fv: 0, target: rr(0.2, 0.8), ft: 0.4, prog: 0.42, t: 0 };
+  G.fish.state = 'fight';
+  fishHold = false;
+  $('fishPanel').hidden = false;
+  drawFishDot();
+  drawFishUI();
+  toast(tr('fishingHook'));
+}
+function fishEnd(win) {
+  const f = G.fishg;
+  G.fishg = null; G.fish = null; fishHold = false;
+  const panel = $('fishPanel');
+  if (panel) panel.hidden = true;
+  if (!f) return;
+  if (win) {
+    const big = f.hard > 0.66;
+    addItem('fish_raw', big ? 2 : 1);
+    toast(big ? tr('fishBig', 2) : tr('fishingCatch'));
+    completeQuestExtra('fish');
+  } else toast(tr('fishingMiss'));
+}
+function updateFishGame(dt) {
+  const f = G.fishg;
+  if (!f) return;
+  f.t += dt;
+  f.zv += (fishHold ? 3.5 : -3.15) * dt;
+  f.zv = clamp(f.zv, -0.9, 0.9);
+  f.zone += f.zv * dt;
+  const half = f.h / 2;
+  if (f.zone < half) { f.zone = half; f.zv = Math.max(0, f.zv); }
+  if (f.zone > 1 - half) { f.zone = 1 - half; f.zv = Math.min(0, f.zv); }
+  f.ft -= dt;
+  if (f.ft <= 0) { f.ft = rr(0.32, 0.95) - f.hard * 0.1; f.target = rr(0.06, 0.94); }
+  f.fv += (f.target - f.fish) * (12 + f.hard * 10) * dt;
+  f.fv *= 0.9;
+  f.fish = clamp(f.fish + f.fv * dt, 0.03, 0.97);
+  const inside = Math.abs(f.fish - f.zone) < half;
+  f.prog = clamp(f.prog + (inside ? dt * (0.5 - 0.12 * f.hard) : -dt * 0.33), 0, 1);
+  drawFishUI();
+  if (f.prog >= 1) fishEnd(true);
+  else if (f.prog <= 0) fishEnd(false);
+}
+function drawFishDot() {
+  const el = $('fishDot');
+  if (!el) return;
+  const c2 = el.getContext('2d');
+  c2.clearRect(0, 0, el.width, el.height);
+  drawIcon(c2, 'fish_raw', 26);
+}
+function drawFishUI() {
+  const f = G.fishg;
+  if (!f) return;
+  const track = $('fishTrack');
+  if (!track) return;
+  const H = track.clientHeight || 146;
+  const zh = Math.max(30, f.h * H);
+  const zoneEl = $('fishZone');
+  zoneEl.style.height = zh.toFixed(1) + 'px';
+  zoneEl.style.bottom = (f.zone * H - zh / 2).toFixed(1) + 'px';
+  const dot = $('fishDot');
+  dot.style.bottom = (f.fish * H - 13).toFixed(1) + 'px';
+  const pr = $('fishProg');
+  pr.style.width = (f.prog * 100).toFixed(0) + '%';
+  pr.style.background = f.prog < 0.25 ? '#c88a5a' : '#7c9a63';
+  track.classList.toggle('hot', Math.abs(f.fish - f.zone) < f.h / 2);
 }
 function completeQuestExtra() { /* fishing is not a tracked goal */ }
 
@@ -1457,6 +1564,155 @@ function stepPlayer(dx, dy) {
   p.x = clamp(p.x, 30, WORLD.w - 30); p.y = clamp(p.y, 30, WORLD.h - 30);
 }
 
+/* ---------------- navigation ---------------- */
+const NAV = { cell: 22, cols: 0, rows: 0, base: null };
+function navBuild() {
+  NAV.cols = Math.ceil(WORLD.w / NAV.cell);
+  NAV.rows = Math.ceil(WORLD.h / NAV.cell);
+  const total = NAV.cols * NAV.rows;
+  if (!NAV.base || NAV.base.length !== total) NAV.base = new Uint8Array(total);
+  else NAV.base.fill(0);
+  const pad = 9;
+  let i = 0;
+  for (let r = 0; r < NAV.rows; r++) {
+    const cy = r * NAV.cell + NAV.cell / 2;
+    for (let c = 0; c < NAV.cols; c++, i++) {
+      const cx = c * NAV.cell + NAV.cell / 2;
+      if (!landAt(cx, cy)) { NAV.base[i] = 1; continue; }
+      for (const n of world.nodes) {
+        if (n.kind !== 'tree' && n.kind !== 'rock') continue;
+        if (Math.hypot(n.x - cx, n.y - cy) < n.r * 0.72 + 8 + pad) { NAV.base[i] = 1; break; }
+      }
+    }
+  }
+}
+function navBlocked(c, r) {
+  if (c < 0 || r < 0 || c >= NAV.cols || r >= NAV.rows) return true;
+  if (NAV.base[r * NAV.cols + c]) return true;
+  if (!G || !G.structs.length) return false;
+  const x = c * NAV.cell + NAV.cell / 2, y = r * NAV.cell + NAV.cell / 2;
+  for (const s of G.structs) {
+    if (s.type !== 'wall' && s.type !== 'bench' && s.type !== 'beacon' && s.type !== 'campfire') continue;
+    if (Math.hypot(s.x - x, s.y - y) < 40) return true;
+  }
+  return false;
+}
+function clearWalk(x1, y1, x2, y2) {
+  const d = Math.hypot(x2 - x1, y2 - y1);
+  const steps = Math.max(1, Math.ceil(d / 18));
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    if (!isWalkable(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t, G.player, false)) return false;
+  }
+  return true;
+}
+function findPath(sx, sy, tx, ty) {
+  if (!NAV.base || !NAV.cols) navBuild();
+  const cell = NAV.cell, cols = NAV.cols, rows = NAV.rows;
+  let tc = clamp(Math.floor(tx / cell), 0, cols - 1), tr = clamp(Math.floor(ty / cell), 0, rows - 1);
+  if (navBlocked(tc, tr)) {
+    let best = null, bd = 1e9;
+    for (let r = tr - 3; r <= tr + 3; r++) {
+      for (let c = tc - 3; c <= tc + 3; c++) {
+        if (navBlocked(c, r)) continue;
+        const d = Math.hypot(c - tc, r - tr);
+        if (d < bd) { bd = d; best = { c: c, r: r }; }
+      }
+    }
+    if (!best) return null;
+    tc = best.c; tr = best.r;
+  }
+  const sc = clamp(Math.floor(sx / cell), 0, cols - 1), sr = clamp(Math.floor(sy / cell), 0, rows - 1);
+  const start = sc + sr * cols, goal = tc + tr * cols;
+  if (start === goal) return [{ x: tx, y: ty }];
+  const total = cols * rows;
+  const g = new Float32Array(total).fill(1e9);
+  const f = new Float32Array(total).fill(1e9);
+  const from = new Int32Array(total).fill(-1);
+  const closed = new Uint8Array(total);
+  const open = [start];
+  const inOpen = new Uint8Array(total);
+  g[start] = 0; f[start] = Math.hypot(tc - sc, tr - sr); inOpen[start] = 1;
+  let guard = 0;
+  while (open.length && guard++ < 9000) {
+    let bi = 0;
+    for (let i = 1; i < open.length; i++) if (f[open[i]] < f[open[bi]]) bi = i;
+    const cur = open[bi];
+    open.splice(bi, 1);
+    inOpen[cur] = 0;
+    if (cur === goal) break;
+    if (closed[cur]) continue;
+    closed[cur] = 1;
+    const cc = cur % cols, cr = (cur / cols) | 0;
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dc && !dr) continue;
+        const nc = cc + dc, nr = cr + dr;
+        if (navBlocked(nc, nr)) continue;
+        if (dc && dr && (navBlocked(cc + dc, cr) || navBlocked(cc, cr + dr))) continue;
+        const ni = nc + nr * cols;
+        if (closed[ni]) continue;
+        const ng = g[cur] + (dc && dr ? 1.4142 : 1);
+        if (ng < g[ni]) {
+          g[ni] = ng; from[ni] = cur;
+          f[ni] = ng + Math.hypot(tc - nc, tr - nr) * 1.04;
+          if (!inOpen[ni]) { inOpen[ni] = 1; open.push(ni); }
+        }
+      }
+    }
+  }
+  if (goal !== start && from[goal] < 0) return null;
+  const pts = [];
+  let cur = goal, steps = 0;
+  while (cur >= 0 && steps++ < 6000) {
+    pts.push({ x: (cur % cols) * cell + cell / 2, y: ((cur / cols) | 0) * cell + cell / 2 });
+    if (cur === start) break;
+    cur = from[cur];
+  }
+  pts.reverse();
+  const out = [];
+  let i = 0;
+  while (i < pts.length) {
+    let j = pts.length - 1;
+    for (; j > i + 1; j--) {
+      if (clearWalk(pts[i].x, pts[i].y, pts[j].x, pts[j].y)) break;
+    }
+    if (j <= i) j = Math.min(i + 1, pts.length - 1);
+    out.push(pts[j]);
+    i = j;
+    if (i === pts.length - 1) break;
+  }
+  if (!out.length || Math.hypot(out[out.length - 1].x - tx, out[out.length - 1].y - ty) > cell * 1.6) {
+    if (clearWalk(out.length ? out[out.length - 1].x : sx, out.length ? out[out.length - 1].y : sy, tx, ty)) out.push({ x: tx, y: ty });
+  }
+  return out.length ? out : null;
+}
+function walkToGoal(tx, ty, reach, speed, dt) {
+  const p = G.player;
+  if (Math.hypot(tx - p.x, ty - p.y) <= reach) { G.path = null; return true; }
+  const path = G.path;
+  const goalMoved = path ? Math.hypot(path.gx - tx, path.gy - ty) : 1e9;
+  if (!path || (goalMoved > 26 && path.age > 0.4) || path.age > 3.5) {
+    const pts = findPath(p.x, p.y, tx, ty);
+    G.path = { pts: pts || [], i: 0, gx: tx, gy: ty, age: 0 };
+    G.stuckT = 0;
+  }
+  G.path.age += dt;
+  const pts = G.path.pts;
+  while (G.path.i < pts.length - 1 && Math.hypot(pts[G.path.i].x - p.x, pts[G.path.i].y - p.y) < 15) G.path.i++;
+  const wp = pts.length ? pts[Math.min(G.path.i, pts.length - 1)] : { x: tx, y: ty };
+  const bx = p.x, by = p.y;
+  const a = Math.atan2(wp.y - p.y, wp.x - p.x);
+  stepPlayer(Math.cos(a) * speed * dt, Math.sin(a) * speed * dt);
+  if (Math.hypot(p.x - bx, p.y - by) < speed * dt * 0.25) {
+    G.stuckT = (G.stuckT || 0) + dt;
+    if (G.stuckT > 0.42) { G.stuckT = 0; G.path = null; }
+  } else G.stuckT = 0;
+  if (Math.abs(wp.x - p.x) > 2) p.face = wp.x < p.x ? -1 : 1;
+  p.walk += dt * 5;
+  return false;
+}
+
 function doJob(dt) {
   const p = G.player, job = G.job;
   if (!job) return;
@@ -1468,12 +1724,10 @@ function doJob(dt) {
   const reach = (job.kind === 'water' || job.kind === 'fish') ? 120 : job.kind === 'struct' ? 62 : 44;
   const d = Math.hypot(job.x - p.x, job.y - p.y);
   if (d > reach) {
-    const sp = 112;
-    stepPlayer((job.x - p.x) / Math.max(1, d) * sp * dt, (job.y - p.y) / Math.max(1, d) * sp * dt);
-    p.face = job.x < p.x ? -1 : 1;
-    p.walk += dt * 5;
+    walkToGoal(job.x, job.y, reach, 112, dt);
     return;
   }
+  G.path = null;
   if (job.kind === 'node') {
     job.t += dt;
     if (job.t >= gatherTime(job.ref)) { job.t = 0; doGather(job.ref); }
@@ -1506,6 +1760,7 @@ function doJob(dt) {
 
 function updatePlayer(dt) {
   const p = G.player;
+  if (G.fishg) { G.job = null; G.moveTo = null; return; }
   let ix = 0, iy = 0;
   if (keys['a'] || keys['arrowleft']) ix--;
   if (keys['d'] || keys['arrowright']) ix++;
@@ -1513,7 +1768,7 @@ function updatePlayer(dt) {
   if (keys['s'] || keys['arrowdown']) iy++;
   p.atk = Math.max(0, p.atk - dt);
   if (ix || iy) {
-    G.job = null; G.moveTo = null; G.fish = null;
+    G.job = null; G.moveTo = null; G.fish = null; G.path = null;
     const len = Math.hypot(ix, iy); ix /= len; iy /= len;
     const sprint = (keys['shift'] || keys['shiftleft'] || keys['shiftright']) && p.stam > 1;
     const sp = sprint ? 176 : 114;
@@ -1526,9 +1781,7 @@ function updatePlayer(dt) {
     p.stam = clamp(p.stam + 13 * dt, 0, 100);
     if (G.job) doJob(dt);
     else if (G.moveTo) {
-      const dx = G.moveTo.x - p.x, dy = G.moveTo.y - p.y, d = Math.hypot(dx, dy);
-      if (d < 9) G.moveTo = null;
-      else { stepPlayer(dx / d * 112 * dt, dy / d * 112 * dt); if (dx) p.face = dx < 0 ? -1 : 1; p.walk += dt * 5; }
+      if (walkToGoal(G.moveTo.x, G.moveTo.y, 9, 112, dt)) G.moveTo = null;
     }
   }
   if (G.fish) {
@@ -1604,6 +1857,7 @@ function die() {
 
 function showOver(win) {
   if (!G) return;
+  if (G.fishg) { G.fishg = null; G.fish = null; const fp = $('fishPanel'); if (fp) fp.hidden = true; }
   mode = 'over';
   persistBest(win);
   const goals = Object.keys(G.goals).filter(k => G.goals[k]).length;
@@ -1719,12 +1973,14 @@ function onKeyDown(e) {
   if (k === 'shift') keys['shift'] = true;
   if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
   if (k === 'escape') {
+    if (G && G.fishg) { fishEnd(false); return; }
     if (!$('craft').hidden) { closeCraft(); return; }
     if (!$('help').hidden) { closeHelp(); return; }
     if (!$('menu').hidden) { closeMenu(); return; }
     if (G && G.hand) { setHand(null); return; }
     if (G && mode === 'play') { openMenu(); return; }
   }
+  if (G && G.fishg && (k === ' ' || k === 'spacebar')) { e.preventDefault(); fishHold = true; return; }
   if (!$('menu').hidden || !$('help').hidden || mode === 'over') return;
   if (k === 'c') {
     if (mode === 'play') { Sound.click && Sound.click(); openCraft(false); }
@@ -1742,6 +1998,7 @@ function onKeyDown(e) {
 }
 function onKeyUp(e) {
   const k = (e.key || '').toLowerCase();
+  if (k === ' ' || k === 'spacebar') fishHold = false;
   if (k === 'shift') keys['shift'] = false;
   keys[k] = false;
 }
@@ -1781,7 +2038,13 @@ function bindUI() {
   for (const b of document.querySelectorAll('[data-lang]')) b.addEventListener('click', () => setLang(b.dataset.lang));
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
-  window.addEventListener('blur', () => { keys = {}; });
+  const fpanel = $('fishPanel');
+  if (fpanel) {
+    fpanel.addEventListener('pointerdown', (e) => { if (G && G.fishg) { e.preventDefault(); fishHold = true; } });
+    window.addEventListener('pointerup', () => { fishHold = false; });
+    window.addEventListener('pointercancel', () => { fishHold = false; });
+  }
+  window.addEventListener('blur', () => { keys = {}; fishHold = false; });
   window.addEventListener('resize', resizeCanvas);
   window.addEventListener('pagehide', persist);
   document.addEventListener('visibilitychange', () => { if (document.hidden) persist(); });
@@ -2267,7 +2530,14 @@ function drawWorld() {
     c.beginPath(); c.moveTo(G.player.x + 10 * G.player.face, G.player.y - 18); c.quadraticCurveTo((G.player.x + G.fish.bx) / 2, Math.min(G.player.y, G.fish.by) - 30, G.fish.bx, G.fish.by + bob); c.stroke();
     c.fillStyle = '#e7b34a'; c.strokeStyle = INK; c.lineWidth = 1.8;
     c.beginPath(); c.arc(G.fish.bx, G.fish.by + bob, 4.4, 0, TAU); c.fill(); c.stroke();
-    if (G.fish.state === 'bite') { c.strokeStyle = '#b8484f'; c.lineWidth = 2; c.beginPath(); c.arc(G.fish.bx, G.fish.by + bob, 9 + Math.sin(t * 12) * 3, 0, TAU); c.stroke(); }
+    if (G.fish.state === 'bite') {
+      c.strokeStyle = '#b8484f'; c.lineWidth = 2; c.beginPath(); c.arc(G.fish.bx, G.fish.by + bob, 9 + Math.sin(t * 12) * 3, 0, TAU); c.stroke();
+      c.save(); c.fillStyle = '#b8484f'; c.font = 'bold 20px "Nunito", system-ui, sans-serif'; c.textAlign = 'center'; c.fillText('!', G.fish.bx, G.fish.by - 15); c.restore();
+    }
+    if (G.fish.state === 'fight') {
+      c.strokeStyle = 'rgba(43,58,51,.32)'; c.lineWidth = 1.6;
+      for (let i = 1; i <= 3; i++) { c.beginPath(); c.arc(G.fish.bx, G.fish.by, 7 + i * 8 + Math.sin(t * 5 + i) * 2, 0, TAU); c.stroke(); }
+    }
   }
   // hover ring on a resource
   if (hoverScreen.on && mode === 'play') {
@@ -2376,6 +2646,7 @@ function frame(ts) {
   shake = Math.max(0, shake - dt * 2);
   updateFx(dt);
   if (G && mode === 'play') {
+    if (G.fishg) updateFishGame(dt);
     updatePlayer(dt);
     if (G) updateWorld(dt);
   } else if (G) {

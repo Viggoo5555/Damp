@@ -3530,6 +3530,8 @@ function buySkin(i) {
   renderTraderSkins(); buildMenu();
 }
 function closeTrade() { tradeOpen = false; $('tradeModal').hidden = true; if (game) mode = 'play'; }
+$('tradeSkip').addEventListener('click', () => { Sound.play('click'); closeTrade(); });
+$('tradeModal').addEventListener('click', e => { if (e.target === $('tradeModal')) closeTrade(); });
 
 /* ---------- multiplayer race ---------- */
 const mp = { ws: null, role: '', code: '', level: -1, peer: '', progress: null, active: false, starting: false, timer: null, startT: null, leaving: false, peerLeft: false };
@@ -3927,6 +3929,8 @@ $('btnErase').addEventListener('click', () => {
 
 window.addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable) && e.key !== 'Escape') return;
   const k = e.key.toLowerCase();
   const onBtn = document.activeElement && document.activeElement.tagName === 'BUTTON';
   if (settingsOpen) { if (k === 'escape') closeSettings(); else if (k === 'm') setVol('music', save.musicVol > 0 ? 0 : 50); return; }

@@ -494,6 +494,8 @@
   .mcard .new-best { background: var(--honey); border: 2px solid var(--ink); border-radius: var(--wob); padding: 2px 14px; line-height: 1.2; }
   #endBest { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .eb-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+  .trade-x { position: absolute; top: 6px; right: 8px; min-width: 40px; min-height: 40px; padding: 0 10px; font-size: 22px; line-height: 1; }
+  #tradeModal .mcard { position: relative; }
   .mcard .acts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 4px; }
   .setcard { width: min(100%, 460px); }
   .setrow { display: flex; align-items: center; gap: 12px; width: 100%; }
@@ -672,6 +674,7 @@
 </div>
 <div class="modal" id="tradeModal" hidden>
   <div class="mcard" role="dialog" aria-modal="true" aria-labelledby="tradeTitle">
+    <button class="btn trade-x" id="tradeX" type="button" aria-label="Close">×</button>
     <h2 id="tradeTitle">Mystery trader</h2>
     <p>Trader exclusives only: three skins, new stock every hour.</p>
     <div class="panel shopbal"><span>Golden seeds</span><b id="traderGold"></b></div>
@@ -3500,6 +3503,7 @@ function spawnTrader(d) {
 }
 function openTrader() {
   if (!game || mode !== 'play' || tradeOpen) return;
+  if (Date.now() - tradeClosedAt < 500) return;
   tradeOpen = true; mode = 'trading'; sel = null; pending = null; moving = null;
   traderSkinStock = traderStock();
   renderTraderSkins();
@@ -3542,8 +3546,10 @@ function buySkin(i) {
   persist(); Sound.play('egg'); toast(o.skin.name + ' is yours');
   renderTraderSkins(); buildMenu();
 }
-function closeTrade() { tradeOpen = false; $('tradeModal').hidden = true; if (game) mode = 'play'; }
-$('tradeSkip').addEventListener('click', () => { Sound.play('click'); closeTrade(); });
+let tradeClosedAt = 0;
+function closeTrade() { tradeOpen = false; tradeClosedAt = Date.now(); $('tradeModal').hidden = true; if (game) mode = 'play'; }
+$('tradeX').addEventListener('click', () => { closeTrade(); try { Sound.play('click'); } catch (error) { /* no audio */ } });
+$('tradeSkip').addEventListener('click', () => { closeTrade(); try { Sound.play('click'); } catch (error) { /* no audio */ } });
 $('tradeModal').addEventListener('click', e => { if (e.target === $('tradeModal')) closeTrade(); });
 
 /* ---------- multiplayer race ---------- */

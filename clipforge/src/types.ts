@@ -61,6 +61,7 @@ export interface Clip {
   sourceId: string;
   title: string;
   hook: string;
+  /** Thumbnail URL: a real frame from the rendered clip, or a demo poster. */
   poster: string;
   posterPosition: string;
   tint: string;
@@ -74,6 +75,16 @@ export interface Clip {
   crop: CropMode;
   edit: EditRecipe;
   status: "draft" | "ready" | "published";
+  /** Absolute path of the rendered mp4, when this cut really exists on disk. */
+  videoPath?: string;
+  /** Absolute path of the extracted thumbnail frame. */
+  thumbPath?: string;
+  /** Loudest second inside the clip, in source time. */
+  peakSec?: number;
+  /** True when the source had captions and they were burned into the file. */
+  hasCaptions?: boolean;
+  /** Real Twitch chat peak (0-1) when the source is a Twitch VOD. */
+  chatScore?: number;
 }
 
 export interface Post {

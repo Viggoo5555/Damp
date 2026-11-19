@@ -722,15 +722,15 @@ export function generateSource(
 }
 
 export const PIPELINE_STEPS = [
-  { id: "fetch", label: "Pulling the source", detail: "Video, audio and metadata" },
-  { id: "transcribe", label: "Transcribing", detail: "Word-level timings for subtitles" },
-  { id: "chat", label: "Reading the chat", detail: "Message velocity and emote bursts" },
-  { id: "score", label: "Scoring moments", detail: "Laughs, hooks, payoffs, dead air" },
-  { id: "cut", label: "Cutting and reframing", detail: "9:16 crop that follows the action" },
-  { id: "edit", label: "Matching the edit", detail: "Pacing, punch-ins and sound read from the source" },
-  { id: "captions", label: "Burning subtitles", detail: "Two-line captions, safe margins" },
-  { id: "viral", label: "Running the viral pass", detail: "Hook, loop point and thumbnail frame" },
-  { id: "render", label: "Rendering", detail: "1080 × 1920, 60 fps, H.264" },
+  { id: "tools", label: "Checking the tools", detail: "ffmpeg and yt-dlp" },
+  { id: "probe", label: "Reading the source", detail: "Title, length, real resolution" },
+  { id: "audio", label: "Downloading the audio", detail: "The whole track, for loudness analysis" },
+  { id: "captions", label: "Reading the transcript", detail: "The source's own captions" },
+  { id: "chat", label: "Reading the chat", detail: "Twitch VOD message bursts" },
+  { id: "energy", label: "Measuring loudness", detail: "Every second of the source" },
+  { id: "score", label: "Scoring moments", detail: "Spikes, laughs and payoffs" },
+  { id: "download", label: "Downloading the picks", detail: "Only the sections that scored" },
+  { id: "render", label: "Cutting to 9:16", detail: "1080 × 1920, captions burned in" },
 ];
 
 export function suggestCopy(clip: Clip, platform: ClipPlatform): { title: string; description: string; hashtags: string[] } {

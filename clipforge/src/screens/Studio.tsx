@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import type { Clip, ClipRequest, Platform } from "../types";
+import type { Clip, ClipRequest, Source } from "../types";
 import { useStore } from "../store";
+import { PIPELINE_STEPS, TINT_PRESETS, defaultEdit, viralReport } from "../lib/engine";
+import { detectPlatform, cx } from "../lib/util";
 import {
-  PIPELINE_STEPS,
-  generateSource,
-  viralReport,
-  type GeneratedSource,
-  type GeneratedSourceMeta,
-} from "../lib/engine";
-import { detectPlatform, cx, duration } from "../lib/util";
+  bridge,
+  isDesktop,
+  mediaUrl,
+  type EngineResult,
+  type JobProgress,
+  type ToolStatus,
+} from "../lib/desktop";
 import { ClipCard } from "../components/ClipCard";
 import { ClipSheet } from "../components/ClipSheet";
 import { ChatSpikes } from "../components/Charts";
@@ -23,16 +25,46 @@ import {
   YoutubeMark,
 } from "../components/Icons";
 
-interface RunState {
-  platform: Platform;
-  steps: Array<{ id: string; label: string; detail: string; durationMs: number }>;
-  generated: GeneratedSource;
-  index: number;
-  progress: number;
-  done: boolean;
+type SortMode = "score" | "spike" | "viral";
+
+function toSource(result: EngineResult, url: string): Source {
+  return {
+    id: `src-${Date.now().toString(36)}`,
+    platform: result.meta.platform === "twitch" ? "twitch" : "youtube",
+    url,
+    title: result.meta.title,
+    channel: result.meta.channel,
+    durationSec: Math.round(result.meta.durationSec),
+    addedAt: Date.now(),
+    clipCount: result.clips.length,
+  };
 }
 
-type SortMode = "score" | "spike" | "viral";
+function toClips(result: EngineResult, sourceId: string): Clip[] {
+  return result.clips.map((clip, index) => ({
+    id: clip.id,
+    sourceId,
+    title: clip.title || `Clip ${index + 1}`,
+    hook: clip.hook || "",
+    poster: mediaUrl(clip.thumbPath),
+    posterPosition: "50% 50%",
+    tint: TINT_PRESETS[index % TINT_PRESETS.length],
+    startSec: clip.startSec,
+    endSec: clip.endSec,
+    score: clip.score,
+    chatSpike: clip.chatSpike,
+    spikePeak: clip.spikePeak,
+    captions: clip.captions,
+    subtitleStyle: "pop",
+    crop: "auto",
+    edit: defaultEdit(result.meta.platform === "twitch" ? "twitch" : "youtube", "auto"),
+    status: "draft",
+    videoPath: clip.videoPath,
+    thumbPath: clip.thumbPath,
+    peakSec: clip.peakSec,
+    hasCaptions: clip.hasCaptions,
+  }));
+}
 
 export function Studio({
   onFocusClip,
@@ -46,38 +78,89 @@ export function Studio({
   const { state, commitSource } = useStore();
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [run, setRun] = useState<RunState | null>(null);
+  const [tools, setTools] = useState<ToolStatus | null>(null);
+  const [installing, setInstalling] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [progress, setProgress] = useState<JobProgress | null>(null);
+  const [result, setResult] = useState<EngineResult | null>(null);
   const [sort, setSort] = useState<SortMode>("score");
   const [openId, setOpenId] = useState<string | null>(null);
-  const [dismissedRun, setDismissedRun] = useState(false);
-  const committed = useRef<string | null>(null);
+  const handledRequest = useRef<number | null>(null);
 
   const platform = detectPlatform(url);
-  const isRunning = Boolean(run && !run.done);
 
   useEffect(() => {
-    if (!run || run.done) return;
-    const timer = window.setInterval(() => {
-      setRun((current) => {
-        if (!current || current.done) return current;
-        const step = current.steps[current.index];
-        const progress = current.progress + (100 * 120) / step.durationMs;
-        if (progress < 100) return { ...current, progress };
-        if (current.index < current.steps.length - 1) {
-          return { ...current, index: current.index + 1, progress: 0 };
-        }
-        return { ...current, progress: 100, done: true };
-      });
-    }, 120);
-    return () => window.clearInterval(timer);
-  }, [run?.index, run?.done]);
+    if (!bridge) return;
+    let alive = true;
+    bridge.tools().then((status) => {
+      if (alive) setTools(status);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
-    if (!run?.done) return;
-    if (committed.current === run.generated.source.id) return;
-    committed.current = run.generated.source.id;
-    commitSource(run.generated.source, run.generated.clips, run.generated.chat);
-  }, [run?.done, run, commitSource]);
+    if (!bridge) return;
+    return bridge.onProgress((next) => setProgress(next));
+  }, []);
+
+  const start = useCallback(async (rawUrl: string) => {
+    const detected = detectPlatform(rawUrl);
+    if (!detected) {
+      setError("That link isn't YouTube or Twitch. Try a watch or VOD URL.");
+      return;
+    }
+    if (!bridge) {
+      setError("Clip finding runs inside the desktop app — open Offcut itself to use it.");
+      return;
+    }
+    setError(null);
+    setResult(null);
+    setRunning(true);
+    setProgress({ stage: "tools", pct: 0, message: "Starting" });
+    try {
+      const response = await bridge.run({ url: rawUrl.trim(), maxClips: 5, subtitleStyle: "pop" });
+      if (!response.ok) {
+        setError(response.error);
+        return;
+      }
+      const source = toSource(response.result, rawUrl.trim());
+      commitSource(source, toClips(response.result, source.id), response.result.chatSeries);
+      setResult(response.result);
+      setTools((current) => (current ? { ...current, ready: true } : current));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : String(caught));
+    } finally {
+      setRunning(false);
+    }
+  }, [commitSource]);
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    void start(url);
+  };
+
+  // A pick from Browse arrives here and starts right away.
+  useEffect(() => {
+    if (!request || handledRequest.current === request.nonce) return;
+    handledRequest.current = request.nonce;
+    setUrl(request.url);
+    void start(request.url);
+    onRequestHandled();
+  }, [request, start, onRequestHandled]);
+
+  const installTools = async () => {
+    if (!bridge) return;
+    setInstalling(true);
+    const response = await bridge.installTools();
+    setInstalling(false);
+    if (!response.ok) {
+      setError(response.error ?? "The tools could not be installed.");
+      return;
+    }
+    setTools(await bridge.tools());
+  };
 
   const clips = useMemo(() => {
     const sorted = [...state.clips];
@@ -94,59 +177,22 @@ export function Studio({
   const openClip: Clip | undefined = state.clips.find((clip) => clip.id === openId);
   const openSource = state.sources.find((source) => source.id === openClip?.sourceId);
 
-  const beginRun = useCallback(
-    (rawUrl: string, meta?: GeneratedSourceMeta) => {
-      const detected = detectPlatform(rawUrl);
-      if (!detected) {
-        setError("That link isn't YouTube or Twitch. Try a watch or VOD URL.");
-        return;
-      }
-      setError(null);
-      setDismissedRun(false);
-      setUrl(rawUrl.trim());
-      const generated = generateSource(rawUrl.trim(), detected, state.sources.length, meta);
-      const steps = PIPELINE_STEPS.filter((step) => detected === "twitch" || step.id !== "chat").map(
-        (step) => ({
-          ...step,
-          durationMs: step.id === "render" ? 1100 : 700 + Math.random() * 700,
-        }),
-      );
-      committed.current = null;
-      setRun({ platform: detected, steps, generated, index: 0, progress: 0, done: false });
-    },
-    [state.sources.length],
+  const steps = useMemo(
+    () => PIPELINE_STEPS.filter((step) => (platform === "youtube" ? step.id !== "chat" : true)),
+    [platform],
   );
-
-  const start = (event: FormEvent) => {
-    event.preventDefault();
-    beginRun(url);
-  };
-
-  // A pick from Browse arrives here and starts right away.
-  const handledRequest = useRef<number | null>(null);
-  useEffect(() => {
-    if (!request || handledRequest.current === request.nonce) return;
-    handledRequest.current = request.nonce;
-    beginRun(request.url, {
-      title: request.title,
-      channel: request.channel,
-      durationSec: request.durationSec,
-      poster: request.poster,
-      posterPosition: request.posterPosition,
-    });
-    onRequestHandled();
-  }, [request, beginRun, onRequestHandled]);
-
-  const chat = run?.generated.chat ?? [];
+  const activeStep = progress ? steps.findIndex((step) => step.id === progress.stage) : -1;
+  const chat = result?.chatSeries ?? [];
   const chatPeaks = useMemo(() => {
     if (!chat.length) return [];
     return chat
-      .map((value, index) => ({ at: index, value, label: "chat spike" }))
+      .map((value, at) => ({ at, value }))
       .sort((a, b) => b.value - a.value)
-      .slice(0, 3);
+      .slice(0, 3)
+      .sort((a, b) => a.at - b.at);
   }, [chat]);
 
-  const showDoneBanner = run?.done && !dismissedRun;
+  const needsTools = Boolean(bridge) && tools !== null && !tools.ready;
 
   return (
     <div className="studio">
@@ -165,7 +211,7 @@ export function Studio({
           </div>
         </div>
 
-        <form className="composer__row" onSubmit={start}>
+        <form className="composer__row" onSubmit={submit}>
           <label className="composer__field" htmlFor="source-url">
             <span className="composer__glyph">
               {platform === "twitch" ? (
@@ -207,7 +253,7 @@ export function Studio({
             type="submit"
             variant="primary"
             size="lg"
-            disabled={!url.trim() || isRunning}
+            disabled={!url.trim() || running || !isDesktop}
             icon={<ScissorsIcon size={18} />}
           >
             Find the funny bits
@@ -217,9 +263,9 @@ export function Studio({
         <div className="composer__foot">
           <p id="source-hint" className={cx("composer__hint", error && "is-error")} role={error ? "alert" : undefined}>
             {error ??
-              (platform === "twitch"
-                ? "Twitch sources also read chat velocity, so bursts of messages mark the moments worth cutting."
-                : "YouTube sources use the audio track and transcript. No API key, no upload.")}
+              (isDesktop
+                ? "Downloads the real video, measures the audio, cuts vertical clips and burns the real captions. Nothing leaves this machine except the download itself."
+                : "You're viewing the browser preview. Clip finding needs the desktop app — the engine lives in the Electron process.")}
           </p>
           <div className="composer__recent">
             {state.sources.slice(0, 3).map((source) => (
@@ -228,7 +274,7 @@ export function Studio({
                 type="button"
                 className="source-chip"
                 onClick={() => setUrl(source.url)}
-                disabled={isRunning}
+                disabled={running}
               >
                 {source.platform === "twitch" ? <TwitchMark size={13} /> : <YoutubeMark size={14} />}
                 {source.title.length > 34 ? `${source.title.slice(0, 34)}…` : source.title}
@@ -238,32 +284,60 @@ export function Studio({
         </div>
       </Surface>
 
-      {run && !run.done ? (
+      {needsTools ? (
+        <Surface className="run-done">
+          <span className="run-done__icon">
+            <SparkIcon size={18} />
+          </span>
+          <div>
+            <strong>ffmpeg and yt-dlp are needed once</strong>
+            <p>
+              They do the downloading and cutting. About 150 MB, downloaded from their official builds, kept in this
+              app's data folder.
+            </p>
+          </div>
+          <div className="run-done__actions">
+            <Button variant="primary" size="sm" onClick={() => void installTools()} disabled={installing}>
+              {installing ? "Installing…" : "Install tools"}
+            </Button>
+          </div>
+        </Surface>
+      ) : null}
+
+      {installing && progress ? (
+        <Surface className="run-done">
+          <span className="run-done__icon">
+            <span className="spinner" />
+          </span>
+          <div>
+            <strong>{progress.message}</strong>
+            <p>{Math.round(progress.pct)}%</p>
+          </div>
+        </Surface>
+      ) : null}
+
+      {running ? (
         <Surface className="run">
           <div className="run__main">
             <header className="run__head">
               <div>
                 <span className="run__kicker">
-                  {run.platform === "twitch" ? <TwitchMark size={14} /> : <YoutubeMark size={15} />}
-                  {run.generated.source.channel} · {duration(run.generated.source.durationSec)}
+                  {platform === "twitch" ? <TwitchMark size={14} /> : <YoutubeMark size={15} />}
+                  {progress?.message ?? "Working"}
                 </span>
-                <h2>{run.generated.source.title}</h2>
+                <h2>{url.trim()}</h2>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => setRun(null)}>
+              <Button variant="ghost" size="sm" onClick={() => void bridge?.cancel()}>
                 Cancel
               </Button>
             </header>
 
             <ol className="steps">
-              {run.steps.map((step, index) => {
-                const done = index < run.index;
-                const active = index === run.index;
+              {steps.map((step, index) => {
+                const done = index < activeStep || progress?.stage === "done";
+                const active = index === activeStep && !done;
                 return (
-                  <li
-                    key={step.id}
-                    className={cx("step", done && "is-done", active && "is-active")}
-                    aria-current={active ? "step" : undefined}
-                  >
+                  <li key={step.id} className={cx("step", done && "is-done", active && "is-active")}>
                     <span className="step__mark">
                       {done ? <CheckIcon size={15} /> : active ? <span className="spinner" /> : null}
                     </span>
@@ -271,11 +345,11 @@ export function Studio({
                       <div className="step__line">
                         <span className="step__label">{step.label}</span>
                         <span className="step__meta mono">
-                          {done ? "done" : active ? `${Math.round(run.progress)}%` : "queued"}
+                          {done ? "done" : active ? `${Math.round(progress?.pct ?? 0)}%` : "queued"}
                         </span>
                       </div>
                       <span className="step__detail">{step.detail}</span>
-                      {active ? <ProgressBar value={run.progress} tone="lime" label={step.label} /> : null}
+                      {active ? <ProgressBar value={progress?.pct ?? 0} tone="lime" label={step.label} /> : null}
                     </div>
                   </li>
                 );
@@ -283,74 +357,81 @@ export function Studio({
             </ol>
           </div>
 
-          <aside className={cx("run__aside", run.platform !== "twitch" && "run__aside--quiet")}>
-            {run.platform === "twitch" ? (
+          <aside className={cx("run__aside", platform !== "twitch" && "run__aside--quiet")}>
+            {platform === "twitch" ? (
               <>
                 <div className="run__aside-head">
-                  <span className="field__label">Chat velocity</span>
+                  <span className="field__label">VOD chat</span>
                   <Chip tone="live">
                     <BoltIcon size={12} />
-                    live signal
+                    real messages
                   </Chip>
                 </div>
-                <ChatSpikes data={chat} peaks={chatPeaks.map((peak) => ({ at: peak.at, label: peak.label }))} />
+                <ChatSpikes data={chat} peaks={chatPeaks.map((peak) => ({ at: peak.at, label: "chat spike" }))} />
                 <div className="run__aside-foot">
-                  <span>
-                    Peak <b>×{(chatPeaks[0]?.value ?? 0) / 22 | 0}</b> baseline
-                  </span>
-                  <span className="mono">msgs / 10s</span>
+                  <span>{result?.chatMessages ?? 0} messages read</span>
+                  <span className="mono">10 s buckets</span>
                 </div>
-                <p className="run__aside-note">
-                  Three bursts cleared the baseline. Those windows get a scoring bonus and a spike badge.
-                </p>
               </>
             ) : (
               <>
                 <div className="run__aside-head">
-                  <span className="field__label">Audio energy</span>
-                  <Chip>laugh detection</Chip>
-                </div>
-                <ChatSpikes data={chat.length ? chat : [18, 20, 26, 22, 30, 28, 36, 24, 20, 18, 16, 22]} peaks={[]} />
-                <div className="run__aside-foot">
-                  <span>Room tone removed</span>
-                  <span className="mono">−42 dB</span>
+                  <span className="field__label">Audio analysis</span>
+                  <Chip>ffmpeg</Chip>
                 </div>
                 <p className="run__aside-note">
-                  YouTube sources are scored on laughter, speech density and the shape of the hook.
+                  Every second of the track is measured, then the loudest sustained moments with laugh-shaped speech
+                  are scored. This source has captions, so the words weigh in too.
                 </p>
+                <div className="run__aside-foot">
+                  <span>{progress?.message ?? "Measuring"}</span>
+                  <span className="mono">{Math.round(progress?.pct ?? 0)}%</span>
+                </div>
               </>
             )}
             <div className="run__ticks">
-              <span className="mono">GPU {state.hardware.vramGb} GB</span>
-              <span className="mono">batch 4</span>
               <span className="mono">local</span>
+              <span className="mono">1080 × 1920</span>
+              <span className="mono">h.264</span>
             </div>
           </aside>
         </Surface>
       ) : null}
 
-      {showDoneBanner && run ? (
+      {error ? (
+        <Surface className="run-done">
+          <span className="run-done__icon">
+            <CloseIcon size={18} />
+          </span>
+          <div>
+            <strong>That run stopped</strong>
+            <p>{error}</p>
+          </div>
+          <div className="run-done__actions">
+            <Button variant="ghost" size="sm" onClick={() => void start(url)} disabled={!url.trim()}>
+              Try again
+            </Button>
+          </div>
+        </Surface>
+      ) : null}
+
+      {result ? (
         <Surface className="run-done">
           <span className="run-done__icon">
             <CheckIcon size={18} />
           </span>
           <div>
             <strong>
-              {run.generated.clips.length} cuts from {run.generated.source.channel}
+              {result.clips.length} cuts from {result.meta.channel}
             </strong>
             <p>
-              Median length{" "}
-              {Math.round(
-                run.generated.clips.reduce((total, clip) => total + (clip.endSec - clip.startSec), 0) /
-                  run.generated.clips.length,
-              )}
-              s · {run.generated.clips.filter((clip) => clip.chatSpike).length} chat spikes · scored, cropped and
-              captioned
+              {result.captionsFound} caption lines · {result.elapsedSec}s of work ·{" "}
+              {result.clips.filter((clip) => clip.hook).length} with a spoken hook · files in your clips folder
             </p>
           </div>
           <div className="run-done__actions">
-            <Button variant="ink" size="sm" onClick={() => setDismissedRun(true)}>
-              View cuts
+            <Button variant="ink" size="sm" onClick={() => void bridge?.reveal(result.clips[0]?.videoPath)}>
+              Show files
             </Button>
           </div>
         </Surface>

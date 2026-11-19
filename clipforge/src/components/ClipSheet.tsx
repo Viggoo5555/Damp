@@ -3,6 +3,7 @@ import type { Clip, CropMode, EditRecipe, PacingMode, Source, SubtitleStyle } fr
 import { useStore } from "../store";
 import { cx, timecode } from "../lib/util";
 import { recommendedEdit, viralReport } from "../lib/engine";
+import { bridge, mediaUrl } from "../lib/desktop";
 import { ArrowRightIcon, BoltIcon, CloseIcon, CropIcon, SparkIcon } from "./Icons";
 import { Button, Chip, IconButton, ScoreBadge, Segmented, Toggle } from "./ui";
 
@@ -91,19 +92,35 @@ export function ClipSheet({
 
         <div className="sheet__scroll">
           <div className="sheet__preview">
-            <div className={cx("preview", `preview--${clip.subtitleStyle}`)}>
-              <img src={clip.poster} alt="" style={{ objectPosition: clip.posterPosition }} />
-              <div className="clip__grade" style={{ background: clip.tint }} />
-              <span className="preview__safe" />
-              <span className="preview__caption">{clip.captions[0]?.text ?? clip.hook}</span>
-              <span className="preview__caption preview__caption--second">
-                {clip.captions[1]?.text ?? ""}
-              </span>
-              <span className="preview__badge">1080 × 1920</span>
-              <span className={cx("preview__badge preview__badge--viral", viral.score >= 85 && "is-hot")}>
-                viral {viral.score}
-              </span>
-            </div>
+            {clip.videoPath ? (
+              <div className="preview preview--video">
+                <video
+                  className="preview__video"
+                  src={mediaUrl(clip.videoPath)}
+                  poster={clip.poster}
+                  controls
+                  playsInline
+                />
+                <span className="preview__badge">rendered · 1080 × 1920</span>
+                <span className={cx("preview__badge preview__badge--viral", viral.score >= 85 && "is-hot")}>
+                  viral {viral.score}
+                </span>
+              </div>
+            ) : (
+              <div className={cx("preview", `preview--${clip.subtitleStyle}`)}>
+                <img src={clip.poster} alt="" style={{ objectPosition: clip.posterPosition }} />
+                <div className="clip__grade" style={{ background: clip.tint }} />
+                <span className="preview__safe" />
+                <span className="preview__caption">{clip.captions[0]?.text ?? clip.hook}</span>
+                <span className="preview__caption preview__caption--second">
+                  {clip.captions[1]?.text ?? ""}
+                </span>
+                <span className="preview__badge">demo poster</span>
+                <span className={cx("preview__badge preview__badge--viral", viral.score >= 85 && "is-hot")}>
+                  viral {viral.score}
+                </span>
+              </div>
+            )}
 
             <div className="sheet__side">
               <ScoreBadge score={clip.score} />
@@ -338,6 +355,11 @@ export function ClipSheet({
           <Button variant="ghost" onClick={onClose}>
             Back to the grid
           </Button>
+          {clip.videoPath ? (
+            <Button variant="ghost" onClick={() => void bridge?.reveal(clip.videoPath)}>
+              Show file
+            </Button>
+          ) : null}
           {clip.status === "ready" ? (
             <Button variant="primary" iconRight={<ArrowRightIcon size={17} />} onClick={() => onSendToPublish(clip.id)}>
               Send to publish

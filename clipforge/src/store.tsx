@@ -22,7 +22,7 @@ import { buildShelf } from "./lib/models";
 import { defaultEdit, seedContent } from "./lib/engine";
 
 const STORAGE_KEY = "offcut.state.v1";
-const STATE_VERSION = 2;
+const STATE_VERSION = 3;
 
 interface PublishEntry {
   clip: Clip;

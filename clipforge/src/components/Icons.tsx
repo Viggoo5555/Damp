@@ -76,6 +76,12 @@ export const DownloadIcon = (props: IconProps) => (
   </Svg>
 );
 
+export const FolderIcon = (props: IconProps) => (
+  <Svg {...props}>
+    <path d="M4 7.5A1.5 1.5 0 0 1 5.5 6h3.2l1.8 2.2h8A1.5 1.5 0 0 1 20 9.7v7.8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5v-10Z" />
+  </Svg>
+);
+
 export const CpuIcon = (props: IconProps) => (
   <Svg {...props}>
     <rect x="7" y="7" width="10" height="10" rx="2" />

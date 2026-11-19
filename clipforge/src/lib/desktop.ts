@@ -62,6 +62,7 @@ interface Bridge {
   onProgress: (callback: (progress: JobProgress) => void) => () => void;
   reveal: (target?: string) => Promise<{ ok: boolean }>;
   clipsDir: () => Promise<string>;
+  copyText: (text: string) => Promise<{ ok: boolean }>;
 }
 
 export const bridge: Bridge | null =

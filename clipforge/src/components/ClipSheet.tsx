@@ -115,7 +115,6 @@ export function ClipSheet({
                 <span className="preview__caption preview__caption--second">
                   {clip.captions[1]?.text ?? ""}
                 </span>
-                <span className="preview__badge">demo poster</span>
                 <span className={cx("preview__badge preview__badge--viral", viral.score >= 85 && "is-hot")}>
                   viral {viral.score}
                 </span>
@@ -329,7 +328,7 @@ export function ClipSheet({
             <div className="transcript">
               <div className="transcript__head">
                 <span className="field__label">Transcript</span>
-                <span className="field__hint">word timings from Whisper</span>
+                <span className="field__hint">lines from the source's captions</span>
               </div>
               {clip.captions.map((caption, index) => (
                 <div className="transcript__row" key={`${clip.id}-${index}`}>
@@ -362,7 +361,7 @@ export function ClipSheet({
           ) : null}
           {clip.status === "ready" ? (
             <Button variant="primary" iconRight={<ArrowRightIcon size={17} />} onClick={() => onSendToPublish(clip.id)}>
-              Send to publish
+              Send to export
             </Button>
           ) : (
             <Button
@@ -372,7 +371,7 @@ export function ClipSheet({
                 onSendToPublish(clip.id);
               }}
             >
-              Mark ready and publish
+              Mark ready and export
             </Button>
           )}
         </footer>

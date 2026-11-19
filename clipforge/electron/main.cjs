@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, protocol, net, shell, ipcMain } = require("electron");
+const { app, BrowserWindow, Menu, clipboard, protocol, net, shell, ipcMain } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
 const fsp = require("node:fs/promises");
@@ -172,6 +172,11 @@ function registerChild(child) {
 
 function registerIpc() {
   ipcMain.handle("offcut:clips-dir", () => clipsDir);
+
+  ipcMain.handle("offcut:copy", (_event, text) => {
+    clipboard.writeText(String(text ?? ""));
+    return { ok: true };
+  });
 
   ipcMain.handle("offcut:tools", async () => {
     const status = engine.checkTools({ binDir });

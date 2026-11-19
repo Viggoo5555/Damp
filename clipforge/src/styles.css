@@ -2369,7 +2369,7 @@ img {
   background: rgba(205, 242, 91, 0.42);
 }
 
-.status--published {
+.status--exported {
   color: #fff;
   background: rgba(13, 20, 32, 0.82);
 }
@@ -4411,22 +4411,6 @@ img {
 }
 
 /* ---------- real rendered clips ---------- */
-.clip__demo {
-  position: absolute;
-  left: 14px;
-  bottom: 14px;
-  z-index: 3;
-  padding: 4px 9px;
-  border-radius: 999px;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.82);
-  background: rgba(8, 12, 20, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(8px);
-}
-
 .preview--video {
   padding: 0;
   overflow: hidden;

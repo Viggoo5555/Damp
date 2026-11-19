@@ -7,8 +7,8 @@ import { Shell } from "./components/Shell";
 import { Setup } from "./screens/Setup";
 import { Browse } from "./screens/Browse";
 import { Studio } from "./screens/Studio";
-import { Publish } from "./screens/Publish";
-import { Analytics } from "./screens/Analytics";
+import { Export } from "./screens/Export";
+import { Library } from "./screens/Library";
 
 function Boot() {
   return (
@@ -36,7 +36,7 @@ function Workspace() {
   const nonce = useRef(0);
 
   const navigate = (next: Screen) => {
-    if (next !== "publish") setFocusClipId(null);
+    if (next !== "export") setFocusClipId(null);
     setScreen(next);
   };
 
@@ -68,12 +68,12 @@ function Workspace() {
           onRequestHandled={clearRequest}
           onFocusClip={(clipId) => {
             setFocusClipId(clipId);
-            setScreen("publish");
+            setScreen("export");
           }}
         />
       ) : null}
-      {screen === "publish" ? <Publish onNavigate={navigate} focusClipId={focusClipId} /> : null}
-      {screen === "analytics" ? <Analytics /> : null}
+      {screen === "export" ? <Export onNavigate={navigate} focusClipId={focusClipId} /> : null}
+      {screen === "library" ? <Library onNavigate={navigate} /> : null}
     </Shell>
   );
 }

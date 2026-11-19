@@ -46,7 +46,6 @@ export function ClipCard({
           viral {viral}
         </span>
         <span className={cx("clip__caption", `clip__caption--${clip.subtitleStyle}`)}>{clip.hook}</span>
-        {clip.videoPath ? null : <span className="clip__demo">demo</span>}
         <span className="clip__play">
           <PlayIcon size={16} />
         </span>

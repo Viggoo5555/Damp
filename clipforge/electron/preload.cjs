@@ -17,5 +17,6 @@ contextBridge.exposeInMainWorld("offcut", {
   },
 
   reveal: (target) => ipcRenderer.invoke("offcut:reveal", target),
+  copyText: (text) => ipcRenderer.invoke("offcut:copy", text),
   clipsDir: () => ipcRenderer.invoke("offcut:clips-dir"),
 });

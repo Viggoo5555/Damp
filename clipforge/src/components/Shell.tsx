@@ -30,19 +30,19 @@ const NAV: Array<{
     icon: ScissorsIcon,
   },
   {
-    id: "publish",
+    id: "export",
     step: "02",
-    label: "Publish",
-    title: "Publish",
-    subtitle: "Write the copy once, send it everywhere.",
+    label: "Export",
+    title: "Export",
+    subtitle: "Copy the caption, grab the file, post it.",
     icon: UploadIcon,
   },
   {
-    id: "analytics",
+    id: "library",
     step: "03",
-    label: "Performance",
-    title: "Performance",
-    subtitle: "Views, subscribers and what each cut earned.",
+    label: "Library",
+    title: "Library",
+    subtitle: "Every clip this machine has rendered.",
     icon: ChartIcon,
   },
 ];
@@ -59,9 +59,8 @@ export function Shell({
   const { state } = useStore();
   const contentRef = useRef<HTMLElement>(null);
   const active = NAV.find((item) => item.id === screen) ?? NAV[0];
-  const readyModels = state.models.filter((model) => model.status === "ready").length;
   const readyClips = state.clips.filter((clip) => clip.status === "ready").length;
-  const headline = screen === "publish" && readyClips > 0 ? `${readyClips} cuts ready to send` : active.subtitle;
+  const headline = screen === "export" && readyClips > 0 ? `${readyClips} cuts ready to export` : active.subtitle;
 
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0 });
@@ -121,9 +120,9 @@ export function Shell({
             <p>{headline}</p>
           </div>
           <div className="topbar__meta">
-            <Chip tone={readyModels === state.models.length ? "ready" : "neutral"}>
-              <span className={cx("dot", readyModels !== state.models.length && "dot--idle")} />
-              {readyModels}/{state.models.length} models
+            <Chip tone={state.clips.length ? "ready" : "neutral"}>
+              <span className={cx("dot", !state.clips.length && "dot--idle")} />
+              {state.clips.length} {state.clips.length === 1 ? "cut" : "cuts"}
             </Chip>
             <Chip className="chip--hardware">
               <CpuIcon size={14} />

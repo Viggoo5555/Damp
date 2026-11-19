@@ -2,7 +2,7 @@
   "name": "offcut",
   "productName": "Offcut",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "description": "Offcut — a local-first clipping studio for streamers.",
   "author": "Offcut",

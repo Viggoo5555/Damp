@@ -50,7 +50,6 @@ function Workspace() {
       nonce: nonce.current,
       title: item.title,
       channel: item.channel,
-      durationSec: item.durationSec,
       poster: item.poster,
       posterPosition: item.posterPosition,
     });

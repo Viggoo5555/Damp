@@ -1,7 +1,7 @@
 Unicode true
 Name "Offcut"
 Caption "Offcut Setup"
-OutFile "Offcut-Setup-1.1.0.exe"
+OutFile "Offcut-Setup-1.2.0.exe"
 InstallDir "$LOCALAPPDATA\Programs\Offcut"
 InstallDirRegKey HKCU "Software\Offcut" "InstallDir"
 RequestExecutionLevel user

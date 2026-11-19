@@ -281,6 +281,68 @@ async function probeLocal(ffprobe, file) {
   };
 }
 
+/** A channel page rather than a single video. */
+function isChannelUrl(url) {
+  try {
+    const parsed = new URL(url);
+    if (/^(www\.)?twitch\.tv$/i.test(parsed.hostname)) {
+      return /^\/[A-Za-z0-9_]{3,}\/?$/.test(parsed.pathname) || /^\/[A-Za-z0-9_]{3,}\/videos\/?$/.test(parsed.pathname);
+    }
+    if (/^(www\.)?youtube\.com$/i.test(parsed.hostname)) {
+      return /^\/@[^/]+\/?(videos|streams)?\/?$/.test(parsed.pathname);
+    }
+  } catch {
+    return false;
+  }
+  return false;
+}
+
+/**
+ * Turns a channel URL into its newest long VOD, using yt-dlp's own listing so the
+ * link we clip is a real one rather than a guess.
+ */
+async function resolveChannel(tools, url) {
+  if (!tools.ytdlp) throw new Error("yt-dlp is not available, so this channel cannot be resolved.");
+  const twitch = /twitch\.tv/i.test(url);
+  const base = url.replace(/\/+$/, "");
+  const listing = twitch
+    ? `${base}${/\/videos$/.test(base) ? "" : "/videos"}?filter=archives`
+    : /\/(videos|streams)$/.test(base)
+      ? base
+      : `${base}/videos`;
+
+  const { stdout } = await execFile(
+    tools.ytdlp,
+    [
+      "--flat-playlist",
+      "--playlist-end",
+      "4",
+      "--print",
+      "%(id)s|%(duration)s|%(title)s",
+      "--socket-timeout",
+      "20",
+      listing,
+    ],
+    { timeoutMs: 180_000 },
+  );
+
+  const rows = stdout
+    .split(/\r?\n/)
+    .map((line) => line.split("|"))
+    .filter((parts) => parts[0] && /^v?[A-Za-z0-9_-]{6,}$/.test(parts[0]));
+
+  if (!rows.length) throw new Error("That channel has no public long videos to clip yet.");
+
+  // Prefer a real stream over a 30-second test upload.
+  const longs = rows.filter((parts) => Number(parts[1]) >= 600);
+  const chosen = longs[0] || rows[0];
+  const id = chosen[0];
+
+  return twitch
+    ? `https://www.twitch.tv/videos/${id.replace(/^v/, "")}`
+    : `https://www.youtube.com/watch?v=${id}`;
+}
+
 async function probeRemote(ytdlp, input, onLine) {
   const { stdout } = await execFile(
     ytdlp,
@@ -979,9 +1041,15 @@ async function runJob(options) {
 
   const started = Date.now();
   const local = isLocalFile(input);
-  const file = local ? localPath(input) : input;
+  let file = local ? localPath(input) : input;
   await fsp.mkdir(workDir, { recursive: true });
   await fsp.mkdir(outDir, { recursive: true });
+
+  if (!local && isChannelUrl(file)) {
+    emit({ stage: "probe", pct: 1, message: "Resolving this channel's newest long stream" });
+    file = await resolveChannel(tools, file);
+    emit({ stage: "probe", pct: 2, message: "Newest stream found" });
+  }
 
   emit({ stage: "probe", pct: 2, message: local ? "Reading the file" : "Reading the video" });
   const meta = local ? await probeLocal(tools.ffprobe, file) : await probeRemote(tools.ytdlp, file);
@@ -1231,4 +1299,6 @@ module.exports = {
   prepareFonts,
   detectContentRect,
   checkTools,
+  resolveChannel,
+  isChannelUrl,
 };

@@ -1,0 +1,2883 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Wildwood 3D</title>
+<meta name="description" content="A 3D top-down survival game. Gather, hunt, fish, light a fire and craft everything by hand on a forested island.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Patrick+Hand&display=swap">
+<style>
+  :root{
+    --paper:#ece4cf; --paper2:#f8f2e0; --ink:#2b3a33; --ink-soft:#51635a;
+    --moss:#7c9a63; --moss-deep:#4f6b48; --bark:#9a7448; --water:#7fb2bb;
+    --berry:#b8484f; --honey:#e7b34a; --amber:#d9823f; --line:#2b3a33;
+    --shadow:3px 3px 0 var(--ink);
+    --wob:14px 22px 12px 20px / 20px 12px 22px 14px;
+    --f-display:'Caveat Brush','Chalkboard SE','Comic Sans MS',cursive;
+    --f-body:'Patrick Hand','Chalkboard SE','Comic Sans MS',cursive;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html,body{height:100%}
+  body{margin:0;overflow:hidden;background:#25372b;color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.2;
+    -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  :focus-visible{outline:3px dashed var(--berry);outline-offset:2px}
+  #stage{position:fixed;inset:0}
+  #stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+
+  .panel{background:color-mix(in srgb,var(--paper2) 94%,transparent);border:2.5px solid var(--ink);border-radius:var(--wob);box-shadow:var(--shadow)}
+  .btn{background:var(--paper2);border:2.5px solid var(--ink);border-radius:var(--wob);padding:4px 12px;min-height:38px;
+    box-shadow:3px 3px 0 var(--ink);cursor:pointer;transition:transform .08s,box-shadow .08s,background .15s;
+    display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  .btn:hover{background:#fffdf5}
+  .btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .btn.primary{background:var(--honey)}
+  .btn.small{min-height:32px;padding:2px 10px;font-size:15px}
+  .btn[disabled]{opacity:.45;cursor:not-allowed;box-shadow:none}
+
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;left:10px;top:10px;z-index:4;display:flex;flex-direction:column;gap:5px;pointer-events:none}
+  .bar{display:flex;align-items:center;gap:6px;font-size:15px;text-shadow:0 1px 0 #fff9}
+  .bar .ico{width:22px;height:22px;flex:0 0 22px}
+  .bar .track{width:120px;height:13px;border:2px solid var(--ink);border-radius:8px 12px 9px 11px/11px 9px 12px 8px;
+    background:#d9cfb6;overflow:hidden;box-shadow:2px 2px 0 rgba(43,58,51,.22)}
+  .bar .fill{display:block;height:100%;width:100%;border-radius:6px;transition:width .25s linear,background .3s}
+  .bar.low .fill{animation:pulse .9s infinite}
+  @keyframes pulse{50%{filter:brightness(1.4)}}
+  #clock{position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:4;padding:3px 14px;display:flex;gap:10px;align-items:baseline;pointer-events:none}
+  #clock b{font-family:var(--f-display);font-weight:400;font-size:24px;line-height:1}
+  #clock span{font-size:15px;color:var(--ink-soft)}
+  #clock.night{background:#cbd3dd}
+
+  #topRight{position:fixed;right:10px;top:10px;z-index:5;display:flex;gap:6px;align-items:flex-start;flex-direction:column}
+  #topRight .row{display:flex;gap:6px}
+  #quests{width:214px;padding:8px 10px 9px;font-size:14.5px}
+  #quests h2{margin:0 0 3px;font-family:var(--f-display);font-weight:400;font-size:20px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  #quests h2 small{font-family:var(--f-body);font-size:13px;color:var(--ink-soft)}
+  #quests ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+  #quests li{display:flex;gap:6px;align-items:flex-start;color:var(--ink-soft)}
+  #quests li::before{content:'○';font-size:13px;line-height:1.35;color:var(--ink-soft)}
+  #quests li.done{color:var(--ink);text-decoration:line-through;text-decoration-color:rgba(43,58,51,.32)}
+  #quests li.done::before{content:'●';color:var(--moss-deep)}
+  #quests.min ul{display:none}
+  #quests.min{padding-bottom:4px}
+
+  #bag{position:fixed;left:50%;bottom:calc(8px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:4;
+    display:flex;gap:7px;padding:8px 10px;border-radius:16px 22px 18px 20px/20px 16px 22px 18px}
+  .slot{position:relative;width:56px;height:56px;border:2.5px solid var(--ink);border-radius:12px 16px 13px 15px/15px 13px 16px 12px;
+    background:#e6dcc4;display:grid;place-items:center;cursor:pointer;transition:transform .1s,background .15s}
+  .slot:hover{background:#f3ecd9}
+  .slot.on{background:var(--honey);transform:translateY(-4px)}
+  .slot svg{width:38px;height:38px;display:block;pointer-events:none}
+  .slot .n{position:absolute;right:2px;bottom:0;font-size:14px;font-weight:700;color:var(--ink);pointer-events:none;
+    text-shadow:0 0 3px #f8f2e0,0 0 3px #f8f2e0}
+  .slot .k{position:absolute;left:3px;top:0;font-size:11px;color:var(--ink-soft);pointer-events:none}
+  .slot.empty{background:#e6dcc477;border-style:dashed}
+  #bagHint{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:4;
+    background:#f8f2e0ee;border:2px solid var(--ink);padding:1px 12px;border-radius:10px 14px 11px 13px/13px 11px 14px 10px;font-size:15px;white-space:nowrap;pointer-events:none}
+
+  #hint{position:fixed;left:50%;top:58px;transform:translateX(-50%);z-index:4;background:#f8f2e0e8;border:2px solid var(--ink);
+    padding:3px 13px;border-radius:10px 14px 11px 13px/13px 11px 14px 10px;font-size:15.5px;opacity:0;transition:opacity .2s;pointer-events:none;
+    max-width:88vw;text-align:center}
+  #hint.on{opacity:1}
+  #toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9;background:#f8f2e0f5;border:2.5px solid var(--ink);
+    padding:6px 18px;border-radius:12px 18px 14px 16px/16px 14px 18px 12px;font-size:18px;opacity:0;transition:opacity .18s;
+    pointer-events:none;text-align:center;max-width:80vw;box-shadow:var(--shadow)}
+  #toast.on{opacity:1}
+
+  /* ---------- screens ---------- */
+  .screen{position:fixed;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;padding:16px;
+    background:radial-gradient(ellipse at 50% 40%,rgba(20,40,28,.35),rgba(12,26,18,.82))}
+  .card{width:min(430px,100%);padding:20px 22px;text-align:center;max-height:92vh;overflow:auto}
+  .card h1{margin:0;font-family:var(--f-display);font-weight:400;font-size:52px;line-height:.95;color:var(--ink)}
+  .card h1 small{display:block;font-family:var(--f-body);font-size:16px;color:var(--ink-soft);margin-top:6px;letter-spacing:.04em}
+  .card h2{margin:0 0 6px;font-family:var(--f-display);font-weight:400;font-size:34px;line-height:1}
+  .card p{margin:6px 0;color:var(--ink-soft);font-size:16px}
+  .card .keys{text-align:left;font-size:15.5px;line-height:1.45;color:var(--ink-soft);margin:10px 0 12px;
+    background:#efe7d2;border:2px dashed #b9ab8c;border-radius:12px;padding:8px 12px}
+  .card .keys b{color:var(--ink)}
+  .card .col{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .langs{display:flex;gap:6px;justify-content:center;margin-top:12px}
+  .langs button[aria-pressed="true"]{background:var(--honey)}
+
+  /* ---------- craft / fish panels ---------- */
+  #craft{position:fixed;inset:0;z-index:7;display:grid;place-items:center;padding:14px;background:#0b1712a8}
+  #craftCard{width:min(500px,100%);max-height:88vh;overflow:auto;padding:14px 16px}
+  #craftCard h2{margin:0 0 2px;font-family:var(--f-display);font-weight:400;font-size:30px;display:flex;justify-content:space-between;align-items:baseline}
+  #craftCard h2 button{all:unset;cursor:pointer;font-size:22px;line-height:1}
+  #recipes{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+  .rec{display:flex;align-items:center;gap:9px;background:#f3ecd9;border:2.5px solid var(--ink);border-radius:12px 16px 13px 15px/15px 13px 16px 12px;padding:6px 9px}
+  .rec .ico{width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;border-radius:10px;background:#e6dcc4;border:2px solid #cbbfa2}
+  .rec .ico svg{width:34px;height:34px}
+  .rec .mid{flex:1;min-width:0}
+  .rec .mid b{display:block;font-size:17px;font-weight:400}
+  .rec .mid small{display:block;color:var(--ink-soft);font-size:13.5px;line-height:1.25}
+  .rec .cost{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+  .cost span{display:inline-flex;align-items:center;gap:3px;font-size:13px;background:#e6dcc4;border:1.5px solid #cbbfa2;border-radius:8px;padding:0 5px;color:var(--ink-soft)}
+  .cost span.no{background:#f3d4d0;border-color:#d99a92;color:#8d3a33}
+  .cost span svg{width:14px;height:14px}
+  .rec button{min-height:34px;padding:2px 12px;font-size:15px}
+
+  #fishPanel{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:6;
+    width:min(430px,92vw);padding:12px 16px 14px;text-align:center;touch-action:none}
+  #fishPanel h3{margin:0 0 2px;font-family:var(--f-display);font-weight:400;font-size:26px}
+  #fishPanel p{margin:2px 0 8px;font-size:14.5px;color:var(--ink-soft)}
+  #fishWrap{display:flex;gap:14px;align-items:stretch;justify-content:center}
+  #fishTrack{position:relative;width:38px;height:152px;border:2.5px solid var(--ink);border-radius:12px 14px 12px 14px;
+    background:#cfe4e2;overflow:hidden;flex:0 0 auto}
+  #fishTrack::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 18px,#ffffff55 18px 19px)}
+  #fishZone{position:absolute;left:0;right:0;background:#7fc06a;border-top:2px solid #3f7a33;border-bottom:2px solid #3f7a33;opacity:.85}
+  #fishDot{position:absolute;left:50%;transform:translate(-50%,50%);width:26px;height:26px;margin-bottom:-13px}
+  #fishDot svg{width:26px;height:26px;display:block}
+  #fishBar{flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0}
+  #fishBar .label{font-size:14px;color:var(--ink-soft);text-align:left}
+  #fishBar .track2{height:18px;border:2.5px solid var(--ink);border-radius:9px 12px 10px 11px/11px 10px 12px 9px;background:#e1d7bd;overflow:hidden}
+  #fishBar .fill2{height:100%;width:0;background:linear-gradient(90deg,#e7b34a,#8fbf5f);transition:width .08s linear}
+  #fishBig{font-size:13.5px;color:var(--amber);min-height:16px;text-align:left}
+
+  @media(max-width:920px){
+    #clock{padding:2px 10px;gap:7px}
+    #clock b{font-size:20px}
+    #clock span{font-size:13px}
+    #clockPhase{display:none}
+    #quests{width:186px}
+  }
+  @media(max-width:520px){
+    #quests{width:170px;font-size:13.5px}
+    .slot{width:46px;height:46px}
+    .slot svg{width:31px;height:31px}
+    #bag{gap:5px;padding:6px 8px}
+    .card h1{font-size:42px}
+    #fishPanel{padding:10px 12px 12px}
+    #fishTrack{height:132px;width:34px}
+    #fishDot,#fishDot svg{width:22px;height:22px}
+    #fishDot{margin-bottom:-11px}
+  }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+
+<div id="hud">
+  <div class="bar" id="barHp"><svg class="ico" viewBox="0 0 24 24"><path d="M12 21s-7-4.4-7-9.4A4.1 4.1 0 0 1 12 8a4.1 4.1 0 0 1 7 3.6C19 16.6 12 21 12 21z" fill="#c2555c" stroke="#2b3a33" stroke-width="1.6"/></svg><i class="track"><b class="fill" style="background:#c2555c"></b></i></div>
+  <div class="bar" id="barFood"><svg class="ico" viewBox="0 0 24 24"><path d="M6 13c0-3 2.7-5 6-5s6 2 6 5-2.7 5-6 5-6-2-6-5z" fill="#b8894e" stroke="#2b3a33" stroke-width="1.6"/><path d="M12 8V5" stroke="#2b3a33" stroke-width="1.6"/></svg><i class="track"><b class="fill" style="background:#c08b4c"></b></i></div>
+  <div class="bar" id="barWater"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3s5 6 5 9.5A5 5 0 0 1 7 12.5C7 9 12 3 12 3z" fill="#6fa8bd" stroke="#2b3a33" stroke-width="1.6"/></svg><i class="track"><b class="fill" style="background:#5f9cb4"></b></i></div>
+  <div class="bar" id="barWarm"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3c3 3.6 4.5 6 4.5 8.3A4.5 4.5 0 0 1 12 16a4.5 4.5 0 0 1-4.5-4.7C7.5 9 9 6.6 12 3z" fill="#e0a13c" stroke="#2b3a33" stroke-width="1.6"/><path d="M12 16v4" stroke="#2b3a33" stroke-width="1.6"/></svg><i class="track"><b class="fill" style="background:#dda23f"></b></i></div>
+  <div class="bar" id="barStam"><svg class="ico" viewBox="0 0 24 24"><path d="M13 2 5 13h6l-1 9 9-12h-6l1-8z" fill="#a9c96f" stroke="#2b3a33" stroke-width="1.5" stroke-linejoin="round"/></svg><i class="track"><b class="fill" style="background:#93b95c"></b></i></div>
+</div>
+
+<div id="clock" class="panel"><b id="dayN">Day 1</b><span id="clockT">08:00</span><span id="clockPhase">Morning</span></div>
+
+<div id="topRight">
+  <div class="row">
+    <button class="btn small" id="btnHands">Hands</button>
+    <button class="btn small" id="btnHelp">?</button>
+    <button class="btn small" id="btnMenu">Menu</button>
+  </div>
+  <div id="quests" class="panel"><h2>Signal for rescue <small id="questN">0/9</small></h2><ul id="questList"></ul></div>
+</div>
+
+<div id="bag" class="panel"></div>
+<div id="bagHint">Left click to use · 1–8 to pick</div>
+<div id="hint"></div>
+<div id="toast"></div>
+
+<div id="craft" hidden>
+  <div id="craftCard" class="panel">
+    <h2><span id="craftTitle">Hands</span><button id="craftClose" aria-label="Close">✕</button></h2>
+    <p id="craftSub" style="margin:0 0 4px;font-size:14.5px;color:var(--ink-soft)"></p>
+    <div id="recipes"></div>
+  </div>
+</div>
+
+<div id="fishPanel" class="panel" hidden>
+  <h3 id="fishTitle">Reel it in</h3>
+  <div id="fishWrap">
+    <div id="fishTrack"><div id="fishZone"></div><div id="fishDot"><svg viewBox="0 0 32 32"><path d="M4 16c4-5 9-7 14-7 3 0 6 1 8 3l6-4-2 8 2 8-6-4c-2 2-5 3-8 3-5 0-10-2-14-7z" fill="#6f9bb0" stroke="#2b3a33" stroke-width="1.8" stroke-linejoin="round"/><circle cx="11" cy="14.5" r="1.4" fill="#2b3a33"/></svg></div></div>
+    <div id="fishBar">
+      <div class="label" id="fishHoldTxt">Hold to lift the hook</div>
+      <div class="track2"><div class="fill2" id="fishProg"></div></div>
+      <div id="fishBig"></div>
+    </div>
+  </div>
+  <p id="fishHelp">Keep the fish in the green band until the bar fills. Esc lets go.</p>
+</div>
+
+<div id="menu" class="screen">
+  <div class="card panel">
+    <h1>Wildwood <small>a 3D island survival</small></h1>
+    <p id="menuIntro">You washed up on a wooded island with nothing but your hands. Gather, hunt, fish, keep a fire alive and build a beacon to signal for rescue.</p>
+    <div class="keys" id="menuKeys"></div>
+    <div class="col">
+      <button class="btn primary" id="btnNew">New game</button>
+      <button class="btn" id="btnContinue" hidden>Continue</button>
+    </div>
+    <div class="langs"><button class="btn small" id="langDa" data-lang="da">Dansk</button><button class="btn small" id="langEn" data-lang="en">English</button></div>
+  </div>
+</div>
+
+<div id="over" class="screen" hidden>
+  <div class="card panel">
+    <h2 id="overBig">Lost to the woods</h2>
+    <p id="overSub"></p>
+    <div class="col"><button class="btn primary" id="btnAgain">Try again</button></div>
+  </div>
+</div>
+
+<script type="importmap">{"imports":{"three":"../vendor/three/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { mergeGeometries } from '../vendor/three/BufferGeometryUtils.js';
+
+/* ============================================================
+   Wildwood 3D — a top-down island survival game
+   ============================================================ */
+
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+const smoothstep = (e0, e1, x) => { const t = clamp((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
+const rnd = (a = 1, b = 0) => b + Math.random() * (a - b);
+const pick = arr => arr[(Math.random() * arr.length) | 0];
+const TAU = Math.PI * 2;
+
+/* ---------- value noise ---------- */
+function hash2(i, j) {
+  let h = (i | 0) * 374761393 + (j | 0) * 668265263;
+  h = (h ^ (h >>> 13)) * 1274126177;
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+}
+function vnoise(x, y) {
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  return lerp(lerp(hash2(xi, yi), hash2(xi + 1, yi), u), lerp(hash2(xi, yi + 1), hash2(xi + 1, yi + 1), u), v);
+}
+function fbm(x, y) { let s = 0, a = 0.5, f = 1; for (let i = 0; i < 4; i++) { s += a * vnoise(x * f, y * f); f *= 2; a *= 0.5; } return s; }
+
+/* ---------- world shape ---------- */
+const SEA = 0;
+const POND = { x: 108, z: -92, rx: 1.32, r: 64 };
+function heightAt(x, z) {
+  const r = Math.pow(Math.pow(Math.abs(x) / 300, 4) + Math.pow(Math.abs(z) / 300, 4), 0.25);
+  const edge = 1 - smoothstep(0.74, 1.04, r);
+  let h = -2.6 + edge * 4.4;
+  h += (fbm(x * 0.0052 + 11.3, z * 0.0052 + 7.7) - 0.5) * 2.3 * edge;
+  h += (fbm(x * 0.02 + 3.1, z * 0.02 + 9.4) - 0.5) * 0.3 * edge;
+  h += (fbm(x * 0.058 + 17.2, z * 0.058 + 2.5) - 0.5) * 0.42 * edge;
+  const dx = (x - POND.x) / POND.rx, dz = z - POND.z;
+  const pd = Math.hypot(dx, dz);
+  h -= 3.9 * Math.exp(-(pd * pd) / (POND.r * POND.r));
+  return h;
+}
+const isWater = (x, z) => heightAt(x, z) < 0.34;
+
+/* ---------- i18n ---------- */
+const I18N = {
+  en: {
+    day: 'Day', morning: 'Morning', noon: 'Midday', evening: 'Evening', night: 'Night',
+    menuIntro: 'You washed up on a wooded island with nothing but your hands. Gather, hunt, fish, keep a fire alive and build a beacon to signal for rescue.',
+    newGame: 'New game', cont: 'Continue', keys: '<b>WASD</b> or <b>click</b> to walk · <b>Shift</b> to run<br><b>Click</b> a tree, rock, bush or animal to gather and hunt<br><b>Right drag</b> turns the camera · <b>wheel</b> zooms · <b>Q/E</b> turn<br><b>1–8</b> picks a tool · <b>H</b> hands · <b>C</b> craft · <b>Esc</b> menu',
+    questTitle: 'Signal for rescue',
+    q1: 'Gather 5 wood, 3 stone, 3 fiber', q2: 'Craft a rope', q3: 'Build a workbench',
+    q4: 'Craft a stone axe', q5: 'Build a campfire', q6: 'Cook meat on the fire',
+    q7: 'Craft a spear', q8: 'Survive a night', q9: 'Build the rescue beacon',
+    bag: 'Left click to use · 1–8 to pick', hands: 'Hands',
+    built: 'Built', needMore: 'Need more materials',
+    toastWood: '+1 wood', toastStone: '+1 stone', toastFiber: '+1 fiber', toastBerry: '+1 berries',
+    toastMeat: '+1 raw meat', toastHide: '+1 hide', toastFish: '+1 fish', toastFish2: '+2 fish — a big one!',
+    cantFish: 'Cast at the water', noRod: 'You need a fishing rod',
+    hooked: 'Something bit! Tap to set the hook', gotAway: 'It got away',
+    noFire: 'Light a fire first', noBench: 'Craft a workbench first',
+    needTool: 'You need an axe for this tree', needSpear: 'Craft a spear to hunt', needRod: 'Craft a fishing rod',
+    hurt: 'A wolf got you', starving: 'You are starving', frozen: 'You froze in the night',
+    drowned: 'Do not swim',
+    overDead: 'Lost to the woods', overWin: 'Rescued!',
+    overSubDead: 'The island keeps its own.', overSubWin: 'A sail on the horizon answers your beacon. You are going home.',
+    again: 'Try again', hungry: 'Hungry — eat something', thirsty: 'Drink at the water', cold: 'Cold — get to the fire',
+    placeCamp: 'Campfire built — cook meat on it', placeBench: 'Workbench built', placeBeacon: 'The beacon is lit. Hold out one more night',
+    craftAtBench: 'Some things need a workbench',
+    win: 'The beacon burns through the night. Rescue is coming.',
+    cooked: '+1 cooked meat', eat: 'Ate a meal', drink: 'Drank your fill',
+    wood: 'wood', stone: 'stone', fiber: 'fiber', berry: 'berries', meat: 'raw meat', hide: 'hide', fish: 'fish',
+  },
+  da: {
+    day: 'Dag', morning: 'Morgen', noon: 'Middag', evening: 'Aften', night: 'Nat',
+    menuIntro: 'Du er skyllet i land på en skovklædt ø med dine bare hænder. Saml, jag, fisk, hold bålet i live og byg et signalbål, så du kan blive reddet.',
+    newGame: 'Nyt spil', cont: 'Fortsæt', keys: '<b>WASD</b> eller <b>klik</b> for at gå · <b>Shift</b> for at løbe<br><b>Klik</b> på træ, sten, busk eller dyr for at samle og jage<br><b>Højre træk</b> drejer kameraet · <b>hjul</b> zoomer · <b>Q/E</b> drej<br><b>1–8</b> vælger værktøj · <b>H</b> hænder · <b>C</b> håndværk · <b>Esc</b> menu',
+    questTitle: 'Signal om redning',
+    q1: 'Saml 5 træ, 3 sten, 3 fibre', q2: 'Lav et reb', q3: 'Byg en høvlbænk',
+    q4: 'Lav en stenøkse', q5: 'Byg et bål', q6: 'Tilbered kød på bålet',
+    q7: 'Lav et spyd', q8: 'Overlev en nat', q9: 'Byg signalbålet',
+    bag: 'Venstreklik for at bruge · 1–8 for at vælge', hands: 'Hænder',
+    built: 'Bygget', needMore: 'Mangler materialer',
+    toastWood: '+1 træ', toastStone: '+1 sten', toastFiber: '+1 fiber', toastBerry: '+1 bær',
+    toastMeat: '+1 råt kød', toastHide: '+1 skind', toastFish: '+1 fisk', toastFish2: '+2 fisk — en stor!',
+    cantFish: 'Kast mod vandet', noRod: 'Du mangler en fiskestang',
+    hooked: 'Der er nappet! Klik for at sætte krogen', gotAway: 'Den slap væk',
+    noFire: 'Tænd et bål først', noBench: 'Byg en høvlbænk først',
+    needTool: 'Du skal bruge en økse', needSpear: 'Lav et spyd for at jage', needRod: 'Lav en fiskestang',
+    hurt: 'En ulv fik dig', starving: 'Du sulter', frozen: 'Du frøs i nat',
+    drowned: 'Du kan ikke svømme',
+    overDead: 'Fortabt i skoven', overWin: 'Reddet!',
+    overSubDead: 'Øen beholder sine egne.', overSubWin: 'Et sejl ved horisonten svarer på dit bål. Du skal hjem.',
+    again: 'Prøv igen', hungry: 'Sulten — spis noget', thirsty: 'Tørstig — drik ved vandet', cold: 'Kold — gå til bålet',
+    placeCamp: 'Bålet er tændt — tilbered kød på det', placeBench: 'Høvlbænken er bygget', placeBeacon: 'Signalbålet brænder. Hold ud én nat mere',
+    craftAtBench: 'Nogle ting kræver en høvlbænk',
+    win: 'Signalbålet brænder hele natten. Redningen er på vej.',
+    cooked: '+1 tilberedt kød', eat: 'Du spiste dig mæt', drink: 'Du drak dig utørstig',
+    wood: 'træ', stone: 'sten', fiber: 'fibre', berry: 'bær', meat: 'råt kød', hide: 'skind', fish: 'fisk',
+  }
+};
+let LANG = 'en';
+const tr = (k, ...a) => {
+  let s = (I18N[LANG] && I18N[LANG][k]) || I18N.en[k] || k;
+  a.forEach((v, i) => { s = s.replace('{' + i + '}', v); });
+  return s;
+};
+
+/* ---------- item icons ---------- */
+const ICONS = {
+  wood: '<svg viewBox="0 0 40 40"><rect x="5" y="13" width="29" height="9" rx="4.5" fill="#b1834f" stroke="#2b3a33" stroke-width="1.7"/><rect x="8" y="23" width="25" height="8" rx="4" fill="#c99a63" stroke="#2b3a33" stroke-width="1.7"/><ellipse cx="10" cy="17.5" rx="2.2" ry="2.8" fill="#f0d9b0" stroke="#2b3a33" stroke-width="1.2"/></svg>',
+  stone: '<svg viewBox="0 0 40 40"><path d="M9 27 12 13l9-4 9 4 3 12-8 6H15z" fill="#9b9c95" stroke="#2b3a33" stroke-width="1.7" stroke-linejoin="round"/><path d="M15 15l6-3 7 3-2 6-8 1z" fill="#b9bab1"/></svg>',
+  fiber: '<svg viewBox="0 0 40 40"><path d="M11 33c1-10 2-18 7-25M18 33c1-11 3-19 8-26M25 33c0-9 1-17 5-22" stroke="#7f9b52" stroke-width="3.4" fill="none" stroke-linecap="round"/><path d="M12 30c-2-4-4-6-7-7M19 30c-1-5-3-8-6-9M26 30c1-4 0-7-2-9" stroke="#6d8a44" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>',
+  flint: '<svg viewBox="0 0 40 40"><path d="M7 26l8-14 12 2 6 12-9 6-12-1z" fill="#6d7076" stroke="#2b3a33" stroke-width="1.7" stroke-linejoin="round"/><path d="M15 12l4 12-8 2z" fill="#8b8f96"/></svg>',
+  rope: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="12" fill="none" stroke="#c39a5f" stroke-width="5"/><circle cx="20" cy="20" r="12" fill="none" stroke="#2b3a33" stroke-width="1.4" stroke-dasharray="3 4"/><circle cx="20" cy="20" r="5" fill="none" stroke="#c39a5f" stroke-width="4"/></svg>',
+  axe: '<svg viewBox="0 0 40 40"><rect x="18" y="8" width="4" height="26" rx="2" fill="#a97c4e" stroke="#2b3a33" stroke-width="1.6"/><path d="M12 9c6-3 12-2 15 1l2 7c-4 3-11 3-17 1z" fill="#a9adb3" stroke="#2b3a33" stroke-width="1.7" stroke-linejoin="round"/></svg>',
+  spear: '<svg viewBox="0 0 40 40"><rect x="19" y="12" width="3.6" height="24" rx="1.8" fill="#b1834f" stroke="#2b3a33" stroke-width="1.5"/><path d="M20.8 3l4.6 9h-9.2z" fill="#b8bcc2" stroke="#2b3a33" stroke-width="1.6" stroke-linejoin="round"/><path d="M20.8 18l6 3-6 3-6-3z" fill="#c39a5f" stroke="#2b3a33" stroke-width="1.3"/></svg>',
+  rod: '<svg viewBox="0 0 40 40"><path d="M9 33 29 8" stroke="#a97c4e" stroke-width="3.4" stroke-linecap="round"/><path d="M29 8v13" stroke="#2b3a33" stroke-width="1.3" stroke-dasharray="2 2"/><circle cx="29" cy="22" r="2.8" fill="#c2555c" stroke="#2b3a33" stroke-width="1.3"/><circle cx="11" cy="32" r="3.4" fill="none" stroke="#2b3a33" stroke-width="2"/></svg>',
+  meat: '<svg viewBox="0 0 40 40"><path d="M11 15c3-5 12-5 15 1 3 6-2 13-8 13-6 0-10-8-7-14z" fill="#c2685f" stroke="#2b3a33" stroke-width="1.7"/><path d="M14 17c2-2 6-2 8 1" stroke="#e0a19a" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M27 26l6 4" stroke="#f0e3c6" stroke-width="4" stroke-linecap="round"/></svg>',
+  cooked: '<svg viewBox="0 0 40 40"><path d="M11 15c3-5 12-5 15 1 3 6-2 13-8 13-6 0-10-8-7-14z" fill="#8a5a35" stroke="#2b3a33" stroke-width="1.7"/><path d="M13 15c2-2 7-2 9 1" stroke="#b07a4c" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M27 26l6 4" stroke="#f0e3c6" stroke-width="4" stroke-linecap="round"/></svg>',
+  fish: '<svg viewBox="0 0 40 40"><path d="M6 20c5-6 11-8 17-8 4 0 7 1 9 3l4-4-1 9 1 9-4-4c-3 2-6 3-9 3-6 0-12-3-17-8z" fill="#6f9bb0" stroke="#2b3a33" stroke-width="1.7" stroke-linejoin="round"/><circle cx="14" cy="18" r="1.6" fill="#2b3a33"/></svg>',
+  hide: '<svg viewBox="0 0 40 40"><path d="M12 9c4-3 12-3 16 0l-3 8 3 12c-4 3-12 3-16 0l3-12z" fill="#c9a06a" stroke="#2b3a33" stroke-width="1.7" stroke-linejoin="round"/><path d="M17 14l3 4 3-4" stroke="#a57c48" stroke-width="1.8" fill="none"/></svg>',
+  berry: '<svg viewBox="0 0 40 40"><circle cx="14" cy="20" r="7" fill="#b8484f" stroke="#2b3a33" stroke-width="1.7"/><circle cx="25" cy="16" r="6" fill="#c9555c" stroke="#2b3a33" stroke-width="1.7"/><circle cx="26" cy="26" r="5.5" fill="#a83f46" stroke="#2b3a33" stroke-width="1.7"/><path d="M25 10c2-3 5-4 7-3" stroke="#5d7d45" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>',
+  bench: '<svg viewBox="0 0 40 40"><rect x="5" y="13" width="30" height="6" rx="2" fill="#c39a5f" stroke="#2b3a33" stroke-width="1.7"/><path d="M9 19v13M31 19v13" stroke="#a97c4e" stroke-width="3.4" stroke-linecap="round"/><rect x="12" y="8" width="3" height="6" fill="#9aa0a6" stroke="#2b3a33" stroke-width="1"/></svg>',
+  camp: '<svg viewBox="0 0 40 40"><path d="M9 32l16-6M31 32L15 26" stroke="#a97c4e" stroke-width="4" stroke-linecap="round"/><path d="M20 26c-5-3-5-9 0-13 5 4 5 10 0 13z" fill="#e0913c" stroke="#2b3a33" stroke-width="1.6"/><path d="M20 24c-2.4-1.6-2.4-5 0-7 2.4 2 2.4 5.4 0 7z" fill="#f6d06a"/></svg>',
+  beacon: '<svg viewBox="0 0 40 40"><path d="M11 34l9-26 9 26" stroke="#a97c4e" stroke-width="3.6" fill="none" stroke-linecap="round"/><path d="M15 22h10" stroke="#c39a5f" stroke-width="3" stroke-linecap="round"/><path d="M20 12c-4-2-4-7 0-9 4 2 4 7 0 9z" fill="#e0913c" stroke="#2b3a33" stroke-width="1.5"/></svg>',
+};
+const icon = id => ICONS[id] || '';
+
+/* ---------- renderer ---------- */
+const stageEl = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+stageEl.appendChild(renderer.domElement);
+const canvas = renderer.domElement;
+
+const scene = new THREE.Scene();
+const SKY_DAY = new THREE.Color(0xa9d6e7), SKY_DUSK = new THREE.Color(0xe7a878), SKY_NIGHT = new THREE.Color(0x1b2a44);
+scene.background = SKY_DAY.clone();
+scene.fog = new THREE.Fog(SKY_DAY.clone(), 40, 185);
+
+const camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, 0.4, 900);
+
+const hemi = new THREE.HemisphereLight(0xd6ecff, 0x6d8054, 0.78);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff2cf, 1.9);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -78; sun.shadow.camera.right = 78;
+sun.shadow.camera.top = 78; sun.shadow.camera.bottom = -78;
+sun.shadow.camera.near = 1; sun.shadow.camera.far = 260;
+sun.shadow.bias = -0.0007; sun.shadow.normalBias = 0.05;
+scene.add(sun, sun.target);
+const fill = new THREE.AmbientLight(0xb2ccdd, 0.62);
+scene.add(fill);
+
+/* ---------- toon materials ---------- */
+function gradientMap() {
+  const d = new Uint8Array([46, 48, 44, 255, 118, 120, 112, 255, 196, 198, 188, 255, 255, 255, 255, 255]);
+  const t = new THREE.DataTexture(d, 4, 1, THREE.RGBAFormat);
+  t.minFilter = t.magFilter = THREE.NearestFilter;
+  t.needsUpdate = true;
+  return t;
+}
+const GRAD = gradientMap();
+const toonCache = new Map();
+function toon(color, opts = {}) {
+  const key = color + JSON.stringify(opts);
+  let m = toonCache.get(key);
+  if (!m) {
+    m = new THREE.MeshToonMaterial({ color, gradientMap: GRAD, ...opts });
+    toonCache.set(key, m);
+  }
+  return m;
+}
+const toonV = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: GRAD });
+
+/* ---------- terrain ---------- */
+const TERRAIN_SIZE = 780, TERRAIN_SEG = 160;
+const landGeo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEG, TERRAIN_SEG);
+landGeo.rotateX(-Math.PI / 2);
+{
+  const pos = landGeo.attributes.position;
+  const colors = new Float32Array(pos.count * 3);
+  const cGrass = new THREE.Color(0x5c8c3f), cGrass2 = new THREE.Color(0x77a84e), cGrassDark = new THREE.Color(0x40682f);
+  const cSand = new THREE.Color(0xdcc79c), cWet = new THREE.Color(0xb9ab80), cRock = new THREE.Color(0x8d9182);
+  const tmp = new THREE.Color();
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), z = pos.getZ(i);
+    const h = heightAt(x, z);
+    pos.setY(i, h);
+    const n = fbm(x * 0.03 + 5, z * 0.03 + 2), n2 = fbm(x * 0.009 + 21, z * 0.009 + 13);
+    if (h < -0.35) tmp.copy(cWet).lerp(new THREE.Color(0x6f7d63), clamp(-h / 2.4, 0, 1));
+    else if (h < 0.72) tmp.copy(cSand).lerp(cWet, clamp((0.72 - h) / 0.72, 0, 0.45));
+    else if (h > 3.15) tmp.copy(cRock).lerp(cGrassDark, clamp((4.1 - h) / 1.1, 0, 1));
+    else tmp.copy(cGrass).lerp(cGrass2, n).lerp(cGrassDark, clamp((h - 1.1) / 2.2, 0, 0.55) * 0.7 + n2 * 0.62);
+    colors[i * 3] = tmp.r; colors[i * 3 + 1] = tmp.g; colors[i * 3 + 2] = tmp.b;
+  }
+  landGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  landGeo.computeVertexNormals();
+}
+function groundTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 150; i++) {
+    const x = Math.random() * 256, y = Math.random() * 256, r = 18 + Math.random() * 54;
+    const grd = g.createRadialGradient(x, y, 0, x, y, r);
+    const dark = Math.random() < 0.62;
+    grd.addColorStop(0, dark ? 'rgba(30,52,20,0.07)' : 'rgba(240,255,210,0.06)');
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grd; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill();
+  }
+  for (let i = 0; i < 1500; i++) {
+    const x = Math.random() * 256, y = Math.random() * 256, a = Math.random() * TAU, l = 5 + Math.random() * 12;
+    g.strokeStyle = Math.random() < 0.55 ? 'rgba(40,62,24,0.11)' : 'rgba(255,255,220,0.10)';
+    g.lineWidth = 2 + Math.random() * 2.5;
+    g.beginPath(); g.moveTo(x, y);
+    g.quadraticCurveTo(x + Math.cos(a) * l * 0.5 + 2, y + Math.sin(a) * l * 0.5, x + Math.cos(a) * l, y + Math.sin(a) * l);
+    g.stroke();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(34, 34);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  return t;
+}
+const landMat = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: GRAD, map: groundTexture() });
+const land = new THREE.Mesh(landGeo, landMat);
+land.receiveShadow = true;
+scene.add(land);
+
+/* ---------- water ---------- */
+const waterUniforms = { uTime: { value: 0 } };
+const waterMat = new THREE.MeshStandardMaterial({
+  color: 0x3f8ba3, transparent: true, opacity: 0.9, roughness: 0.52, metalness: 0.0, flatShading: true,
+});
+waterMat.onBeforeCompile = sh => {
+  sh.uniforms.uTime = waterUniforms.uTime;
+  sh.vertexShader = 'uniform float uTime;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+    float wv = sin(position.x * 0.085 + uTime * 1.35) * 0.17
+             + sin(position.z * 0.115 - uTime * 1.05) * 0.14
+             + sin((position.x - position.z) * 0.05 + uTime * 0.72) * 0.11;
+    transformed.y += wv;`);
+};
+const waterGeo = new THREE.PlaneGeometry(1700, 1700, 80, 80);
+waterGeo.rotateX(-Math.PI / 2);
+const water = new THREE.Mesh(waterGeo, waterMat);
+water.position.y = SEA;
+water.receiveShadow = false;
+scene.add(water);
+
+/* ---------- stars ---------- */
+const starGeo = new THREE.BufferGeometry();
+{
+  const n = 420, arr = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * TAU, e = rnd(1, 0.18) * Math.PI / 2;
+    const r = 400;
+    arr[i * 3] = Math.cos(a) * Math.cos(e) * r;
+    arr[i * 3 + 1] = Math.sin(e) * r + 40;
+    arr[i * 3 + 2] = Math.sin(a) * Math.cos(e) * r;
+  }
+  starGeo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+}
+const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xf4f8ff, size: 2.4, sizeAttenuation: false, transparent: true, opacity: 0 }));
+scene.add(stars);
+
+/* ---------- camera rig ---------- */
+const camRig = { yaw: 0.55, dist: 22, pitch: 0.88, target: new THREE.Vector3() };
+const camLookAt = new THREE.Vector3();
+
+/* ============================================================
+   Models — everything is built from primitives into low-poly
+   toon geometry, then merged so each prop is one draw call.
+   ============================================================ */
+
+const G = {
+  box: new THREE.BoxGeometry(1, 1, 1),
+  sphere: new THREE.SphereGeometry(1, 14, 10),
+  sphereLo: new THREE.SphereGeometry(1, 9, 7),
+  ico: new THREE.IcosahedronGeometry(1, 1),
+  icoLo: new THREE.IcosahedronGeometry(1, 0),
+  dodec: new THREE.DodecahedronGeometry(1, 0),
+  cyl: new THREE.CylinderGeometry(1, 1, 1, 10),
+  cyl6: new THREE.CylinderGeometry(1, 1, 1, 6),
+  cone: new THREE.ConeGeometry(1, 1, 9),
+  cone6: new THREE.ConeGeometry(1, 1, 6),
+  capsule: new THREE.CapsuleGeometry(1, 1, 4, 9),
+  torus: new THREE.TorusGeometry(1, 0.3, 6, 14),
+  ring: new THREE.RingGeometry(0.78, 1, 26),
+};
+const HALF_SPHERE = new THREE.SphereGeometry(1, 14, 8, 0, TAU, 0, Math.PI / 2);
+G.half = HALF_SPHERE;
+
+const STRIP = g => { g.deleteAttribute('uv'); return g; };
+function paint(g, color) {
+  const c = new THREE.Color(color);
+  const n = g.attributes.position.count;
+  const arr = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { arr[i * 3] = c.r; arr[i * 3 + 1] = c.g; arr[i * 3 + 2] = c.b; }
+  g.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+  return g;
+}
+/** transformed + coloured copy of a base geometry */
+function P(geo, color, pos = [0, 0, 0], rot = [0, 0, 0], scale = [1, 1, 1]) {
+  const g = geo.index ? geo.toNonIndexed() : geo.clone();
+  STRIP(g);
+  const m = new THREE.Matrix4().compose(
+    new THREE.Vector3(pos[0], pos[1], pos[2]),
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(rot[0], rot[1], rot[2])),
+    new THREE.Vector3(scale[0], scale[1], scale[2])
+  );
+  g.applyMatrix4(m);
+  return paint(g, color);
+}
+const mergeV = parts => mergeGeometries(parts, false);
+
+/* ---------- palette ---------- */
+const PAL = {
+  bark: 0x8b6644, barkDark: 0x6d4e34, barkLight: 0xa37b52,
+  leaf1: 0x4e7f37, leaf2: 0x61943f, leaf3: 0x3d6b2c, leafDeep: 0x355c27,
+  pine: 0x3f6f45, pine2: 0x35603c, pine3: 0x4b7f4c,
+  rock: 0x969a90, rock2: 0x7f857c, rock3: 0xb0b3a8,
+  skin: 0xe3b78d, skin2: 0xd0a078, hair: 0x493426,
+  shirt: 0x4f6b48, shirt2: 0x5d7a52, pants: 0x5b4a3a, boot: 0x40342a,
+  wood: 0xb1834f, wood2: 0x986c3f, wood3: 0xc79a63,
+  flint: 0x8e9298, iron: 0xa9adb3,
+  flame: 0xf0a03a, flame2: 0xffd166, ember: 0xff7a2e,
+  deer: 0xa8794a, deer2: 0xc59a68, deerBelly: 0xe7d3b4, antler: 0xd8c39a,
+  wolf: 0x6a6f78, wolf2: 0x828892, wolfBelly: 0xb9bdc4,
+  rabbit: 0xa8937e, rabbit2: 0xcbbba6, rabbitWhite: 0xf2ece0,
+  cloth: 0xd9c9a3, red: 0xb8484f,
+};
+
+/* ============================================================
+   Trees, rocks, plants
+   ============================================================ */
+function treeRound(seed) {
+  const r = (i) => hash2(seed * 97 + i, seed * 31 - i);
+  const h = 3.1 + r(1) * 2.1;
+  const lean = (r(2) - 0.5) * 0.35;
+  const parts = [
+    P(G.cyl6, PAL.barkDark, [0, h * 0.5, 0], [0, 0, 0], [0.2, h, 0.2]),
+    P(G.cyl6, PAL.bark, [0, h * 0.5, 0], [0, 0.6, 0], [0.15, h * 0.98, 0.15]),
+    // root flares
+    P(G.cone6, PAL.barkDark, [0, 0.22, 0], [0, 0, 0], [0.42, 0.5, 0.42]),
+    P(G.cyl6, PAL.bark, [lean * 0.5, h + 0.35, 0], [0, 0.5, lean], [0.12, 0.9, 0.12]),
+  ];
+  const crownY = h + 1.0;
+  const blobs = 5 + ((r(3) * 2) | 0);
+  for (let i = 0; i < blobs; i++) {
+    const a = (i / blobs) * TAU + r(4 + i) * 0.9;
+    const rad = i === 0 ? 0 : 0.55 + r(5 + i) * 0.75;
+    const sc = (i === 0 ? 1.5 : 0.95 + r(9 + i) * 0.5);
+    const cols = [PAL.leaf1, PAL.leaf2, PAL.leaf3, PAL.leaf2];
+    parts.push(P(G.icoLo, cols[(r(12 + i) * 4) | 0],
+      [Math.cos(a) * rad + lean, crownY + (r(13 + i) - 0.45) * 0.95, Math.sin(a) * rad],
+      [r(14 + i) * 3, r(15 + i) * 3, r(16 + i) * 3],
+      [sc, sc * (0.72 + r(17 + i) * 0.3), sc]));
+  }
+  parts.push(P(G.icoLo, PAL.leaf2, [lean + 0.25, crownY + 1.05, -0.15], [0.4, 1, 0.2], [0.8, 0.55, 0.8]));
+  return mergeV(parts);
+}
+function treePine(seed) {
+  const r = (i) => hash2(seed * 53 + i, seed * 71 - i);
+  const h = 3.0 + r(1) * 2.2;
+  const parts = [
+    P(G.cyl6, PAL.barkDark, [0, h * 0.28, 0], [0, 0, 0], [0.22, h * 0.56, 0.22]),
+    P(G.cone6, PAL.pine2, [0, h * 0.52, 0], [0, 0.4, 0], [1.55, 1.9, 1.55]),
+    P(G.cone6, PAL.pine, [0, h * 0.78, 0], [0, 1.1, 0], [1.25, 1.7, 1.25]),
+    P(G.cone6, PAL.pine3, [0, h, 0], [0, 0.2, 0], [0.85, 1.35, 0.85]),
+  ];
+  return mergeV(parts);
+}
+function treeBirch(seed) {
+  const r = (i) => hash2(seed * 13 + i, seed * 29 - i);
+  const h = 3.2 + r(1) * 1.8;
+  const parts = [
+    P(G.cyl6, 0xdcd6c4, [0, h * 0.5, 0], [0, 0, 0], [0.15, h, 0.15]),
+    P(G.cyl6, 0x5d5a4e, [0, h * 0.45, 0], [0, 0.9, 0.02], [0.155, 0.12, 0.155]),
+    P(G.cyl6, 0x5d5a4e, [0, h * 0.7, 0], [0, 0.2, 0.02], [0.15, 0.1, 0.15]),
+  ];
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * TAU + r(4) * 0.8;
+    const rad = 0.35 + r(5 + i) * 0.7;
+    const sc = 0.85 + r(6 + i) * 0.5;
+    parts.push(P(G.icoLo, i % 2 ? PAL.leaf2 : 0x9dc06a,
+      [Math.cos(a) * rad, h + 0.35 + (r(8 + i) - 0.4) * 0.9, Math.sin(a) * rad],
+      [r(9 + i) * 3, r(10 + i) * 3, r(11 + i) * 3], [sc, sc * 0.85, sc]));
+  }
+  return mergeV(parts);
+}
+function rockModel(seed) {
+  const r = (i) => hash2(seed * 7 + i, seed * 19 - i);
+  const s = 0.62 + r(1) * 0.5;
+  const parts = [
+    P(G.dodec, PAL.rock, [0, s * 0.42, 0], [r(2) * 3, r(3) * 3, r(4) * 3], [s, s * 0.78, s * 0.92]),
+    P(G.dodec, PAL.rock2, [s * 0.55, s * 0.22, s * 0.3], [r(5) * 3, r(6) * 3, 0], [s * 0.4, s * 0.32, s * 0.4]),
+    P(G.dodec, PAL.rock3, [-s * 0.35, s * 0.16, -s * 0.5], [0, r(7) * 3, 0], [s * 0.3, s * 0.22, s * 0.3]),
+  ];
+  return mergeV(parts);
+}
+function bushModel(seed) {
+  const r = (i) => hash2(seed * 11 + i, seed * 23 - i);
+  const parts = [];
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * TAU + r(1) * 0.7;
+    const sc = 0.42 + r(2 + i) * 0.26;
+    parts.push(P(G.icoLo, i % 2 ? PAL.leaf1 : PAL.leaf3,
+      [Math.cos(a) * 0.34, 0.34 + r(6 + i) * 0.24, Math.sin(a) * 0.34],
+      [r(7 + i) * 3, r(8 + i) * 3, r(9 + i) * 3], [sc, sc * 0.85, sc]));
+  }
+  for (let i = 0; i < 6; i++) {
+    const a = r(20 + i) * TAU, rad = 0.25 + r(21 + i) * 0.40;
+    parts.push(P(G.sphereLo, i % 3 ? PAL.red : 0xd4626a,
+      [Math.cos(a) * rad, 0.36 + r(22 + i) * 0.42, Math.sin(a) * rad], [0, 0, 0], [0.075, 0.075, 0.075]));
+  }
+  return mergeV(parts);
+}
+function reedsModel(seed) {
+  const r = (i) => hash2(seed * 5 + i, seed * 17 - i);
+  const parts = [];
+  for (let i = 0; i < 7; i++) {
+    const a = r(1 + i) * TAU, rad = r(2 + i) * 0.34, hh = 0.8 + r(3 + i) * 0.75;
+    const x = Math.cos(a) * rad, z = Math.sin(a) * rad;
+    parts.push(P(G.cyl, 0x8fa855, [x, hh * 0.5, z], [(r(4 + i) - 0.5) * 0.3, 0, (r(5 + i) - 0.5) * 0.3], [0.035, hh, 0.035]));
+    if (i % 2) parts.push(P(G.capsule, 0x8a6a41, [x, hh + 0.06, z], [0, 0, 0], [0.07, 0.16, 0.07]));
+  }
+  return mergeV(parts);
+}
+function grassTuft(seed) {
+  const r = (i) => hash2(seed * 3 + i, seed * 13 - i);
+  const parts = [];
+  for (let i = 0; i < 4; i++) {
+    const a = r(1 + i) * TAU, hh = 0.22 + r(2 + i) * 0.24;
+    parts.push(P(G.cone6, i % 2 ? 0x7fae5c : 0x6d9a4e,
+      [Math.cos(a) * 0.12, hh * 0.5, Math.sin(a) * 0.12], [(r(3 + i) - 0.5) * 0.4, 0, (r(4 + i) - 0.5) * 0.4],
+      [0.055, hh, 0.055]));
+  }
+  return mergeV(parts);
+}
+function flowerModel(seed) {
+  const r = (i) => hash2(seed * 9 + i, seed * 41 - i);
+  const parts = [P(G.cyl, 0x6f9a50, [0, 0.16, 0], [0, 0, 0], [0.02, 0.32, 0.02])];
+  const col = [0xf0d06a, 0xe9e6dc, 0xc9a2d6][(r(1) * 3) | 0];
+  parts.push(P(G.sphereLo, col, [0, 0.34, 0], [0, r(2) * 3, 0], [0.075, 0.055, 0.075]));
+  return mergeV(parts);
+}
+
+/* ============================================================
+   Player
+   ============================================================ */
+function makePlayer() {
+  const root = new THREE.Group();
+  const rig = new THREE.Group();
+  root.add(rig);
+  const add = (parent, geo, color, pos, rot, scale) => {
+    const m = new THREE.Mesh(geo, toon(color));
+    m.position.set(...(pos || [0, 0, 0]));
+    if (rot) m.rotation.set(...rot);
+    if (scale) m.scale.set(...scale);
+    m.castShadow = true; m.receiveShadow = false;
+    parent.add(m);
+    return m;
+  };
+
+  const hips = new THREE.Group(); hips.position.y = 0.78; rig.add(hips);
+  add(hips, G.capsule, PAL.pants, [0, -0.08, 0], [0, 0, 0], [0.19, 0.16, 0.18]);
+
+  const leg = side => {
+    const g = new THREE.Group();
+    g.position.set(0.14 * side, 0.02, 0);
+    hips.add(g);
+    add(g, G.capsule, PAL.pants, [0, -0.3, 0], [0, 0, 0], [0.105, 0.22, 0.105]);
+    add(g, G.box, PAL.boot, [0, -0.62, 0.045], [0, 0, 0], [0.17, 0.13, 0.27]);
+    return g;
+  };
+  const legR = leg(1), legL = leg(-1);
+
+  const torso = new THREE.Group(); torso.position.y = 0.86; rig.add(torso);
+  add(torso, G.capsule, PAL.shirt, [0, 0.28, 0], [0, 0, 0], [0.25, 0.22, 0.21]);
+  add(torso, G.box, 0x6b8a5c, [0, 0.3, 0.16], [0, 0, 0], [0.3, 0.22, 0.14]);
+  add(torso, G.box, 0x3e5340, [0, 0.06, 0], [0, 0, 0], [0.46, 0.1, 0.32]);
+  // backpack
+  add(torso, G.box, 0x7a5b3c, [0, 0.3, -0.24], [0, 0, 0], [0.34, 0.36, 0.2]);
+  add(torso, G.box, 0x62482f, [0, 0.44, -0.35], [0, 0, 0], [0.3, 0.1, 0.06]);
+
+  // head
+  const head = new THREE.Group(); head.position.y = 1.46; rig.add(head);
+  head.add(new THREE.Mesh(G.sphere, toon(PAL.skin)));
+  head.children[0].scale.set(0.235, 0.25, 0.225);
+  head.children[0].castShadow = true;
+  add(head, G.sphere, PAL.skin2, [0, -0.02, 0.2], [0, 0, 0], [0.08, 0.07, 0.08]); // nose
+  const hair = add(head, G.half, PAL.hair, [0, 0.035, 0], [0, 0, 0], [0.245, 0.235, 0.24]);
+  hair.receiveShadow = false;
+  add(head, G.box, PAL.hair, [0, 0.1, -0.18], [0.3, 0, 0], [0.3, 0.2, 0.16]);
+  add(head, G.sphereLo, 0x2b2b2b, [-0.085, 0.03, 0.19], [0, 0, 0], [0.028, 0.032, 0.02]);
+  add(head, G.sphereLo, 0x2b2b2b, [0.085, 0.03, 0.19], [0, 0, 0], [0.028, 0.032, 0.02]);
+
+  const arm = side => {
+    const g = new THREE.Group();
+    g.position.set(0.28 * side, 1.3, 0);
+    rig.add(g);
+    add(g, G.capsule, PAL.shirt, [0, -0.19, 0], [0, 0, side * 0.09], [0.082, 0.17, 0.082]);
+    add(g, G.capsule, PAL.skin, [0.01 * side, -0.44, 0.01], [0, 0, side * 0.09], [0.072, 0.06, 0.072]);
+    add(g, G.sphere, PAL.skin, [0.02 * side, -0.56, 0.01], [0, 0, 0], [0.085, 0.09, 0.075]);
+    const hand = new THREE.Group();
+    hand.position.set(0.02 * side, -0.56, 0.03);
+    g.add(hand);
+    return { g, hand };
+  };
+  const armR = arm(1), armL = arm(-1);
+
+  root.userData = { rig, hips, torso, head, legL, legR, armL: armL.g, armR: armR.g, handR: armR.hand, handL: armL.hand, phase: 0 };
+  return root;
+}
+
+/* ---------- tools ---------- */
+function toolModel(id) {
+  const g = new THREE.Group();
+  const add = (geo, color, pos, rot, scale) => {
+    const m = new THREE.Mesh(geo, toon(color));
+    m.position.set(...pos); if (rot) m.rotation.set(...rot); if (scale) m.scale.set(...scale);
+    m.castShadow = true; g.add(m); return m;
+  };
+  if (id === 'axe') {
+    add(G.cyl6, PAL.wood, [0, 0.34, 0], [0, 0, 0], [0.035, 0.7, 0.035]);
+    add(G.box, PAL.iron, [0, 0.66, 0.09], [0.1, 0, 0], [0.06, 0.2, 0.14]);
+    add(G.box, PAL.flint, [0, 0.66, 0.16], [0.1, 0, 0], [0.05, 0.16, 0.05]);
+    add(G.torus, 0x6c5236, [0, 0.34, 0], [Math.PI / 2, 0, 0], [0.06, 0.06, 0.06]);
+  } else if (id === 'spear') {
+    add(G.cyl6, PAL.wood, [0, 0.62, 0], [0, 0, 0], [0.032, 1.35, 0.032]);
+    add(G.cone6, PAL.flint, [0, 1.4, 0], [0, 0, 0], [0.075, 0.32, 0.075]);
+    add(G.cyl, 0xb1834f, [0, 1.16, 0], [0, 0, 0], [0.045, 0.1, 0.045]);
+    add(G.cyl, PAL.red, [0, 1.22, 0], [0, 0, 0], [0.042, 0.05, 0.042]);
+  } else if (id === 'rod') {
+    add(G.cyl6, 0x6f5236, [0, 0.12, 0], [0, 0, 0], [0.045, 0.24, 0.045]);
+    const rod = add(G.cyl6, PAL.wood, [0, 0.95, 0], [0, 0, 0], [0.02, 1.5, 0.02]);
+    rod.rotation.z = -0.16;
+    add(G.torus, PAL.iron, [0.02, 0.3, 0], [Math.PI / 2, 0, 0], [0.07, 0.07, 0.07]);
+    add(G.sphere, 0x55585c, [0.02, 0.3, 0], [0, 0, 0], [0.06, 0.06, 0.06]);
+    g.userData.tip = new THREE.Object3D();
+    g.userData.tip.position.set(0.16, 1.68, 0);
+    g.add(g.userData.tip);
+  } else if (id === 'meat' || id === 'cooked') {
+    add(G.sphere, id === 'meat' ? 0xc2685f : 0x8a5a35, [0, 0.06, 0], [0, 0, 0], [0.16, 0.12, 0.13]);
+  }
+  return g;
+}
+
+/* ============================================================
+   Animals
+   ============================================================ */
+function makeDeer(scale = 1) {
+  const root = new THREE.Group();
+  const body = new THREE.Group(); root.add(body);
+  const add = (parent, geo, color, pos, rot, sc) => {
+    const m = new THREE.Mesh(geo, toon(color));
+    m.position.set(...pos); if (rot) m.rotation.set(...rot); if (sc) m.scale.set(...sc);
+    m.castShadow = true; parent.add(m); return m;
+  };
+  add(body, G.capsule, PAL.deer, [0, 1.18, 0], [Math.PI / 2, 0, 0], [0.4, 0.52, 0.4]);
+  add(body, G.sphere, PAL.deer2, [0, 1.12, 0.42], [0, 0, 0], [0.36, 0.34, 0.3]);
+  add(body, G.capsule, PAL.deerBelly, [0, 0.94, 0.05], [Math.PI / 2, 0, 0], [0.3, 0.48, 0.3]);
+  add(body, G.capsule, PAL.deer2, [0, 1.44, -0.5], [0.5, 0, 0], [0.19, 0.24, 0.19]);
+  const head = new THREE.Group(); head.position.set(0, 1.62, -0.72); body.add(head);
+  add(head, G.sphere, PAL.deer, [0, 0.03, 0], [0, 0, 0], [0.19, 0.2, 0.26]);
+  add(head, G.sphere, PAL.deer2, [0, -0.02, 0.16], [0, 0, 0], [0.14, 0.13, 0.18]);
+  add(head, G.sphereLo, 0x3a2d22, [0, 0.0, 0.31], [0, 0, 0], [0.055, 0.05, 0.05]);
+  for (const s of [-1, 1]) {
+    add(head, G.cone6, PAL.deer, [0.16 * s, 0.15, 0.02], [0, 0, s * 0.7], [0.07, 0.16, 0.04]);
+    // antlers
+    add(head, G.cyl6, PAL.antler, [0.09 * s, 0.28, -0.02], [0, 0, s * 0.32], [0.026, 0.42, 0.026]);
+    add(head, G.cyl6, PAL.antler, [0.2 * s, 0.5, -0.02], [0, 0, s * 1.05], [0.022, 0.28, 0.022]);
+    add(head, G.cyl6, PAL.antler, [0.16 * s, 0.62, 0.12], [0.7, 0, s * 0.4], [0.02, 0.22, 0.02]);
+    add(head, G.cyl6, PAL.antler, [0.24 * s, 0.42, -0.2], [-0.7, 0, s * 0.5], [0.02, 0.2, 0.02]);
+    add(head, G.sphereLo, 0x1c1a17, [0.15 * s, 0.07, 0.16], [0, 0, 0], [0.032, 0.036, 0.028]);
+  }
+  add(body, G.cone6, PAL.deerBelly, [0, 1.16, 0.75], [1.9, 0, 0], [0.1, 0.22, 0.1]);
+  const legs = [];
+  for (const [x, z] of [[-0.22, 0.42], [0.22, 0.42], [-0.22, -0.42], [0.22, -0.42]]) {
+    const g = new THREE.Group(); g.position.set(x, 1.0, z); body.add(g); legs.push(g);
+    add(g, G.capsule, PAL.deer, [0, -0.28, 0], [0, 0, 0], [0.078, 0.24, 0.078]);
+    add(g, G.capsule, 0x6f4f33, [0, -0.62, 0], [0, 0, 0], [0.055, 0.14, 0.055]);
+    add(g, G.box, 0x3a2d22, [0, -0.9, 0.03], [0, 0, 0], [0.13, 0.1, 0.18]);
+  }
+  body.scale.setScalar(scale);
+  root.userData = { body, head, legs, kind: 'deer', scale };
+  return root;
+}
+function makeRabbit() {
+  const root = new THREE.Group();
+  const body = new THREE.Group(); root.add(body);
+  const add = (parent, geo, color, pos, rot, sc) => {
+    const m = new THREE.Mesh(geo, toon(color));
+    m.position.set(...pos); if (rot) m.rotation.set(...rot); if (sc) m.scale.set(...sc);
+    m.castShadow = true; parent.add(m); return m;
+  };
+  add(body, G.sphere, PAL.rabbit, [0, 0.3, 0], [0, 0, 0], [0.27, 0.26, 0.36]);
+  add(body, G.sphere, PAL.rabbit2, [0, 0.24, 0.12], [0, 0, 0], [0.24, 0.2, 0.28]);
+  add(body, G.sphere, PAL.rabbitWhite, [0, 0.32, -0.34], [0, 0, 0], [0.13, 0.13, 0.11]);
+  const head = new THREE.Group(); head.position.set(0, 0.44, 0.26); body.add(head);
+  add(head, G.sphere, PAL.rabbit, [0, 0, 0], [0, 0, 0], [0.17, 0.16, 0.19]);
+  add(head, G.sphere, PAL.rabbitWhite, [0, -0.03, 0.13], [0, 0, 0], [0.11, 0.1, 0.09]);
+  for (const s of [-1, 1]) {
+    add(head, G.capsule, PAL.rabbit, [0.075 * s, 0.24, -0.03], [-0.18, 0, s * 0.16], [0.045, 0.16, 0.035]);
+    add(head, G.sphereLo, 0x1c1a17, [0.1 * s, 0.03, 0.13], [0, 0, 0], [0.026, 0.03, 0.024]);
+  }
+  const legs = [];
+  for (const [x, z] of [[-0.16, 0.2], [0.16, 0.2], [-0.18, -0.2], [0.18, -0.2]]) {
+    const g = new THREE.Group(); g.position.set(x, 0.2, z); body.add(g); legs.push(g);
+    add(g, G.capsule, PAL.rabbit2, [0, -0.1, 0], [0, 0, 0], [0.06, 0.08, 0.06]);
+  }
+  root.userData = { body, head, legs, kind: 'rabbit' };
+  return root;
+}
+function makeWolf() {
+  const root = new THREE.Group();
+  const body = new THREE.Group(); root.add(body);
+  const add = (parent, geo, color, pos, rot, sc) => {
+    const m = new THREE.Mesh(geo, toon(color));
+    m.position.set(...pos); if (rot) m.rotation.set(...rot); if (sc) m.scale.set(...sc);
+    m.castShadow = true; parent.add(m); return m;
+  };
+  add(body, G.capsule, PAL.wolf, [0, 0.86, -0.08], [Math.PI / 2, 0, 0], [0.31, 0.44, 0.31]);
+  add(body, G.capsule, PAL.wolf2, [0, 0.92, 0.35], [Math.PI / 2, 0, 0], [0.28, 0.3, 0.28]);
+  add(body, G.capsule, PAL.wolfBelly, [0, 0.66, -0.05], [Math.PI / 2, 0, 0], [0.22, 0.4, 0.22]);
+  add(body, G.capsule, PAL.wolf, [0, 1.2, 0.42], [0.9, 0, 0], [0.2, 0.16, 0.2]);
+  const head = new THREE.Group(); head.position.set(0, 1.26, 0.62); body.add(head);
+  add(head, G.box, PAL.wolf, [0, 0, 0], [0, 0, 0], [0.3, 0.26, 0.28]);
+  add(head, G.box, PAL.wolf2, [0, -0.04, 0.2], [0.1, 0, 0], [0.18, 0.15, 0.2]);
+  add(head, G.sphereLo, 0x22242a, [0, -0.01, 0.31], [0, 0, 0], [0.07, 0.055, 0.05]);
+  for (const s of [-1, 1]) {
+    add(head, G.cone6, PAL.wolf2, [0.12 * s, 0.19, -0.02], [0, 0, s * 0.24], [0.075, 0.17, 0.05]);
+    const eye = add(head, G.sphereLo, 0xffcf5a, [0.09 * s, 0.06, 0.16], [0, 0, 0], [0.036, 0.03, 0.02]);
+    eye.material = new THREE.MeshBasicMaterial({ color: 0xffd873 });
+  }
+  add(body, G.capsule, PAL.wolf2, [0, 1.02, -0.72], [0.7, 0, 0], [0.09, 0.28, 0.09]);
+  const legs = [];
+  for (const [x, z] of [[-0.19, 0.34], [0.19, 0.34], [-0.19, -0.36], [0.19, -0.36]]) {
+    const g = new THREE.Group(); g.position.set(x, 0.72, z); body.add(g); legs.push(g);
+    add(g, G.capsule, PAL.wolf, [0, -0.22, 0], [0, 0, 0], [0.07, 0.18, 0.07]);
+    add(g, G.capsule, PAL.wolfBelly, [0, -0.5, 0], [0, 0, 0], [0.055, 0.12, 0.055]);
+    add(g, G.box, 0x2e3138, [0, -0.66, 0.03], [0, 0, 0], [0.12, 0.09, 0.17]);
+  }
+  root.userData = { body, head, legs, kind: 'wolf' };
+  return root;
+}
+
+/* ============================================================
+   Structures
+   ============================================================ */
+function campfireModel() {
+  const root = new THREE.Group();
+  const geoParts = [];
+  for (let i = 0; i < 9; i++) {
+    const a = (i / 9) * TAU;
+    geoParts.push(P(G.dodec, i % 2 ? PAL.rock : 0x8b9088,
+      [Math.cos(a) * 0.82, 0.12, Math.sin(a) * 0.82], [rnd(3), rnd(3), rnd(3)], [0.24, 0.18, 0.22]));
+  }
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * TAU + 0.4;
+    geoParts.push(P(G.cyl6, i % 2 ? PAL.wood : PAL.wood2,
+      [Math.cos(a) * 0.16, 0.2, Math.sin(a) * 0.16], [0.18, a, 0], [0.09, 0.78, 0.09]));
+  }
+  geoParts.push(P(G.cyl6, 0x3a2b1e, [0, 0.1, 0], [0, 0.7, 0], [0.55, 0.1, 0.55]));
+  const base = new THREE.Mesh(mergeV(geoParts), toonV);
+  base.castShadow = true; base.receiveShadow = true;
+  root.add(base);
+
+  const flames = new THREE.Group(); flames.position.y = 0.22; root.add(flames);
+  const flameMat = new THREE.MeshBasicMaterial({ color: 0xe2621b, transparent: true, opacity: 0.88, depthWrite: false, toneMapped: false });
+  const flameMat2 = new THREE.MeshBasicMaterial({ color: 0xffb44a, transparent: true, opacity: 0.9, depthWrite: false, toneMapped: false });
+  const f1 = new THREE.Mesh(G.cone, flameMat); f1.scale.set(0.2, 0.42, 0.2); f1.position.y = 0.18; flames.add(f1);
+  const f2 = new THREE.Mesh(G.cone, flameMat); f2.scale.set(0.13, 0.32, 0.13); f2.position.set(0.12, 0.18, 0.07); f2.rotation.z = 0.2; flames.add(f2);
+  const f3 = new THREE.Mesh(G.cone, flameMat); f3.scale.set(0.11, 0.27, 0.11); f3.position.set(-0.11, 0.18, -0.08); f3.rotation.z = -0.18; flames.add(f3);
+  const f4 = new THREE.Mesh(G.cone, flameMat2); f4.scale.set(0.09, 0.2, 0.09); f4.position.y = 0.12; flames.add(f4);
+  const glow = new THREE.PointLight(0xff8c3a, 0, 15, 2);
+  glow.position.y = 0.5; root.add(glow);
+
+  const emberGeo = new THREE.BufferGeometry();
+  const emberN = 26, emberPos = new Float32Array(emberN * 3), emberSeed = [];
+  for (let i = 0; i < emberN; i++) { emberSeed.push({ t: Math.random(), a: Math.random() * TAU, r: Math.random() * 0.3, sp: 0.4 + Math.random() * 0.7 }); }
+  emberGeo.setAttribute('position', new THREE.BufferAttribute(emberPos, 3));
+  const embers = new THREE.Points(emberGeo, new THREE.PointsMaterial({ color: 0xffb154, size: 0.1, transparent: true, opacity: 0.9, depthWrite: false }));
+  root.add(embers);
+
+  const spit = new THREE.Group(); spit.position.y = 0.62; root.add(spit);
+  for (const s of [-1, 1]) {
+    const post = new THREE.Mesh(G.cyl6, toon(PAL.wood2));
+    post.position.set(0.5 * s, 0, 0); post.scale.set(0.05, 1.0, 0.05); post.castShadow = true; spit.add(post);
+  }
+  const bar = new THREE.Mesh(G.cyl6, toon(PAL.wood));
+  bar.rotation.z = Math.PI / 2; bar.scale.set(0.04, 1.05, 0.04); bar.castShadow = true; spit.add(bar);
+
+  root.userData = { flames, glow, embers, emberSeed, f1, f2, f3, f4, spit, lit: false, t: 0, intensity: 0 };
+  return root;
+}
+function workbenchModel() {
+  const parts = [
+    P(G.box, PAL.wood3, [0, 0.86, 0], [0, 0, 0], [1.5, 0.12, 0.78]),
+    P(G.box, PAL.wood, [0, 0.8, 0.02], [0, 0, 0], [1.44, 0.1, 0.72]),
+    P(G.box, PAL.wood2, [-0.55, 0.78, -0.3], [0, 0, 0], [0.1, 0.1, 0.1]),
+  ];
+  for (const [x, z] of [[-0.64, -0.28], [0.64, -0.28], [-0.64, 0.28], [0.64, 0.28]]) {
+    parts.push(P(G.cyl6, PAL.bark, [x, 0.4, z], [0, 0, 0], [0.075, 0.82, 0.075]));
+    parts.push(P(G.box, PAL.barkDark, [x, 0.06, z], [0, 0, 0], [0.2, 0.1, 0.2]));
+  }
+  parts.push(P(G.box, PAL.barkDark, [0, 0.3, 0], [0, 0, 0], [1.2, 0.06, 0.16]));
+  // vice + tools on top
+  parts.push(P(G.box, PAL.iron, [0.5, 0.97, 0.12], [0, 0, 0], [0.22, 0.14, 0.2]));
+  parts.push(P(G.cyl6, PAL.iron, [0.5, 0.97, 0.3], [Math.PI / 2, 0, 0], [0.04, 0.22, 0.04]));
+  parts.push(P(G.box, PAL.wood, [-0.35, 0.96, -0.1], [0, 0.4, 0], [0.5, 0.08, 0.12]));
+  parts.push(P(G.box, PAL.flint, [-0.55, 0.98, -0.1], [0, 0.4, 0], [0.16, 0.1, 0.1]));
+  parts.push(P(G.cyl6, PAL.bark, [-0.5, 0.25, 0.42], [0.3, 0, 0], [0.11, 0.5, 0.11]));
+  const m = new THREE.Mesh(mergeV(parts), toonV);
+  m.castShadow = true; m.receiveShadow = true;
+  const root = new THREE.Group(); root.add(m);
+  return root;
+}
+function beaconModel() {
+  const root = new THREE.Group();
+  const parts = [];
+  // log platform
+  for (let i = 0; i < 5; i++) parts.push(P(G.cyl6, i % 2 ? PAL.wood : PAL.wood2, [(i - 2) * 0.34, 0.12, 0], [0, 0, Math.PI / 2], [0.15, 1.5, 0.15]));
+  // tripod
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * TAU;
+    parts.push(P(G.cyl6, PAL.bark, [Math.cos(a) * 0.42, 1.2, Math.sin(a) * 0.42], [Math.cos(a) * 0.2, 0, -Math.sin(a) * 0.2], [0.08, 2.4, 0.08]));
+  }
+  parts.push(P(G.torus, 0x6b5334, [0, 1.85, 0], [Math.PI / 2, 0, 0], [0.5, 0.5, 0.5]));
+  // brush / fuel pile
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * TAU;
+    parts.push(P(G.cone6, i % 2 ? 0x8a7a48 : 0x9b8a52, [Math.cos(a) * 0.3, 0.4, Math.sin(a) * 0.3], [0, a, 0.16], [0.16, 0.75, 0.16]));
+  }
+  const stack = new THREE.Mesh(mergeV(parts), toonV);
+  stack.castShadow = true; stack.receiveShadow = true;
+  root.add(stack);
+
+  const flag = new THREE.Mesh(G.box, toon(PAL.cloth));
+  flag.scale.set(0.55, 0.34, 0.03); flag.position.set(0.3, 2.35, 0); flag.castShadow = true;
+  root.add(flag);
+
+  const flames = new THREE.Group(); flames.position.y = 0.75; root.add(flames);
+  const fm = new THREE.MeshBasicMaterial({ color: 0xe2621b, transparent: true, opacity: 0.85, depthWrite: false, toneMapped: false });
+  const fm2 = new THREE.MeshBasicMaterial({ color: 0xffb44a, transparent: true, opacity: 0.9, depthWrite: false, toneMapped: false });
+  const big = [];
+  for (let i = 0; i < 5; i++) {
+    const f = new THREE.Mesh(G.cone, i % 2 ? fm2 : fm);
+    const s = 0.5 - i * 0.07;
+    f.scale.set(s * 0.6, 1.6 - i * 0.2, s * 0.6);
+    f.position.set((Math.random() - 0.5) * 0.3, 0.2 + i * 0.05, (Math.random() - 0.5) * 0.3);
+    f.rotation.z = (Math.random() - 0.5) * 0.3;
+    flames.add(f); big.push(f);
+  }
+  const glow = new THREE.PointLight(0xffa040, 0, 46, 2);
+  glow.position.y = 1.6; root.add(glow);
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 1.6, 40, 10, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0xffc76a, transparent: true, opacity: 0.1, depthWrite: false, side: THREE.DoubleSide }));
+  beam.position.y = 21; root.add(beam);
+  root.userData = { flames, glow, beam, flag, lit: false, big, t: 0 };
+  return root;
+}
+
+/* ---------- loose pickups ---------- */
+function pickupModel(id) {
+  const g = new THREE.Group();
+  const add = (geo, color, pos, rot, sc) => {
+    const m = new THREE.Mesh(geo, toon(color));
+    m.position.set(...pos); if (rot) m.rotation.set(...rot); if (sc) m.scale.set(...sc);
+    m.castShadow = true; g.add(m);
+  };
+  if (id === 'meat') { add(G.sphere, 0xc2685f, [0, 0.12, 0], [0, 0, 0], [0.2, 0.15, 0.17]); add(G.cyl6, 0xf0e3c6, [0.16, 0.16, 0], [0, 0, 1.1], [0.04, 0.18, 0.04]); }
+  else if (id === 'hide') { add(G.box, 0xc9a06a, [0, 0.05, 0], [0, 0, 0], [0.42, 0.05, 0.34]); add(G.box, 0xb58a55, [0.1, 0.07, 0.06], [0, 0.4, 0], [0.2, 0.04, 0.16]); }
+  else if (id === 'wood') { add(G.cyl6, PAL.wood, [0, 0.13, 0], [0, 0, Math.PI / 2], [0.1, 0.6, 0.1]); }
+  else if (id === 'stone') { add(G.dodec, PAL.rock, [0, 0.13, 0], [0.4, 1, 0.2], [0.19, 0.15, 0.17]); }
+  else if (id === 'fiber') { add(G.cyl6, 0x7f9b52, [0, 0.09, 0], [0, 0.4, 1.4], [0.07, 0.4, 0.07]); }
+  else if (id === 'fish') { add(G.sphere, 0x6f9bb0, [0, 0.12, 0], [0, 0, 0], [0.24, 0.14, 0.12]); add(G.cone6, 0x5d8799, [-0.22, 0.12, 0], [0, 0, 1.4], [0.1, 0.16, 0.03]); }
+  else if (id === 'cooked') { add(G.sphere, 0x8a5a35, [0, 0.12, 0], [0, 0, 0], [0.2, 0.15, 0.17]); }
+  return g;
+}
+
+/* ---------- water ripple ---------- */
+function makeRipple() {
+  const m = new THREE.Mesh(G.ring, new THREE.MeshBasicMaterial({ color: 0xdff0f2, transparent: true, opacity: 0.6, side: THREE.DoubleSide, depthWrite: false }));
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = SEA + 0.03;
+  m.userData.t = 0;
+  return m;
+}
+
+/* ============================================================
+   World state, generation, navigation, movement
+   ============================================================ */
+
+const instancedMeshes = [];
+const STATE = {
+  playing: false, over: false, win: false, mode: 'play',
+  clock: 0, day: 1, days: 1,
+  player: null, rig: null, tool: 'hands',
+  inv: {}, goals: {},
+  props: [], animals: [], pickups: [], structures: [], ripples: [], collected: {},
+  path: null, action: null, actionCooldown: 0,
+  stats: { hp: 100, food: 82, water: 74, warm: 100, stam: 100 },
+  fireLevel: 0, nearFire: false, nearBench: false,
+};
+const DAY_LENGTH = 300; // seconds of real time for a full in-game day
+
+/* ---------- inventory ---------- */
+const INV_ORDER = ['wood', 'stone', 'fiber', 'berry', 'meat', 'cooked', 'fish', 'hide', 'rope', 'axe', 'spear', 'rod'];
+const addItem = (id, n = 1) => { STATE.inv[id] = (STATE.inv[id] || 0) + n; refreshBag(); };
+const hasItem = (id, n = 1) => (STATE.inv[id] || 0) >= n;
+const takeItem = (id, n = 1) => {
+  if (!hasItem(id, n)) return false;
+  STATE.inv[id] -= n;
+  if (STATE.inv[id] <= 0) delete STATE.inv[id];
+  refreshBag();
+  return true;
+};
+
+/* ---------- spatial hash for obstacles ---------- */
+const HASH_CELL = 10;
+const hashMap = new Map();
+const hkey = (x, z) => ((x / HASH_CELL) | 0) + ',' + ((z / HASH_CELL) | 0);
+function hashAdd(o) {
+  const k = hkey(o.x, o.z);
+  let arr = hashMap.get(k);
+  if (!arr) hashMap.set(k, arr = []);
+  arr.push(o);
+}
+function nearObstacles(x, z, out) {
+  out.length = 0;
+  const ci = (x / HASH_CELL) | 0, cj = (z / HASH_CELL) | 0;
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+    const arr = hashMap.get((ci + i) + ',' + (cj + j));
+    if (arr) for (const o of arr) out.push(o);
+  }
+  return out;
+}
+const tmpNear = [];
+
+/* ---------- navigation grid ---------- */
+const NAV = { cell: 4, half: 330, n: 0, blocked: null, stamp: null, g: null, visit: 0, heap: null };
+function navIndex(x, z) {
+  const i = clamp(Math.floor((x + NAV.half) / NAV.cell), 0, NAV.n - 1);
+  const j = clamp(Math.floor((z + NAV.half) / NAV.cell), 0, NAV.n - 1);
+  return j * NAV.n + i;
+}
+function cellCenter(idx, out) {
+  const i = idx % NAV.n, j = (idx / NAV.n) | 0;
+  out.x = i * NAV.cell - NAV.half + NAV.cell / 2;
+  out.z = j * NAV.cell - NAV.half + NAV.cell / 2;
+  return out;
+}
+function buildNav() {
+  NAV.n = Math.ceil((NAV.half * 2) / NAV.cell);
+  const n = NAV.n * NAV.n;
+  NAV.blocked = new Uint8Array(n);
+  NAV.stamp = new Int32Array(n);
+  NAV.g = new Float32Array(n);
+  NAV.from = new Int32Array(n);
+  for (let j = 0; j < NAV.n; j++) {
+    for (let i = 0; i < NAV.n; i++) {
+      const x = i * NAV.cell - NAV.half + NAV.cell / 2;
+      const z = j * NAV.cell - NAV.half + NAV.cell / 2;
+      if (heightAt(x, z) < 0.42) NAV.blocked[j * NAV.n + i] = 1;
+    }
+  }
+  for (const p of STATE.props) {
+    if (p.kind === 'grass' || p.kind === 'flower' || p.kind === 'reed') continue;
+    const rad = p.blockR;
+    if (!rad) continue;
+    const i0 = Math.floor((p.x - rad + NAV.half) / NAV.cell), i1 = Math.floor((p.x + rad + NAV.half) / NAV.cell);
+    const j0 = Math.floor((p.z - rad + NAV.half) / NAV.cell), j1 = Math.floor((p.z + rad + NAV.half) / NAV.cell);
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      if (i < 0 || j < 0 || i >= NAV.n || j >= NAV.n) continue;
+      NAV.blocked[j * NAV.n + i] = 1;
+    }
+  }
+}
+function navBlockedAt(x, z) {
+  if (Math.abs(x) > NAV.half - 2 || Math.abs(z) > NAV.half - 2) return true;
+  return NAV.blocked[navIndex(x, z)] === 1;
+}
+function lineFree(ax, az, bx, bz) {
+  const dx = bx - ax, dz = bz - az;
+  const len = Math.hypot(dx, dz);
+  const steps = Math.max(2, Math.ceil(len / (NAV.cell * 0.5)));
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    if (navBlockedAt(ax + dx * t, az + dz * t)) return false;
+  }
+  return true;
+}
+/* binary heap of cell indices keyed by f */
+class Heap {
+  constructor() { this.a = []; this.f = []; }
+  clear() { this.a.length = 0; this.f.length = 0; }
+  push(idx, f) {
+    const a = this.a, fs = this.f;
+    a.push(idx); fs.push(f);
+    let i = a.length - 1;
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      if (fs[p] <= fs[i]) break;
+      [a[p], a[i]] = [a[i], a[p]]; [fs[p], fs[i]] = [fs[i], fs[p]];
+      i = p;
+    }
+  }
+  pop() {
+    const a = this.a, fs = this.f;
+    const top = a[0];
+    const last = a.pop(), lastF = fs.pop();
+    if (a.length) {
+      a[0] = last; fs[0] = lastF;
+      let i = 0;
+      for (;;) {
+        const l = i * 2 + 1, r = l + 1;
+        let m = i;
+        if (l < a.length && fs[l] < fs[m]) m = l;
+        if (r < a.length && fs[r] < fs[m]) m = r;
+        if (m === i) break;
+        [a[m], a[i]] = [a[i], a[m]]; [fs[m], fs[i]] = [fs[i], fs[m]];
+        i = m;
+      }
+    }
+    return top;
+  }
+  get size() { return this.a.length; }
+}
+NAV.heap = new Heap();
+const navTmp = { x: 0, z: 0 };
+function nearestFree(idx) {
+  if (!NAV.blocked[idx]) return idx;
+  const i0 = idx % NAV.n, j0 = (idx / NAV.n) | 0;
+  for (let r = 1; r <= 6; r++) {
+    for (let j = j0 - r; j <= j0 + r; j++) {
+      for (let i = i0 - r; i <= i0 + r; i++) {
+        if (i < 1 || j < 1 || i >= NAV.n - 1 || j >= NAV.n - 1) continue;
+        const k = j * NAV.n + i;
+        if (!NAV.blocked[k]) return k;
+      }
+    }
+  }
+  return -1;
+}
+function clearToGoal(sx, sz, tx, tz) {
+  // ignore the last stretch: the goal itself is usually the blocked prop
+  for (let t = 0.05; t <= 0.9; t += 0.08) {
+    if (navBlockedAt(lerp(sx, tx, t), lerp(sz, tz, t))) return false;
+  }
+  return true;
+}
+function findPath(sx, sz, tx, tz) {
+  if (!NAV.blocked) return null;
+  if (clearToGoal(sx, sz, tx, tz)) return [{ x: tx, z: tz }];
+  const start = nearestFree(navIndex(sx, sz));
+  const goal = nearestFree(navIndex(tx, tz));
+  if (start < 0 || goal < 0) return null;
+  if (start === goal) return [{ x: tx, z: tz }];
+  const n = NAV.n, blocked = NAV.blocked;
+  NAV.visit++;
+  const stamp = NAV.stamp, gScore = NAV.g, from = NAV.from, heap = NAV.heap;
+  heap.clear();
+  const goalC = cellCenter(goal, { x: 0, z: 0 });
+  const h = idx => { const c = cellCenter(idx, navTmp); return Math.hypot(c.x - goalC.x, c.z - goalC.z); };
+  gScore[start] = 0; stamp[start] = NAV.visit; from[start] = -1;
+  heap.push(start, h(start));
+  let found = false, guard = 0;
+  while (heap.size && guard++ < 30000) {
+    const cur = heap.pop();
+    if (cur === goal) { found = true; break; }
+    const ci = cur % n, cj = (cur / n) | 0;
+    for (let dj = -1; dj <= 1; dj++) {
+      for (let di = -1; di <= 1; di++) {
+        if (!di && !dj) continue;
+        const i = ci + di, j = cj + dj;
+        if (i < 0 || j < 0 || i >= n || j >= n) continue;
+        const nk = j * n + i;
+        if (blocked[nk]) continue;
+        if (di && dj) { // no corner cutting
+          if (blocked[cj * n + i] || blocked[j * n + ci]) continue;
+        }
+        const step = (di && dj) ? 1.4142 : 1;
+        const ng = gScore[cur] + step;
+        if (stamp[nk] !== NAV.visit || ng < gScore[nk]) {
+          stamp[nk] = NAV.visit; gScore[nk] = ng; from[nk] = cur;
+          heap.push(nk, ng + h(nk) * 1.02);
+        }
+      }
+    }
+  }
+  if (!found) return null;
+  const rev = [];
+  let k = goal;
+  let guard2 = 0;
+  while (k !== -1 && guard2++ < 4000) {
+    const c = cellCenter(k, { x: 0, z: 0 });
+    rev.push(c);
+    if (k === start) break;
+    k = from[k];
+  }
+  rev.reverse();
+  rev.push({ x: tx, z: tz });
+  // smooth: keep only the furthest visible point
+  const out = [];
+  let i = 0;
+  while (i < rev.length - 1) {
+    let j = rev.length - 1;
+    for (; j > i + 1; j--) if (lineFree(rev[i].x, rev[i].z, rev[j].x, rev[j].z)) break;
+    out.push(rev[j]);
+    i = j;
+  }
+  if (!out.length) out.push(rev[rev.length - 1]);
+  return out;
+}
+
+/* ---------- collision ---------- */
+const PLAYER_R = 0.42;
+function blockedAt(x, z, ignore) {
+  if (heightAt(x, z) < 0.34) return true;
+  if (Math.abs(x) > 318 || Math.abs(z) > 318) return true;
+  nearObstacles(x, z, tmpNear);
+  for (const o of tmpNear) {
+    if (o === ignore || o.dead) continue;
+    const dx = x - o.x, dz = z - o.z;
+    const rr = (o.blockR || 0) + PLAYER_R;
+    if (dx * dx + dz * dz < rr * rr) return true;
+  }
+  return false;
+}
+function movePlayer(dx, dz, dt) {
+  const p = STATE.player;
+  const nx = p.x + dx, nz = p.z + dz;
+  if (!blockedAt(nx, nz)) { p.x = nx; p.z = nz; return true; }
+  if (!blockedAt(nx, p.z)) { p.x = nx; return true; }
+  if (!blockedAt(p.x, nz)) { p.z = nz; return true; }
+  return false;
+}
+
+/* ============================================================
+   World generation
+   ============================================================ */
+function scatterProps() {
+  const variants = [
+    { geo: treeRound(3), inst: null, list: [] },
+    { geo: treeRound(17), inst: null, list: [] },
+    { geo: treePine(5), inst: null, list: [] },
+    { geo: treeBirch(11), inst: null, list: [] },
+    { geo: treeRound(23), inst: null, list: [] },
+    { geo: treeRound(41), inst: null, list: [] },
+  ];
+  let tries = 0;
+  while (variants.reduce((a, v) => a + v.list.length, 0) < 2500 && tries++ < 200000) {
+    const x = rnd(300, -300), z = rnd(300, -300);
+    const h = heightAt(x, z);
+    if (h < 0.8 || h > 3.6) continue;
+    if (Math.hypot(x, z) < 6) continue;
+    if (Math.hypot((x - POND.x) / POND.rx, z - POND.z) < POND.r * 0.62) continue;
+    const dens = fbm(x * 0.014 + 31, z * 0.014 + 17);
+    if (dens < 0.34 && Math.random() > 0.55) continue;
+    let ok = true;
+    for (const v of variants) for (const o of v.list) {
+      if (Math.hypot(o.x - x, o.z - z) < 6.1) { ok = false; break; }
+    }
+    if (!ok) continue;
+    const v = variants[(Math.random() * variants.length) | 0];
+    const s = rnd(1.15, 0.82);
+    v.list.push({ x, z, s, rot: rnd(TAU) });
+  }
+  const toonM = toonV;
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), pos = new THREE.Vector3(), scl = new THREE.Vector3();
+  for (const v of variants) {
+    if (!v.list.length) continue;
+    const inst = new THREE.InstancedMesh(v.geo, toonM, v.list.length);
+    inst.castShadow = true; inst.receiveShadow = true;
+    const tint = new THREE.Color();
+    v.list.forEach((o, i) => {
+      const y = heightAt(o.x, o.z) - 0.15;
+      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), o.rot);
+      pos.set(o.x, y, o.z); scl.setScalar(o.s);
+      m4.compose(pos, q, scl);
+      inst.setMatrixAt(i, m4);
+      const k = 0.84 + Math.random() * 0.34;
+      tint.setRGB(k * (0.95 + Math.random() * 0.1), k, k * (0.92 + Math.random() * 0.12));
+      inst.setColorAt(i, tint);
+      const prop = { kind: 'tree', x: o.x, z: o.z, y, s: o.s, variant: v, idx: i, blockR: 0.62 * o.s, hp: 3, maxHp: 3, dead: false, regrow: 0, radius: 1.6 * o.s };
+      STATE.props.push(prop);
+      hashAdd(prop);
+    });
+    inst.instanceMatrix.needsUpdate = true;
+    if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+    scene.add(inst);
+    instancedMeshes.push(inst);
+    v.inst = inst;
+  }
+
+  // rocks
+  const rockVariants = [{ geo: rockModel(2), list: [] }, { geo: rockModel(9), list: [] }, { geo: rockModel(14), list: [] }];
+  tries = 0;
+  while (rockVariants.reduce((a, v) => a + v.list.length, 0) < 170 && tries++ < 20000) {
+    const x = rnd(292, -292), z = rnd(292, -292);
+    const h = heightAt(x, z);
+    if (h < 0.62 || h > 3.4) continue;
+    if (Math.hypot(x, z) < 5) continue;
+    let ok = true;
+    for (const v of rockVariants) for (const o of v.list) if (Math.hypot(o.x - x, o.z - z) < 5.2) { ok = false; break; }
+    if (!ok) continue;
+    const v = rockVariants[(Math.random() * 3) | 0];
+    v.list.push({ x, z, s: rnd(0.95, 0.6), rot: rnd(TAU) });
+  }
+  for (const v of rockVariants) {
+    if (!v.list.length) continue;
+    const inst = new THREE.InstancedMesh(v.geo, toonM, v.list.length);
+    inst.castShadow = true; inst.receiveShadow = true;
+    v.list.forEach((o, i) => {
+      const y = heightAt(o.x, o.z) - 0.12;
+      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), o.rot);
+      m4.compose(pos.set(o.x, y, o.z), q, scl.setScalar(o.s));
+      inst.setMatrixAt(i, m4);
+      const prop = { kind: 'rock', x: o.x, z: o.z, y, s: o.s, variant: v, idx: i, blockR: 0.6 * o.s, hp: 2, maxHp: 2, dead: false, regrow: 0, radius: 1.1 * o.s };
+      STATE.props.push(prop); hashAdd(prop);
+    });
+    inst.instanceMatrix.needsUpdate = true;
+    scene.add(inst);
+    instancedMeshes.push(inst);
+    v.inst = inst;
+  }
+
+  // bushes, reeds, grass, flowers
+  const bushGeo = [bushModel(4), bushModel(8), bushModel(12)];
+  const bushList = bushGeo.map(() => []);
+  tries = 0;
+  while (bushList.reduce((a, b) => a + b.length, 0) < 210 && tries++ < 20000) {
+    const x = rnd(495, -495), z = rnd(495, -495);
+    if (heightAt(x, z) < 0.85) continue;
+    if (Math.hypot(x, z) < 7) continue;
+    const vi = (Math.random() * 3) | 0;
+    bushList[vi].push({ x, z, rot: rnd(TAU), s: rnd(0.92, 0.6) });
+  }
+  const bushProps = [];
+  bushGeo.forEach((geo, vi) => {
+    const list = bushList[vi];
+    if (!list.length) return;
+    const inst = new THREE.InstancedMesh(geo, toonM, list.length);
+    inst.castShadow = true;
+    list.forEach((o, i) => {
+      const y = heightAt(o.x, o.z) - 0.05;
+      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), o.rot);
+      m4.compose(pos.set(o.x, y, o.z), q, scl.setScalar(o.s));
+      inst.setMatrixAt(i, m4);
+      const prop = { kind: 'bush', x: o.x, z: o.z, y, s: o.s, variant: { inst, list }, idx: i, blockR: 0.3, hp: 2, maxHp: 2, dead: false, regrow: 0, radius: 1.0 };
+      STATE.props.push(prop); bushProps.push(prop);
+    });
+    inst.instanceMatrix.needsUpdate = true;
+    scene.add(inst);
+    instancedMeshes.push(inst);
+  });
+
+  // grass tufts + flowers (instanced, many)
+  const grassGeo = grassTuft(7);
+  const gCount = 3600;
+  const gInst = new THREE.InstancedMesh(grassGeo, toonM, gCount);
+  gInst.castShadow = false; gInst.receiveShadow = true;
+  let gi = 0, gt = 0;
+  while (gi < gCount && gt++ < 30000) {
+    const x = rnd(305, -305), z = rnd(305, -305);
+    const h = heightAt(x, z);
+    if (h < 0.6 || h > 3.5) continue;
+    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rnd(TAU));
+    m4.compose(pos.set(x, h - 0.02, z), q, scl.setScalar(rnd(1.9, 1.0)));
+    gInst.setMatrixAt(gi++, m4);
+  }
+  gInst.count = gi;
+  gInst.instanceMatrix.needsUpdate = true;
+  scene.add(gInst);
+  instancedMeshes.push(gInst);
+
+  const flowerGeo = flowerModel(5), fCount = 620;
+  const fInst = new THREE.InstancedMesh(flowerGeo, toonM, fCount);
+  let fi = 0, ft = 0;
+  while (fi < fCount && ft++ < 8000) {
+    const x = rnd(290, -290), z = rnd(290, -290);
+    const h = heightAt(x, z);
+    if (h < 0.8 || h > 3.2) continue;
+    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rnd(TAU));
+    m4.compose(pos.set(x, h, z), q, scl.setScalar(rnd(1.1, 0.8)));
+    fInst.setMatrixAt(fi++, m4);
+  }
+  fInst.count = fi;
+  fInst.instanceMatrix.needsUpdate = true;
+  scene.add(fInst);
+  instancedMeshes.push(fInst);
+
+  // reeds along the shoreline
+  const reedGeo = reedsModel(6);
+  const reedList = [];
+  gt = 0;
+  while (reedList.length < 150 && gt++ < 30000) {
+    const a = rnd(TAU), r = rnd(318, 250);
+    const x = Math.cos(a) * r, z = Math.sin(a) * r;
+    const h = heightAt(x, z);
+    if (h < 0.28 || h > 0.7) continue;
+    reedList.push({ x, z, rot: rnd(TAU), s: rnd(1.25, 0.8) });
+  }
+  // pond reeds
+  gt = 0;
+  while (reedList.length < 300 && gt++ < 30000) {
+    const a = rnd(TAU), r = POND.r * 1.02 + rnd(14, -4);
+    const x = POND.x + Math.cos(a) * r * POND.rx, z = POND.z + Math.sin(a) * r;
+    const h = heightAt(x, z);
+    if (h < 0.28 || h > 0.68) continue;
+    reedList.push({ x, z, rot: rnd(TAU), s: rnd(1.2, 0.8) });
+  }
+  const rInst = new THREE.InstancedMesh(reedGeo, toonM, reedList.length);
+  rInst.castShadow = true;
+  reedList.forEach((o, i) => {
+    const y = heightAt(o.x, o.z) - 0.05;
+    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), o.rot);
+    m4.compose(pos.set(o.x, y, o.z), q, scl.setScalar(o.s));
+    rInst.setMatrixAt(i, m4);
+    const prop = { kind: 'reed', x: o.x, z: o.z, y, s: o.s, variant: { inst: rInst, list: reedList }, idx: i, blockR: 0, hp: 1, maxHp: 1, dead: false, regrow: 0, radius: 1.0 };
+    STATE.props.push(prop);
+  });
+  rInst.instanceMatrix.needsUpdate = true;
+  scene.add(rInst);
+  instancedMeshes.push(rInst);
+}
+
+function hideProp(prop) {
+  const inst = prop.variant && prop.variant.inst;
+  if (!inst) return;
+  const m4 = new THREE.Matrix4().makeScale(0.0001, 0.0001, 0.0001);
+  inst.setMatrixAt(prop.idx, m4);
+  inst.instanceMatrix.needsUpdate = true;
+}
+function showProp(prop) {
+  const inst = prop.variant && prop.variant.inst;
+  if (!inst) return;
+  const o = prop.variant.list[prop.idx];
+  const m4 = new THREE.Matrix4().compose(
+    new THREE.Vector3(o.x, heightAt(o.x, o.z) - (prop.kind === 'rock' ? 0.12 : 0.05), o.z),
+    new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), o.rot || 0),
+    new THREE.Vector3(prop.s, prop.s, prop.s)
+  );
+  inst.setMatrixAt(prop.idx, m4);
+  inst.instanceMatrix.needsUpdate = true;
+}
+
+/* ---------- animals ---------- */
+const SPECIES = {
+  deer: { hp: 80, radius: 0.95, blockR: 0.85, flee: 8.6, walk: 2.0, name: 'deer', drops: [['meat', 2], ['hide', 1]] },
+  rabbit: { hp: 26, radius: 0.45, blockR: 0.4, flee: 6.4, walk: 1.5, name: 'rabbit', drops: [['meat', 1]] },
+  wolf: { hp: 62, radius: 0.8, blockR: 0.7, flee: 7.6, walk: 2.6, name: 'wolf', drops: [['meat', 1], ['hide', 1]] },
+};
+let animalSerial = 0;
+function spawnAnimal(kind, x, z) {
+  const spec = SPECIES[kind];
+  const model = kind === 'deer' ? makeDeer() : kind === 'rabbit' ? makeRabbit() : makeWolf();
+  const y = heightAt(x, z);
+  model.position.set(x, y, z);
+  model.rotation.y = rnd(TAU);
+  scene.add(model);
+  const a = {
+    id: ++animalSerial, kind, model, x, z, hx: x, hz: z, spec,
+    hp: spec.hp, state: 'idle', t: rnd(3), dir: rnd(TAU), speed: 0, targetX: x, targetZ: z,
+    faceSign: kind === 'deer' ? Math.PI : 0, walkPhase: rnd(10), alert: 0, hurt: 0, dead: false, deadT: 0,
+    attackCd: 0, graze: 0,
+  };
+  STATE.animals.push(a);
+  return a;
+}
+function populateAnimals() {
+  let n = 0, tries = 0;
+  while (n < 14 && tries++ < 6000) {
+    const x = rnd(255, -255), z = rnd(255, -255);
+    if (heightAt(x, z) < 0.75) continue;
+    if (Math.hypot(x, z) < 24) continue;
+    spawnAnimal(Math.random() < 0.28 ? 'rabbit' : 'deer', x, z);
+    n++;
+  }
+  n = 0; tries = 0;
+  while (n < 5 && tries++ < 2000) {
+    const x = rnd(255, -255), z = rnd(255, -255);
+    if (heightAt(x, z) < 0.85) continue;
+    if (Math.hypot(x, z) < 60) continue;
+    spawnAnimal('wolf', x, z);
+    n++;
+  }
+}
+
+/* ---------- particles ---------- */
+const burstGeo = new THREE.BufferGeometry();
+const BURST_MAX = 120;
+const burstPos = new Float32Array(BURST_MAX * 3);
+const burstCol = new Float32Array(BURST_MAX * 3);
+const burstData = [];
+for (let i = 0; i < BURST_MAX; i++) burstData.push({ life: 0, vx: 0, vy: 0, vz: 0, x: 0, y: 0, z: 0 });
+burstGeo.setAttribute('position', new THREE.BufferAttribute(burstPos, 3));
+burstGeo.setAttribute('color', new THREE.BufferAttribute(burstCol, 3));
+const burstPoints = new THREE.Points(burstGeo, new THREE.PointsMaterial({ size: 0.16, vertexColors: true, transparent: true, opacity: 0.95, depthWrite: false }));
+burstPoints.frustumCulled = false;
+scene.add(burstPoints);
+let burstIdx = 0;
+function spawnBurst(x, y, z, color, n = 7, power = 1) {
+  const c = new THREE.Color(color);
+  for (let i = 0; i < n; i++) {
+    const d = burstData[burstIdx];
+    d.life = 0.45 + Math.random() * 0.3;
+    d.max = d.life;
+    d.x = x; d.y = y; d.z = z;
+    const a = Math.random() * TAU, sp = (1.4 + Math.random() * 2.4) * power;
+    d.vx = Math.cos(a) * sp; d.vz = Math.sin(a) * sp; d.vy = 2.4 * power + Math.random() * 2.2;
+    burstPos[burstIdx * 3] = x; burstPos[burstIdx * 3 + 1] = y; burstPos[burstIdx * 3 + 2] = z;
+    burstCol[burstIdx * 3] = c.r; burstCol[burstIdx * 3 + 1] = c.g; burstCol[burstIdx * 3 + 2] = c.b;
+    burstIdx = (burstIdx + 1) % BURST_MAX;
+  }
+  burstGeo.attributes.position.needsUpdate = true;
+  burstGeo.attributes.color.needsUpdate = true;
+}
+function updateBursts(dt) {
+  let moved = false;
+  for (let i = 0; i < BURST_MAX; i++) {
+    const d = burstData[i];
+    if (d.life <= 0) continue;
+    d.life -= dt; moved = true;
+    d.vy -= 12 * dt;
+    d.x += d.vx * dt; d.y += d.vy * dt; d.z += d.vz * dt;
+    if (d.y < 0.05) { d.y = 0.05; d.vy *= -0.35; d.vx *= 0.6; d.vz *= 0.6; }
+    burstPos[i * 3] = d.x; burstPos[i * 3 + 1] = d.y; burstPos[i * 3 + 2] = d.z;
+    if (d.life <= 0) { burstPos[i * 3 + 1] = -999; }
+  }
+  if (moved) burstGeo.attributes.position.needsUpdate = true;
+}
+
+/* ---------- pickups ---------- */
+function spawnPickup(id, x, z, n = 1) {
+  for (let i = 0; i < n; i++) {
+    const m = pickupModel(id);
+    const px = x + rnd(1.1, -1.1), pz = z + rnd(1.1, -1.1);
+    m.position.set(px, heightAt(px, pz) + 0.1, pz);
+    scene.add(m);
+    STATE.pickups.push({ id, mesh: m, x: px, z: pz, t: rnd(TAU), taken: false });
+  }
+}
+
+/* ============================================================
+   Input, player, animals, interactions, UI, loop
+   ============================================================ */
+
+const keys = Object.create(null);
+const $ = id => document.getElementById(id);
+let toastTimer = 0, toastEl = null;
+function toast(msg, ms = 1700) {
+  toastEl = toastEl || $('toast');
+  toastEl.textContent = msg;
+  toastEl.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('on'), ms);
+}
+let hintTimer = 0;
+function hint(msg = '') {
+  const el = $('hint');
+  if (!msg) { el.classList.remove('on'); return; }
+  el.textContent = msg; el.classList.add('on');
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => el.classList.remove('on'), 2400);
+}
+
+/* ---------- bag ---------- */
+const BAG_SLOTS = 8;
+let bagSel = 0;
+function bagItems() {
+  const out = [];
+  for (const id of INV_ORDER) if (STATE.inv[id]) out.push(id);
+  return out;
+}
+function refreshBag() {
+  const bag = $('bag');
+  const items = bagItems();
+  const tools = ['axe', 'spear', 'rod'].filter(t => STATE.inv[t]);
+  bag.innerHTML = '';
+  const head = tools.length ? tools : [];
+  const show = head.concat(items.filter(i => !head.includes(i))).slice(0, BAG_SLOTS);
+  for (let i = 0; i < BAG_SLOTS; i++) {
+    const id = show[i];
+    const b = document.createElement('button');
+    b.className = 'slot' + (id ? '' : ' empty') + (id && STATE.tool === id ? ' on' : '');
+    b.dataset.item = id || '';
+    if (id) {
+      b.innerHTML = icon(id) + `<i class="k">${i + 1}</i>` + (STATE.inv[id] > 1 ? `<i class="n">${STATE.inv[id]}</i>` : '');
+      b.onclick = () => useSlot(id);
+    }
+    bag.appendChild(b);
+  }
+}
+function selectSlot(i) {
+  const show = Array.from(document.querySelectorAll('#bag .slot')).map(s => s.dataset.item).filter(Boolean);
+  const id = show[i];
+  if (id) useSlot(id);
+}
+function useSlot(id) {
+  if (['axe', 'spear', 'rod'].includes(id)) {
+    equip(STATE.tool === id ? 'hands' : id);
+    return;
+  }
+  if (id === 'cooked' || id === 'berry' || id === 'fish') {
+    if (!takeItem(id, 1)) return;
+    const gain = id === 'cooked' ? 34 : id === 'berry' ? 9 : 18;
+    STATE.stats.food = clamp(STATE.stats.food + gain, 0, 100);
+    STATE.stats.hp = clamp(STATE.stats.hp + (id === 'cooked' ? 6 : 1), 0, 100);
+    toast(tr('eat'));
+    return;
+  }
+  if (id === 'meat') { hint(tr('noFire')); }
+}
+
+/* ---------- equipping ---------- */
+function equip(id) {
+  STATE.tool = id;
+  const hand = STATE.rig.userData.handR;
+  hand.clear();
+  if (id !== 'hands') {
+    const m = toolModel(id);
+    m.rotation.x = -0.35;
+    hand.add(m);
+    STATE.rig.userData.toolMesh = m;
+  } else {
+    STATE.rig.userData.toolMesh = null;
+  }
+  refreshBag();
+  hint(id === 'hands' ? tr('hands') : tr(id) || id);
+}
+
+/* ---------- nav / walk helpers ---------- */
+function walkTo(x, z, action) {
+  const p = STATE.player;
+  const path = findPath(p.x, p.z, x, z);
+  if (path && path.length) {
+    STATE.path = path;
+  } else {
+    STATE.path = [{ x, z }];
+  }
+  STATE.action = action || null;
+}
+function stopWalk() { STATE.path = null; }
+
+/* ---------- clicking ---------- */
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -1.0);
+const hitPoint = new THREE.Vector3();
+function screenToGround(clientX, clientY) {
+  const r = canvas.getBoundingClientRect();
+  ndc.x = ((clientX - r.left) / r.width) * 2 - 1;
+  ndc.y = -((clientY - r.top) / r.height) * 2 + 1;
+  raycaster.setFromCamera(ndc, camera);
+  const ok = raycaster.ray.intersectPlane(groundPlane, hitPoint);
+  if (!ok) return null;
+  return { x: hitPoint.x, z: hitPoint.z };
+}
+function nearestProp(x, z, maxD, kinds) {
+  let best = null, bd = maxD * maxD;
+  for (const p of STATE.props) {
+    if (p.dead || (kinds && !kinds.includes(p.kind))) continue;
+    const d = (p.x - x) ** 2 + (p.z - z) ** 2;
+    if (d < bd) { bd = d; best = p; }
+  }
+  return best;
+}
+function nearestAnimal(x, z, maxD) {
+  let best = null, bd = maxD * maxD;
+  for (const a of STATE.animals) {
+    if (a.dead) continue;
+    const d = (a.x - x) ** 2 + (a.z - z) ** 2;
+    if (d < bd) { bd = d; best = a; }
+  }
+  return best;
+}
+function handleClick(clientX, clientY) {
+  if (!STATE.playing) return;
+  if (STATE.fish && STATE.fish.stage === 'bite') { hookFish(); return; }
+  if (STATE.fish && (STATE.fish.stage === 'fight')) return;
+  const gp = screenToGround(clientX, clientY);
+  if (!gp) return;
+  const p = STATE.player;
+
+  // water?
+  if (isWater(gp.x, gp.z)) {
+    if (STATE.tool === 'rod') { castLine(gp.x, gp.z); return; }
+    if (Math.hypot(gp.x - p.x, gp.z - p.z) < 40) {
+      walkTo(gp.x + (p.x - gp.x) * 0.06, gp.z + (p.z - gp.z) * 0.06, { type: 'drink' });
+      return;
+    }
+  }
+  const animal = nearestAnimal(gp.x, gp.z, 4.2);
+  if (animal) {
+    if (STATE.tool === 'spear' && Math.hypot(animal.x - p.x, animal.z - p.z) > 3.5) {
+      throwSpear(animal);
+      return;
+    }
+    if (STATE.tool === 'spear' || animal.kind === 'rabbit') {
+      walkTo(animal.x, animal.z, { type: 'hunt', target: animal });
+    } else {
+      hint(tr('needSpear'));
+    }
+    return;
+  }
+  const pk = nearestPickup(gp.x, gp.z, 3.0);
+  if (pk) { walkTo(pk.x, pk.z, { type: 'pickup', target: pk }); return; }
+  const struct = nearestStructure(gp.x, gp.z, 3.6);
+  if (struct) { walkTo(struct.x, struct.z, { type: 'use', target: struct }); return; }
+  const prop = nearestProp(gp.x, gp.z, 3.4, ['tree', 'rock', 'bush', 'reed']);
+  if (prop) { walkTo(prop.x, prop.z, { type: 'gather', target: prop }); return; }
+  walkTo(gp.x, gp.z);
+}
+function nearestPickup(x, z, maxD) {
+  let best = null, bd = maxD * maxD;
+  for (const pk of STATE.pickups) {
+    if (pk.taken) continue;
+    const d = (pk.x - x) ** 2 + (pk.z - z) ** 2;
+    if (d < bd) { bd = d; best = pk; }
+  }
+  return best;
+}
+function nearestStructure(x, z, maxD) {
+  let best = null, bd = maxD * maxD;
+  for (const s of STATE.structures) {
+    const d = (s.x - x) ** 2 + (s.z - z) ** 2;
+    if (d < bd) { bd = d; best = s; }
+  }
+  return best;
+}
+
+/* ---------- pointer input ---------- */
+const pointers = new Map();
+let dragStart = null, dragMoved = false, camDrag = false;
+canvas.addEventListener('pointerdown', e => {
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  dragStart = { x: e.clientX, y: e.clientY, yaw: camRig.yaw };
+  dragMoved = false; camDrag = false;
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', e => {
+  if (!dragStart) return;
+  const dx = e.clientX - dragStart.x, dy = e.clientY - dragStart.y;
+  if (Math.hypot(dx, dy) > 12) dragMoved = true;
+  if (dragMoved) {
+    camRig.yaw = dragStart.yaw - dx * 0.006;
+    camRig.dist = clamp(camRig.dist + dy * 0.03, 14, 42);
+  }
+});
+canvas.addEventListener('pointerup', e => {
+  pointers.delete(e.pointerId);
+  const wasDrag = dragMoved;
+  dragStart = null; dragMoved = false;
+  if (!wasDrag) handleClick(e.clientX, e.clientY);
+});
+canvas.addEventListener('pointercancel', () => { pointers.clear(); dragStart = null; });
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  camRig.dist = clamp(camRig.dist + Math.sign(e.deltaY) * 2.0, 14, 42);
+}, { passive: false });
+
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k === 'escape') {
+    if (STATE.fish && STATE.fish.stage === 'fight') { endFishing(false, true); return; }
+    if (!$('craft').hidden) { closeCraft(); return; }
+    openMenu(); return;
+  }
+  if (k === 'c' || k === 'b') { toggleCraft(); return; }
+  if (k === 'h') { equip('hands'); return; }
+  if (k === ' ') {
+    if (STATE.fish && STATE.fish.stage === 'fight') { fishHold = true; }
+    e.preventDefault();
+    return;
+  }
+  if (k >= '1' && k <= '8') { selectSlot(+k - 1); return; }
+  keys[k] = true;
+  if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) {
+    STATE.path = null;
+    STATE.action = null;
+  }
+  if (k === 'q') camRig.yaw += 0.12;
+  if (k === 'e') camRig.yaw -= 0.12;
+});
+addEventListener('keyup', e => {
+  const k = e.key.toLowerCase();
+  keys[k] = false;
+  if (k === ' ') fishHold = false;
+});
+addEventListener('blur', () => { for (const k in keys) keys[k] = false; fishHold = false; });
+
+/* ============================================================
+   Player
+   ============================================================ */
+function resetPlayer() {
+  if (STATE.rig) scene.remove(STATE.rig);
+  STATE.rig = makePlayer();
+  scene.add(STATE.rig);
+  STATE.player = { x: 0, z: 2, vy: 0, dir: 0, speed: 0, walkPhase: 0, breathe: 0, stamina: 100 };
+  STATE.path = null; STATE.action = null; STATE.tool = 'hands';
+}
+let swingT = 0;
+function updatePlayer(dt) {
+  const p = STATE.player, rig = STATE.rig, ud = rig.userData;
+  if (!p) return;
+  let ix = 0, iz = 0;
+  const fwd = -1;
+  if (keys.w || keys.arrowup) iz -= 1;
+  if (keys.s || keys.arrowdown) iz += 1;
+  if (keys.a || keys.arrowleft) ix -= 1;
+  if (keys.d || keys.arrowright) ix += 1;
+  const running = !!(keys.shift && p.stamina > 2);
+  let moved = false;
+  const maxSpeed = running ? 7.2 : 4.5;
+
+  if (ix || iz) {
+    const len = Math.hypot(ix, iz);
+    ix /= len; iz /= len;
+    const sy = Math.sin(camRig.yaw), cy = Math.cos(camRig.yaw);
+    // camera forward on the ground = (-sin, -cos), right = (cos, -sin)
+    const dx = (-sy * -iz + cy * ix), dz = (-cy * -iz - sy * ix);
+    const step = maxSpeed * dt;
+    if (movePlayer(dx * step, dz * step, dt)) moved = true;
+    p.dir = Math.atan2(dx, dz);
+    p.speed = lerp(p.speed, maxSpeed, 1 - Math.exp(-12 * dt));
+    STATE.path = null;
+  } else if (STATE.path && STATE.path.length) {
+    const wp = STATE.path[0];
+    const dx = wp.x - p.x, dz = wp.z - p.z;
+    const d = Math.hypot(dx, dz);
+    if (d < 0.55) {
+      STATE.path.shift();
+      if (!STATE.path.length) STATE.path = null;
+    } else {
+      const sp = Math.min(maxSpeed, Math.max(1.4, d * 3));
+      const step = sp * dt;
+      if (movePlayer((dx / d) * step, (dz / d) * step, dt)) moved = true;
+      p.dir = Math.atan2(dx / d, dz / d);
+      p.speed = lerp(p.speed, sp, 1 - Math.exp(-10 * dt));
+    }
+  } else {
+    p.speed = lerp(p.speed, 0, 1 - Math.exp(-10 * dt));
+  }
+  if (running && moved) p.stamina = clamp(p.stamina - 9 * dt, 0, 100);
+  else p.stamina = clamp(p.stamina + 6 * dt, 0, 100);
+
+  // ground height + model transform
+  const gy = heightAt(p.x, p.z);
+  rig.position.set(p.x, gy, p.z);
+  rig.rotation.y = lerpAngle(rig.rotation.y, p.dir, 1 - Math.exp(-14 * dt));
+
+  // walk animation
+  const spd = p.speed;
+  p.walkPhase += dt * (2.6 + spd * 1.5) * (spd > 0.2 ? 1 : 0);
+  const amp = clamp(spd / 6.5, 0, 1) * 0.9;
+  const s = Math.sin(p.walkPhase * 2);
+  ud.legL.rotation.x = s * amp;
+  ud.legR.rotation.x = -s * amp;
+  ud.armR.rotation.x = -s * amp * 0.7 - (STATE.tool === 'rod' ? 0.9 : STATE.tool === 'spear' ? 0.5 : 0.1);
+  ud.armL.rotation.x = s * amp * 0.7;
+  ud.rig.position.y = Math.abs(Math.sin(p.walkPhase * 2)) * 0.055 * amp;
+  p.breathe += dt;
+  ud.torso.rotation.z = Math.sin(p.breathe * 1.6) * 0.014;
+  ud.head.rotation.z = Math.sin(p.breathe * 1.2 + 1) * 0.02;
+  ud.torso.rotation.x = lerp(ud.torso.rotation.x, spd > 0.5 ? 0.09 : 0, 1 - Math.exp(-6 * dt));
+
+  // gather / hunt action
+  swingT = Math.max(0, swingT - dt);
+  STATE.actionCooldown = Math.max(0, STATE.actionCooldown - dt);
+  updateAction(dt);
+}
+function lerpAngle(a, b, t) {
+  let d = ((b - a + Math.PI) % TAU + TAU) % TAU - Math.PI;
+  return a + d * t;
+}
+
+/* ============================================================
+   Actions: gather, hunt, pick up, drink, use structures
+   ============================================================ */
+function updateAction(dt) {
+  const act = STATE.action, p = STATE.player;
+  if (!act) return;
+  let tx, tz, reach;
+  if (act.type === 'gather') {
+    const t = act.target;
+    if (!t || t.dead) { STATE.action = null; return; }
+    tx = t.x; tz = t.z; reach = (t.radius || 1.4) + 1.25;
+  } else if (act.type === 'hunt') {
+    const a = act.target;
+    if (!a || a.dead) { STATE.action = null; return; }
+    tx = a.x; tz = a.z; reach = 2.1;
+  } else if (act.type === 'pickup') {
+    const pk = act.target;
+    if (!pk || pk.taken) { STATE.action = null; return; }
+    tx = pk.x; tz = pk.z; reach = 2.0;
+  } else if (act.type === 'drink') {
+    tx = act.x; tz = act.z; reach = 2.2;
+  } else if (act.type === 'use') {
+    const st = act.target;
+    if (!st) { STATE.action = null; return; }
+    tx = st.x; tz = st.z; reach = 2.7;
+  } else { STATE.action = null; return; }
+
+  const d = Math.hypot(tx - p.x, tz - p.z);
+  if (d > reach) {
+    // keep walking, recompute the path only when it is missing or the goal moved
+    const moved = !act.lastGoal || Math.hypot(tx - act.lastGoal.x, tz - act.lastGoal.z) > 3;
+    if (!STATE.path || !STATE.path.length || (moved && act.type === 'hunt')) {
+      act.lastGoal = { x: tx, z: tz };
+      STATE.path = findPath(p.x, p.z, tx, tz) || [{ x: tx, z: tz }];
+    }
+    return;
+  }
+  STATE.path = null;
+  faceTo(tx, tz, dt);
+  if (act.type === 'gather') {
+    if (STATE.actionCooldown <= 0) hitProp(act.target);
+    return;
+  }
+  if (act.type === 'hunt') {
+    if (STATE.actionCooldown <= 0) strikeAnimal(act.target);
+    return;
+  }
+  if (act.type === 'pickup') { collectPickup(act.target); STATE.action = null; return; }
+  if (act.type === 'drink') {
+    STATE.stats.water = clamp(STATE.stats.water + 42, 0, 100);
+    toast(tr('drink'));
+    spawnRippleAt(p.x + Math.sin(p.dir) * 1.3, p.z + Math.cos(p.dir) * 1.3);
+    STATE.action = null;
+    return;
+  }
+  if (act.type === 'use') { const st = act.target; STATE.action = null; useStructure(st); return; }
+}
+function faceTo(x, z, dt) {
+  const p = STATE.player;
+  p.dir = lerpAngle(p.dir, Math.atan2(x - p.x, z - p.z), 1 - Math.exp(-16 * dt));
+}
+function hitProp(prop) {
+  const p = STATE.player;
+  const axe = STATE.tool === 'axe';
+  STATE.actionCooldown = axe ? 0.4 : 0.62;
+  swingT = 0.34;
+  const rig = STATE.rig.userData;
+  rig.armR.rotation.x = -1.5;
+  if (prop.kind === 'tree') {
+    if (!axe && Math.random() < 0.55) {
+      prop.hp -= 0.5;
+    } else prop.hp -= axe ? 1.4 : 0.8;
+    spawnBurst(prop.x, prop.y + 1.3, prop.z, 0xb98c56, 6, 0.9);
+    if (prop.hp <= 0) {
+      prop.dead = true; prop.regrow = 70;
+      hideProp(prop);
+      STATE.collected.wood = (STATE.collected.wood || 0) + 3;
+      addItem('wood', 3);
+      toast(tr('toastWood') + ' ×3');
+      spawnBurst(prop.x, prop.y + 1.0, prop.z, 0x8fae62, 10, 1.1);
+      checkGoals();
+    }
+  } else if (prop.kind === 'rock') {
+    prop.hp -= axe ? 1.3 : 0.85;
+    spawnBurst(prop.x, prop.y + 0.5, prop.z, 0x9a9a90, 6, 0.8);
+    if (prop.hp <= 0) {
+      prop.dead = true; prop.regrow = 90;
+      hideProp(prop);
+      STATE.collected.stone = (STATE.collected.stone || 0) + 2;
+      addItem('stone', 2);
+      toast(tr('toastStone') + ' ×2');
+      checkGoals();
+    }
+  } else if (prop.kind === 'bush') {
+    prop.hp -= 1;
+    spawnBurst(prop.x, prop.y + 0.6, prop.z, 0xb8484f, 6, 0.7);
+    addItem('berry', 2);
+    toast(tr('toastBerry') + ' ×2');
+    if (prop.hp <= 0) { prop.dead = true; prop.regrow = 55; hideProp(prop); }
+  } else if (prop.kind === 'reed') {
+    prop.dead = true; prop.regrow = 45;
+    hideProp(prop);
+    STATE.collected.fiber = (STATE.collected.fiber || 0) + 2;
+    addItem('fiber', 2);
+    toast(tr('toastFiber') + ' ×2');
+    spawnBurst(prop.x, prop.y + 0.5, prop.z, 0x8fae62, 6, 0.8);
+    checkGoals();
+  }
+}
+function strikeAnimal(a) {
+  STATE.actionCooldown = 0.62;
+  swingT = 0.3;
+  STATE.rig.userData.armR.rotation.x = -1.7;
+  const dmg = STATE.tool === 'spear' ? 46 : 14;
+  a.hp -= dmg;
+  a.hurt = 0.3;
+  spawnBurst(a.x, heightAt(a.x, a.z) + 1.1, a.z, 0xb8484f, 7, 1);
+  a.state = 'flee'; a.t = 3.2;
+  a.dir = Math.atan2(a.x - STATE.player.x, a.z - STATE.player.z);
+  if (a.hp <= 0) killAnimal(a);
+}
+function killAnimal(a) {
+  a.dead = true; a.deadT = 0;
+  const gy = heightAt(a.x, a.z);
+  for (const [id, n] of a.spec.drops) {
+    spawnPickup(id, a.x, a.z, n);
+    if (id === 'meat') { STATE.collected.meat = (STATE.collected.meat || 0) + n; }
+  }
+  toast(a.kind === 'deer' ? 'Deer down' : a.kind === 'wolf' ? 'Wolf down' : 'Rabbit caught');
+  spawnBurst(a.x, gy + 0.9, a.z, 0xc2685f, 12, 1.2);
+  checkGoals();
+}
+function collectPickup(pk) {
+  pk.taken = true;
+  scene.remove(pk.mesh);
+  addItem(pk.id, 1);
+  const map = { meat: 'toastMeat', hide: 'toastHide', wood: 'toastWood', stone: 'toastStone', fiber: 'toastFiber', fish: 'toastFish' };
+  toast(tr(map[pk.id] || 'toastMeat'));
+  STATE.stats.food = clamp(STATE.stats.food + 0.5, 0, 100);
+}
+
+/* ---------- spear throw ---------- */
+const projectiles = [];
+function throwSpear(target) {
+  const p = STATE.player, ud = STATE.rig.userData;
+  const mesh = toolModel('spear');
+  const start = new THREE.Vector3(p.x, heightAt(p.x, p.z) + 1.5, p.z);
+  mesh.position.copy(start);
+  scene.add(mesh);
+  const tx = target.x, tz = target.z;
+  const dist = Math.hypot(tx - p.x, tz - p.z);
+  projectiles.push({ mesh, x: p.x, z: p.z, y: start.y, tx, tz, t: 0, dur: clamp(dist / 26, 0.35, 0.9), startY: start.y, target, dist });
+  STATE.actionCooldown = 0.9;
+  // little recoil
+  ud.armR.rotation.x = -2.1;
+  STATE.player.stamina = clamp(STATE.player.stamina - 8, 0, 100);
+}
+function updateProjectiles(dt) {
+  for (let i = projectiles.length - 1; i >= 0; i--) {
+    const pr = projectiles[i];
+    pr.t += dt;
+    const k = clamp(pr.t / pr.dur, 0, 1);
+    const x = lerp(pr.x, pr.tx, k), z = lerp(pr.z, pr.tz, k);
+    const arc = Math.sin(k * Math.PI) * (1.4 + pr.dist * 0.03);
+    const y = lerp(pr.startY, heightAt(pr.tx, pr.tz) + 0.6, k) + arc;
+    pr.mesh.position.set(x, y, z);
+    pr.mesh.rotation.x = -1.1 + k * 1.2;
+    if (k >= 1) {
+      scene.remove(pr.mesh);
+      projectiles.splice(i, 1);
+      const a = pr.target;
+      if (a && !a.dead && Math.hypot(a.x - pr.tx, a.z - pr.tz) < 2.6) {
+        a.hp -= 46; a.hurt = 0.3;
+        spawnBurst(a.x, heightAt(a.x, a.z) + 1.1, a.z, 0xb8484f, 9, 1.1);
+        if (a.hp <= 0) killAnimal(a); else { a.state = 'flee'; a.t = 4; }
+      }
+      spawnBurst(pr.tx, heightAt(pr.tx, pr.tz) + 0.3, pr.tz, 0x9a8b63, 5, 0.7);
+    }
+  }
+}
+
+/* ============================================================
+   Animals
+   ============================================================ */
+function updateAnimals(dt) {
+  const p = STATE.player;
+  const night = isNight();
+  for (const a of STATE.animals) {
+    if (a.dead) {
+      a.deadT += dt;
+      a.model.rotation.z = lerp(a.model.rotation.z, Math.PI / 2, 1 - Math.exp(-6 * dt));
+      a.model.position.y = heightAt(a.x, a.z) - Math.min(0.6, a.deadT * 0.18);
+      continue;
+    }
+    const dx = p.x - a.x, dz = p.z - a.z;
+    const dist = Math.hypot(dx, dz);
+    a.hurt = Math.max(0, a.hurt - dt);
+    let targetSpeed = 0;
+
+    const predator = a.kind === 'wolf';
+    const threatened = dist < (predator ? 26 : 13) && (night || STATE.player.speed > 4 || dist < 7);
+
+    if (predator) {
+      if (a.hp < 22 || (dist > 30 && !night)) {
+        if (a.state !== 'retreat') { a.state = 'retreat'; a.t = rnd(3, 1.5); a.dir = Math.atan2(-dx, -dz); }
+      } else if (dist < (night ? 24 : 17)) {
+        if (a.state !== 'stalk') { a.state = 'stalk'; }
+      }
+    } else if (threatened && (a.state === 'idle' || a.state === 'graze' || a.state === 'walk')) {
+      a.state = 'flee'; a.t = rnd(3.6, 2.2);
+      a.dir = Math.atan2(-dx, -dz) + rnd(0.5, -0.5);
+    }
+
+    a.t -= dt;
+    if (a.state === 'flee') {
+      targetSpeed = a.spec.flee * clamp(a.t / 2.4, 0.45, 1);
+      if (a.t <= 0) { a.state = 'idle'; a.t = rnd(2.5, 1); }
+    } else if (a.state === 'stalk') {
+      a.dir = Math.atan2(dx, dz);
+      targetSpeed = a.spec.flee * 0.72;
+      if (dist < 1.9) {
+        targetSpeed = 0.2;
+        a.attackCd = (a.attackCd || 0) - dt;
+        if (a.attackCd <= 0) {
+          a.attackCd = 1.5;
+          hurtPlayer(predator ? 13 : 6);
+          spawnBurst(p.x, heightAt(p.x, p.z) + 1.2, p.z, 0xc2555c, 6, 0.9);
+        }
+      }
+      if (dist > 34) { a.state = 'idle'; a.t = 2; }
+    } else if (a.state === 'retreat') {
+      targetSpeed = a.spec.flee * 0.85;
+      if (a.t <= 0) { a.state = 'idle'; a.t = 3; }
+    } else if (a.state === 'graze') {
+      targetSpeed = 0;
+      if (a.t <= 0) { a.state = 'idle'; a.t = rnd(2, 0.6); }
+    } else if (a.state === 'walk') {
+      targetSpeed = a.spec.walk;
+      if (Math.hypot(a.targetX - a.x, a.targetZ - a.z) < 1.4) { a.state = 'graze'; a.t = rnd(4, 1.5); }
+    } else { // idle
+      targetSpeed = 0;
+      if (a.t <= 0) {
+        if (Math.random() < 0.55) {
+          const ang = Math.random() * TAU, r = rnd(14, 4);
+          a.targetX = clamp(a.hx + Math.cos(ang) * r, -700, 700);
+          a.targetZ = clamp(a.hz + Math.sin(ang) * r, -700, 700);
+          a.dir = Math.atan2(a.targetX - a.x, a.targetZ - a.z);
+          a.state = 'walk'; a.t = rnd(6, 2);
+        } else { a.state = 'graze'; a.t = rnd(4, 1.5); }
+      }
+    }
+
+    // steer
+    if (targetSpeed > 0) {
+      let nx = a.x + Math.sin(a.dir) * targetSpeed * dt;
+      let nz = a.z + Math.cos(a.dir) * targetSpeed * dt;
+      if (heightAt(nx, nz) < 0.45 || Math.abs(nx) > 270 || Math.abs(nz) > 270) {
+        a.dir += 1.4 + rnd(0.6);
+        nx = a.x; nz = a.z;
+      }
+      a.x = nx; a.z = nz;
+      a.speed = lerp(a.speed, targetSpeed, 1 - Math.exp(-6 * dt));
+    } else {
+      a.speed = lerp(a.speed, 0, 1 - Math.exp(-8 * dt));
+    }
+
+    // model pose
+    const gy = heightAt(a.x, a.z);
+    a.model.position.set(a.x, gy + (a.kind === 'rabbit' ? Math.abs(Math.sin(a.model.userData.phase * 6)) * 0.2 * clamp(a.speed / 4, 0, 1) : 0), a.z);
+    a.model.rotation.y = lerpAngle(a.model.rotation.y, a.dir + a.faceSign, 1 - Math.exp(-9 * dt));
+    const ud = a.model.userData;
+    ud.phase = (ud.phase || 0) + dt * (2 + a.speed * 1.9);
+    const amp = clamp(a.speed / a.spec.flee, 0, 1) * (a.kind === 'rabbit' ? 0.9 : 0.85);
+    if (a.kind === 'deer' || a.kind === 'wolf') {
+      const ph = ud.phase * 2;
+      ud.legs.forEach((leg, i) => {
+        const off = (i === 0 || i === 3) ? 0 : Math.PI;
+        leg.rotation.x = Math.sin(ph + off) * 0.75 * amp;
+      });
+      ud.body.position.y = Math.abs(Math.sin(ph)) * 0.05 * amp;
+      ud.body.rotation.x = a.state === 'graze' ? 0.06 : 0;
+      if (ud.head && a.state === 'graze') {
+        ud.head.rotation.x = lerp(ud.head.rotation.x, 0.55, 1 - Math.exp(-4 * dt));
+      } else if (ud.head) {
+        ud.head.rotation.x = lerp(ud.head.rotation.x, a.state === 'stalk' ? -0.16 : 0, 1 - Math.exp(-4 * dt));
+      }
+    } else {
+      ud.legs.forEach((leg, i) => { leg.rotation.x = Math.sin(ud.phase * 2 + i) * 0.5 * amp; });
+      ud.head.rotation.z = Math.sin(ud.phase * 1.4) * 0.06;
+    }
+  }
+}
+function hurtPlayer(n) {
+  if (STATE.over) return;
+  STATE.stats.hp = clamp(STATE.stats.hp - n, 0, 100);
+  STATE.stats.warm = clamp(STATE.stats.warm - 2, 0, 100);
+  if (STATE.stats.hp <= 0) gameOver(tr('hurt'));
+}
+
+/* ============================================================
+   Fishing
+   ============================================================ */
+let fishHold = false;
+STATE.fish = null;
+function spawnRippleAt(x, z, scale = 1) {
+  const r = makeRipple();
+  r.position.set(x, SEA + 0.04, z);
+  r.scale.setScalar(0.6 * scale);
+  scene.add(r);
+  STATE.ripples.push({ mesh: r, t: 0, life: 1.6 });
+}
+function castLine(tx, tz) {
+  const p = STATE.player;
+  if (!STATE.fish) {
+    const bobber = new THREE.Group();
+    const b = new THREE.Mesh(G.sphere, toon(0xd9484e));
+    b.scale.setScalar(0.16); bobber.add(b);
+    const top = new THREE.Mesh(G.sphere, toon(0xf7f2e4));
+    top.scale.setScalar(0.11); top.position.y = 0.09; bobber.add(top);
+    const line = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()]),
+      new THREE.LineBasicMaterial({ color: 0x3b4a44, transparent: true, opacity: 0.75 })
+    );
+    line.frustumCulled = false;
+    scene.add(line, bobber);
+    STATE.fish = {
+      stage: 'cast', t: 0, bobber, line, sx: p.x, sz: p.z,
+      tx, tz, hard: clamp(Math.random() * 0.9 + Math.hypot(tx - p.x, tz - p.z) / 260, 0, 1),
+      zone: 0.5, fish: 0.5, prog: 0.45, hold: false, waitT: rnd(4.2, 1.8), fightT: 0,
+    };
+    spawnRippleAt(tx, tz, 1.2);
+  }
+}
+function endFishing(caught, quiet) {
+  const f = STATE.fish;
+  if (!f) return;
+  if (f.bobber) scene.remove(f.bobber);
+  if (f.line) { scene.remove(f.line); f.line.geometry.dispose(); }
+  $('fishPanel').hidden = true;
+  STATE.fish = null;
+  fishHold = false;
+  if (!quiet) {
+    if (caught) {
+      const n = f.hard > 0.66 ? 2 : 1;
+      addItem('fish', n);
+      STATE.collected.fish = (STATE.collected.fish || 0) + n;
+      toast(tr(n > 1 ? 'toastFish2' : 'toastFish'));
+      STATE.stats.food = clamp(STATE.stats.food + 6, 0, 100);
+      spawnBurst(STATE.player.x, heightAt(STATE.player.x, STATE.player.z) + 1.5, STATE.player.z, 0x6f9bb0, 10, 1);
+    } else {
+      toast(tr('gotAway'));
+    }
+  }
+}
+function hookFish() {
+  const f = STATE.fish;
+  if (!f || f.stage !== 'bite') return;
+  f.stage = 'fight';
+  f.prog = 0.42;
+  f.zone = 0.5;
+  const h = f.hard;
+  f.zoneH = 0.4 - 0.12 * h;
+  f.fishSpeed = 0.55 + h * 0.75;
+  f.fishTarget = Math.random();
+  f.fightT = 0;
+  $('fishPanel').hidden = false;
+  $('fishBig').textContent = h > 0.66 ? tr('fishBig') || 'Something big is on the line…' : '';
+  updateFishPanel();
+  spawnRippleAt(f.tx, f.tz, 1.5);
+}
+function updateFishing(dt) {
+  const f = STATE.fish;
+  if (!f) return;
+  const p = STATE.player;
+  f.t += dt;
+  const rodTip = new THREE.Vector3();
+  const tm = STATE.rig.userData.toolMesh;
+  const ud = STATE.rig.userData;
+  const tipObj = tm && tm.userData.tip;
+  if (tipObj) tipObj.getWorldPosition(rodTip);
+  else rodTip.set(p.x, heightAt(p.x, p.z) + 1.4, p.z);
+
+  if (f.stage === 'cast') {
+    const k = clamp(f.t / 0.55, 0, 1);
+    const x = lerp(f.sx, f.tx, k), z = lerp(f.sz, f.tz, k);
+    const y = lerp(heightAt(p.x, p.z) + 1.8, SEA + 0.12, k) + Math.sin(k * Math.PI) * 2.6;
+    f.bobber.position.set(x, y, z);
+    if (k >= 1) { f.stage = 'wait'; f.t = 0; spawnRippleAt(f.tx, f.tz, 1); }
+  } else if (f.stage === 'wait' || f.stage === 'bite' || f.stage === 'fight') {
+    const bob = f.stage === 'bite' ? Math.sin(f.t * 26) * 0.09 : Math.sin(f.t * 2.4) * 0.05;
+    f.bobber.position.set(f.tx, SEA + 0.1 + bob, f.tz);
+    if (f.stage === 'wait') {
+      if (f.t > f.waitT) {
+        f.stage = 'bite'; f.t = 0;
+        spawnRippleAt(f.tx, f.tz, 1.6);
+        toast(tr('hooked'), 2200);
+      }
+    } else if (f.stage === 'bite') {
+      if (f.t % 0.7 < dt) spawnRippleAt(f.tx, f.tz, 0.9);
+      if (f.t > 1.9) {
+        f.stage = 'wait'; f.t = 0; f.waitT = rnd(4.5, 1.6);
+        spawnRippleAt(f.tx, f.tz, 0.7);
+      }
+    } else if (f.stage === 'fight') {
+      updateFishGame(dt);
+    }
+  }
+
+  // line
+  const arr = f.line.geometry.attributes.position.array;
+  arr[0] = rodTip.x; arr[1] = rodTip.y; arr[2] = rodTip.z;
+  const mid = new THREE.Vector3().lerpVectors(rodTip, f.bobber.position, 0.5);
+  mid.y -= 0.5;
+  arr[3] = mid.x; arr[4] = mid.y; arr[5] = mid.z;
+  arr[6] = f.bobber.position.x; arr[7] = f.bobber.position.y + 0.1; arr[8] = f.bobber.position.z;
+  f.line.geometry.attributes.position.needsUpdate = true;
+  // player faces the water, rod raised
+  if (Math.hypot(f.tx - p.x, f.tz - p.z) > 0.5) p.dir = Math.atan2(f.tx - p.x, f.tz - p.z);
+  ud.armR.rotation.x = lerp(ud.armR.rotation.x, -1.15, 1 - Math.exp(-6 * dt));
+  if (f.stage === 'fight') STATE.player.x = clamp(STATE.player.x, f.sx - 3, f.sx + 3);
+}
+function updateFishGame(dt) {
+  const f = STATE.fish;
+  f.fightT += dt;
+  const h = f.hard;
+  // zone physics: hold lifts, release sinks
+  const rising = fishHold || f.hold;
+  f.zone = clamp(f.zone + (rising ? 0.92 : -0.78) * dt, 0, 1);
+  // fish darts around
+  f.fishTarget -= dt;
+  if (f.fishTarget <= 0) {
+    f.fishTarget = rnd(1.5, 0.5) - h * 0.35;
+    f.targetPos = clamp(Math.random(), 0.03, 0.97);
+  }
+  const drift = (f.targetPos - f.fish) * (1.2 + h * 1.5);
+  f.fish = clamp(f.fish + drift * dt + Math.sin(f.fightT * 6) * 0.02, 0.01, 0.99);
+  const zoneMid = f.zone, half = (f.zoneH || 0.35) / 2;
+  const inside = f.fish > zoneMid - half && f.fish < zoneMid + half;
+  f.prog = clamp(f.prog + (inside ? 0.34 + 0.14 * (1 - h) : -0.26 - 0.1 * h) * dt, 0, 1);
+  if (f.prog >= 1) { endFishing(true); return; }
+  if (f.prog <= 0) { endFishing(false); return; }
+  if (f.fightT > 0 && Math.random() < dt * 3) spawnRippleAt(f.tx + rnd(0.6, -0.6), f.tz + rnd(0.6, -0.6), rnd(0.9, 0.4));
+  updateFishPanel();
+}
+function updateFishPanel() {
+  const f = STATE.fish;
+  if (!f) return;
+  $('fishZone').style.height = ((f.zoneH || 0.35) * 100) + '%';
+  $('fishZone').style.bottom = ((f.zone - (f.zoneH || 0.35) / 2) * 100) + '%';
+  $('fishDot').style.bottom = (f.fish * 100) + '%';
+  $('fishProg').style.width = (f.prog * 100) + '%';
+}
+function updateRipples(dt) {
+  for (let i = STATE.ripples.length - 1; i >= 0; i--) {
+    const r = STATE.ripples[i];
+    r.t += dt;
+    const k = r.t / r.life;
+    r.mesh.scale.setScalar(0.6 + k * 2.2);
+    r.mesh.material.opacity = 0.55 * (1 - k);
+    if (k >= 1) { scene.remove(r.mesh); r.mesh.geometry.dispose(); r.mesh.material.dispose(); STATE.ripples.splice(i, 1); }
+  }
+}
+
+/* ============================================================
+   Structures, crafting, cooking
+   ============================================================ */
+function blockNavCircle(x, z, r) {
+  const i0 = Math.floor((x - r + NAV.half) / NAV.cell), i1 = Math.floor((x + r + NAV.half) / NAV.cell);
+  const j0 = Math.floor((z - r + NAV.half) / NAV.cell), j1 = Math.floor((z + r + NAV.half) / NAV.cell);
+  for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+    if (i < 0 || j < 0 || i >= NAV.n || j >= NAV.n) continue;
+    NAV.blocked[j * NAV.n + i] = 1;
+  }
+}
+function placeStructure(kind, x, z) {
+  const p = STATE.player;
+  let model, blockR = 1.0;
+  if (kind === 'camp') { model = campfireModel(); blockR = 0.95; }
+  else if (kind === 'bench') { model = workbenchModel(); blockR = 0.95; }
+  else { model = beaconModel(); blockR = 1.5; }
+  const y = heightAt(x, z);
+  model.position.set(x, y, z);
+  model.rotation.y = p.dir + Math.PI;
+  scene.add(model);
+  const s = { kind, x, z, y, model, lit: false, t: 0 };
+  STATE.structures.push(s);
+  hashAdd(s);
+  blockNavCircle(x, z, blockR);
+  if (kind === 'camp') { toast(tr('placeCamp'), 2400); STATE.goals.camp = true; }
+  if (kind === 'bench') { toast(tr('placeBench')); STATE.goals.bench = true; }
+  if (kind === 'beacon') { toast(tr('placeBeacon'), 2600); STATE.goals.beacon = true; s.lit = true; checkGoals(); winGame(); return s; }
+  checkGoals();
+  return s;
+}
+function structureInFront() {
+  const p = STATE.player;
+  const d = 2.6;
+  let x = p.x + Math.sin(p.dir) * d, z = p.z + Math.cos(p.dir) * d;
+  if (heightAt(x, z) < 0.5) { x = p.x; z = p.z + 1; }
+  return { x, z };
+}
+function useStructure(s) {
+  if (s.kind === 'camp') {
+    if (hasItem('meat')) {
+      if (takeItem('meat', 1)) {
+        addItem('cooked', 1);
+        STATE.goals.cooked = true;
+        toast(tr('cooked'));
+        spawnBurst(s.x, s.y + 1.0, s.z, 0xffb154, 8, 0.8);
+        checkGoals();
+      }
+    } else if (hasItem('cooked')) {
+      hint(tr('eat'));
+    } else toast(tr('noFire'));
+    return;
+  }
+  if (s.kind === 'bench') { openCraft(true); return; }
+  if (s.kind === 'beacon') { toast(tr('win'), 2600); return; }
+}
+function updateStructures(dt) {
+  const p = STATE.player;
+  STATE.nearFire = false;
+  for (const s of STATE.structures) {
+    if (s.kind === 'camp') {
+      const near = Math.hypot(p.x - s.x, p.z - s.z) < 7;
+      if (near) STATE.nearFire = true;
+      const ud = s.model.userData;
+      const flick = 0.78 + Math.sin(performance.now() * 0.012 + s.x) * 0.12 + Math.random() * 0.1;
+      ud.flames.scale.set(1, flick, 1);
+      ud.flames.rotation.y += dt * 1.4;
+      ud.f1.scale.y = 0.5 * (0.9 + flick * 0.25);
+      ud.f2.scale.y = 0.38 * (0.85 + flick * 0.3);
+      ud.glow.intensity = (1.4 + flick * 0.7) * (isNight() ? 13 : 5);
+      // embers
+      const arr = ud.embers.geometry.attributes.position.array;
+      ud.emberSeed.forEach((e, i) => {
+        e.t += dt * e.sp * 0.6;
+        if (e.t > 1) { e.t = 0; e.a = Math.random() * TAU; e.r = Math.random() * 0.25; }
+        arr[i * 3] = Math.cos(e.a) * e.r * (1 - e.t * 0.4);
+        arr[i * 3 + 1] = 0.2 + e.t * 1.7;
+        arr[i * 3 + 2] = Math.sin(e.a) * e.r * (1 - e.t * 0.4);
+      });
+      ud.embers.geometry.attributes.position.needsUpdate = true;
+      ud.embers.material.opacity = 0.85;
+      // spit meat when cooking
+      const cooking = hasItem('cooked') && false;
+      ud.spit.visible = true;
+    } else if (s.kind === 'beacon') {
+      const ud = s.model.userData;
+      ud.t += dt;
+      ud.flames.scale.set(1, 0.9 + Math.sin(ud.t * 9) * 0.12, 1);
+      ud.flames.rotation.y += dt * 2.2;
+      ud.big.forEach((f, i) => { f.scale.y = (1.6 - i * 0.2) * (0.85 + Math.sin(ud.t * (7 + i) + i) * 0.2); });
+      ud.glow.intensity = 30 + Math.sin(ud.t * 8) * 6;
+      ud.beam.rotation.y += dt * 0.35;
+      ud.beam.material.opacity = 0.07 + Math.sin(ud.t * 2) * 0.02;
+      ud.flag.rotation.y = Math.sin(ud.t * 2.4) * 0.25;
+    }
+  }
+  // campfire warmth
+  if (STATE.nearFire) STATE.stats.warm = clamp(STATE.stats.warm + 9 * dt, 0, 100);
+}
+
+/* ---------- crafting ---------- */
+const RECIPES = [
+  { id: 'rope', label: { en: 'Rope', da: 'Reb' }, icon: 'rope', cost: { fiber: 3 }, needs: null },
+  { id: 'bench', label: { en: 'Workbench', da: 'Høvlbænk' }, icon: 'bench', cost: { wood: 5, stone: 3 }, needs: null, place: 'bench' },
+  { id: 'axe', label: { en: 'Stone axe', da: 'Stenøkse' }, icon: 'axe', cost: { wood: 2, stone: 2, rope: 1 }, needs: 'bench', tool: 'axe' },
+  { id: 'camp', label: { en: 'Campfire', da: 'Bål' }, icon: 'camp', cost: { wood: 5, stone: 6 }, needs: null, place: 'camp' },
+  { id: 'spear', label: { en: 'Spear', da: 'Spyd' }, icon: 'spear', cost: { wood: 3, stone: 1, rope: 1 }, needs: 'bench', tool: 'spear' },
+  { id: 'rod', label: { en: 'Fishing rod', da: 'Fiskestang' }, icon: 'rod', cost: { wood: 2, fiber: 2 }, needs: 'bench', tool: 'rod' },
+  { id: 'beacon', label: { en: 'Rescue beacon', da: 'Signalbål' }, icon: 'beacon', cost: { wood: 12, stone: 10, rope: 2, hide: 2 }, needs: 'bench', place: 'beacon' },
+];
+const canCraft = r => Object.entries(r.cost).every(([k, n]) => hasItem(k, n));
+function costChips(r) {
+  return Object.entries(r.cost).map(([k, n]) =>
+    `<span class="${hasItem(k, n) ? '' : 'no'}">${icon(k)}${n} ${tr(k)}</span>`).join('');
+}
+function renderCraft() {
+  const list = $('recipes');
+  list.innerHTML = '';
+  const nearBench = STATE.structures.some(s => s.kind === 'bench');
+  for (const r of RECIPES) {
+    if (r.place && STATE.structures.some(s => s.kind === r.place)) continue;
+    if (r.tool && hasItem(r.tool)) continue;
+    const blocked = r.needs === 'bench' && !nearBench;
+    const ok = canCraft(r) && !blocked;
+    const row = document.createElement('div');
+    row.className = 'rec';
+    row.innerHTML = `<div class="ico">${icon(r.icon)}</div>
+      <div class="mid"><b>${r.label[LANG] || r.label.en}</b><small>${blocked ? tr('craftAtBench') : ''}</small><div class="cost">${costChips(r)}</div></div>`;
+    const b = document.createElement('button');
+    b.className = 'btn small' + (ok ? ' primary' : '');
+    b.textContent = 'Craft';
+    b.disabled = !ok;
+    b.onclick = () => craft(r);
+    row.appendChild(b);
+    list.appendChild(row);
+  }
+}
+function craft(r) {
+  if (!canCraft(r)) { toast(tr('needMore')); return; }
+  if (r.needs === 'bench' && !STATE.structures.some(s => s.kind === 'bench')) { toast(tr('craftAtBench')); return; }
+  for (const [k, n] of Object.entries(r.cost)) takeItem(k, n);
+  if (r.tool) { addItem(r.tool, 1); equip(r.tool); }
+  if (r.id === 'rope') addItem('rope', 1);
+  if (r.place) {
+    const pos = structureInFront();
+    placeStructure(r.place, pos.x, pos.z);
+  }
+  toast((LANG === 'da' ? '' : '') + (r.label[LANG] || r.label.en) + ' — ' + tr('built'));
+  closeCraft();
+  checkGoals();
+  refreshBag();
+}
+function openCraft(fromBench) {
+  if (!fromBench && !STATE.structures.some(s => s.kind === 'bench')) { hint(tr('craftAtBench')); }
+  $('craft').hidden = false;
+  $('craftTitle').textContent = fromBench ? (LANG === 'da' ? 'Høvlbænk' : 'Workbench') : tr('hands');
+  $('craftSub').textContent = LANG === 'da' ? 'Alt laves i hånden. Noget kræver en høvlbænk.' : 'Everything is made by hand. Some things need a workbench.';
+  renderCraft();
+}
+function closeCraft() { $('craft').hidden = true; }
+function toggleCraft() {
+  if (!$('craft').hidden) closeCraft();
+  else openCraft(false);
+}
+
+/* ---------- goals ---------- */
+const GOALS = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9'];
+function checkGoals() {
+  const inv = STATE.inv, g = STATE.goals, c = STATE.collected;
+  if (!g.q1 && (c.wood || 0) >= 5 && (c.stone || 0) >= 3 && (c.fiber || 0) >= 3) g.q1 = true;
+  if (!g.q2 && (inv.rope || g.q2r)) g.q2 = true;
+  if (!g.q3 && STATE.structures.some(s => s.kind === 'bench')) g.q3 = true;
+  if (!g.q4 && inv.axe) g.q4 = true;
+  if (!g.q5 && STATE.structures.some(s => s.kind === 'camp')) g.q5 = true;
+  if (!g.q6 && g.cooked) g.q6 = true;
+  if (!g.q7 && inv.spear) g.q7 = true;
+  if (!g.q8 && STATE.day >= 2 && STATE.clock > 300) g.q8 = true;
+  if (!g.q9 && STATE.structures.some(s => s.kind === 'beacon')) g.q9 = true;
+  if (inv.rope) g.q2r = true;
+  renderQuests();
+}
+function renderQuests() {
+  const ul = $('questList');
+  ul.innerHTML = GOALS.map(k => `<li class="${STATE.goals[k] ? 'done' : ''}">${tr(k)}</li>`).join('');
+  const done = GOALS.filter(k => STATE.goals[k]).length;
+  $('questN').textContent = done + '/9';
+}
+
+/* ---------- HUD ---------- */
+function updateHUD() {
+  const s = STATE.stats;
+  const set = (id, v) => {
+    const el = $(id);
+    el.querySelector('.fill').style.width = clamp(v, 0, 100) + '%';
+    el.classList.toggle('low', v < 22);
+  };
+  set('barHp', s.hp); set('barFood', s.food); set('barWater', s.water); set('barWarm', s.warm); set('barStam', STATE.player ? STATE.player.stamina : 100);
+  const hour = gameHour();
+  const hh = Math.floor(hour), mm = Math.floor((hour % 1) * 60);
+  $('clockT').textContent = String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+  $('dayN').textContent = tr('day') + ' ' + STATE.day;
+  $('clockPhase').textContent = hour < 9 ? tr('morning') : hour < 15 ? tr('noon') : hour < 19 ? tr('evening') : tr('night');
+  $('clock').classList.toggle('night', isNight());
+}
+const gameHour = () => (8 + (STATE.clock % DAY_LENGTH) / DAY_LENGTH * 24) % 24;
+const isNight = () => { const h = gameHour(); return h >= 19.2 || h < 5.6; };
+
+/* ---------- day / night look ---------- */
+function updateSky(dt) {
+  const hour = gameHour();
+  const dayF = smoothstep(5.2, 7.6, hour) * (1 - smoothstep(17.8, 20.4, hour));
+  const nightF = 1 - dayF;
+  sun.intensity = 0.3 + 1.6 * dayF;
+  sun.color.setHSL(0.11, 0.55, lerp(0.62, 0.92, dayF));
+  hemi.intensity = 0.5 + 0.5 * dayF;
+  fill.intensity = 0.2 + 0.24 * dayF;
+  const sky = SKY_NIGHT.clone().lerp(SKY_DAY, dayF);
+  const warm = Math.max(0, 1 - Math.abs(hour - 7.2) / 2.2) + Math.max(0, 1 - Math.abs(hour - 18.4) / 2.2);
+  sky.lerp(SKY_DUSK, clamp(warm * 0.5, 0, 0.62));
+  scene.background.copy(sky);
+  scene.fog.color.copy(sky);
+  scene.fog.near = lerp(22, 40, dayF);
+  scene.fog.far = lerp(110, 185, dayF);
+  stars.material.opacity = clamp(nightF * 1.3 - 0.2, 0, 1);
+  waterMat.color.setHSL(0.53, 0.34, lerp(0.17, 0.42, dayF));
+  // sun follows the hour around the player
+  const ang = (hour / 24) * TAU + Math.PI * 0.25;
+  const p = STATE.player;
+  sun.position.set((p ? p.x : 0) + Math.cos(ang) * 30, 84, (p ? p.z : 0) + Math.sin(ang) * 30);
+  sun.target.position.set(p ? p.x : 0, 0, p ? p.z : 0);
+  sun.target.updateMatrixWorld();
+  stars.position.set(p ? p.x : 0, 0, p ? p.z : 0);
+}
+
+/* ---------- camera ---------- */
+function updateCamera(dt) {
+  const p = STATE.player;
+  const tx = p ? p.x : 0, tz = p ? p.z : 0;
+  const ty = p ? heightAt(p.x, p.z) + 1.1 : 1.5;
+  camRig.target.lerp(new THREE.Vector3(tx, ty, tz), 1 - Math.exp(-7 * dt));
+  const cp = Math.cos(camRig.pitch), sp = Math.sin(camRig.pitch);
+  const ox = Math.sin(camRig.yaw) * cp * camRig.dist;
+  const oz = Math.cos(camRig.yaw) * cp * camRig.dist;
+  const oy = sp * camRig.dist;
+  camera.position.set(camRig.target.x + ox, camRig.target.y + oy, camRig.target.z + oz);
+  if (camera.position.y < heightAt(camera.position.x, camera.position.z) + 3.5) {
+    camera.position.y = heightAt(camera.position.x, camera.position.z) + 3.5;
+  }
+  camLookAt.copy(camRig.target);
+  camera.lookAt(camLookAt);
+}
+
+/* ---------- survival ticks ---------- */
+let tickAcc = 0;
+function updateSurvival(dt) {
+  const s = STATE.stats;
+  tickAcc += dt;
+  s.food = clamp(s.food - 0.16 * dt, 0, 100);
+  s.water = clamp(s.water - 0.22 * dt, 0, 100);
+  if (isNight() && !STATE.nearFire) s.warm = clamp(s.warm - 1.5 * dt, 0, 100);
+  if (!isNight() && !STATE.nearFire) s.warm = clamp(s.warm + 0.5 * dt, 0, 100);
+  if (s.food <= 0 || s.water <= 0) s.hp = clamp(s.hp - 1.7 * dt, 0, 100);
+  if (s.warm <= 0) s.hp = clamp(s.hp - 1.2 * dt, 0, 100);
+  if (s.hp <= 0 && !STATE.over) gameOver(s.food <= 0 ? tr('starving') : s.warm <= 0 ? tr('frozen') : tr('hurt'));
+  if (STATE.nearFire) s.warm = clamp(s.warm + 2.5 * dt, 0, 100);
+  if (tickAcc > 0.6) {
+    tickAcc = 0;
+    if (s.hp < 40 && s.food > 30) s.hp = clamp(s.hp + 0.5, 0, 100);
+    updateHUD();
+  }
+}
+
+/* ---------- regrowth ---------- */
+function updateRegrow(dt) {
+  for (const p of STATE.props) {
+    if (p.dead) {
+      p.regrow -= dt;
+      if (p.regrow <= 0) { p.dead = false; p.hp = p.maxHp; showProp(p); }
+    }
+  }
+}
+
+/* ---------- pickups animation ---------- */
+function updatePickups(dt) {
+  for (const pk of STATE.pickups) {
+    if (pk.taken) continue;
+    pk.t += dt;
+    pk.mesh.position.y = heightAt(pk.x, pk.z) + 0.16 + Math.sin(pk.t * 2.2) * 0.06;
+    pk.mesh.rotation.y += dt * 1.4;
+  }
+}
+
+/* ============================================================
+   Game flow
+   ============================================================ */
+function resetWorld() {
+  for (const a of STATE.animals) scene.remove(a.model);
+  for (const pk of STATE.pickups) scene.remove(pk.mesh);
+  for (const s of STATE.structures) scene.remove(s.model);
+  for (const r of STATE.ripples) scene.remove(r.mesh);
+  for (const m of instancedMeshes) { scene.remove(m); if (m.geometry) m.geometry.dispose(); }
+  instancedMeshes.length = 0;
+  for (const pr of projectiles) scene.remove(pr.mesh);
+  projectiles.length = 0;
+  STATE.animals = []; STATE.pickups = []; STATE.structures = []; STATE.ripples = []; STATE.props = [];
+  hashMap.clear();
+  STATE.inv = {}; STATE.goals = {}; STATE.collected = {};
+  STATE.clock = 0; STATE.day = 1; STATE.over = false; STATE.win = false;
+  STATE.stats = { hp: 100, food: 82, water: 74, warm: 100, stam: 100 };
+}
+function newWorld() {
+  resetWorld();
+  scatterProps();
+  buildNav();
+  populateAnimals();
+  startGame(false);
+}
+function startGame(load) {
+  STATE.playing = true;
+  $('menu').hidden = true;
+  $('over').hidden = true;
+  resetPlayer();
+  equip('hands');
+  refreshBag();
+  renderQuests();
+  updateHUD();
+  hint(LANG === 'da' ? 'Klik på et træ for at samle træ' : 'Click a tree to gather wood', 3000);
+  STATE.mode = 'play';
+  if (load) loadSave();
+  refreshBag();
+  checkGoals();
+}
+function gameOver(reason) {
+  if (STATE.over) return;
+  STATE.over = true;
+  STATE.playing = false;
+  $('overBig').textContent = tr('overDead');
+  $('overSub').textContent = reason + '. ' + tr('overSubDead');
+  $('over').hidden = false;
+  if (STATE.fish) endFishing(false, true);
+}
+function winGame() {
+  if (STATE.win) return;
+  STATE.win = true;
+  setTimeout(() => {
+    STATE.playing = false;
+    $('overBig').textContent = tr('overWin');
+    $('overSub').textContent = tr('overSubWin');
+    $('over').hidden = false;
+    try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+  }, 1400);
+}
+function openMenu() {
+  if (!STATE.playing) return;
+  STATE.playing = false;
+  $('menu').hidden = false;
+  $('btnContinue').hidden = false;
+  $('btnNew').textContent = tr('newGame');
+  saveGame();
+}
+function applyLang() {
+  document.documentElement.lang = LANG;
+  $('menuIntro').textContent = tr('menuIntro');
+  $('menuKeys').innerHTML = tr('keys');
+  $('btnNew').textContent = tr('newGame');
+  $('btnContinue').textContent = tr('cont');
+  $('btnAgain').textContent = tr('again');
+  $('btnHands').textContent = tr('hands');
+  $('bagHint').textContent = tr('bag');
+  $('quests').querySelector('h2').firstChild.textContent = tr('questTitle') + ' ';
+  $('fishTitle').textContent = LANG === 'da' ? 'Hiv den ind' : 'Reel it in';
+  $('fishHoldTxt').textContent = LANG === 'da' ? 'Hold for at løfte krogen' : 'Hold to lift the hook';
+  $('fishHelp').textContent = LANG === 'da' ? 'Hold fisken i det grønne felt, indtil bjælken er fyldt. Esc slipper.' : 'Keep the fish in the green band until the bar fills. Esc lets go.';
+  document.querySelectorAll('#langDa,#langEn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === LANG)));
+  renderQuests();
+  if (!$('craft').hidden) openCraft(true);
+  updateHUD();
+}
+
+/* ---------- save ---------- */
+const SAVE_KEY = 'wildwood3d-v1';
+function saveGame() {
+  if (!STATE.playing && !STATE.over) return;
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      lang: LANG, inv: STATE.inv, goals: STATE.goals, collected: STATE.collected,
+      clock: STATE.clock, day: STATE.day, stats: STATE.stats,
+      pos: STATE.player ? { x: STATE.player.x, z: STATE.player.z } : null,
+      structures: STATE.structures.map(s => ({ kind: s.kind, x: s.x, z: s.z })),
+    }));
+  } catch (e) { /* storage off */ }
+}
+function hasSave() {
+  try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; }
+}
+function loadSave() {
+  let d;
+  try { d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch (e) { return; }
+  if (!d) return;
+  STATE.inv = d.inv || {};
+  STATE.goals = d.goals || {};
+  STATE.collected = d.collected || {};
+  STATE.clock = d.clock || 8 * 3600;
+  STATE.day = d.day || 1;
+  STATE.stats = Object.assign(STATE.stats, d.stats || {});
+  if (d.pos) { STATE.player.x = d.pos.x; STATE.player.z = d.pos.z; }
+  (d.structures || []).forEach(s => placeStructure(s.kind, s.x, s.z));
+  refreshBag(); renderQuests();
+}
+
+/* ============================================================
+   Loop
+   ============================================================ */
+let last = performance.now(), acc = 0, frames = 0, fps = 60;
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  waterUniforms.uTime.value += dt;
+  water.position.set(STATE.player ? STATE.player.x : 0, SEA, STATE.player ? STATE.player.z : 0);
+  updateBursts(dt);
+  updateRipples(dt);
+  if (!STATE.playing) { updateSky(dt); updateCamera(dt); renderer.render(scene, camera); return; }
+  STATE.clock += dt;
+  if (Math.floor(STATE.clock / DAY_LENGTH) + 1 > STATE.day) {
+    STATE.day = Math.floor(STATE.clock / DAY_LENGTH) + 1;
+    toast(tr('day') + ' ' + STATE.day);
+    checkGoals();
+  }
+  updatePlayer(dt);
+  updateAnimals(dt);
+  updateProjectiles(dt);
+  updatePickups(dt);
+  updateStructures(dt);
+  updateFishing(dt);
+  updateRegrow(dt);
+  updateSurvival(dt);
+  updateSky(dt);
+  updateCamera(dt);
+  renderer.render(scene, camera);
+  frames++;
+}
+
+/* ---------- boot ---------- */
+function resize() {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+}
+addEventListener('resize', resize);
+
+function setLang(l) {
+  LANG = l === 'da' ? 'da' : 'en';
+  applyLang();
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) { const d = JSON.parse(raw); d.lang = LANG; localStorage.setItem(SAVE_KEY, JSON.stringify(d)); }
+    localStorage.setItem('w3d-lang', LANG);
+  } catch (e) {}
+}
+document.querySelectorAll('#langDa,#langEn').forEach(b => {
+  b.onclick = () => setLang(b.dataset.lang);
+});
+$('btnNew').onclick = () => { newWorld(); };
+$('btnContinue').onclick = () => { startGame(true); };
+$('btnAgain').onclick = () => { newWorld(); };
+$('btnMenu').onclick = () => openMenu();
+$('btnHelp').onclick = () => { $('hint').classList.add('on'); hint(tr('keys').replace(/<[^>]+>/g, ' ')); };
+$('btnHands').onclick = () => equip('hands');
+$('quests').querySelector('h2').onclick = () => $('quests').classList.toggle('min');
+$('quests').querySelector('h2').style.cursor = 'pointer';
+$('craftClose').onclick = () => closeCraft();
+$('fishPanel').addEventListener('pointerdown', e => { e.preventDefault(); fishHold = true; });
+addEventListener('pointerup', () => { fishHold = false; });
+
+// language
+try {
+  const saved = localStorage.getItem('w3d-lang');
+  if (saved === 'da' || saved === 'en') LANG = saved;
+  else if ((navigator.language || 'en').toLowerCase().startsWith('da')) LANG = 'da';
+} catch (e) {}
+
+// build the world
+resetWorld();
+scatterProps();
+buildNav();
+populateAnimals();
+applyLang();
+updateSky(0.016);
+updateCamera(0.016);
+if (hasSave()) { $('btnContinue').hidden = false; }
+renderer.render(scene, camera);
+requestAnimationFrame(frame);
+setInterval(() => { if (STATE.playing) saveGame(); }, 12000);
+addEventListener('beforeunload', () => { if (STATE.playing) saveGame(); });
+
+</script>
+</body>
+</html>

@@ -778,7 +778,7 @@ $("editor-form").addEventListener("submit", async function (event) {
 
 // ----- Language: one default for the games -----
 const LANGUAGE_KEY = "damp.lang";
-const LANGUAGE_GAMES = new Set(["battleship", "hedgerow-hallow", "ordle", "wildwood"]);
+const LANGUAGE_GAMES = new Set(["battleship", "hedgerow-hallow", "ordle", "wildwood", "wildwood-3d"]);
 let playerLanguageReady = false;
 
 function browserLanguage() {
@@ -815,6 +815,7 @@ function gameLanguage(id) {
   else if (id === "hedgerow-hallow") saved = savedJsonLanguage("hedgerow-hollow-v1");
   else if (id === "ordle") saved = savedJsonLanguage("ordle-set");
   else if (id === "wildwood") saved = savedJsonLanguage("wildwood-v1");
+  else if (id === "wildwood-3d") saved = savedJsonLanguage("wildwood3d-v1");
   return saved || preferredLanguage();
 }
 
@@ -859,6 +860,7 @@ function setGlobalLanguage(language) {
   updateSavedLanguage("hedgerow-hollow-v1", next);
   updateSavedLanguage("ordle-set", next);
   updateSavedLanguage("wildwood-v1", next);
+  updateSavedLanguage("wildwood3d-v1", next);
   syncLanguageControls();
 }
 
@@ -883,7 +885,7 @@ function clickGameLanguage(language) {
     return true;
   }
 
-  if (playing === "wildwood") {
+  if (playing === "wildwood" || playing === "wildwood-3d") {
     const button = doc.getElementById(language === "da" ? "langDa" : "langEn");
     if (!button) return false;
     button.click();

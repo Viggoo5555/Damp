@@ -105,5 +105,12 @@
     "file": "games/wildwood.html",
     "category": "Survival",
     "image": "img/wildwood.png"
+  },
+  {
+    "title": "Wildwood 3D",
+    "description": "The island in full 3D. Steer your survivor from above: chop, hunt deer and wolves with a thrown spear, reel in fish, keep the campfire alive and raise a beacon before the nights win.",
+    "file": "games/wildwood-3d.html",
+    "category": "Survival",
+    "image": "img/wildwood-3d.png"
   }
 ]

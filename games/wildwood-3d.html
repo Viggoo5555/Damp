@@ -97,13 +97,22 @@
   #crew .mate{position:relative;width:42px;height:42px;border:2.5px solid var(--ink);border-radius:50%;background:var(--paper2);
     display:grid;place-items:center;padding:0;cursor:pointer;box-shadow:2px 2px 0 var(--ink);transition:transform .12s,background .15s}
   #crew .mate:hover{background:#fffdf5;transform:translateX(-2px)}
-  #crew .mate b{font-family:var(--f-display);font-weight:400;font-size:21px;line-height:1}
-  #crew .mate i{position:absolute;right:-1px;bottom:-1px;width:13px;height:13px;border:2px solid var(--ink);border-radius:50%}
+  #crew .mate .pf{position:relative;display:block;width:29px;height:29px;border-radius:50%;overflow:hidden;background:var(--paper2)}
+  #crew .mate .pf i{position:absolute;display:block}
+  #crew .mate .pf .hd{left:1px;top:5px;width:27px;height:27px;border-radius:50%;background:var(--sk)}
+  #crew .mate .pf .hr{left:0;top:-4px;width:29px;height:16px;border-radius:0 0 14px 14px;background:var(--hr)}
+  #crew .mate .pf .ey{left:8px;top:14px;width:3px;height:4px;border-radius:1.5px;background:#2b2b2b;box-shadow:10px 0 0 #2b2b2b}
+  #crew .mate .pf .ht{left:0;top:0;width:29px;height:7px;border-radius:0 0 4px 4px;background:var(--ht)}
+  #crew .mate > i{position:absolute;right:-1px;bottom:-1px;width:13px;height:13px;border:2px solid var(--ink);border-radius:50%}
   #crew .mate.on{background:var(--honey);transform:translateX(-5px)}
   @media(max-width:760px){
     #crew{right:auto;left:8px;top:46%;transform:translateY(-50%);gap:4px;max-height:44vh}
     #crew .mate{width:34px;height:34px}
-    #crew .mate b{font-size:17px}
+    #crew .mate .pf{width:24px;height:24px}
+    #crew .mate .pf .hd{width:22px;height:22px;top:4px}
+    #crew .mate .pf .hr{width:24px;height:13px}
+    #crew .mate .pf .ey{left:6px;top:12px;box-shadow:9px 0 0 #2b2b2b}
+    #crew .mate .pf .ht{width:24px}
   }
   #zoom{position:fixed;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:5;display:flex;flex-direction:column;gap:6px}
   #zoom .btn{width:42px;height:42px;justify-content:center;font-size:22px;padding:0}
@@ -801,75 +810,180 @@ function flowerModel(seed) {
    ============================================================ */
 function makePlayer(look) {
   const L = Object.assign({
-    shirt: PAL.shirt, pants: PAL.pants, boot: PAL.boot, hair: PAL.hair, skin: PAL.skin,
-    vest: 0x6b8a5c, belt: 0x3e5340, pack: true, hat: null,
+    shirt: PAL.shirt, shirt2: PAL.shirt2, pants: PAL.pants, boot: PAL.boot,
+    hair: PAL.hair, skin: PAL.skin, skin2: PAL.skin2, vest: 0x6b8a5c, belt: 0x3e5340,
+    brow: 0x3a2b22, pack: true, hat: null, hatStyle: 'brim', hairStyle: 'tousled',
+    build: 1, headScale: 1, scarf: null, apron: null, satchel: null,
   }, look || {});
+
   const root = new THREE.Group();
   const rig = new THREE.Group();
   root.add(rig);
-  const add = (parent, geo, color, pos, rot, scale) => {
-    const m = new THREE.Mesh(geo, toon(color));
-    m.position.set(...(pos || [0, 0, 0]));
-    if (rot) m.rotation.set(...rot);
-    if (scale) m.scale.set(...scale);
+  const W = L.build || 1;
+  const HS = L.headScale || 1;
+
+  // every body part is merged down to a single coloured mesh: fewer draw calls,
+  // but much more detail than one block per limb
+  const part = (parent, parts, noInk) => {
+    const m = new THREE.Mesh(mergeV(parts), toonV);
     m.castShadow = true; m.receiveShadow = false;
+    if (noInk) m.userData.noInk = true;
     parent.add(m);
     return m;
   };
 
+  /* ---- hips ---- */
   const hips = new THREE.Group(); hips.position.y = 0.78; rig.add(hips);
-  add(hips, G.capsule, L.pants, [0, -0.08, 0], [0, 0, 0], [0.19, 0.16, 0.18]);
+  part(hips, [
+    P(G.capsule, L.pants, [0, -0.08, 0], [0, 0, 0], [0.19 * W, 0.16, 0.18]),
+    P(G.box, L.belt, [0, 0.02, -0.02], [0, 0, 0], [0.36 * W, 0.07, 0.3]),
+  ]);
 
+  /* ---- legs: thigh, rolled cuff, ankle boot with sole and lace strap ---- */
   const leg = side => {
     const g = new THREE.Group();
     g.position.set(0.14 * side, 0.02, 0);
     hips.add(g);
-    add(g, G.capsule, L.pants, [0, -0.3, 0], [0, 0, 0], [0.105, 0.22, 0.105]);
-    add(g, G.box, L.boot, [0, -0.62, 0.045], [0, 0, 0], [0.17, 0.13, 0.27]);
+    const parts = [
+      P(G.capsule, L.pants, [0, -0.3, 0], [0, 0, 0], [0.108, 0.22, 0.108]),
+      P(G.cyl, L.pants, [0, -0.465, 0], [0, 0, 0], [0.118, 0.07, 0.118]),
+      P(G.cyl, L.boot, [0, -0.55, 0], [0, 0, 0], [0.106, 0.09, 0.106]),
+      P(G.box, L.boot, [0, -0.625, 0.05], [0, 0, 0], [0.17, 0.13, 0.28]),
+      P(G.box, 0x2b221a, [0, -0.687, 0.055], [0, 0, 0], [0.185, 0.045, 0.3]),
+      P(G.box, 0xbfa072, [0, -0.578, 0.035], [0, 0, 0], [0.176, 0.028, 0.235]),
+    ];
+    if (side > 0) parts.push(P(G.box, 0x6f5b46, [0.055, -0.32, 0.095], [0, 0, 0.2], [0.11, 0.11, 0.03]));
+    part(g, parts);
     return g;
   };
   const legR = leg(1), legL = leg(-1);
 
+  /* ---- torso: shirt, open vest, collar, buttons, belt, extras ---- */
   const torso = new THREE.Group(); torso.position.y = 0.86; rig.add(torso);
-  add(torso, G.capsule, L.shirt, [0, 0.28, 0], [0, 0, 0], [0.25, 0.22, 0.21]);
-  add(torso, G.box, L.vest, [0, 0.3, 0.16], [0, 0, 0], [0.3, 0.22, 0.14]);
-  add(torso, G.box, L.belt, [0, 0.06, 0], [0, 0, 0], [0.46, 0.1, 0.32]);
-  // backpack
+  const T = [
+    P(G.capsule, L.shirt, [0, 0.28, 0], [0, 0, 0], [0.235 * W, 0.22, 0.2]),
+    P(G.box, L.vest, [-0.155 * W, 0.3, 0.115], [0, -0.2, 0], [0.16 * W, 0.32, 0.1]),
+    P(G.box, L.vest, [0.155 * W, 0.3, 0.115], [0, 0.2, 0], [0.16 * W, 0.32, 0.1]),
+    P(G.box, L.vest, [0, 0.3, -0.175], [0, 0, 0], [0.42 * W, 0.3, 0.04]),
+    P(G.box, L.shirt2, [0, 0.45, 0.08], [0.22, 0, 0], [0.3 * W, 0.07, 0.17]),
+    P(G.box, L.belt, [0, 0.05, 0], [0, 0, 0], [0.47 * W, 0.1, 0.31]),
+    P(G.box, 0xd9b25e, [0, 0.05, 0.165], [0, 0, 0], [0.095, 0.095, 0.03]),
+  ];
+  for (let i = 0; i < 3; i++) T.push(P(G.sphereLo, 0xe9dab4, [0, 0.15 + i * 0.095, 0.198], [0, 0, 0], [0.023, 0.023, 0.014]));
+  if (L.apron) {
+    T.push(P(G.box, L.apron, [0, 0.1, 0.19], [0.04, 0, 0], [0.3 * W, 0.44, 0.035]));
+    T.push(P(G.box, L.apron, [0, 0.42, 0.13], [0.12, 0, 0], [0.07, 0.26, 0.03]));
+    T.push(P(G.box, 0x4a3b2c, [0, 0.2, 0.205], [0, 0, 0], [0.12, 0.06, 0.02]));
+  }
+  if (L.scarf) {
+    T.push(P(G.torus, L.scarf, [0, 0.455, 0.01], [Math.PI / 2, 0, 0], [0.15, 0.15, 0.55]));
+    T.push(P(G.box, L.scarf, [0.11, 0.3, 0.14], [0.15, 0, 0.18], [0.11, 0.25, 0.04]));
+    T.push(P(G.box, L.scarf, [0.11, 0.19, 0.16], [0.15, 0, 0.18], [0.1, 0.05, 0.035]));
+  }
+  if (L.satchel) {
+    T.push(P(G.box, L.satchel, [0.255 * W, 0.02, 0.0], [0, 0.8, 0.25], [0.1, 0.12, 0.075]));
+    T.push(P(G.box, 0x53402a, [0.03, 0.3, 0.14], [0, 0, -1.25], [0.035, 0.52, 0.035]));
+  }
   if (L.pack) {
-    add(torso, G.box, 0x7a5b3c, [0, 0.3, -0.24], [0, 0, 0], [0.34, 0.36, 0.2]);
-    add(torso, G.box, 0x62482f, [0, 0.44, -0.35], [0, 0, 0], [0.3, 0.1, 0.06]);
+    T.push(P(G.box, 0x7a5b3c, [0, 0.28, -0.24], [0, 0, 0], [0.32 * W, 0.36, 0.19]));
+    T.push(P(G.box, 0x62482f, [0, 0.43, -0.25], [0.12, 0, 0], [0.3 * W, 0.1, 0.18]));
+    T.push(P(G.cyl, 0x9a7b52, [0, 0.5, -0.31], [0, 0, Math.PI / 2], [0.085, 0.34, 0.085]));
+    T.push(P(G.box, 0x53402a, [-0.1 * W, 0.28, 0.07], [0, 0, 0.06], [0.05, 0.4, 0.06]));
+    T.push(P(G.box, 0x53402a, [0.1 * W, 0.28, 0.07], [0, 0, -0.06], [0.05, 0.4, 0.06]));
   }
+  part(torso, T);
 
-  // head
-  const head = new THREE.Group(); head.position.y = 1.46; rig.add(head);
-  head.add(new THREE.Mesh(G.sphere, toon(L.skin)));
-  head.children[0].scale.set(0.235, 0.25, 0.225);
-  head.children[0].castShadow = true;
-  add(head, G.sphere, L.skin, [0, -0.02, 0.2], [0, 0, 0], [0.08, 0.07, 0.08]); // nose
-  const hair = add(head, G.half, L.hair, [0, 0.035, 0], [0, 0, 0], [0.245, 0.235, 0.24]);
-  hair.userData.noInk = true;
-  hair.receiveShadow = false;
-  add(head, G.box, L.hair, [0, 0.1, -0.18], [0.3, 0, 0], [0.3, 0.2, 0.16]).userData.noInk = true;
-  if (L.hat) {
-    add(head, G.cyl, L.hat, [0, 0.17, 0], [0, 0, 0], [0.44, 0.04, 0.44]).userData.noInk = true;
-    add(head, G.cone6, L.hat, [0, 0.28, 0], [0, 0, 0], [0.25, 0.2, 0.25]).userData.noInk = true;
-  }
-  add(head, G.sphereLo, 0x2b2b2b, [-0.085, 0.03, 0.19], [0, 0, 0], [0.028, 0.032, 0.02]);
-  add(head, G.sphereLo, 0x2b2b2b, [0.085, 0.03, 0.19], [0, 0, 0], [0.028, 0.032, 0.02]);
-
+  /* ---- arms: puffed shoulder, sleeve, cuff, forearm, hand and thumb ---- */
   const arm = side => {
     const g = new THREE.Group();
-    g.position.set(0.28 * side, 1.3, 0);
+    g.position.set(0.285 * side, 1.3, 0);
     rig.add(g);
-    add(g, G.capsule, L.shirt, [0, -0.19, 0], [0, 0, side * 0.09], [0.082, 0.17, 0.082]);
-    add(g, G.capsule, L.skin, [0.01 * side, -0.44, 0.01], [0, 0, side * 0.09], [0.072, 0.06, 0.072]);
-    add(g, G.sphere, L.skin, [0.02 * side, -0.56, 0.01], [0, 0, 0], [0.085, 0.09, 0.075]);
+    part(g, [
+      P(G.sphere, L.shirt, [0, 0.02, 0], [0, 0, 0], [0.1, 0.095, 0.1]),
+      P(G.capsule, L.shirt, [0, -0.19, 0], [0, 0, side * 0.08], [0.082, 0.17, 0.082]),
+      P(G.cyl, L.shirt2, [0, -0.335, 0], [0, 0, side * 0.08], [0.087, 0.055, 0.087]),
+      P(G.capsule, L.skin, [0.01 * side, -0.44, 0.01], [0, 0, side * 0.08], [0.07, 0.06, 0.07]),
+      P(G.sphere, L.skin, [0.02 * side, -0.55, 0.02], [0, 0, 0], [0.078, 0.082, 0.072]),
+      P(G.sphere, L.skin, [0.02 * side + 0.055 * side, -0.53, 0.06], [0, 0, 0], [0.032, 0.036, 0.03]),
+    ]);
     const hand = new THREE.Group();
     hand.position.set(0.02 * side, -0.56, 0.03);
     g.add(hand);
     return { g, hand };
   };
   const armR = arm(1), armL = arm(-1);
+
+  /* ---- head: skull, ears, nose ---- */
+  const head = new THREE.Group(); head.position.y = 1.46; rig.add(head);
+  part(head, [
+    P(G.sphere, L.skin, [0, 0, 0], [0, 0, 0], [0.25 * HS, 0.265 * HS, 0.24 * HS]),
+    P(G.sphere, L.skin, [-0.24 * HS, 0.0, 0], [0, 0, 0], [0.055 * HS, 0.072 * HS, 0.052 * HS]),
+    P(G.sphere, L.skin, [0.24 * HS, 0.0, 0], [0, 0, 0], [0.055 * HS, 0.072 * HS, 0.052 * HS]),
+    P(G.sphere, L.skin, [0, -0.012, 0.214 * HS], [0, 0, 0], [0.062 * HS, 0.055 * HS, 0.062 * HS]),
+  ]);
+
+  /* ---- face: eyes with catchlights, brows, mouth, cheeks (no outline) ---- */
+  part(head, [
+    P(G.sphereLo, 0x241f1c, [-0.088 * HS, 0.028 * HS, 0.213 * HS], [0, 0, 0], [0.036, 0.044, 0.028]),
+    P(G.sphereLo, 0x241f1c, [0.088 * HS, 0.028 * HS, 0.213 * HS], [0, 0, 0], [0.036, 0.044, 0.028]),
+    P(G.sphereLo, 0xffffff, [-0.078 * HS, 0.044 * HS, 0.234 * HS], [0, 0, 0], [0.014, 0.014, 0.009]),
+    P(G.sphereLo, 0xffffff, [0.098 * HS, 0.044 * HS, 0.234 * HS], [0, 0, 0], [0.014, 0.014, 0.009]),
+    P(G.box, L.brow, [-0.09 * HS, 0.105 * HS, 0.222 * HS], [0, 0, 0.2], [0.082, 0.02, 0.022]),
+    P(G.box, L.brow, [0.09 * HS, 0.105 * HS, 0.222 * HS], [0, 0, -0.2], [0.082, 0.02, 0.022]),
+    P(G.box, 0x8c4a44, [0, -0.118 * HS, 0.243 * HS], [0.16, 0, 0], [0.086, 0.022, 0.022]),
+    P(G.box, 0x8c4a44, [-0.045 * HS, -0.108 * HS, 0.235 * HS], [0.16, 0.4, 0.5], [0.026, 0.02, 0.02]),
+    P(G.box, 0x8c4a44, [0.045 * HS, -0.108 * HS, 0.235 * HS], [0.16, -0.4, -0.5], [0.026, 0.02, 0.02]),
+    P(G.sphereLo, 0xd98f7a, [-0.172 * HS, -0.055 * HS, 0.182 * HS], [0, 0, 0], [0.05, 0.036, 0.022]),
+    P(G.sphereLo, 0xd98f7a, [0.172 * HS, -0.055 * HS, 0.182 * HS], [0, 0, 0], [0.05, 0.036, 0.022]),
+  ], true);
+
+  /* ---- hair ---- */
+  const style = L.hairStyle || 'cap';
+  const hairParts = [];
+  if (style !== 'bald') {
+    hairParts.push(P(G.half, L.hair, [0, 0.105, 0], [0, 0, 0], [0.272 * HS, 0.215 * HS, 0.258 * HS]));
+    hairParts.push(P(G.box, L.hair, [0, 0.215, 0.15], [0.35, 0, 0], [0.4 * HS, 0.07, 0.12]));
+    hairParts.push(P(G.box, L.hair, [0, 0.0, -0.2], [0, 0, 0], [0.4 * HS, 0.3, 0.1]));
+  }
+  if (style === 'tousled') {
+    const spots = [[-0.1, 0.3, 0.1], [0.12, 0.305, 0.02], [-0.02, 0.33, -0.09], [0.18, 0.25, -0.1], [-0.18, 0.24, -0.07]];
+    for (const [x, y, z] of spots) hairParts.push(P(G.icoLo, L.hair, [x, y, z], [x * 9, y * 8, z * 6], [0.115, 0.1, 0.115]));
+  } else if (style === 'bun') {
+    hairParts.push(P(G.sphere, L.hair, [0, 0.19, -0.21], [0, 0, 0], [0.115, 0.115, 0.115]));
+    hairParts.push(P(G.torus, 0x8a6a48, [0, 0.16, -0.2], [0.5, 0, 0], [0.09, 0.09, 0.09]));
+  } else if (style === 'long') {
+    hairParts.push(P(G.box, L.hair, [-0.2, -0.13, -0.05], [0, 0, 0.06], [0.085, 0.44, 0.17]));
+    hairParts.push(P(G.box, L.hair, [0.2, -0.13, -0.05], [0, 0, -0.06], [0.085, 0.44, 0.17]));
+    hairParts.push(P(G.box, L.hair, [0, -0.14, -0.21], [0, 0, 0], [0.34, 0.46, 0.09]));
+  }
+  if (hairParts.length) part(head, hairParts, true);
+
+  /* ---- hats ---- */
+  if (L.hat) {
+    const H2 = [];
+    const st = L.hatStyle || 'brim';
+    if (st === 'cap') {
+      H2.push(P(G.half, L.hat, [0, 0.14, 0], [0, 0, 0], [0.285 * HS, 0.225 * HS, 0.285 * HS]));
+      H2.push(P(G.box, L.hat, [0, 0.16, 0.215], [0.1, 0, 0], [0.38 * HS, 0.045, 0.22]));
+      H2.push(P(G.sphereLo, 0x7a5b3c, [0, 0.36, 0], [0, 0, 0], [0.033, 0.033, 0.033]));
+    } else if (st === 'beanie') {
+      H2.push(P(G.half, L.hat, [0, 0.13, 0], [0, 0, 0], [0.29 * HS, 0.27 * HS, 0.29 * HS]));
+      H2.push(P(G.torus, 0xf3ead6, [0, 0.17, 0], [Math.PI / 2, 0, 0], [0.27 * HS, 0.27 * HS, 0.27 * HS]));
+      H2.push(P(G.sphere, 0xf3ead6, [0, 0.4, 0], [0, 0, 0], [0.085, 0.085, 0.085]));
+    } else if (st === 'bandana') {
+      H2.push(P(G.half, L.hat, [0, 0.1, 0], [0, 0, 0], [0.28 * HS, 0.225 * HS, 0.28 * HS]));
+      H2.push(P(G.box, L.hat, [0, 0.06, -0.26], [0, 0, 0.3], [0.12, 0.13, 0.09]));
+      H2.push(P(G.box, L.hat, [0.1, -0.13, -0.3], [0.2, 0, 0.35], [0.06, 0.26, 0.05]));
+    } else if (st === 'hood') {
+      H2.push(P(G.half, L.hat, [0, 0.09, -0.03], [0, 0, 0], [0.325 * HS, 0.31 * HS, 0.325 * HS]));
+      H2.push(P(G.box, L.hat, [0, -0.12, -0.2], [0, 0, 0], [0.44 * HS, 0.38, 0.14]));
+    } else {
+      H2.push(P(G.cyl, L.hat, [0, 0.25, 0], [0, 0, 0], [0.46 * HS, 0.032, 0.46 * HS]));
+      H2.push(P(G.cyl, L.hat, [0, 0.34, 0], [0, 0, 0], [0.275 * HS, 0.14, 0.275 * HS]));
+      H2.push(P(G.cyl, 0x7a5b3c, [0, 0.275, 0], [0, 0, 0], [0.288 * HS, 0.036, 0.288 * HS]));
+    }
+    part(head, H2, true);
+  }
 
   root.userData = { rig, hips, torso, head, legL, legR, armL: armL.g, armR: armR.g, handR: armR.hand, handL: armL.hand, phase: 0 };
   return root;
@@ -1813,14 +1927,15 @@ const FOLK_TXT = {
 const ft = k => (FOLK_TXT[k] || {})[LANG] || k;
 
 const VILLAGER_LOOKS = [
-  { shirt: 0x6f8f5c, vest: 0x53704a, pants: 0x53463a, hair: 0x4a3524, hat: 0xd9c9a3 },
-  { shirt: 0xb5714f, vest: 0x8f573c, pants: 0x4f5b45, hair: 0x2f2a24, hat: null },
-  { shirt: 0x7f86b0, vest: 0x646b92, pants: 0x54473a, hair: 0x8a6a3a, hat: 0x9fb37a },
-  { shirt: 0xc9a86a, vest: 0xa68a52, pants: 0x3f4a3c, hair: 0x1f1c18, hat: 0xb8484f },
-  { shirt: 0x8fa86a, vest: 0x6f8850, pants: 0x5b4a3a, hair: 0x53382a, hat: null },
-  { shirt: 0xa2697f, vest: 0x825066, pants: 0x463f36, hair: 0x2b2b2b, hat: 0x8a9a6a },
-  { shirt: 0x5f8f8a, vest: 0x477470, pants: 0x4a3f34, hair: 0x7a5a34, hat: 0xe7d8b4 },
-  { shirt: 0xb98a4a, vest: 0x9a7038, pants: 0x39433a, hair: 0x241f1a, hat: null },
+  { shirt: 0x6f8f5c, shirt2: 0x82a26c, vest: 0x53704a, pants: 0x53463a, hair: 0x4a3524, hat: 0xd9c9a3, hatStyle: 'brim', hairStyle: 'tousled', scarf: 0xb8484f, build: 1.02 },
+  { shirt: 0xb5714f, shirt2: 0xc98460, vest: 0x8f573c, pants: 0x4f5b45, hair: 0x2f2a24, hat: null, hairStyle: 'cap', apron: 0x7a5b3c, build: 1.12, headScale: 1.04 },
+  { shirt: 0x7f86b0, shirt2: 0x929bc6, vest: 0x646b92, pants: 0x54473a, hair: 0x8a6a3a, hat: 0x9fb37a, hatStyle: 'beanie', hairStyle: 'long', build: 0.94, skin: 0xdfae84, skin2: 0xcfa078 },
+  { shirt: 0xc9a86a, shirt2: 0xdcbe86, vest: 0xa68a52, pants: 0x3f4a3c, hair: 0x1f1c18, hat: 0xb8484f, hatStyle: 'bandana', hairStyle: 'bun', satchel: 0x8a6a3a },
+  { shirt: 0x8fa86a, shirt2: 0xa4bd7e, vest: 0x6f8850, pants: 0x5b4a3a, hair: 0x53382a, hat: null, hairStyle: 'tousled', scarf: 0xe7d8b4, skin: 0xe8bd93 },
+  { shirt: 0xa2697f, shirt2: 0xba7e94, vest: 0x825066, pants: 0x463f36, hair: 0x2b2b2b, hat: 0x8a9a6a, hatStyle: 'cap', hairStyle: 'cap', build: 1.06 },
+  { shirt: 0x5f8f8a, shirt2: 0x76a7a2, vest: 0x477470, pants: 0x4a3f34, hair: 0x7a5a34, hat: 0xe7d8b4, hatStyle: 'brim', hairStyle: 'long', apron: 0x54706a, build: 0.96 },
+  { shirt: 0xb98a4a, shirt2: 0xcc9f60, vest: 0x9a7038, pants: 0x39433a, hair: 0x241f1a, hat: null, hairStyle: 'bald', satchel: 0x6b5436, build: 1.1, headScale: 1.05 },
+  { shirt: 0x8a6f9e, shirt2: 0x9c83b0, vest: 0x6d5580, pants: 0x453f3a, hair: 0x33291f, hat: 0x6f8f5c, hatStyle: 'hood', hairStyle: 'cap', skin: 0xd8a97e, skin2: 0xc79a72 },
 ];
 const VILLAGER_NAMES = ['Ash', 'Birch', 'Rowan', 'Elm', 'Hazel', 'Juniper', 'Willow', 'Oak', 'Moss', 'Fern', 'Ivy', 'Pine'];
 let villagerSerial = 0;
@@ -1846,7 +1961,7 @@ function villagerRing() {
 function spawnVillager(x, z, opts = {}) {
   const n = villagerSerial++;
   const look = VILLAGER_LOOKS[n % VILLAGER_LOOKS.length];
-  const model = inkGroup(makePlayer(Object.assign({ pack: false }, look)), 1.11);
+  const model = inkGroup(makePlayer(Object.assign({ pack: false }, look)), 1.1);
   const ring = villagerRing();
   model.add(ring);
   const y = heightAt(x, z);
@@ -1854,7 +1969,7 @@ function spawnVillager(x, z, opts = {}) {
   scene.add(model);
   const v = {
     id: 'v' + n + '-' + Math.random().toString(16).slice(2, 6),
-    name: opts.name || VILLAGER_NAMES[n % VILLAGER_NAMES.length],
+    name: opts.name || VILLAGER_NAMES[n % VILLAGER_NAMES.length], look,
     x, z, dir: Math.PI, speed: 0, walkPhase: Math.random() * 6,
     model, ud: model.userData, ring,
     job: opts.job || 'idle', state: 'idle', path: null, target: null, claimed: null,
@@ -2286,9 +2401,15 @@ function renderCrew() {
   const box = $('crew');
   if (!box) return;
   const colors = { wood: '#8a6a3a', stone: '#8d9182', forage: '#b8484f', build: '#e7b34a', idle: '#9fae9c' };
-  box.innerHTML = STATE.villagers.map((v, i) =>
-    `<button class="mate${v.selected ? ' on' : ''}" data-i="${i}" title="${v.name} · ${ft(v.job)}">
-      <b>${v.name.slice(0, 1)}</b><i style="background:${colors[v.job] || colors.idle}"></i></button>`).join('');
+  const hex = c => '#' + (c >>> 0).toString(16).padStart(6, '0');
+  box.innerHTML = STATE.villagers.map((v, i) => {
+    const k = v.look || {};
+    return `<button class="mate${v.selected ? ' on' : ''}" data-i="${i}" title="${v.name} · ${ft(v.job)}">
+      <span class="pf" style="--sk:${hex(k.skin || 0xe3b78d)};--hr:${hex(k.hair || 0x493426)};--ht:${k.hat ? hex(k.hat) : 'transparent'}">
+        <i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ht"></i>
+      </span>
+      <i style="background:${colors[v.job] || colors.idle}"></i></button>`;
+  }).join('');
   box.querySelectorAll('.mate').forEach(b => {
     b.onclick = () => {
       const v = STATE.villagers[+b.dataset.i];

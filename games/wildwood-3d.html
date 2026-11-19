@@ -386,6 +386,7 @@ sun.shadow.mapSize.set(2048, 2048);
 sun.shadow.camera.left = -78; sun.shadow.camera.right = 78;
 sun.shadow.camera.top = 78; sun.shadow.camera.bottom = -78;
 sun.shadow.camera.near = 1; sun.shadow.camera.far = 260;
+sun.shadow.camera.updateProjectionMatrix();
 sun.shadow.bias = -0.0007; sun.shadow.normalBias = 0.05;
 scene.add(sun, sun.target);
 const fill = new THREE.AmbientLight(0xb2ccdd, 0.62);
@@ -393,8 +394,11 @@ scene.add(fill);
 
 /* ---------- toon materials ---------- */
 function gradientMap() {
-  const d = new Uint8Array([46, 48, 44, 255, 118, 120, 112, 255, 196, 198, 188, 255, 255, 255, 255, 255]);
-  const t = new THREE.DataTexture(d, 4, 1, THREE.RGBAFormat);
+  const d = new Uint8Array([
+    40, 42, 38, 255, 84, 86, 80, 255, 130, 132, 124, 255,
+    176, 178, 168, 255, 214, 216, 206, 255, 255, 255, 255, 255,
+  ]);
+  const t = new THREE.DataTexture(d, 6, 1, THREE.RGBAFormat);
   t.minFilter = t.magFilter = THREE.NearestFilter;
   t.needsUpdate = true;
   return t;
@@ -427,7 +431,7 @@ landGeo.rotateX(-Math.PI / 2);
     const h = heightAt(x, z);
     pos.setY(i, h);
     const n = fbm(x * 0.03 + 5, z * 0.03 + 2), n2 = fbm(x * 0.009 + 21, z * 0.009 + 13);
-    if (h < -0.35) tmp.copy(cWet).lerp(new THREE.Color(0x6f7d63), clamp(-h / 2.4, 0, 1));
+    if (h < -0.35) tmp.copy(cWet).lerp(new THREE.Color(0x2c4a45), clamp(-h / 1.9, 0, 1));
     else if (h < 0.72) tmp.copy(cSand).lerp(cWet, clamp((0.72 - h) / 0.72, 0, 0.45));
     else if (h > 3.15) tmp.copy(cRock).lerp(cGrassDark, clamp((4.1 - h) / 1.1, 0, 1));
     else tmp.copy(cGrass).lerp(cGrass2, n).lerp(cGrassDark, clamp((h - 1.1) / 2.2, 0, 0.55) * 0.7 + n2 * 0.62);

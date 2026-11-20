@@ -224,10 +224,112 @@
     return name.indexOf("@") > -1 ? name : name + MAIL;
   }
 
-  function shownName(who) {
+  // ----- Nickname: the name friends see in chat and on the Flappy board -----
+  const NICK_MAX = 24;
+  let nick = "";  // empty until a nickname is chosen
+
+  function accountName(who) {
     const mail = who.email || "";
     return mail.endsWith(MAIL) ? mail.slice(0, -MAIL.length) : (mail || who.displayName || "your account");
   }
+
+  function nickMap() {
+    try { return JSON.parse(localStorage.getItem("damp-nicks") || "{}") || {}; } catch (error) { return {}; }
+  }
+
+  function nickFor(uid) { return String(nickMap()[uid] || ""); }
+
+  function setNickFor(uid, value) {
+    const all = nickMap();
+    if (value) all[uid] = value; else delete all[uid];
+    try { localStorage.setItem("damp-nicks", JSON.stringify(all)); } catch (error) { /* storage off */ }
+  }
+
+  // Without a nickname the username is the name everywhere
+  function shownName(who) {
+    return nick || accountName(who || user || {});
+  }
+
+  // Writes the name into the header of the page and the account dialog, and
+  // tells the rest of the site (damp-name, dampUser) what to show.
+  function applyIdentity() {
+    if (!user) return;
+    const name = shownName(user);
+    window.dampUser = { name: name };
+    try { localStorage.setItem("damp-name", name); } catch (error) { /* storage off */ }
+    if (byId("acc-who")) byId("acc-who").textContent = name;
+    if (byId("acc-nick")) byId("acc-nick").value = nick;
+    pingPresence();
+    if (peopleDialog.open) drawPeople();
+  }
+
+  function useIdentity(who) {
+    nick = who ? nickFor(who.uid) : "";
+    if (!who) {
+      window.dampUser = null;
+      try { localStorage.setItem("damp-name", ""); } catch (error) { /* storage off */ }
+      return;
+    }
+    applyIdentity();
+    loadNick(who);
+  }
+
+  // The nickname also lives in the people directory, so it follows the account
+  // to another device.
+  async function loadNick(who) {
+    if (!fb || !user) return;
+    try {
+      const snap = await fb.f.getDoc(fb.f.doc(fb.db, "people", who.uid));
+      if (!snap.exists()) return;
+      const saved = String(snap.data().name || "").trim().slice(0, NICK_MAX);
+      // The directory holds the username until a nickname is chosen
+      if (saved && saved !== accountName(who) && saved !== nick) {
+        nick = saved;
+        setNickFor(who.uid, nick);
+        applyIdentity();
+      }
+    } catch (error) { /* offline, or the people rules are not published */ }
+  }
+
+  // Monday-based week id, the same one the Flappy board uses
+  function weekId(date) {
+    const t = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const day = t.getUTCDay() || 7;
+    t.setUTCDate(t.getUTCDate() + 4 - day);
+    const y = t.getUTCFullYear();
+    return y + "-W" + String(Math.ceil(((t - Date.UTC(y, 0, 1)) / 864e5 + 1) / 7)).padStart(2, "0");
+  }
+
+  // Flappy keeps its own copy of the name in every score row, so a new nickname
+  // has to reach the rows that already exist as well as the ones written later.
+  async function renameBoard(uid, name) {
+    const all = fb.f.doc(fb.db, "flappy", uid);
+    if ((await fb.f.getDoc(all)).exists()) await fb.f.setDoc(all, { name: name }, { merge: true });
+    const weekly = fb.f.doc(fb.db, "flappy_week", weekId(new Date()), "scores", uid);
+    if ((await fb.f.getDoc(weekly)).exists()) await fb.f.setDoc(weekly, { name: name }, { merge: true });
+  }
+
+  async function saveNick() {
+    if (!user || !fb) return;
+    const clean = byId("acc-nick").value.trim().replace(/\s+/g, " ").slice(0, NICK_MAX);
+    if (clean.length < 2) return tell("Nickname: 2 to 24 characters.", true);
+    nick = clean;
+    setNickFor(user.uid, clean);
+    applyIdentity();
+    tell("Saving nickname…");
+    try {
+      await fb.f.setDoc(fb.f.doc(fb.db, "people", user.uid), { name: clean, at: Date.now() }, { merge: true });
+      await renameBoard(user.uid, clean);
+      tell("Saved. Friends see “" + clean + "” in chat and on the Flappy board.");
+    } catch (error) {
+      tell(fbProblem(error), true);
+    }
+  }
+
+  byId("acc-nick-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    saveNick();
+  });
 
   byId("account").addEventListener("click", function () { dialog.showModal(); });
   byId("acc-close").addEventListener("click", function () { dialog.close(); });
@@ -434,12 +536,34 @@
           const data = doc.data();
           const bubble = document.createElement("div");
           bubble.className = "msg" + (data.from === user.uid ? " me" : "");
-          fillText(bubble, data.text || "");
+          if (data.image) {
+            const pic = document.createElement("img");
+            pic.className = "msg-img";
+            pic.src = data.image;
+            pic.alt = "Photo";
+            pic.loading = "lazy";
+            bubble.appendChild(pic);
+          }
+          if (data.text) fillText(bubble, data.text);
           if (data.at) {
             const time = document.createElement("span");
             time.className = "t";
             time.textContent = new Date(data.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
             bubble.appendChild(time);
+          }
+          // Your own messages can be removed again
+          if (data.from === user.uid) {
+            const del = document.createElement("button");
+            del.type = "button";
+            del.className = "msg-del";
+            del.title = "Delete message";
+            del.setAttribute("aria-label", "Delete message");
+            del.textContent = "×";
+            del.addEventListener("click", function () {
+              if (!window.confirm("Delete this message?")) return;
+              fb.f.deleteDoc(doc.ref).catch(function (error) { peopleMsg(fbProblem(error), true); });
+            });
+            bubble.appendChild(del);
           }
           log.appendChild(bubble);
         });
@@ -477,16 +601,81 @@
     event.preventDefault();
     const input = byId("chat-text");
     const text = input.value.trim();
-    if (!text || !chatWith || !user) return;
+    if (!text) return;
     input.value = "";
+    postMessage(text, "");
+  });
+
+  // One place that writes a message and keeps the chat summary fresh, so the
+  // other player still gets a toast for a photo
+  function postMessage(text, image) {
+    if (!chatWith || !user) return;
     const id = pairId(user.uid, chatWith);
     const at = Date.now();
-    fb.f.addDoc(fb.f.collection(fb.db, "chats", id, "messages"), { from: user.uid, text: text, at: at })
+    const message = { from: user.uid, at: at };
+    if (text) message.text = text;
+    if (image) message.image = image;
+    fb.f.addDoc(fb.f.collection(fb.db, "chats", id, "messages"), message)
       .catch(function (error) { peopleMsg(fbProblem(error), true); });
-    // Keeps the summary on the chat fresh, so the other player can be notified
     fb.f.setDoc(fb.f.doc(fb.db, "chats", id),
-      { ids: [user.uid, chatWith].sort(), last: text.slice(0, 120), lastAt: at, lastFrom: user.uid },
+      { ids: [user.uid, chatWith].sort(), last: (text || "📷 Photo").slice(0, 120), lastAt: at, lastFrom: user.uid },
       { merge: true }).catch(function () { /* the chat rules are not published yet */ });
+  }
+
+  // A chat document holds at most 1 MiB, so a picture is shrunk to a small JPEG
+  // before it is sent instead of storing the original photo.
+  function shrinkImage(file) {
+    return new Promise(function (resolve, reject) {
+      const objectUrl = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = function () {
+        try {
+          let w = img.naturalWidth || img.width;
+          let h = img.naturalHeight || img.height;
+          const max = 900;
+          if (Math.max(w, h) > max) {
+            const k = max / Math.max(w, h);
+            w = Math.max(1, Math.round(w * k));
+            h = Math.max(1, Math.round(h * k));
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          let quality = 0.72;
+          let out = canvas.toDataURL("image/jpeg", quality);
+          while (out.length > 600000 && quality > 0.34) {
+            quality -= 0.12;
+            out = canvas.toDataURL("image/jpeg", quality);
+          }
+          URL.revokeObjectURL(objectUrl);
+          if (out.length > 700000) reject(new Error("too big"));
+          else resolve(out);
+        } catch (error) {
+          URL.revokeObjectURL(objectUrl);
+          reject(error);
+        }
+      };
+      img.onerror = function () { URL.revokeObjectURL(objectUrl); reject(new Error("not an image")); };
+      img.src = objectUrl;
+    });
+  }
+
+  byId("chat-photo").addEventListener("click", function () { byId("chat-file").click(); });
+
+  byId("chat-file").addEventListener("change", function () {
+    const input = byId("chat-file");
+    const file = input.files && input.files[0];
+    input.value = "";
+    if (!file || !chatWith || !user) return;
+    if (!/^image\//.test(file.type)) return peopleMsg("That file is not an image.", true);
+    peopleMsg("Sending picture…");
+    shrinkImage(file).then(function (dataUrl) {
+      peopleMsg("");
+      postMessage("", dataUrl);
+    }, function () {
+      peopleMsg("That picture could not be sent. Try a smaller one.", true);
+    });
   });
 
   // ----- Little message notification -----
@@ -646,10 +835,7 @@
       fb = { a: parts[1], f: parts[2], auth: parts[1].getAuth(app), db: parts[2].getFirestore(app) };
       fb.a.onAuthStateChanged(fb.auth, function (who) {
         user = who;
-        const accountName = who ? shownName(who) : "";
-        window.dampUser = who ? { name: accountName } : null;
-        try { localStorage.setItem("damp-name", accountName); } catch (error) { /* storage off */ }
-        try { localStorage.setItem("damp-in", who ? "1" : "0"); } catch (error) { /* storage off */ }
+        useIdentity(who);
         if (!user) { clearInterval(autosave); current = null; synced = null; }
         if (who) { startPresence(); watchMessages(); }
         else {

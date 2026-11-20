@@ -52,13 +52,25 @@ service cloud.firestore {
     match /chats/{chatId}/messages/{msgId} {
       allow read: if request.auth != null
         && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.ids;
+      // A message is text, a picture, or both. Pictures are the small JPEG
+      // data URLs the site makes, never the original photo.
       allow create: if request.auth != null
+        && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.ids
         && request.resource.data.from == request.auth.uid
-        && request.resource.data.text is string
-        && request.resource.data.text.size() > 0
-        && request.resource.data.text.size() <= 500
-        && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.ids;
-      allow update, delete: if false;
+        && request.resource.data.at is int
+        && request.resource.data.keys().hasOnly(['from', 'at', 'text', 'image'])
+        && (!('text' in request.resource.data)
+            || (request.resource.data.text is string
+                && request.resource.data.text.size() <= 500))
+        && (!('image' in request.resource.data)
+            || (request.resource.data.image is string
+                && request.resource.data.image.size() <= 700000
+                && request.resource.data.image.matches('^data:image/(jpeg|png|webp);base64,')))
+        && (('image' in request.resource.data)
+            || (('text' in request.resource.data) && request.resource.data.text.size() > 0));
+      // Only the sender may take a message back
+      allow delete: if request.auth != null && resource.data.from == request.auth.uid;
+      allow update: if false;
     }
 
     // Online fighting rooms: only used to connect two players (the game itself

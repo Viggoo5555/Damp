@@ -890,6 +890,9 @@ label input[type="file"] { height: auto; padding: 8px 12px; }
   padding: 12px 2px;
   border: 0;
   border-bottom: 1px solid var(--line);
+  /* a row is a flat divider, not a pill: the shared dialog button radius
+     turned every bottom border into an arc */
+  border-radius: 0;
   background: none;
   color: var(--mist);
   font: inherit;
@@ -897,7 +900,9 @@ label input[type="file"] { height: auto; padding: 8px 12px; }
   cursor: pointer;
 }
 
-.person:hover { color: var(--lamp); }
+.person:last-child { border-bottom: 0; }
+
+.person:hover { color: var(--lamp); background: rgba(242, 198, 94, 0.05); }
 
 .chat-head {
   display: flex;
@@ -926,9 +931,12 @@ label input[type="file"] { height: auto; padding: 8px 12px; }
   height: min(46vh, 340px);
   padding: 4px 2px;
   overflow-y: auto;
+  /* the delete button sits above a bubble, never beside it */
+  overflow-x: hidden;
 }
 
 .msg {
+  position: relative;
   max-width: 82%;
   padding: 8px 12px;
   border-radius: 8px;
@@ -937,6 +945,40 @@ label input[type="file"] { height: auto; padding: 8px 12px; }
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
+
+.msg-img {
+  display: block;
+  max-width: 100%;
+  max-height: 260px;
+  border-radius: 8px;
+}
+
+.msg-img + .t { margin-top: 6px; }
+
+/* Delete your own message: only your bubbles have one */
+.msg-del {
+  position: absolute;
+  top: -8px;
+  right: -2px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--deep);
+  color: var(--fog);
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.msg:hover .msg-del, .msg-del:focus-visible { opacity: 1; }
+.msg-del:hover { color: var(--bad); border-color: var(--bad); }
+
+@media (hover: none) { .msg-del { opacity: 1; } }
 
 .msg.me {
   align-self: flex-end;
@@ -964,6 +1006,24 @@ label input[type="file"] { height: auto; padding: 8px 12px; }
   gap: 8px;
   margin-top: 12px;
 }
+
+#chat-photo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--deep);
+  color: var(--mist);
+  cursor: pointer;
+}
+
+#chat-photo svg { width: 20px; height: 20px; }
+#chat-photo:hover { border-color: var(--lamp); color: var(--lamp); }
 
 #chat-text {
   flex: 1;

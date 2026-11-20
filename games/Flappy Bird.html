@@ -716,9 +716,29 @@ const FB={apiKey:"AIzaSyDJhWSi7QZKXtOPYwKHPF7zPg_klh1If7w",authDomain:"damp-2406
 const FBSDK='/vendor/firebase/',LB='flappy';
 let fbAuth=null,fbDb=null,F=null,fbUser=null,fbState='loading',lbRows=[],lbOwn=null,lbLoaded=false,ownUnsub=null,lbUnsub=null,lbMode='all',lbWriteFail=false;
 try{lbMode=localStorage.getItem('fb-lbmode')==='week'?'week':'all'}catch(e){}
+let lbNick='';
 function lbName(u){
+  // Damp saves the chosen nickname as damp-name, and that is the name the board
+  // should show, so it wins over the account name.
+  if(lbNick)return lbNick;
+  try{const n=localStorage.getItem('damp-name');if(n)return n.slice(0,24);}catch(e){}
   const mail=u.email||'';
   return mail.endsWith('@damp.example')?mail.slice(0,-13):(mail.split('@')[0]||u.displayName||'player');
+}
+// The nickname follows the account in the people directory, so a name set on
+// another device is used here too
+async function lbLoadNick(){
+  lbNick='';
+  try{
+    const d=await F.getDoc(F.doc(fbDb,'people',fbUser.uid));
+    if(d.exists()){
+      const n=String(d.data().name||'').trim().slice(0,24);
+      const mail=fbUser.email||'';
+      const own=mail.endsWith('@damp.example')?mail.slice(0,-13):'';
+      if(n&&n!==own)lbNick=n;
+    }
+  }catch(e){}
+  lbRender();
 }
 function lbHead(box){
   const h=document.createElement('div');h.className='lbh';
@@ -903,7 +923,7 @@ async function initLb(){
     try{
       const authM=await authP;
       fbAuth=authM.getAuth(app);
-      authM.onAuthStateChanged(fbAuth,u=>{fbUser=u;lbWatchOwn();lbRender();if(u){cloudLoad();submitLb();syncDeviceBest();}}); 
+      authM.onAuthStateChanged(fbAuth,u=>{fbUser=u;lbWatchOwn();lbRender();if(u){cloudLoad();lbLoadNick();submitLb();syncDeviceBest();}}); 
     }catch(e){}
   }catch(e){
     if(!lbApiOk){fbState='off';lbRender();}

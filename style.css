@@ -2453,3 +2453,93 @@ dialog {
 #player-people svg { width: 18px; height: 18px; fill: currentColor; stroke: none; }
 #player-people:hover { border-color: rgba(242, 198, 94, 0.52); color: var(--lamp); }
 #toast { z-index: 50; }
+
+/* ============================================================
+   Alignment pass: one control height, one gap rhythm.
+   The bar had a 46px search beside 44px buttons, and the chat
+   composer had three heights (42 / 44 / 49) in a single row.
+   ============================================================ */
+
+/* ---------- Header: every control is 44px, every gap is 8px ---------- */
+.bar { gap: 8px; }
+.search-field { margin: 0 4px; }
+#search { height: 44px; }
+.bar-actions { gap: 8px; }
+.header-language, #people, #add-game, #random, #account { height: 44px; }
+#people { width: 44px; }
+
+@media (max-width: 760px) {
+  /* the mobile bar stacks, so the row gap keeps its own value */
+  .bar { gap: 8px 12px; }
+  .search-field { margin: 0; }
+  /* a round button needs the same width as height */
+  #random { width: 44px; }
+}
+
+/* ---------- Chat composer: photo, field and Send share one row height ---------- */
+#chat-form { align-items: center; gap: 8px; margin-top: 10px; }
+#chat-photo { width: 44px; height: 44px; }
+#chat-text { height: 44px; margin-top: 0; }
+#chat-photo, #chat-text { border-radius: 12px; }
+#chat-form .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+}
+
+/* ---------- Attached picture: a preview above the composer, not a send ---------- */
+#chat-attach {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 7px 10px 7px 7px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--deep);
+}
+
+#chat-attach img {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 9px;
+  object-fit: cover;
+  background: var(--pane);
+}
+
+#chat-attach-note {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fog);
+  font-size: 0.85rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#chat-attach-clear {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fog);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#chat-attach-clear:hover { border-color: var(--bad); color: var(--bad); }
+
+@media (max-width: 420px) {
+  /* a narrow phone needs the room in the message field, not the button */
+  #chat-form { gap: 6px; }
+  #chat-form .button { padding: 0 14px; }
+}

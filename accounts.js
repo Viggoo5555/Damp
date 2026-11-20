@@ -371,6 +371,8 @@
   let peopleUnsub = null;
   let chatUnsub = null;
   let chatWith = null;
+  // A picture waiting to go out with the next message, as a JPEG data URL
+  let pendingImage = "";
 
   function pairId(one, two) {
     return one < two ? one + "_" + two : two + "_" + one;
@@ -595,11 +597,13 @@
     if (peopleUnsub) { peopleUnsub(); peopleUnsub = null; }
     if (chatUnsub) { chatUnsub(); chatUnsub = null; }
     chatWith = null;
+    setPendingImage("");
   });
 
   byId("chat-back").addEventListener("click", function () {
     if (chatUnsub) { chatUnsub(); chatUnsub = null; }
     chatWith = null;
+    setPendingImage("");
     byId("chat-view").hidden = true;
     byId("people-list-view").hidden = false;
     peopleMsg("");
@@ -609,9 +613,12 @@
     event.preventDefault();
     const input = byId("chat-text");
     const text = input.value.trim();
-    if (!text) return;
+    if (!text && !pendingImage) return;
+    const image = pendingImage;
     input.value = "";
-    postMessage(text, "");
+    setPendingImage("");
+    postMessage(text, image);
+    input.focus();
   });
 
   // One place that writes a message and keeps the chat summary fresh, so the
@@ -669,21 +676,65 @@
     });
   }
 
+  // A picture is only ever attached, never posted on its own: you pick or paste
+  // it, see it in the composer, and it goes out when you press Send.
+  function setPendingImage(dataUrl) {
+    pendingImage = dataUrl || "";
+    const box = byId("chat-attach");
+    const img = byId("chat-attach-img");
+    if (!pendingImage) {
+      box.hidden = true;
+      img.removeAttribute("src");
+      return;
+    }
+    img.src = pendingImage;
+    box.hidden = false;
+    peopleMsg("");
+  }
+
+  function attachFile(file) {
+    if (!file || !chatWith || !user) return;
+    if (!/^image\//.test(file.type)) return peopleMsg("That file is not a picture.", true);
+    peopleMsg("Adding picture…");
+    shrinkImage(file).then(function (dataUrl) {
+      setPendingImage(dataUrl);
+      byId("chat-text").focus();
+    }, function () {
+      peopleMsg("That picture is too big. Try a smaller one.", true);
+    });
+  }
+
   byId("chat-photo").addEventListener("click", function () { byId("chat-file").click(); });
+
+  byId("chat-attach-clear").addEventListener("click", function () {
+    setPendingImage("");
+    byId("chat-text").focus();
+  });
 
   byId("chat-file").addEventListener("change", function () {
     const input = byId("chat-file");
     const file = input.files && input.files[0];
     input.value = "";
-    if (!file || !chatWith || !user) return;
-    if (!/^image\//.test(file.type)) return peopleMsg("That file is not an image.", true);
-    peopleMsg("Sending picture…");
-    shrinkImage(file).then(function (dataUrl) {
-      peopleMsg("");
-      postMessage("", dataUrl);
-    }, function () {
-      peopleMsg("That picture could not be sent. Try a smaller one.", true);
-    });
+    attachFile(file);
+  });
+
+  // Paste works anywhere in the open chat, so a screenshot can go straight in
+  document.addEventListener("paste", function (event) {
+    if (!peopleDialog.open || byId("chat-view").hidden || !chatWith) return;
+    const clip = event.clipboardData;
+    if (!clip) return;
+    let file = null;
+    const items = clip.items || [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].kind === "file" && /^image\//.test(items[i].type)) {
+        file = items[i].getAsFile();
+        break;
+      }
+    }
+    if (!file && clip.files && clip.files[0] && /^image\//.test(clip.files[0].type)) file = clip.files[0];
+    if (!file) return;
+    event.preventDefault();
+    attachFile(file);
   });
 
   // ----- Little message notification -----

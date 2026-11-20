@@ -58,12 +58,18 @@ function hueFrom(text) {
   return hue;
 }
 
-function categories() {
-  const list = [];
-  games.forEach(function (game) {
-    if (game.category && !list.includes(game.category)) list.push(game.category);
+// A game with "hidden": true stays in games.json and keeps its files; it is only
+// left off the page. Its #play= link still works, so you can keep working on it.
+function liveGames() {
+  return games.filter(function (game) { return !game.hidden; });
+}
+
+function categories(list) {
+  const out = [];
+  (list || liveGames()).forEach(function (game) {
+    if (game.category && !out.includes(game.category)) out.push(game.category);
   });
-  return list;
+  return out;
 }
 
 // ----- Games -----
@@ -95,6 +101,12 @@ function makeCard(game) {
     tile.appendChild(img);
   } else {
     letterTile();
+  }
+
+  // Only you see a hidden game on the page, marked, so it can still be edited
+  if (admin && game.hidden) {
+    item.classList.add("is-hidden");
+    tile.appendChild(el("span", "tag-hidden", "Hidden"));
   }
 
   card.append(tile, el("h3", null, game.title), el("p", "d", game.description || ""), el("p", "cat", game.category || "Game"));
@@ -135,8 +147,9 @@ function showHero() {
 
 function showGames() {
   const query = search.value.trim().toLowerCase();
+  const source = admin ? games : liveGames();
 
-  const list = games.filter(function (game) {
+  const list = source.filter(function (game) {
     const inCategory = category === "All" || game.category === category;
     const words = (game.title + " " + (game.description || "") + " " + (game.category || "")).toLowerCase();
     return inCategory && words.includes(query);
@@ -160,7 +173,7 @@ function showGames() {
   if (loadFailed) {
     $("empty").textContent = "The games list didn't load. Open the site through its web address.";
   } else {
-    $("empty").textContent = games.length === 0 ? "No games yet. Check back soon." : "No games match your search.";
+    $("empty").textContent = source.length === 0 ? "No games yet. Check back soon." : "No games match your search.";
   }
   $("empty").hidden = list.length > 0;
   showShelf();
@@ -169,13 +182,14 @@ function showGames() {
 
 function showChips() {
   chips.replaceChildren();
-  const names = ["All"].concat(categories());
+  const list = liveGames();
+  const names = ["All"].concat(categories(list));
   if (!names.includes(category)) category = "All";
   chips.hidden = names.length < 3;
 
   names.forEach(function (name) {
     const chip = el("button", "chip");
-    const total = name === "All" ? games.length : games.filter(function (g) { return g.category === name; }).length;
+    const total = name === "All" ? list.length : list.filter(function (g) { return g.category === name; }).length;
     chip.append(el("span", null, name), el("span", "n", String(total)));
     chip.type = "button";
     chip.setAttribute("aria-pressed", name === category);
@@ -193,8 +207,9 @@ function showChips() {
 search.addEventListener("input", showGames);
 
 function playRandom() {
-  if (!games.length) return;
-  const game = games[Math.floor(Math.random() * games.length)];
+  const list = liveGames();
+  if (!list.length) return;
+  const game = list[Math.floor(Math.random() * list.length)];
   location.hash = "play=" + slug(game);
 }
 
@@ -207,7 +222,8 @@ function getRecent() {
 }
 
 function recentGames() {
-  return getRecent().filter(function (id) { return games.some(function (g) { return slug(g) === id; }); });
+  const list = liveGames();
+  return getRecent().filter(function (id) { return list.some(function (g) { return slug(g) === id; }); });
 }
 
 // There is no global play counter in the project, so the curated games.json order
@@ -238,8 +254,9 @@ function forYouOrder(list) {
 }
 
 function shelfPick() {
-  if (recentGames().length) return forYouOrder(games)[0] || games[0];
-  return games.find(function (g) { return g.featured; }) || games[0];
+  const list = liveGames();
+  if (recentGames().length) return forYouOrder(list)[0] || list[0];
+  return list.find(function (g) { return g.featured; }) || list[0];
 }
 
 function addRecent(game) {
@@ -548,6 +565,7 @@ function openEditor(game) {
   $("editor-title").textContent = game ? "Edit game" : "Add a game";
   $("save").textContent = game ? "Save changes" : "Add game";
   $("remove").hidden = !game;
+  $("f-hidden").checked = !!(game && game.hidden);
   $("f-title").value = game ? game.title : "";
   $("f-category").value = game && game.category ? game.category : "";
   $("f-desc").value = game && game.description ? game.description : "";
@@ -557,7 +575,7 @@ function openEditor(game) {
   $("f-repo").value = localStorage.getItem("damp-repo") || guessRepo();
   $("f-token").value = localStorage.getItem("damp-token") || "";
   $("conn").open = !$("f-token").value;
-  $("categories").replaceChildren(...categories().map(function (name) {
+  $("categories").replaceChildren(...categories(games).map(function (name) {
     const option = el("option");
     option.value = name;
     return option;
@@ -746,6 +764,7 @@ $("editor-form").addEventListener("submit", async function (event) {
     image: iconFile ? "img/" + base + "." + iconType : (editing ? editing.image || "" : "")
   };
   if (editing && editing.featured) entry.featured = true;
+  if ($("f-hidden").checked) entry.hidden = true;
 
   $("save").disabled = true;
   try {
@@ -775,7 +794,9 @@ $("editor-form").addEventListener("submit", async function (event) {
     updateFileInfo();
     showChips();
     showGames();
-    say("Saved. It goes live for everyone in about a minute.");
+    say(entry.hidden
+      ? "Saved, and hidden. It stays off the page until you edit it and untick Hide; its link still plays."
+      : "Saved. It goes live for everyone in about a minute.");
   } catch (error) {
     say(error.message, true);
   }

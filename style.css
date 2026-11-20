@@ -2543,3 +2543,55 @@ dialog {
   #chat-form { gap: 6px; }
   #chat-form .button { padding: 0 14px; }
 }
+
+/* ============================================================
+   Hidden games: the entry and the files stay, the page just
+   leaves them out. Only the unlocked editor sees them, marked.
+   ============================================================ */
+
+.item.is-hidden .tile { opacity: 0.5; filter: grayscale(0.55); }
+.item.is-hidden .game h3 { color: var(--fog); }
+
+.tag-hidden {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px 9px 4px;
+  border-radius: 999px;
+  background: rgba(7, 17, 22, 0.86);
+  color: var(--lamp);
+  font-family: var(--text);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+/* The editor's Hide switch: a checkbox, not a 44px text field */
+.manage-hide {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 14px;
+  color: var(--mist);
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.manage-hide input {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin: 1px 0 0;
+  accent-color: var(--lamp);
+  cursor: pointer;
+}
+
+.manage-hide em {
+  display: block;
+  margin-top: 3px;
+  color: var(--fog);
+  font-size: 0.82rem;
+  font-style: normal;
+}

@@ -65,7 +65,7 @@ service cloud.firestore {
         && (!('image' in request.resource.data)
             || (request.resource.data.image is string
                 && request.resource.data.image.size() <= 700000
-                && request.resource.data.image.matches('^data:image/(jpeg|png|webp);base64,')))
+                && request.resource.data.image.matches('data:image/(jpeg|png|webp);base64,.*')))
         && (('image' in request.resource.data)
             || (('text' in request.resource.data) && request.resource.data.text.size() > 0));
       // Only the sender may take a message back

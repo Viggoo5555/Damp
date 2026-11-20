@@ -620,9 +620,32 @@ function evaluate(bd) {
   return score;
 }
 
-let searchDeadline = 0, nodesSearched = 0;
+let searchDeadline = 0, nodesSearched = 0, qDepth = 3;
+// Two killer moves per ply, plus a history table: both are only ever used to
+// decide which move to try first, never to change a score.
+const killers = [[], [], [], [], [], [], [], [], [], []];
+const history = new Int32Array(64 * 64);
+
 function timeUp() {
-  if ((++nodesSearched & 511) === 0 && performance.now() > searchDeadline) throw new Error('timeout');
+  if ((++nodesSearched & 2047) === 0 && performance.now() > searchDeadline) throw new Error('timeout');
+}
+
+// Captures first, then the move that worked in the last pass, then the moves
+// that have caused cutoffs before. Better ordering means the search can look
+// further ahead in the same amount of time.
+function orderScore(bd, mv, ply, pv) {
+  if (pv && mv.from === pv.from && mv.to === pv.to) return 1000000;
+  let s = 0;
+  const victim = mv.ep ? bd[mv.cap] : bd[mv.to];
+  if (victim) s += 100000 + 10 * VAL[victim[1]] - VAL[mv.t];
+  if (mv.promo === 'q') s += 90000;
+  if (mv.castle) s += 600;
+  if (ply >= 0) {
+    const k = killers[ply];
+    if (k && k.some(m => m.from === mv.from && m.to === mv.to)) s += 50000;
+    s += Math.min(40000, history[mv.from * 64 + mv.to] | 0);
+  }
+  return s;
 }
 
 function quiesce(bd, st, alpha, beta, sign, depth) {
@@ -633,7 +656,7 @@ function quiesce(bd, st, alpha, beta, sign, depth) {
   if (depth <= 0) return alpha;
   const moves = legalMoves(bd, st);
   const caps = moves.filter(m => m.ep || bd[m.to] || m.promo === 'q');
-  caps.sort((a, b) => scoreMove(bd, b) - scoreMove(bd, a));
+  caps.sort((a, b) => orderScore(bd, b, -1, null) - orderScore(bd, a, -1, null));
   for (const mv of caps) {
     const res = makeMove(bd, st, mv);
     const score = -quiesce(res.bd, res.st, -beta, -alpha, -sign, depth - 1);
@@ -643,29 +666,29 @@ function quiesce(bd, st, alpha, beta, sign, depth) {
   return alpha;
 }
 
-function scoreMove(bd, mv) {
-  let s = 0;
-  const victim = mv.ep ? bd[mv.cap] : bd[mv.to];
-  if (victim) s += 10 * VAL[victim[1]] - VAL[mv.t];
-  if (mv.promo === 'q') s += 900;
-  if (mv.castle) s += 60;
-  return s;
-}
-
-function negamax(bd, st, depth, alpha, beta, sign) {
+function negamax(bd, st, depth, alpha, beta, sign, ply, pv) {
   timeUp();
   const moves = legalMoves(bd, st);
   if (!moves.length) return inCheck(bd, st.turn) ? -30000 - depth * 10 : 0;
-  if (depth <= 0) return quiesce(bd, st, alpha, beta, sign, 3);
-  moves.sort((a, b) => scoreMove(bd, b) - scoreMove(bd, a));
+  if (depth <= 0) return quiesce(bd, st, alpha, beta, sign, qDepth);
+  moves.sort((a, b) => orderScore(bd, b, ply, pv) - orderScore(bd, a, ply, pv));
   for (const mv of moves) {
     const res = makeMove(bd, st, mv);
-    const score = -negamax(res.bd, res.st, depth - 1, -beta, -alpha, -sign);
-    if (score >= beta) return beta;
+    const score = -negamax(res.bd, res.st, depth - 1, -beta, -alpha, -sign, ply + 1, null);
+    if (score >= beta) {
+      const k = killers[ply];
+      if (k && !k.some(m => m.from === mv.from && m.to === mv.to)) {
+        k.unshift(mv);
+        if (k.length > 2) k.pop();
+      }
+      history[mv.from * 64 + mv.to] += depth * depth;
+      return beta;
+    }
     if (score > alpha) alpha = score;
   }
   return alpha;
 }
+
 
 /* five opponents, weakest to strongest. elo is a rough target for the level */
 const LEVELS = [
@@ -673,7 +696,7 @@ const LEVELS = [
   { n: 'Rookie', elo: 800, depth: 2, time: 240, noise: 55, blunder: .12 },
   { n: 'Club', elo: 1200, depth: 3, time: 420, noise: 20, blunder: .03 },
   { n: 'Admiral', elo: 1600, depth: 3, time: 750, noise: 0, blunder: 0 },
-  { n: 'Master', elo: 2000, depth: 4, time: 1300, noise: 0, blunder: 0 }
+  { n: 'Master', elo: 2200, depth: 8, time: 2600, qdepth: 4, noise: 0, blunder: 0, exact: true }
 ];
 
 function bestMove(bd, st, level) {
@@ -684,8 +707,11 @@ function bestMove(bd, st, level) {
   // a weak bot now and then simply plays a legal move
   if (L.blunder && Math.random() < L.blunder) return root[Math.random() * root.length | 0];
   const maxDepth = L.depth;
+  qDepth = L.qdepth || 3;
   searchDeadline = performance.now() + L.time;
   nodesSearched = 0;
+  killers.forEach(k => { k.length = 0; });
+  history.fill(0);
   // shuffle equal-scoring opening moves so games differ
   for (let i = root.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [root[i], root[j]] = [root[j], root[i]]; }
   let pick = root[0];
@@ -693,10 +719,11 @@ function bestMove(bd, st, level) {
     const scored = [];
     let alpha = -1e9;
     try {
-      root.sort((a, b) => scoreMove(bd, b) - scoreMove(bd, a));
+      // last pass's best move goes first: it is usually still the best move
+      root.sort((a, b) => orderScore(bd, b, 0, d > 1 ? pick : null) - orderScore(bd, a, 0, d > 1 ? pick : null));
       for (const mv of root) {
         const res = makeMove(bd, st, mv);
-        let sc = -negamax(res.bd, res.st, d - 1, -1e9, -alpha, -sign);
+        let sc = -negamax(res.bd, res.st, d - 1, -1e9, -alpha, -sign, 1, null);
         if (L.noise) sc += Math.random() * L.noise;
         scored.push({ mv, sc });
         if (sc > alpha) alpha = sc;
@@ -706,7 +733,7 @@ function bestMove(bd, st, level) {
     }
     scored.sort((a, b) => b.sc - a.sc);
     const best = scored[0].sc;
-    const near = scored.filter(s => s.sc >= best - 6);
+    const near = scored.filter(s => s.sc >= best - (L.exact ? 0 : 6));
     pick = near[Math.random() * near.length | 0].mv;
     if (d >= 2 && best > 25000) break; // found a mate, stop early
   }

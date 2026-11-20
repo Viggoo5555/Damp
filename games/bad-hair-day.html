@@ -103,7 +103,9 @@
   #shots figcaption{font-size:9.5px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--plum-soft);margin-top:4px}
   #breakdown{display:grid;gap:6px;margin:0 20px 14px;text-align:left}
   #breakdown div{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:800;color:var(--plum-soft)}
-  #breakdown i{height:9px;border-radius:6px;background:linear-gradient(90deg,var(--pink),#ffa6cd);display:block;
+  #breakdown .track{flex:1;height:9px;border-radius:6px;background:#ffdcea;overflow:hidden;display:block;
+    box-shadow:inset 0 1px 2px rgba(224,47,126,.22)}
+  #breakdown .track i{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--pink),#ffa6cd);display:block;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
   #breakdown span{width:64px;text-transform:uppercase;letter-spacing:.08em;font-size:10px}
   #card button{font-family:"Nunito",sans-serif;font-weight:900;font-size:14px;padding:11px 22px;border:2.5px solid #fff;
@@ -135,7 +137,7 @@
     <div id="tools"></div>
     <div id="sub"><div id="palette" style="display:flex;gap:8px"></div><div id="clips" style="display:flex;gap:7px"></div></div>
     <div id="bar">
-      <div id="tidyWrap"><i id="tidy"></i><b>glam</b></div>
+      <div id="tidyWrap"><i id="tidy"></i><b id="meterLabel">hair</b></div>
       <button id="done">Finish look</button>
     </div>
   </footer>
@@ -203,6 +205,10 @@ function shade(c, k) {
   return k < 0 ? rgb2hex(r * (1 + k), g * (1 + k), b * (1 + k)) : rgb2hex(lerp(r, 255, k), lerp(g, 255, k), lerp(b, 255, k));
 }
 const rgba = (c, a) => { const [r, g, b] = hex2rgb(c); return `rgba(${r},${g},${b},${a})`; };
+const colourNear = (a, b) => {
+  const A = hex2rgb(a), B = hex2rgb(b);
+  return 1 - Math.min(1, Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]) / 441);
+};
 
 /* ---------- the salon's customers ---------- */
 const CUSTOMERS = [
@@ -210,35 +216,50 @@ const CUSTOMERS = [
     name: 'Bibi', wish: 'wants soft, glossy waves', hair: '#d8a954', skin: '#f7cfae', smock: '#ff9ec9',
     len: 1.55, bad: 1.0, uneven: 0.36, want: { curl: 0.55, vol: 0.5, len: 0.95 },
     tip: 'Brush out the nest, then curl soft waves through it',
-    lip: '#e05f86', iris: '#6b93a8', earring: '#f5c451',
+    lip: '#e05f86', iris: '#4bb8ef', earring: '#f5c451',
+    muWish: 'wants pink lids and glossy lips',
+    mu: { shadow: '#ff7fc8', lip: '#ff4f9e', blush: '#ff6fa5' },
   },
   {
     name: 'Lola', wish: 'wants it sleek and sharp', hair: '#2b2029', skin: '#e8b48c', smock: '#b8a4e0',
     len: 1.05, bad: 1.0, uneven: 0.55, want: { curl: 0.08, vol: 0.34, len: 0.72 },
     tip: 'Iron it flat, then snip the sides even',
-    lip: '#c74a6d', iris: '#4a3527', earring: '#ffd7e9',
+    lip: '#c74a6d', iris: '#7a5a3a', earring: '#ffd7e9',
+    muWish: 'wants a smoky eye and a red lip',
+    mu: { shadow: '#c39bff', lip: '#e01f4f', blush: '#f56b8a' },
   },
   {
     name: 'Rosa', wish: 'wants big bouncy curls', hair: '#a4552f', skin: '#d9a077', smock: '#ffc9a8',
     len: 1.35, bad: 0.85, uneven: 0.22, want: { curl: 0.92, vol: 0.8, len: 0.9 },
     tip: 'Blow-dry for volume, then curl every lock',
-    lip: '#b8435f', iris: '#5c7a4a', earring: '#f5c451',
+    lip: '#b8435f', iris: '#5c9a5a', earring: '#f5c451',
+    muWish: 'wants gold lids and a coral lip',
+    mu: { shadow: '#f5c451', lip: '#ff7a5c', blush: '#ff9d7a' },
   },
   {
     name: 'Sasha', wish: 'wants a neat short crop', hair: '#7a6250', skin: '#f3c8a4', smock: '#a8d8d0',
     len: 2.0, bad: 0.8, uneven: 0.6, want: { curl: 0.12, vol: 0.28, len: 0.42 },
     tip: 'Far too long — snip it short and straighten it',
-    lip: '#d9677f', iris: '#7a5a3a', earring: '#ffffff',
+    lip: '#d9677f', iris: '#5aa9e0', earring: '#ffffff',
+    muWish: 'wants a clean pink face',
+    mu: { shadow: '#ff9ed4', lip: '#ff8fb8', blush: '#e79bd1' },
   },
   {
     name: 'Nell', wish: 'wants glossy and smooth', hair: '#e2cfa9', skin: '#f6cfb2', smock: '#ffb3c8',
     len: 1.7, bad: 1.0, uneven: 0.18, want: { curl: 0.1, vol: 0.56, len: 0.95 },
     tip: 'Tame the frizz, then iron it until it shines',
-    lip: '#e2688a', iris: '#8fae6d', earring: '#ffd7e9',
+    lip: '#e2688a', iris: '#7fae5a', earring: '#ffd7e9',
+    muWish: 'wants soft lilac eyes and pink lips',
+    mu: { shadow: '#c39bff', lip: '#ff4f9e', blush: '#ff6fa5' },
   },
 ];
 
 const DYES = ['#e6c17a', '#2a1b24', '#b06a3c', '#f0e3d0', '#ff4fa0', '#b492e0', '#5fb2ad', '#d98f7a'];
+const MAKEUP = {
+  shadow: ['#ff7fc8', '#c39bff', '#63d2ff', '#f5c451', '#ff4f6d', '#8affd4'],
+  blush: ['#ff6fa5', '#ff9d7a', '#f56b8a', '#e79bd1'],
+  lips: ['#ff4f9e', '#e01f4f', '#ff7a5c', '#c98b7a', '#a83f7a', '#ff8fb8'],
+};
 const CLIPS = ['bow', 'flower', 'star'];
 
 /* ---------- view + state ---------- */
@@ -249,6 +270,10 @@ const S = {
   time: 0, phase: 'style', before: '', after: '',
   pointer: { x: 0, y: 0, down: false, inside: false, prevX: 0, prevY: 0, moved: false },
   blink: 2, lidClosed: false, gazeX: 0, gazeY: 0, cheer: 0, heat: 0, snips: 0,
+  makeup: {
+    shadow: 0, lash: 0, blush: 0, lip: 0, glow: 0,
+    shadowColor: '#ff7fc8', blushColor: '#ff6fa5', lipColor: '#ff4f9e',
+  },
 };
 
 let progress = { unlocked: 1, best: {} };
@@ -265,6 +290,13 @@ const TOOLS = [
   { id: 'dye', label: 'Dye', hint: 'Pick a colour, then drag it through the hair' },
   { id: 'clip', label: 'Clip', hint: 'Click in the hair to add a little something' },
 ];
+const MAKEUP_TOOLS = [
+  { id: 'shadow', label: 'Shadow', hint: 'Sweep shadow over both lids' },
+  { id: 'lash', label: 'Lashes', hint: 'Brush mascara onto her lashes' },
+  { id: 'blush', label: 'Blush', hint: 'Dab blush on both cheeks' },
+  { id: 'lips', label: 'Lips', hint: 'Paint her lips with gloss' },
+  { id: 'glow', label: 'Glow', hint: 'Highlight her cheekbones and nose' },
+];
 const ICONS = {
   brush: '<path d="M4 20c2.6 0 3.4-1.4 3.4-3.2 0-1.6 1.2-2.4 2.4-2.4" /><path d="M8 13.6 15.6 6a2.4 2.4 0 0 1 3.4 3.4L11.4 17" /><path d="M13 8.5l2.6 2.6"/>',
   scissors: '<circle cx="6.5" cy="6.5" r="2.4"/><circle cx="6.5" cy="17.5" r="2.4"/><path d="M8.6 8 19 17.5M8.6 16 19 6.5"/>',
@@ -273,6 +305,11 @@ const ICONS = {
   curl: '<path d="M7 19.4c-2.4-1.4-2.4-4.4 0-5.8 2.6-1.5 5.4.2 5.4 2.6 0 2-1.8 3.2-3.4 2.4"/><path d="M13.4 13.8c1.8-2.2 1.1-5.2-1.5-6.1-2.2-.8-4.4.7-4.4 2.8"/><path d="M9.6 6.2c.9-1.7 3-2.4 4.8-1.5"/>',
   dye: '<path d="M10 3.4h4v3.2l3 4.2v7.4a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-7.4l3-4.2z"/><path d="M7 13.4h10"/>',
   clip: '<path d="M12 4.6l1.9 4.1 4.5.5-3.3 3.1.9 4.5-4-2.2-4 2.2.9-4.5-3.3-3.1 4.5-.5z"/>',
+  shadow: '<path d="M3 15c3-4 5.6-6 9-6s6 2 9 6"/><path d="M3 15h18"/><path d="M6.5 12.2 6 9.4M12 9v-3M17.5 12.2l.5-2.8"/>',
+  lash: '<path d="M4 14c2.6-3.6 5-5.4 8-5.4S17.4 10.4 20 14"/><path d="M7 8.4 5.4 4.6M12 6.4V2.6M17 8.4l1.6-3.8"/>',
+  blush: '<circle cx="7.5" cy="14" r="3.6"/><circle cx="16.5" cy="14" r="3.6"/><path d="M3 8.6c3-2 15-2 18 0"/>',
+  lips: '<path d="M12 7.6c2.6-2.8 6.4-2 8 .6-2.8 3.8-5.6 5.8-8 5.8s-5.2-2-8-5.8c1.6-2.6 5.4-3.4 8-.6z"/><path d="M4 8.2c4 1.2 12 1.2 16 0"/>',
+  glow: '<path d="M12 3.2l1.6 5 5 1.6-5 1.6-1.6 5-1.6-5-5-1.6 5-1.6z"/><path d="M18.4 16.4l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>',
 };
 const svgIcon = id => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[id]}</svg>`;
 
@@ -485,6 +522,27 @@ function applyTool(x, y, dt, pressed) {
   return touched;
 }
 
+/* ---------- makeup brushes ---------- */
+function applyMakeup(x, y, dt) {
+  const R = view.R, cx = view.cx, cy = view.cy, m = S.makeup, tool = S.tool;
+  const at = (ox, oy) => Math.hypot(x - (cx + ox * R), y - (cy + oy * R));
+  let touched = false;
+  const paint = (key, ox, oy, radius, rate) => {
+    if (at(ox, oy) < R * radius) {
+      const before = m[key];
+      m[key] = Math.min(1, m[key] + dt * rate);
+      if (m[key] !== before) touched = true;
+    }
+  };
+  if (tool === 'shadow') { paint('shadow', -0.34, -0.05, 0.34, 1.15); paint('shadow', 0.34, -0.05, 0.34, 1.15); }
+  else if (tool === 'lash') { paint('lash', -0.34, -0.05, 0.3, 1.15); paint('lash', 0.34, -0.05, 0.3, 1.15); }
+  else if (tool === 'blush') { paint('blush', -0.5, 0.23, 0.34, 1.1); paint('blush', 0.5, 0.23, 0.34, 1.1); }
+  else if (tool === 'lips') { paint('lip', 0, 0.34, 0.3, 1.25); }
+  else if (tool === 'glow') { paint('glow', 0, 0.1, 0.62, 1.0); }
+  if (touched) sceneDirty = true;
+  return touched;
+}
+
 /* ---------- scoring ---------- */
 function scoreNow() {
   const def = CUSTOMERS[S.idx];
@@ -509,7 +567,14 @@ function scoreNow() {
   const lenMatch = clamp(1 - Math.abs(len - def.len * def.want.len) / 0.85, 0, 1);
   const gloss = clamp(shine, 0, 1);
   const total = tidy * 0.34 + even * 0.14 + curlMatch * 0.17 + volMatch * 0.15 + lenMatch * 0.12 + gloss * 0.08;
-  return { tidy, even, curlMatch, volMatch, lenMatch, gloss, total: clamp(total, 0, 1), curl, vol, len, shine };
+
+  // makeup: how much of each step she got, nudged by how close the colours are to her wish
+  const m = S.makeup;
+  const mk = (m.shadow + m.lash + m.blush + m.lip + m.glow * 0.65) / 4.65;
+  const harmony = (colourNear(m.shadowColor, def.mu.shadow) + colourNear(m.lipColor, def.mu.lip) + colourNear(m.blushColor, def.mu.blush)) / 3;
+  const makeup = clamp(mk * (0.8 + 0.2 * harmony), 0, 1);
+  const overall = clamp(total * 0.62 + makeup * 0.38, 0, 1);
+  return { tidy, even, curlMatch, volMatch, lenMatch, gloss, makeup, total: clamp(total, 0, 1), overall, curl, vol, len, shine };
 }
 
 const starsFor = t => (t >= 0.82 ? 3 : t >= 0.62 ? 2 : 1);
@@ -521,17 +586,17 @@ const starsFor = t => (t >= 0.82 ? 3 : t >= 0.62 ? 2 : 1);
 function drawBackground() {
   const w = view.w, h = view.h, R = view.R;
   const g = ctx.createLinearGradient(0, 0, 0, h);
-  g.addColorStop(0, '#ffe7f4');
-  g.addColorStop(0.45, '#ffd9eb');
-  g.addColorStop(1, '#ffc9e1');
+  g.addColorStop(0, '#ff8ee2');
+  g.addColorStop(0.42, '#ff4fc9');
+  g.addColorStop(1, '#bd0090');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
 
   // soft glow behind the customer
   const glow = ctx.createRadialGradient(view.cx, view.cy - R * 0.4, R * 0.3, view.cx, view.cy, R * 3.4);
-  glow.addColorStop(0, 'rgba(255,255,255,.85)');
-  glow.addColorStop(0.5, 'rgba(255,190,224,.35)');
-  glow.addColorStop(1, 'rgba(255,154,205,0)');
+  glow.addColorStop(0, 'rgba(255,240,252,.92)');
+  glow.addColorStop(0.5, 'rgba(255,130,215,.4)');
+  glow.addColorStop(1, 'rgba(210,0,158,0)');
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, w, h);
 
@@ -726,24 +791,30 @@ function drawHead(def) {
   // ears + pearls
   for (const s of [-1, 1]) {
     ctx.beginPath();
-    ctx.ellipse(cx + s * R * 0.87, cy + R * 0.04, R * 0.11, R * 0.165, 0, 0, TAU);
+    ctx.ellipse(cx + s * R * 0.79, cy + R * 0.06, R * 0.1, R * 0.15, 0, 0, TAU);
     ctx.fillStyle = shade(skin, -0.05);
     ctx.fill();
     ctx.strokeStyle = rgba('#a8705a', 0.45);
     ctx.lineWidth = 1.4;
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(cx + s * R * 0.89, cy + R * 0.23, R * 0.045, 0, TAU);
-    const pg = ctx.createRadialGradient(cx + s * R * 0.89 - R * 0.015, cy + R * 0.215, 0, cx + s * R * 0.89, cy + R * 0.23, R * 0.05);
+    ctx.arc(cx + s * R * 0.81, cy + R * 0.24, R * 0.042, 0, TAU);
+    const pg = ctx.createRadialGradient(cx + s * R * 0.81 - R * 0.015, cy + R * 0.225, 0, cx + s * R * 0.81, cy + R * 0.24, R * 0.048);
     pg.addColorStop(0, '#ffffff');
     pg.addColorStop(1, def.earring);
     ctx.fillStyle = pg;
     ctx.fill();
   }
 
-  // head
+  // head — wide at the cheekbones, tapering to a soft chin
+  const hw = R * 0.82, hh = R * 1.0;
   ctx.beginPath();
-  ctx.ellipse(cx, cy, R * 0.85, R * 1.0, 0, 0, TAU);
+  ctx.moveTo(cx, cy - hh);
+  ctx.bezierCurveTo(cx + hw * 0.96, cy - hh * 0.95, cx + hw * 1.03, cy - hh * 0.12, cx + hw * 0.76, cy + hh * 0.44);
+  ctx.bezierCurveTo(cx + hw * 0.58, cy + hh * 0.84, cx + hw * 0.26, cy + hh, cx, cy + hh);
+  ctx.bezierCurveTo(cx - hw * 0.26, cy + hh, cx - hw * 0.58, cy + hh * 0.84, cx - hw * 0.76, cy + hh * 0.44);
+  ctx.bezierCurveTo(cx - hw * 1.03, cy - hh * 0.12, cx - hw * 0.96, cy - hh * 0.95, cx, cy - hh);
+  ctx.closePath();
   const hg = ctx.createRadialGradient(cx - R * 0.3, cy - R * 0.42, R * 0.15, cx, cy + R * 0.1, R * 1.18);
   hg.addColorStop(0, shade(skin, 0.16));
   hg.addColorStop(0.55, skin);
@@ -771,14 +842,17 @@ function drawHead(def) {
 function drawFace(def) {
   const R = view.R, cx = view.cx, cy = view.cy;
   const sc = scoreNow();
-  const happy = S.phase === 'result' ? 1 : clamp((sc.total - 0.28) / 0.6, 0, 1);
+  const happy = S.phase === 'result' ? 1 : clamp((sc.overall - 0.26) / 0.6, 0, 1);
   const blink = S.blink < 0.14 ? 0.1 : 1;
+
+  drawBlush();
+  drawShadow();
 
   // eyes
   for (const s of [-1, 1]) {
     const ex = cx + s * R * 0.35 + S.gazeX * R * 0.03;
     const ey = cy - R * 0.04 + S.gazeY * R * 0.02;
-    const ew = R * 0.17, eh = R * 0.2 * blink;
+    const ew = R * 0.185, eh = R * 0.215 * blink;
 
     // eye white
     ctx.beginPath();
@@ -792,12 +866,12 @@ function drawFace(def) {
     if (blink > 0.5) {
       const gx = ex + S.gazeX * R * 0.05, gy = ey + S.gazeY * R * 0.035;
       // iris
-      const ir = ctx.createRadialGradient(gx - R * 0.03, gy - R * 0.04, R * 0.01, gx, gy, R * 0.115);
+      const ir = ctx.createRadialGradient(gx - R * 0.035, gy - R * 0.045, R * 0.01, gx, gy, R * 0.125);
       ir.addColorStop(0, shade(def.iris, 0.45));
       ir.addColorStop(0.55, def.iris);
       ir.addColorStop(1, shade(def.iris, -0.55));
       ctx.beginPath();
-      ctx.ellipse(gx, gy, R * 0.105, R * 0.115, 0, 0, TAU);
+      ctx.ellipse(gx, gy, R * 0.115, R * 0.125, 0, 0, TAU);
       ctx.fillStyle = ir;
       ctx.fill();
       // pupil
@@ -834,17 +908,21 @@ function drawFace(def) {
     ctx.moveTo(ex - ew * (s > 0 ? 0.98 : 1), ey - R * 0.01);
     ctx.quadraticCurveTo(ex, ey - eh - R * 0.03, ex + ew * (s > 0 ? 1.02 : 1), ey - R * 0.03);
     ctx.strokeStyle = '#2c1522';
-    ctx.lineWidth = Math.max(2.2, R * 0.026);
+    ctx.lineWidth = Math.max(2.2, R * (0.026 + S.makeup.lash * 0.012));
     ctx.lineCap = 'round';
     ctx.stroke();
-    // flicked lashes
-    for (let k = 0; k < 3; k++) {
-      const lx = ex + s * ew * (0.55 + k * 0.22);
-      const ly = ey - eh * (0.55 - k * 0.16) - R * 0.01;
+    // flicked lashes — mascara adds more, and longer ones
+    const lashN = 4 + Math.round(S.makeup.lash * 5);
+    const lashLen = R * (0.04 + S.makeup.lash * 0.03);
+    for (let k = 0; k < lashN; k++) {
+      const tt = lashN > 1 ? k / (lashN - 1) : 0;
+      const lx = ex + s * ew * (0.28 + tt * 0.7);
+      const ly = ey - eh * (0.58 - tt * 0.26) - R * 0.008;
+      const len = lashLen * (0.55 + 0.55 * Math.sin(Math.PI * (0.25 + tt * 0.75)));
       ctx.beginPath();
       ctx.moveTo(lx, ly);
-      ctx.quadraticCurveTo(lx + s * R * 0.03, ly - R * 0.05, lx + s * R * 0.06, ly - R * 0.055);
-      ctx.lineWidth = 1.6;
+      ctx.quadraticCurveTo(lx + s * len * 0.5, ly - len * 0.85, lx + s * len * 1.1, ly - len * 1.05);
+      ctx.lineWidth = 0.9 + S.makeup.lash * 0.5;
       ctx.stroke();
     }
 
@@ -853,8 +931,8 @@ function drawFace(def) {
     ctx.beginPath();
     ctx.moveTo(ex - s * R * 0.15, by + R * 0.03);
     ctx.quadraticCurveTo(ex, by - R * 0.075 - happy * R * 0.015, ex + s * R * 0.15, by + R * 0.01);
-    ctx.strokeStyle = rgba(shade(def.hair, -0.22), 0.85);
-    ctx.lineWidth = Math.max(2, R * 0.022);
+    ctx.strokeStyle = rgba(shade(def.hair, -0.34), 0.92);
+    ctx.lineWidth = Math.max(2.4, R * 0.03);
     ctx.stroke();
   }
 
@@ -871,7 +949,7 @@ function drawFace(def) {
   ctx.fill();
 
   // lips — glossy, smile grows with the score
-  const mw = R * (0.15 + happy * 0.08);
+  const mw = R * (0.175 + happy * 0.075 + S.makeup.lip * 0.016);
   const my = cy + R * 0.34;
   const open = R * (0.05 + happy * 0.07);
   ctx.beginPath();
@@ -880,20 +958,92 @@ function drawFace(def) {
   ctx.quadraticCurveTo(cx + mw * 0.4, my - R * 0.055, cx + mw, my);
   ctx.quadraticCurveTo(cx, my + open * 1.6, cx - mw, my);
   ctx.closePath();
+  const lipBase = mixc(def.lip, S.makeup.lipColor, S.makeup.lip);
   const lg = ctx.createLinearGradient(cx, my - R * 0.06, cx, my + open * 1.6);
-  lg.addColorStop(0, shade(def.lip, 0.18));
-  lg.addColorStop(0.5, def.lip);
-  lg.addColorStop(1, shade(def.lip, -0.3));
+  lg.addColorStop(0, shade(lipBase, 0.2));
+  lg.addColorStop(0.5, lipBase);
+  lg.addColorStop(1, shade(lipBase, -0.28));
   ctx.fillStyle = lg;
   ctx.fill();
-  ctx.strokeStyle = rgba(shade(def.lip, -0.5), 0.6);
+  ctx.strokeStyle = rgba(shade(lipBase, -0.5), 0.6);
   ctx.lineWidth = 1.2;
   ctx.stroke();
   // gloss highlight
   ctx.beginPath();
   ctx.ellipse(cx - mw * 0.28, my - R * 0.015, mw * 0.26, R * 0.018, -0.15, 0, TAU);
-  ctx.fillStyle = 'rgba(255,255,255,.7)';
+  ctx.fillStyle = `rgba(255,255,255,${0.6 + S.makeup.lip * 0.35})`;
   ctx.fill();
+  if (S.makeup.lip > 0.35) {
+    ctx.beginPath();
+    ctx.ellipse(cx + mw * 0.34, my - R * 0.008, mw * 0.12, R * 0.012, 0.2, 0, TAU);
+    ctx.fillStyle = 'rgba(255,255,255,.75)';
+    ctx.fill();
+  }
+  drawGlow();
+}
+
+/* ---------- makeup on the face ---------- */
+function drawBlush() {
+  const R = view.R, cx = view.cx, cy = view.cy, m = S.makeup;
+  for (const s of [-1, 1]) {
+    const bx = cx + s * R * 0.5, by = cy + R * 0.23;
+    const a = 0.14 + m.blush * 0.52;
+    const g = ctx.createRadialGradient(bx, by, 0, bx, by, R * 0.26);
+    g.addColorStop(0, rgba(m.blushColor, a));
+    g.addColorStop(0.6, rgba(m.blushColor, a * 0.45));
+    g.addColorStop(1, rgba(m.blushColor, 0));
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(bx, by, R * 0.3, R * 0.19, 0, 0, TAU);
+    ctx.fill();
+  }
+}
+
+function drawShadow() {
+  const R = view.R, cx = view.cx, cy = view.cy, m = S.makeup;
+  if (m.shadow < 0.01) return;
+  for (const s of [-1, 1]) {
+    const ex = cx + s * R * 0.34 + S.gazeX * R * 0.03, ey = cy - R * 0.05 + S.gazeY * R * 0.02;
+    const g = ctx.createRadialGradient(ex, ey - R * 0.1, R * 0.01, ex, ey - R * 0.07, R * 0.32);
+    g.addColorStop(0, rgba(m.shadowColor, 0.1 + m.shadow * 0.45));
+    g.addColorStop(0.5, rgba(m.shadowColor, 0.06 + m.shadow * 0.28));
+    g.addColorStop(1, rgba(m.shadowColor, 0));
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(ex + s * R * 0.03, ey - R * 0.085, R * 0.3, R * 0.2, s * 0.14, 0, TAU);
+    ctx.fill();
+    // a little wing at the outer corner
+    ctx.globalAlpha = clamp(0.15 + m.shadow * 0.5, 0, 0.7);
+    ctx.beginPath();
+    ctx.moveTo(ex + s * R * 0.15, ey - R * 0.12);
+    ctx.quadraticCurveTo(ex + s * R * 0.33, ey - R * 0.14, ex + s * R * 0.35, ey);
+    ctx.quadraticCurveTo(ex + s * R * 0.25, ey - R * 0.06, ex + s * R * 0.15, ey - R * 0.06);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawGlow() {
+  const R = view.R, cx = view.cx, cy = view.cy, m = S.makeup;
+  if (m.glow < 0.02) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const spots = [
+    [cx - R * 0.46, cy + R * 0.08, R * 0.17],
+    [cx + R * 0.46, cy + R * 0.08, R * 0.17],
+    [cx, cy + R * 0.11, R * 0.07],
+    [cx, cy + R * 0.29, R * 0.045],
+    [cx - R * 0.34, cy - R * 0.14, R * 0.05],
+    [cx + R * 0.34, cy - R * 0.14, R * 0.05],
+  ];
+  for (const [x, y, r] of spots) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(255,255,255,${0.14 + m.glow * 0.38})`);
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
 }
 /* ---------- hair geometry ---------- */
 function lockTone(l) {
@@ -1122,7 +1272,58 @@ function drawRoots(def) {
   ctx.restore();
   ctx.globalAlpha = 1;
 
+  // airbrush just the front hairline so it melts into the forehead
+  hairlinePath(ctx);
+  for (const [w, a] of [[9, 0.12], [5, 0.16], [2.5, 0.2]]) {
+    ctx.lineWidth = w * (R / 100);
+    ctx.strokeStyle = rgba(shade(tone, 0.04), a);
+    ctx.stroke();
+  }
+  // a handful of short hairs following that line
+  for (let i = 0; i < 34; i++) {
+    const t = (i + 0.5) / 34;
+    const p = hairlinePoint(t);
+    const s = hash01(i * 4.3);
+    const len = R * (0.02 + 0.05 * s);
+    const dir = hash01(i * 9.1) > 0.5 ? 1 : -1;
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.quadraticCurveTo(p.x + dir * len * 0.5, p.y + len * 0.75, p.x + dir * len, p.y + len * 1.1);
+    ctx.strokeStyle = shade(tone, s < 0.4 ? 0.2 : -0.04);
+    ctx.globalAlpha = 0.14 + 0.2 * s;
+    ctx.lineWidth = (0.7 + 0.7 * s) * (R / 100);
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
   ctx.globalAlpha = 1;
+}
+
+/* just the front edge of the cap — the hairline over her forehead */
+function hairlinePath(target) {
+  const R = view.R, cx = view.cx, cy = view.cy;
+  if (target.beginPath) target.beginPath();
+  target.moveTo(cx + R * 1.0, cy - R * 0.16);
+  target.quadraticCurveTo(cx + R * 0.68, cy - R * 0.28, cx + R * 0.38, cy - R * 0.38);
+  target.quadraticCurveTo(cx + R * 0.12, cy - R * 0.45, cx - R * 0.18, cy - R * 0.41);
+  target.quadraticCurveTo(cx - R * 0.54, cy - R * 0.33, cx - R * 1.0, cy - R * 0.1);
+}
+
+function hairlinePoint(t) {
+  const R = view.R, cx = view.cx, cy = view.cy;
+  // walk the three quads that make the front edge
+  const seg = [
+    [[1.0, -0.16], [0.68, -0.28], [0.38, -0.38]],
+    [[0.38, -0.38], [0.12, -0.45], [-0.18, -0.41]],
+    [[-0.18, -0.41], [-0.54, -0.33], [-1.0, -0.1]],
+  ];
+  const u = clamp(t, 0, 0.999) * 3;
+  const i = Math.floor(u), f = u - i;
+  const [A, B, C] = seg[i];
+  const a = 1 - f;
+  return {
+    x: cx + R * (a * a * A[0] + 2 * a * f * B[0] + f * f * C[0]),
+    y: cy + R * (a * a * A[1] + 2 * a * f * B[1] + f * f * C[1]),
+  };
 }
 
 /* a broad specular band across the whole hairstyle */
@@ -1393,6 +1594,7 @@ canvas.addEventListener('pointercancel', endPointer);
 canvas.addEventListener('pointerleave', () => { S.pointer.inside = false; S.pointer.down = false; });
 
 function onPress(x, y) {
+  if (S.phase === 'makeup') { applyMakeup(x, y, 0.12); return; }
   if (S.phase !== 'style') return;
   if (S.tool === 'scissors') {
     applyTool(x, y, 0.05, true);
@@ -1413,6 +1615,13 @@ function startCustomer(i) {
   S.snips = 0;
   S.parts = []; S.sparks = []; S.cheer = 0; S.heat = 0;
   const def = CUSTOMERS[S.idx];
+  S.makeup = {
+    shadow: 0, lash: 0, blush: 0, lip: 0, glow: 0,
+    shadowColor: def.mu.shadow, blushColor: def.mu.blush, lipColor: def.mu.lip,
+  };
+  $('meterLabel').textContent = 'hair';
+  $('done').textContent = 'Next: makeup';
+  buildToolbar(TOOLS);
   layout();
   buildHair(def);
   $('cname').textContent = def.name;
@@ -1441,25 +1650,69 @@ function showHint(msg, ms = 2600) {
 
 function updateMeter() {
   const s = scoreNow();
-  $('tidy').style.width = Math.round(s.tidy * 100) + '%';
+  const v = S.phase === 'makeup' ? s.makeup : s.tidy;
+  $('tidy').style.width = Math.round(v * 100) + '%';
+}
+
+function buildToolbar(list) {
+  $('tools').innerHTML = list.map(t =>
+    `<button class="tool" data-tool="${t.id}" aria-label="${t.label}" title="${t.label}">${svgIcon(t.id)}<span>${t.label}</span></button>`).join('');
+  document.querySelectorAll('.tool').forEach(b => { b.onclick = () => setTool(b.dataset.tool); });
+}
+
+function renderPalette() {
+  const p = $('palette');
+  let list = null, cur = null, key = null;
+  if (S.tool === 'dye') { list = DYES; cur = S.dye; key = 'dye'; }
+  else if (S.tool === 'shadow') { list = MAKEUP.shadow; cur = S.makeup.shadowColor; key = 'shadow'; }
+  else if (S.tool === 'blush') { list = MAKEUP.blush; cur = S.makeup.blushColor; key = 'blush'; }
+  else if (S.tool === 'lips') { list = MAKEUP.lips; cur = S.makeup.lipColor; key = 'lips'; }
+  if (!list) { p.style.display = 'none'; p.innerHTML = ''; return; }
+  p.style.display = 'flex';
+  p.innerHTML = list.map(c =>
+    `<button class="sw${c === cur ? ' on' : ''}" data-c="${c}" style="background:${c}" aria-label="${key} ${c}"></button>`).join('');
+  p.querySelectorAll('.sw').forEach(b => {
+    b.onclick = () => {
+      if (key === 'dye') S.dye = b.dataset.c;
+      else if (key === 'shadow') S.makeup.shadowColor = b.dataset.c;
+      else if (key === 'blush') S.makeup.blushColor = b.dataset.c;
+      else S.makeup.lipColor = b.dataset.c;
+      sceneDirty = true;
+      renderPalette();
+    };
+  });
 }
 
 function setTool(id) {
   S.tool = id;
   document.querySelectorAll('.tool').forEach(b => b.classList.toggle('on', b.dataset.tool === id));
-  const sub = $('sub');
-  sub.classList.toggle('on', id === 'dye' || id === 'clip');
-  $('palette').style.display = id === 'dye' ? 'flex' : 'none';
   $('clips').style.display = id === 'clip' ? 'flex' : 'none';
-  const t = TOOLS.find(t => t.id === id);
+  renderPalette();
+  $('sub').classList.toggle('on', id === 'clip' || $('palette').style.display === 'flex');
+  const t = TOOLS.concat(MAKEUP_TOOLS).find(t => t.id === id);
   if (t) showHint(t.hint, 2200);
 }
 
+/* hair is finished first — the mirror comes out again for her makeup */
+function toMakeup() {
+  const def = CUSTOMERS[S.idx];
+  S.phase = 'makeup';
+  buildToolbar(MAKEUP_TOOLS);
+  setTool('shadow');
+  $('meterLabel').textContent = 'makeup';
+  $('done').textContent = 'Finish look';
+  $('cwish').textContent = def.muWish;
+  $('tidy').style.width = Math.round(scoreNow().makeup * 100) + '%';
+  showHint('Hair’s done — now her makeup. Sweep shadow over the lids.', 4600);
+  sceneDirty = true;
+}
+
 function finish() {
-  if (S.phase !== 'style') return;
+  if (S.phase === 'style') { toMakeup(); return; }
+  if (S.phase !== 'makeup') return;
   const s = scoreNow();
   S.phase = 'result';
-  const stars = starsFor(s.total);
+  const stars = starsFor(s.overall);
   const best = Math.max(progress.best[S.idx] || 0, stars);
   progress.best[S.idx] = best;
   progress.unlocked = Math.max(progress.unlocked, Math.min(CUSTOMERS.length, S.idx + 2));
@@ -1479,11 +1732,12 @@ function finish() {
   $('stars').textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
   $('beforeImg').src = S.before;
   $('afterImg').src = S.after;
+  $('meterLabel').textContent = 'glam';
   const rows = [
-    ['tidy', s.tidy], ['even', s.even], ['shape', (s.curlMatch + s.volMatch) / 2], ['length', s.lenMatch], ['shine', s.gloss],
+    ['tidy', s.tidy], ['shape', (s.curlMatch + s.volMatch) / 2], ['length', s.lenMatch], ['shine', s.gloss], ['makeup', s.makeup],
   ];
   $('breakdown').innerHTML = rows.map(([k, v]) =>
-    `<div><span>${k}</span><i style="width:${Math.round(clamp(v, 0, 1) * 100)}%"></i></div>`).join('');
+    `<div><span>${k}</span><b class="track"><i style="width:${Math.round(clamp(v, 0, 1) * 100)}%"></i></b></div>`).join('');
   $('result').hidden = false;
   $('next').textContent = S.idx + 1 < CUSTOMERS.length ? 'Next customer' : 'Back to the first chair';
 }
@@ -1496,17 +1750,8 @@ $('done').onclick = finish;
 $('restart').onclick = () => startCustomer(S.idx);
 
 /* ---------- tool UI ---------- */
-$('tools').innerHTML = TOOLS.map(t =>
-  `<button class="tool" data-tool="${t.id}" aria-label="${t.label}" title="${t.label}">${svgIcon(t.id)}<span>${t.label}</span></button>`).join('');
-document.querySelectorAll('.tool').forEach(b => { b.onclick = () => setTool(b.dataset.tool); });
-
-$('palette').innerHTML = DYES.map(c =>
-  `<button class="sw" data-c="${c}" style="background:${c}" aria-label="Dye ${c}"></button>`).join('');
-const syncSwatches = () => document.querySelectorAll('.sw').forEach(b => b.classList.toggle('on', b.dataset.c === S.dye));
-document.querySelectorAll('.sw').forEach(b => {
-  b.onclick = () => { S.dye = b.dataset.c; syncSwatches(); setTool('dye'); };
-});
-syncSwatches();
+buildToolbar(TOOLS);
+renderPalette();
 
 const CLIP_GLYPH = {
   bow: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#ff8fc4" stroke="#8a1f52" stroke-width="1.4"><path d="M11 12 4 8.4c-1.3 2.6-1 6 0 7.2l7-3.6zM13 12l7-3.6c1.3 2.6 1 6 0 7.2L13 12z"/><circle cx="12" cy="12" r="1.8" fill="#ffd9ea"/></svg>',
@@ -1546,6 +1791,8 @@ function tick(now) {
 
   if (S.phase === 'style' && S.pointer.down) {
     applyTool(S.pointer.x, S.pointer.y, dt, true);
+  } else if (S.phase === 'makeup' && S.pointer.down) {
+    applyMakeup(S.pointer.x, S.pointer.y, dt);
   }
   if (S.phase === 'style' && S.pointer.down && S.tool === 'brush') {
     const steps = 3;
@@ -1556,7 +1803,7 @@ function tick(now) {
 
   render(dt);
   meterT += dt;
-  if (meterT > 0.12) { meterT = 0; if (S.phase === 'style') updateMeter(); }
+  if (meterT > 0.12) { meterT = 0; if (S.phase === 'style' || S.phase === 'makeup') updateMeter(); }
 }
 
 addEventListener('resize', () => { layout(); });

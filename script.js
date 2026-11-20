@@ -86,6 +86,11 @@ function makeCard(game) {
     img.src = encodeURI(game.image);
     img.alt = "";
     img.loading = "lazy";
+    // The tile is 16:10; giving the image its own ratio stops it collapsing
+    // before the file arrives, and keeps the shelf from jumping.
+    img.width = 320;
+    img.height = 200;
+    img.decoding = "async";
     img.addEventListener("error", function () { img.remove(); letterTile(); });
     tile.appendChild(img);
   } else {

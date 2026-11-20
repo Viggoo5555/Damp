@@ -2271,3 +2271,176 @@ label input[type="file"] { height: auto; border-radius: 10px; }
   .header-language { height: 38px; padding: 2px; }
   .header-language button { min-width: 30px; height: 32px; padding: 0 6px; font-size: 0.67rem; }
 }
+
+/* ============================================================
+   Interface pass: keyboard, touch, glass chrome, shelf type.
+   Glass is a material for the chrome only — header, windows,
+   player bar, toast. The content itself stays opaque and legible.
+   ============================================================ */
+
+:root {
+  --glass: rgba(9, 21, 27, 0.74);
+  --glass-edge: rgba(215, 233, 236, 0.15);
+}
+
+/* ---------- Keyboard: a skip link that waits for focus ---------- */
+.skip {
+  position: fixed;
+  left: 16px;
+  top: 14px;
+  z-index: 60;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--lamp);
+  color: var(--lamp-ink);
+  font-size: 0.9rem;
+  font-weight: 750;
+  text-decoration: none;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+  transform: translateY(-180%);
+  transition: transform 0.18s ease;
+}
+
+.skip:focus-visible { transform: none; outline-offset: 3px; }
+
+/* ---------- Search: the field owns the row, the shortcut is a keycap ---------- */
+.search-field {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.search-field #search { width: 100%; padding-right: 46px; }
+
+.search-key {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 1px 7px 2px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 7px;
+  background: rgba(215, 233, 236, 0.06);
+  color: var(--fog);
+  font-family: var(--text);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.5;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+
+#search:focus ~ .search-key { opacity: 0; }
+
+/* ---------- Touch and scrolling ---------- */
+a, button, input, select, textarea, summary, label[for] { touch-action: manipulation; }
+dialog, .people-list, .chat-log, .player { overscroll-behavior: contain; }
+
+/* ---------- Glass chrome ---------- */
+@media (min-width: 761px) {
+  .top {
+    background: linear-gradient(180deg, rgba(6, 14, 19, 0.88), rgba(6, 14, 19, 0.58));
+    border-bottom-color: var(--glass-edge);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+}
+
+dialog {
+  background: linear-gradient(158deg, rgba(30, 56, 68, 0.9) 0%, rgba(7, 17, 22, 0.95) 100%);
+  border-color: var(--glass-edge);
+  -webkit-backdrop-filter: blur(26px) saturate(1.18);
+  backdrop-filter: blur(26px) saturate(1.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 40px 110px rgba(0, 0, 0, 0.6);
+}
+
+.player-bar {
+  background: rgba(7, 17, 22, 0.82);
+  border-bottom-color: var(--glass-edge);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+  backdrop-filter: blur(20px) saturate(1.1);
+}
+
+#toast {
+  background: rgba(11, 27, 34, 0.94);
+  border-color: var(--glass-edge);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+/* ---------- The shelf speaks in the display face ---------- */
+.game h3,
+.has-lead > .item:first-child h3 {
+  margin-top: 11px;
+  font-family: var(--display);
+  font-size: 1.34rem;
+  font-weight: 800;
+  line-height: 1.14;
+  letter-spacing: 0.004em;
+  text-wrap: pretty;
+}
+
+/* The recently-played rail is a utility row, not a poster: keep it quiet. */
+.shelf-grid .game h3 { font-family: var(--text); font-weight: 600; }
+
+/* Categories read as words, not as stamped labels */
+.game .cat,
+.has-lead > .item:first-child .cat {
+  color: #8ba1a7;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.chips::before {
+  content: "Filter";
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.sort-wrap {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* ---------- Press states, so a tap answers back ---------- */
+.game:active .tile { transform: translateY(-1px) scale(0.994); }
+#random:active, .button:active, .hero-random:active { transform: translateY(0) scale(0.985); }
+.chip:active { background: rgba(242, 198, 94, 0.14); }
+
+/* ---------- Small screens ---------- */
+@media (max-width: 900px) {
+  .game h3, .has-lead > .item:first-child h3 { font-size: 1.18rem; }
+}
+
+@media (max-width: 760px) {
+  /* the bar becomes a grid, so the wrapper takes the search row */
+  .search-field { grid-area: search; width: 100%; }
+  .game h3, .has-lead > .item:first-child h3 { font-size: 1.12rem; }
+  .search-key { display: none; }
+  .search-field #search { padding-right: 18px; }
+}
+
+@media (max-width: 640px) {
+  .search-field { order: 3; flex-basis: 100%; }
+}
+
+@media (max-width: 420px) {
+  .game h3, .has-lead > .item:first-child h3 { font-size: 0.98rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skip, .search-key, dialog, .player-bar, #toast { transition: none; }
+}
+
+/* The featured card names its category the same way the shelf does */
+.hero-game-meta {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 0.76rem;
+  font-weight: 600;
+}

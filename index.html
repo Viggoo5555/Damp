@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Damp – Free browser games</title>
   <meta name="description" content="Play free games right in your browser.">
-  <meta name="theme-color" content="#0e171d">
+  <meta name="theme-color" content="#071116">
   <meta name="google-adsense-account" content="ca-pub-6851662024546666">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230e171d'/%3E%3Cpath d='M32 9c8 12 14 19 14 28a14 14 0 0 1-28 0c0-9 6-16 14-28z' fill='%23e9b44c'/%3E%3C/svg%3E">
   <link rel="modulepreload" href="vendor/firebase/firebase-app.js">
@@ -17,10 +17,15 @@
 </head>
 <body>
 
+  <a class="skip" href="#games-grid">Skip to the games</a>
+
   <header class="top">
     <div class="wrap bar">
-      <a class="logo" href="./" aria-label="Damp home"><svg viewBox="0 0 20 24" aria-hidden="true"><path d="M10 0c3 5 10 9.500 10 14.500a10 10 0 0 1-20 0C0 9.500 7 5 10 0z"/></svg><span>damp</span></a>
-      <input id="search" type="search" placeholder="Search games  (press / )" aria-label="Search games" autocomplete="off">
+      <a class="logo" href="./" aria-label="Damp home"><svg viewBox="0 0 20 24" aria-hidden="true"><path d="M10 0c3 5 10 9.500 10 14.500a10 10 0 0 1-20 0C0 9.500 7 5 10 0z"/></svg><span translate="no">damp</span></a>
+      <div class="search-field">
+        <input id="search" name="q" type="search" placeholder="Search games…" aria-label="Search games" autocomplete="off" spellcheck="false" enterkeyhint="search">
+        <kbd class="search-key" aria-hidden="true">/</kbd>
+      </div>
       <div class="bar-actions">
         <button id="random" type="button" aria-label="Random game"><span class="random-label">Random game</span><span class="random-die" aria-hidden="true">✦</span></button>
         <button id="account" type="button" hidden>Log in</button>
@@ -36,7 +41,7 @@
 
   <section class="hero wrap" id="hero" aria-labelledby="hero-title">
     <div class="hero-copy">
-      <p class="eyebrow">Damp / free browser games</p>
+      <p class="eyebrow">Free to play, nothing to install</p>
       <h1 id="hero-title">Pick a game.<br><span>Lose an evening.</span></h1>
       <p class="hero-lede">A small, hand-picked arcade for slow nights and spare minutes.</p>
       <div class="hero-actions">
@@ -46,11 +51,10 @@
     </div>
     <a class="hero-feature" id="hero-feature" href="#games-grid" hidden>
       <span class="hero-art-wrap">
-        <img id="hero-art" alt="" loading="eager">
+        <img id="hero-art" alt="" loading="eager" width="960" height="600" fetchpriority="high" decoding="async">
         <span class="hero-art-shade" aria-hidden="true"></span>
       </span>
       <span class="hero-feature-copy">
-        <span class="eyebrow">On the shelf</span>
         <strong id="hero-game-title"></strong>
         <span class="hero-game-desc" id="hero-game-desc"></span>
         <span class="hero-game-meta"><span id="hero-game-cat"></span><span>Play now <b aria-hidden="true">→</b></span></span>
@@ -58,7 +62,7 @@
     </a>
   </section>
 
-  <main class="wrap">
+  <main class="wrap" id="main">
     <div id="chips" class="chips" role="group" aria-label="Categories"></div>
 
     <section id="shelf" class="shelf" hidden>
@@ -68,7 +72,6 @@
 
     <div class="head">
       <div class="head-title">
-        <p class="eyebrow">The shelf</p>
         <h2 id="heading">All games</h2>
       </div>
       <div class="head-tools">
@@ -86,7 +89,7 @@
   </main>
 
   <footer class="wrap foot">
-    <span><b>damp</b> / free browser games for the in-between hours.</span>
+    <span><b translate="no">damp</b> / free browser games for the in-between hours.</span>
     <span>&copy; <span id="year"></span> &middot; <a href="privacy.html">Privacy</a></span>
   </footer>
 
@@ -130,7 +133,7 @@
     <div class="admin-box">
       <h3>Manage games</h3>
       <form id="code-form" class="inline">
-        <input id="code" type="password" inputmode="numeric" placeholder="Code" autocomplete="off" aria-label="Code">
+        <input id="code" name="code" type="password" inputmode="numeric" placeholder="Code" autocomplete="off" aria-label="Code">
         <button class="button" type="submit">Unlock</button>
       </form>
       <p id="code-msg" class="note"></p>
@@ -144,16 +147,16 @@
         <h2 id="editor-title">Add a game</h2>
         <button id="editor-close" type="button">Close</button>
       </div>
-      <label>Title<input id="f-title" maxlength="40" autocomplete="off"></label>
-      <label>Category<input id="f-category" list="categories" maxlength="24" placeholder="Arcade, Racing, ..." autocomplete="off"></label>
+      <label>Title<input id="f-title" name="title" maxlength="40" autocomplete="off"></label>
+      <label>Category<input id="f-category" name="category" list="categories" maxlength="24" placeholder="Arcade, Racing…" autocomplete="off"></label>
       <datalist id="categories"></datalist>
-      <label>Description<input id="f-desc" maxlength="120" autocomplete="off"></label>
+      <label>Description<input id="f-desc" name="description" maxlength="120" autocomplete="off"></label>
       <div class="field">
         <span class="field-label">Game file (.html)</span>
         <div class="file-row">
           <label class="file-btn" for="f-file">Choose file</label>
           <span id="f-file-name" class="file-name"></span>
-          <input id="f-file" type="file" accept=".html,.htm">
+          <input id="f-file" name="game-file" type="file" accept=".html,.htm">
         </div>
       </div>
       <div class="field">
@@ -161,14 +164,14 @@
         <div class="file-row">
           <label class="file-btn" for="f-icon">Choose file</label>
           <span id="f-icon-name" class="file-name"></span>
-          <input id="f-icon" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+          <input id="f-icon" name="icon" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
         </div>
         <img id="f-icon-preview" alt="Icon preview" hidden>
       </div>
       <details id="conn" class="conn">
         <summary>GitHub connection</summary>
-        <label>Repository<input id="f-repo" placeholder="your-name/Skals-site" autocomplete="off"></label>
-        <label>Access token<input id="f-token" type="password" autocomplete="off"></label>
+        <label>Repository<input id="f-repo" name="repository" placeholder="your-name/Skals-site" autocomplete="off" spellcheck="false"></label>
+        <label>Access token<input id="f-token" name="token" type="password" autocomplete="off" spellcheck="false"></label>
         <p class="note">Use a fine-grained token for this repository only, with Contents set to read and write. It stays on this device.</p>
       </details>
       <p id="status" class="note" aria-live="polite"></p>
@@ -185,8 +188,8 @@
 
     <form id="acc-in">
       <p class="note">Pick a username and a password to keep your game progress on every device. There is no email, so a forgotten password can't be reset.</p>
-      <label>Username<input id="acc-user" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="40"></label>
-      <label>Password<input id="acc-pass" type="password" autocomplete="current-password"></label>
+      <label>Username<input id="acc-user" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="40"></label>
+      <label>Password<input id="acc-pass" name="password" type="password" autocomplete="current-password"></label>
       <button class="button" type="submit">Log in</button>
       <button id="acc-create" type="button">Create account</button>
     </form>
@@ -194,7 +197,7 @@
     <div id="acc-out" hidden>
       <p>Logged in as <strong id="acc-who"></strong></p>
       <form id="acc-nick-form">
-        <label>Nickname<input id="acc-nick" maxlength="24" autocomplete="off" spellcheck="false"></label>
+        <label>Nickname<input id="acc-nick" name="nickname" maxlength="24" autocomplete="off" spellcheck="false"></label>
         <p class="note">Friends see this in chat, and it is the name on the Flappy Bird board.</p>
         <button class="button" type="submit">Save nickname</button>
       </form>
@@ -242,7 +245,7 @@
         <button id="chat-photo" type="button" aria-label="Send an image" title="Send an image">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="10.5" r="1.6"/><path d="M4.5 17.5 9.5 13l3.5 3 2.5-2 4 4"/></svg>
         </button>
-        <input id="chat-text" maxlength="500" autocomplete="off" placeholder="Write a message" aria-label="Message">
+        <input id="chat-text" name="message" maxlength="500" autocomplete="off" placeholder="Write a message…" aria-label="Message" enterkeyhint="send">
         <button class="button" type="submit">Send</button>
       </form>
     </div>

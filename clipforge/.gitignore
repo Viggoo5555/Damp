@@ -1,0 +1,7 @@
+node_modules/
+dist/
+release/
+installer/win-unpacked/
+installer/*.exe
+installer/*.7z
+installer/*.yml

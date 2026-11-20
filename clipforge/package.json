@@ -1,0 +1,75 @@
+{
+  "name": "offcut",
+  "productName": "Offcut",
+  "private": true,
+  "version": "1.4.0",
+  "type": "module",
+  "description": "Offcut — a local-first clipping studio for streamers.",
+  "author": "Offcut",
+  "license": "UNLICENSED",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 3000",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 3000",
+    "start": "npm run build && electron .",
+    "app:dev": "electron .",
+    "dist:win": "npm run build && electron-builder --win nsis --x64",
+    "package:win": "npm run build && electron-packager . Offcut --platform=win32 --arch=x64 --out=release --overwrite --prune=true --asar --ignore=\"^/(release|artifacts)$\"",
+    "package:mac": "npm run build && electron-packager . Offcut --platform=darwin --arch=arm64 --out=release --overwrite --prune=true --asar --ignore=\"^/(release|artifacts)$\"",
+    "package:linux": "npm run build && electron-packager . Offcut --platform=linux --arch=x64 --out=release --overwrite --prune=true --asar --ignore=\"^/(release|artifacts)$\""
+  },
+  "build": {
+    "appId": "studio.offcut.app",
+    "productName": "Offcut",
+    "copyright": "Offcut",
+    "directories": {
+      "output": "installer"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json",
+      "!**/*.map"
+    ],
+    "asar": true,
+    "npmRebuild": false,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "signAndEditExecutable": false,
+      "artifactName": "Offcut-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Offcut",
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "Offcut-Setup-${version}.${ext}"
+    }
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@electron/packager": "^18.3.6",
+    "@types/node": "^22.15.3",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.4.1",
+    "electron": "^33.4.11",
+    "electron-builder": "^26.18.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  }
+}

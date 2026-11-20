@@ -384,7 +384,7 @@ function buildHair(def) {
         l.sideSign = side;
         // the hank grows out of the hairline: temples first, ears behind
         const a = lerp(layer ? 0.33 : 0.285, layer ? 0.72 : 0.555, t) * Math.PI;
-        const rad = layer ? 0.91 : 0.93;
+        const rad = layer ? 0.9 : 0.915;
         l.anchor = { u: Math.sin(side * a) * rad, v: -Math.cos(side * a) * rad * 1.02 };
         l.spreadMax = (layer ? 0.44 : 0.17) * (0.8 + 0.55 * t);
         l.len = clamp(def.len * (0.7 + 0.32 * t) * (0.9 + 0.2 * Math.random()) * (1 + (Math.random() - 0.5) * def.uneven), 0.5, 1.5);
@@ -392,6 +392,25 @@ function buildHair(def) {
         l.base = shade(l.base, rnd(0.055, -0.075));
         S.locks.push(l);
       }
+    }
+  }
+  // locks that carry the hair over the crown, so the top is combed strands
+  // rather than a smooth cap
+  for (const side of [-1, 1]) {
+    const n = 7;
+    for (let i = 0; i < n; i++) {
+      const t = i / (n - 1);
+      const l = makeLock(0, side, def, 400 + (side > 0 ? 50 : 0) + i);
+      l.crown = true;
+      l.back = false;
+      l.sideSign = side;
+      l.crownA0 = side * lerp(0.05, 0.22, t) * Math.PI;
+      l.crownA1 = side * lerp(0.3, 0.54, t) * Math.PI;
+      l.width = rnd(0.085, 0.055);
+      l.vol = 0.5;
+      l.anchor = { u: 0, v: 0 };
+      l.spreadMax = 0;
+      S.locks.push(l);
     }
   }
   S.clips = [];
@@ -412,7 +431,8 @@ function crownSpine(l) {
   for (let i = 0; i < N; i++) {
     const t = i / (N - 1);
     const a = lerp(l.crownA0, l.crownA1, t);
-    const rad = (0.99 + 0.02 * Math.sin(t * 3 + l.phase)) * (1 - 0.04 * t);
+    // start tucked inside the mass so no blunt end lands on the outline
+    const rad = lerp(0.86, 0.985, Math.min(1, t * 2.4)) + 0.015 * Math.sin(t * 3 + l.phase);
     const nx = l.off[i].x * l.noisy * R * 0.035;
     const ny = l.off[i].y * l.noisy * R * 0.03;
     pts[i] = {
@@ -1057,12 +1077,15 @@ function lockWidth(l, t) {
   // long locks end in a point; short fringe and crown locks keep their width
   const tip = (l.bang || l.crown)
     ? 1 - smoothstep(0.9, 1, t) * 0.45
-    : 1 - smoothstep(0.76, 1, t) * 0.94;
-  return R * l.width * (0.3 + 0.7 * Math.pow(1 - t, 0.8)) * tip * (0.78 + l.vol * 0.55) * (l.back ? 1.2 : 1);
+    : 1 - smoothstep(0.7, 1, t);
+  // crown locks fade in from a point as well, so neither end is a blunt edge
+  const start = l.crown ? smoothstep(0.02, 0.2, t) : 1;
+  return R * l.width * 1.22 * (0.32 + 0.68 * Math.pow(1 - t, 0.8)) * tip * start * (0.78 + l.vol * 0.55) * (l.back ? 1.2 : 1);
 }
 
-function ribbon(target, l, scale) {
+function ribbon(target, l, scale, shift) {
   const k = scale == null ? 1 : scale;
+  const sh = shift || 0;
   const pts = l.pts;
   const left = [], right = [];
   for (let i = 0; i < N; i++) {
@@ -1072,9 +1095,11 @@ function ribbon(target, l, scale) {
     const m = Math.hypot(tx, ty) || 1;
     tx /= m; ty /= m;
     const nx = -ty, ny = tx;
-    const w = lockWidth(l, i / (N - 1)) * k;
-    left.push({ x: p.x + nx * w, y: p.y + ny * w });
-    right.push({ x: p.x - nx * w, y: p.y - ny * w });
+    const full = lockWidth(l, i / (N - 1));
+    const w = full * k;
+    const bx = p.x + nx * (sh * full), by = p.y + ny * (sh * full);
+    left.push({ x: bx + nx * w, y: by + ny * w });
+    right.push({ x: bx - nx * w, y: by - ny * w });
   }
   if (target.beginPath) target.beginPath();   // Path2D has no beginPath — it accumulates subpaths
   target.moveTo(left[0].x, left[0].y);
@@ -1127,98 +1152,153 @@ function traceStrand(l, k, count, endT, tone, alpha, width, uOverride) {
   return { x: X[steps], y: Y[steps] };
 }
 
-function drawHank(l, opts) {
-  const o = opts || {};
-  const R = view.R;
-  const tone = lockTone(l);
-  const boost = o.darkness || 0;
-  const density = o.density || (l.back ? 0.72 : 1);
 
-  // soft mass: three feathered passes so no hard slab edges show
-  const p0 = l.pts[0], pL = l.pts[N - 1];
-  const g = ctx.createLinearGradient(p0.x, p0.y, pL.x, pL.y);
-  g.addColorStop(0, shade(tone, -0.46 - boost));
-  g.addColorStop(0.3, shade(tone, -0.17 - boost));
-  g.addColorStop(0.62, shade(tone, -0.02 - boost));
-  g.addColorStop(1, shade(tone, 0.08 - boost));
-  const passes = [[1.0, 0.24], [0.88, 0.36], [0.62, 0.36]];
-  for (const [k, a] of passes) {
-    ribbon(ctx, l, k);
-    ctx.save();
-    ctx.globalAlpha = a * (l.back ? 0.85 : 1) * (o.body == null ? 1 : o.body);
-    ctx.fillStyle = g;
-    ctx.fill();
-    ctx.restore();
-  }
-
-  // soft seam between neighbouring locks reads as clumped hair
-  if (!fastPaint && !l.crown && !l.bang) {
-    traceStrand(l, 30 + l.idx, 3, 0.62, shade(tone, -0.52 - boost), 0.13, Math.max(1.2, R * 0.009), 0.92);
-  }
-
-  // fine strands
-  const count = Math.max(3, Math.round((l.back ? 5 : 8) * density * (R > 112 ? 1 : 0.8) * (fastPaint ? 0.45 : 1)));
-  for (let k = 0; k < count; k++) {
-    const v = hash01(l.idx * 101.3 + k * 7.77);
-    const tk = v < 0.24 ? 0.3 : v < 0.6 ? 0.06 : -0.16 - 0.2 * v;
-    const toneS = shade(tone, tk - boost);
-    const endT = 0.45 + 0.55 * hash01(l.idx * 3.3 + k * 11.1);
-    const alpha = (0.12 + 0.24 * hash01(k * 2.7 + l.idx * 1.3)) * (l.back ? 0.85 : 1);
-    const width = (0.6 + 1.1 * hash01(k * 5.3 + l.idx * 1.7)) * (R / 100) * (l.back ? 1.1 : 1);
-    traceStrand(l, k, count, endT, toneS, alpha, width);
-  }
-
-  // broad soft clumps break up the flat body
-  for (let c = 0; c < (fastPaint ? 0 : 3); c++) {
-    const u = -0.5 + c * 0.8;
-    traceStrand(l, c + 21, 4, 0.9, shade(tone, -0.42 - boost), 0.1, Math.max(2.4, R * 0.028), u);
-  }
-
-  // a specular streak down the lit side of every lock — the doll-hair gloss
-  const shine = o.shine != null ? o.shine : l.shine;
-  if (!l.bang && !fastPaint) {
-    ctx.save();
-    ctx.lineCap = 'round';
-    for (let pass = 0; pass < 2; pass++) {
-      ctx.beginPath();
-      const i0 = 1 + pass, i1 = Math.max(i0 + 2, Math.round(N * (0.5 + pass * 0.12)));
-      for (let i = i0; i <= i1; i++) {
-        const p = l.pts[i];
-        const q = l.pts[Math.min(N - 1, i + 1)], r = l.pts[Math.max(0, i - 1)];
-        const m = Math.hypot(q.x - r.x, q.y - r.y) || 1;
-        const nx = -(q.y - r.y) / m, ny = (q.x - r.x) / m;
-        const off = (-0.42 + pass * 0.3) * lockWidth(l, i / (N - 1)) * (l.sideSign || 1);
-        const x = p.x + nx * off, y = p.y + ny * off;
-        i === i0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-      }
-      ctx.globalAlpha = (0.14 + shine * 0.38) * (1 - pass * 0.45);
-      ctx.strokeStyle = shade(tone, 0.55);
-      ctx.lineWidth = Math.max(1.4, R * 0.015 * (0.85 + shine) * (1 - pass * 0.5));
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  // a couple of short wisps keep messy hair looking fuzzy without spider webs
-  if (l.noisy > 0.35 && !l.bang) {
-    const s = hash01(l.idx * 57.7);
-    const i0 = Math.round((0.22 + 0.3 * s) * (N - 1));
-    const p = l.pts[i0];
-    const dir = l.sideSign || 1;
-    const ex = p.x + dir * R * (0.05 + 0.07 * s) * (0.5 + l.noisy * 0.6);
-    const ey = p.y - R * 0.03 * (0.5 + l.noisy * 0.6);
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-    ctx.quadraticCurveTo(p.x + dir * R * 0.05, p.y - R * 0.045, ex, ey);
-    ctx.strokeStyle = shade(tone, 0.2);
-    ctx.globalAlpha = 0.3;
-    ctx.lineWidth = Math.max(0.8, R * 0.007);
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
+/* the hair is painted as one smooth mass: a filled silhouette, a lit-from-the-
+   upper-left gradient, then soft blurred clumps and gloss inside it. Nothing
+   has a hard outline, so no lock edge can read as a glitch. */
+function hairTone(group) {
+  let t = null;
+  for (const l of group) t = t ? mixc(t, lockTone(l), 1 / (group.indexOf(l) + 2)) : lockTone(l);
+  return t || '#e8c78a';
 }
 
-/* the top of the head: scalp tone plus strands sweeping from the crown */
+/* one clean silhouette per side: sample every lock's edges row by row, then
+   smooth the outline. This is what gives the hair a single clean edge instead
+   of a union of a hundred overlapping ribbon outlines. */
+function envelopeInto(path, back, side) {
+  const group = S.locks.filter(l => !l.bang && !l.crown && !!l.back === !!back && (side < 0 ? l.sideSign < 0 : l.sideSign > 0));
+  if (!group.length) return;
+  const BINS = 22;
+  let yTop = Infinity, yBot = -Infinity;
+  const samples = [];
+  for (const l of group) {
+    for (let i = 0; i < N; i++) {
+      const p = l.pts[i];
+      if (!p) continue;
+      const w = Math.max(2, lockWidth(l, i / (N - 1)));
+      samples.push({ y: p.y, a: p.x - w, b: p.x + w });
+      yTop = Math.min(yTop, p.y);
+      yBot = Math.max(yBot, p.y);
+    }
+  }
+  if (!samples.length || !isFinite(yTop) || yBot - yTop < 4) return;
+  const span = yBot - yTop;
+  const rows = new Array(BINS);
+  for (const sm of samples) {
+    const k = clamp(Math.floor((sm.y - yTop) / span * (BINS - 1)), 0, BINS - 1);
+    const r = rows[k] || (rows[k] = { n: 0, y: 0, a: Infinity, b: -Infinity });
+    r.n++; r.y += sm.y; r.a = Math.min(r.a, sm.a); r.b = Math.max(r.b, sm.b);
+  }
+  const filled = [];
+  for (let k = 0; k < BINS; k++) {
+    const r = rows[k];
+    if (r && r.n) filled.push({ y: r.y / r.n, a: r.a, b: r.b });
+    else if (filled.length) {
+      const prev = filled[filled.length - 1];
+      filled.push({ y: yTop + span * k / (BINS - 1), a: prev.a, b: prev.b });
+    }
+  }
+  if (filled.length < 3) return;
+  for (let pass = 0; pass < 3; pass++) {
+    for (let i = 1; i < filled.length - 1; i++) {
+      filled[i].a = (filled[i - 1].a + filled[i].a * 2 + filled[i + 1].a) / 4;
+      filled[i].b = (filled[i - 1].b + filled[i].b * 2 + filled[i + 1].b) / 4;
+    }
+  }
+  const outer = filled.map(r => ({ x: side < 0 ? r.a : r.b, y: r.y }));
+  const inner = filled.map(r => ({ x: side < 0 ? r.b : r.a, y: r.y }));
+  path.moveTo(outer[0].x, outer[0].y);
+  for (let i = 1; i < outer.length; i++) {
+    const a = outer[i - 1], b = outer[i];
+    path.quadraticCurveTo(a.x, a.y, (a.x + b.x) / 2, (a.y + b.y) / 2);
+  }
+  for (let i = inner.length - 1; i >= 0; i--) path.lineTo(inner[i].x, inner[i].y);
+  path.closePath();
+}
+
+function paintHair(back) {
+  const all = S.locks.filter(l => !l.bang && !!l.back === !!back);
+  if (!all.length) return;
+  const group = all.filter(l => !l.crown);
+  const crowns = all.filter(l => l.crown);
+  const R = view.R, cx = view.cx, cy = view.cy;
+  const tone = hairTone(all);
+  const blur = Math.max(1.2, 3.2 * (R / 100) * (fastPaint ? 0.55 : 1));
+
+  if (group.length) {
+    const mask = new Path2D();
+    envelopeInto(mask, back, -1);
+    envelopeInto(mask, back, 1);
+
+    ctx.save();
+    const g = ctx.createLinearGradient(cx, cy - R * 1.05, cx, cy + R * 1.7);
+    g.addColorStop(0, shade(tone, back ? -0.42 : -0.3));
+    g.addColorStop(0.42, shade(tone, back ? -0.2 : -0.08));
+    g.addColorStop(1, shade(tone, back ? -0.12 : 0.08));
+    ctx.fillStyle = g;
+    if (!fastPaint) ctx.filter = 'blur(' + Math.max(0.8, 1.6 * (R / 110)).toFixed(1) + 'px)';
+    ctx.fill(mask);
+    ctx.filter = 'none';
+    // while a stroke is running one flat fill is enough; the shaded pass
+    // lands the moment the pointer is released
+    if (fastPaint) { ctx.restore(); return; }
+    ctx.clip(mask);
+
+    // the head is round: lit from the upper left, dark at the outer edges
+    const rg = ctx.createRadialGradient(cx - R * 0.5, cy - R * 0.3, R * 0.12, cx - R * 0.15, cy + R * 0.1, R * 1.5);
+    rg.addColorStop(0, 'rgba(255,255,255,0.16)');
+    rg.addColorStop(0.42, 'rgba(255,255,255,0.015)');
+    rg.addColorStop(1, 'rgba(0,0,0,0.24)');
+    ctx.fillStyle = rg;
+    ctx.fillRect(cx - R * 2, cy - R * 2, R * 4, R * 4);
+
+    // soft clumps, lit sides and gloss, all airbrushed (full quality only:
+    // the blurred passes are what make brushing expensive)
+    ctx.filter = 'blur(' + Math.max(1, 1.9 * (R / 100)).toFixed(1) + 'px)';
+    for (const l of fastPaint ? [] : group) {
+      const shine = l.shine;
+      ribbon(ctx, l, 0.5, -0.48);
+      ctx.fillStyle = shade(tone, -0.42);
+      ctx.globalAlpha = 0.3;
+      ctx.fill();
+      ribbon(ctx, l, 0.44, 0.3);
+      ctx.fillStyle = shade(tone, 0.34);
+      ctx.globalAlpha = 0.34;
+      ctx.fill();
+      if (!fastPaint) {
+        ribbon(ctx, l, 0.15, 0.46);
+        ctx.fillStyle = 'rgba(255,250,235,' + (0.16 + shine * 0.3).toFixed(3) + ')';
+        ctx.globalAlpha = 1;
+        ctx.fill();
+      }
+    }
+    ctx.filter = 'none';
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  // the crown strands sit on the cap, so they are painted unclipped and very
+  // soft: their blurred ends melt into the rest of the hair
+  if (crowns.length && !back && !fastPaint) {
+    ctx.save();
+    ctx.filter = 'blur(' + (5.4 * (R / 100)).toFixed(1) + 'px)';
+    for (const l of crowns) {
+      ribbon(ctx, l, 0.5, -0.46);
+      ctx.fillStyle = shade(tone, -0.3);
+      ctx.globalAlpha = 0.16;
+      ctx.fill();
+      ribbon(ctx, l, 0.44, 0.26);
+      ctx.fillStyle = shade(tone, 0.28);
+      ctx.globalAlpha = 0.2;
+      ctx.fill();
+    }
+    ctx.filter = 'none';
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+}
+
+/* the top of the head: scalp tone plus a soft gloss sweep */
 function capPath(target) {
   const R = view.R, cx = view.cx, cy = view.cy;
   if (target.beginPath) target.beginPath();
@@ -1237,64 +1317,55 @@ function drawRoots(def) {
 
   capPath(ctx);
   const g = ctx.createLinearGradient(cx, cy - R * 1.05, cx, cy + R * 0.05);
-  g.addColorStop(0, shade(tone, 0.02));
-  g.addColorStop(0.55, shade(tone, -0.18));
+  g.addColorStop(0, shade(tone, -0.16));
+  g.addColorStop(0.32, shade(tone, -0.02));
+  g.addColorStop(0.62, shade(tone, -0.2));
   g.addColorStop(1, shade(tone, -0.38));
   ctx.fillStyle = g;
   ctx.fill();
 
-  // strands sweeping back from the crown
-  const crownX = cx - R * 0.1, crownY = cy - R * 0.5;
+  // where the crown curves away from the light it must fall into shadow
+  const rim = ctx.createLinearGradient(cx, cy - R * 1.06, cx, cy - R * 0.72);
+  rim.addColorStop(0, 'rgba(60,32,0,0.22)');
+  rim.addColorStop(1, 'rgba(60,32,0,0)');
   ctx.save();
   capPath(ctx);
-  ctx.clip();
-  const count = fastPaint ? 22 : 80;
-  for (let i = 0; i < count; i++) {
-    const t = (i + 0.5) / count;
-    const a = Math.PI * 1.015 + t * Math.PI * 0.97;
-    const s = hash01(i * 7.13);
-    const ex = cx + Math.cos(a) * R * (0.99 + 0.03 * s);
-    const ey = cy + Math.sin(a) * R * (1.01 + 0.04 * s);
-    const sx = crownX + (hash01(i * 3.31) - 0.5) * R * 0.5;
-    const sy = crownY + (hash01(i * 5.17) - 0.5) * R * 0.16;
-    const mx = (sx + ex) / 2 + (sx - cx) * 0.1;
-    const my = (sy + ey) / 2 - R * 0.12;
+  ctx.fillStyle = rim;
+  ctx.fill();
+  ctx.restore();
+
+  // soft sweeps from the part give the crown the flow of combed hair
+  const partX = cx - R * 0.42, partY = cy - R * 0.55;
+  ctx.filter = 'blur(' + Math.max(1.2, 3 * (R / 100) * (fastPaint ? 0.5 : 1)).toFixed(1) + 'px)';
+  for (let i = 0; i < 14; i++) {
+    const t = (i + 0.5) / 14;
+    const a = Math.PI * 1.04 + t * Math.PI * 0.92;
+    const ex = cx + Math.cos(a) * R * 1.0;
+    const ey = cy + Math.sin(a) * R * 1.02;
+    const mx = (partX + ex) / 2, my = (partY + ey) / 2 - R * 0.1;
     ctx.beginPath();
-    ctx.moveTo(sx, sy);
+    ctx.moveTo(partX + (i % 3 - 1) * R * 0.03, partY + (i % 2) * R * 0.02);
     ctx.quadraticCurveTo(mx, my, ex, ey);
-    const tk = hash01(i * 11.3);
-    ctx.strokeStyle = shade(tone, tk < 0.35 ? 0.22 : tk < 0.7 ? 0.02 : -0.22);
-    ctx.globalAlpha = 0.12 + 0.2 * hash01(i * 2.9);
-    ctx.lineWidth = (0.8 + 1.2 * tk) * (R / 100);
+    ctx.strokeStyle = i % 3 === 0 ? shade(tone, 0.26) : shade(tone, -0.16);
+    ctx.globalAlpha = i % 3 === 0 ? 0.1 : 0.08;
+    ctx.lineWidth = R * 0.05;
     ctx.lineCap = 'round';
     ctx.stroke();
   }
+  ctx.filter = 'none';
   ctx.restore();
   ctx.globalAlpha = 1;
 
-  // airbrush just the front hairline so it melts into the forehead
+  // a soft shadow sits under the hairline so the hair looks seated on the head
   hairlinePath(ctx);
-  for (const [w, a] of [[9, 0.12], [5, 0.16], [2.5, 0.2]]) {
-    ctx.lineWidth = w * (R / 100);
-    ctx.strokeStyle = rgba(shade(tone, 0.04), a);
-    ctx.stroke();
-  }
-  // a handful of short hairs following that line
-  for (let i = 0; i < 34; i++) {
-    const t = (i + 0.5) / 34;
-    const p = hairlinePoint(t);
-    const s = hash01(i * 4.3);
-    const len = R * (0.02 + 0.05 * s);
-    const dir = hash01(i * 9.1) > 0.5 ? 1 : -1;
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-    ctx.quadraticCurveTo(p.x + dir * len * 0.5, p.y + len * 0.75, p.x + dir * len, p.y + len * 1.1);
-    ctx.strokeStyle = shade(tone, s < 0.4 ? 0.2 : -0.04);
-    ctx.globalAlpha = 0.14 + 0.2 * s;
-    ctx.lineWidth = (0.7 + 0.7 * s) * (R / 100);
-    ctx.lineCap = 'round';
-    ctx.stroke();
-  }
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.filter = 'blur(' + Math.max(1.5, 4 * (R / 100)).toFixed(1) + 'px)';
+  ctx.lineWidth = R * 0.16;
+  ctx.strokeStyle = 'rgba(96,48,16,0.16)';
+  ctx.stroke();
+  ctx.filter = 'none';
+  ctx.restore();
   ctx.globalAlpha = 1;
 }
 
@@ -1330,7 +1401,10 @@ function hairlinePoint(t) {
 function drawSheen(sc) {
   const R = view.R, cx = view.cx, cy = view.cy;
   const sil = new Path2D();
-  for (const l of S.locks) if (!l.bang) ribbon(sil, l);
+  envelopeInto(sil, true, -1);
+  envelopeInto(sil, true, 1);
+  envelopeInto(sil, false, -1);
+  envelopeInto(sil, false, 1);
   capPath(sil);
   for (const l of S.locks) if (l.bang) ribbon(sil, l);
 
@@ -1526,7 +1600,7 @@ function renderBackgroundLayer() {
 function renderSceneLayer() {
   const main = ctx;
   if (bgDirty) renderBackgroundLayer();
-  fastPaint = S.phase === 'style' && S.pointer.down;
+  fastPaint = S.pointer.down && (S.phase === 'style' || S.phase === 'makeup');
   ctx = sctx;
   sctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
   sctx.clearRect(0, 0, view.w, view.h);
@@ -1535,10 +1609,10 @@ function renderSceneLayer() {
   const def = CUSTOMERS[S.idx];
   const sc = scoreNow();
   drawShoulders(def.smock);
-  for (const l of S.locks) if (l.back) drawHank(l, { darkness: 0.08 });
+  paintHair(true);
   drawHead(def);
   drawRoots(def);
-  for (const l of S.locks) if (!l.back && !l.bang && !l.crown) drawHank(l, {});
+  paintHair(false);
   if (!fastPaint) drawSheen(sc);
   for (const c of S.clips) drawClip(c);
 

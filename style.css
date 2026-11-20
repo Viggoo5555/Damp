@@ -2641,3 +2641,62 @@ dialog {
 #unread-text strong { color: var(--lamp); font-weight: 700; }
 
 #unread-dialog .save-actions { margin-bottom: 0; }
+
+/* ============================================================
+   Board games and video games: two sides of one shelf.
+   The type switch sits above the categories in the sidebar.
+   ============================================================ */
+
+.types {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 14px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(14, 23, 29, 0.55);
+}
+
+.type {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fog);
+  font: inherit;
+  font-size: 0.87rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.type:hover { color: var(--mist); background: rgba(223, 232, 232, 0.05); }
+
+.type[aria-pressed="true"] {
+  background: var(--pane);
+  color: var(--mist);
+  font-weight: 700;
+}
+
+.type[aria-pressed="true"]::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--lamp);
+}
+
+@media (max-width: 900px) {
+  /* the sidebar is a swipable row here, so the switch joins it */
+  .types { flex-direction: row; gap: 3px; margin-bottom: 0; padding: 3px; }
+  .type { width: auto; padding: 6px 10px; white-space: nowrap; }
+  .type[aria-pressed="true"]::after { display: none; }
+}

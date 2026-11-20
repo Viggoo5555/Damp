@@ -31,6 +31,12 @@ const fullscreenLabel = fullscreenButton.querySelector(".player-action-label");
 let games = [];
 let loadFailed = false;
 let category = "All";
+// "" shows everything, "board" only the board games, "video" the rest
+let group = "";
+try {
+  const savedGroup = localStorage.getItem("damp-group");
+  if (savedGroup === "board" || savedGroup === "video") group = savedGroup;
+} catch (error) { /* storage off */ }
 let admin = sessionStorage.getItem("damp-admin") === "1";
 let editing = null;
 let playing = "";
@@ -62,6 +68,12 @@ function hueFrom(text) {
 // left off the page. Its #play= link still works, so you can keep working on it.
 function liveGames() {
   return games.filter(function (game) { return !game.hidden; });
+}
+
+// Board games and video games are two halves of the same shelf
+function inGroup(game) {
+  if (!group) return true;
+  return group === "board" ? !!game.board : !game.board;
 }
 
 function categories(list) {
@@ -147,7 +159,7 @@ function showHero() {
 
 function showGames() {
   const query = search.value.trim().toLowerCase();
-  const source = admin ? games : liveGames();
+  const source = (admin ? games : liveGames()).filter(inGroup);
 
   const list = source.filter(function (game) {
     const inCategory = category === "All" || game.category === category;
@@ -167,7 +179,8 @@ function showGames() {
 
   grid.replaceChildren(...list.map(makeCard));
   grid.classList.remove("has-lead");
-  $("heading").textContent = category === "All" ? "All games" : category;
+  const typeName = group === "board" ? "Board games" : group === "video" ? "Video games" : "All games";
+  $("heading").textContent = category === "All" ? typeName : category;
   $("count").textContent = list.length + (list.length === 1 ? " game" : " games");
 
   if (loadFailed) {
@@ -182,10 +195,31 @@ function showGames() {
 
 function showChips() {
   chips.replaceChildren();
-  const list = liveGames();
+  const list = liveGames().filter(inGroup);
   const names = ["All"].concat(categories(list));
   if (!names.includes(category)) category = "All";
   chips.hidden = names.length < 3;
+
+  // The type switch sits above the categories: board games on their own, the
+  // rest on theirs, or both together.
+  const types = el("div", "types");
+  types.setAttribute("role", "group");
+  types.setAttribute("aria-label", "Game type");
+  [["", "All games"], ["board", "Board games"], ["video", "Video games"]].forEach(function (pair) {
+    const button = el("button", "type", pair[1]);
+    button.type = "button";
+    button.setAttribute("aria-pressed", group === pair[0] ? "true" : "false");
+    button.addEventListener("click", function () {
+      if (group === pair[0]) return;
+      group = pair[0];
+      category = "All";
+      try { localStorage.setItem("damp-group", group); } catch (error) { /* storage off */ }
+      showChips();
+      showGames();
+    });
+    types.appendChild(button);
+  });
+  chips.appendChild(types);
 
   names.forEach(function (name) {
     const chip = el("button", "chip");
@@ -207,7 +241,7 @@ function showChips() {
 search.addEventListener("input", showGames);
 
 function playRandom() {
-  const list = liveGames();
+  const list = liveGames().filter(inGroup);
   if (!list.length) return;
   const game = list[Math.floor(Math.random() * list.length)];
   location.hash = "play=" + slug(game);
@@ -271,7 +305,7 @@ function showShelf() {
   const picks = recentGames().slice(0, 12).map(function (id) {
     return games.find(function (g) { return slug(g) === id; });
   });
-  $("shelf").hidden = !(category === "All" && search.value.trim() === "" && picks.length > 0);
+  $("shelf").hidden = !(category === "All" && !group && search.value.trim() === "" && picks.length > 0);
   $("shelf-grid").replaceChildren(...picks.map(makeCard));
 }
 
@@ -569,6 +603,7 @@ function openEditor(game) {
   $("save").textContent = game ? "Save changes" : "Add game";
   $("remove").hidden = !game;
   $("f-hidden").checked = !!(game && game.hidden);
+  $("f-board").checked = !!(game && game.board);
   $("f-title").value = game ? game.title : "";
   $("f-category").value = game && game.category ? game.category : "";
   $("f-desc").value = game && game.description ? game.description : "";
@@ -768,6 +803,7 @@ $("editor-form").addEventListener("submit", async function (event) {
   };
   if (editing && editing.featured) entry.featured = true;
   if ($("f-hidden").checked) entry.hidden = true;
+  if ($("f-board").checked) entry.board = true;
 
   $("save").disabled = true;
   try {

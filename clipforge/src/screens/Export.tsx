@@ -5,6 +5,7 @@ import { useStore } from "../store";
 import { cx, timecode } from "../lib/util";
 import { bridge } from "../lib/desktop";
 import { Button, Chip, Surface } from "../components/ui";
+import { usePlayer } from "../components/Player";
 import {
   CheckIcon,
   InstagramMark,
@@ -59,6 +60,7 @@ export function Export({
   focusClipId: string | null;
 }) {
   const { state, setClipStatus } = useStore();
+  const { play } = usePlayer();
   const candidates = useMemo(
     () => state.clips.filter((clip) => clip.status !== "exported"),
     [state.clips],
@@ -152,6 +154,14 @@ export function Export({
                     {activePlatforms.map((platform) => PLATFORM_LABEL[platform.id]).join(" · ")}
                   </span>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={<PlayIcon size={14} />}
+                  onClick={() => play(clip, state.sources.find((source) => source.id === clip.sourceId))}
+                >
+                  Watch
+                </Button>
                 <Button
                   variant="glass"
                   size="sm"
@@ -297,9 +307,18 @@ export function Export({
                     </span>
                     <h3>{clip.title}</h3>
                   </div>
-                  <button type="button" className="link-btn" onClick={() => toggleClip(clip.id)}>
-                    Remove
-                  </button>
+                  <div className="copy-card__head-actions">
+                    <button
+                      type="button"
+                      className="link-btn"
+                      onClick={() => play(clip, state.sources.find((source) => source.id === clip.sourceId))}
+                    >
+                      Watch
+                    </button>
+                    <button type="button" className="link-btn" onClick={() => toggleClip(clip.id)}>
+                      Remove
+                    </button>
+                  </div>
                 </header>
 
                 <label className="field">

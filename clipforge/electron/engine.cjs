@@ -1037,6 +1037,8 @@ async function runJob(options) {
     fontSource = "",
     emit = () => {},
     register = () => {},
+    // Awaited between checkpoints so a paused run holds its place instead of dying.
+    waitIfPaused = async () => {},
   } = options;
 
   const started = Date.now();
@@ -1044,6 +1046,7 @@ async function runJob(options) {
   let file = local ? localPath(input) : input;
   await fsp.mkdir(workDir, { recursive: true });
   await fsp.mkdir(outDir, { recursive: true });
+  await waitIfPaused();
 
   if (!local && isChannelUrl(file)) {
     emit({ stage: "probe", pct: 1, message: "Resolving this channel's newest long stream" });
@@ -1059,6 +1062,7 @@ async function runJob(options) {
   emit({ stage: "probe", pct: 6, message: `${meta.title} · ${Math.round(meta.durationSec / 60)} min`, meta });
 
   // 1. Audio for analysis.
+  await waitIfPaused();
   emit({ stage: "audio", pct: 8, message: "Downloading the audio track" });
   let sourceForRender = file;
   let wavPath = path.join(workDir, "analysis.wav");
@@ -1116,6 +1120,7 @@ async function runJob(options) {
   }
 
   // 2. Captions.
+  await waitIfPaused();
   emit({ stage: "captions", pct: 32, message: "Reading the transcript" });
   const cues = local ? [] : await fetchCaptions(tools.ytdlp, file, workDir, () => {});
   emit({
@@ -1127,6 +1132,7 @@ async function runJob(options) {
   // 3. Chat, for Twitch.
   let chat = [];
   if (meta.platform === "twitch") {
+    await waitIfPaused();
     emit({ stage: "chat", pct: 38, message: "Reading the VOD chat" });
     const result = await fetchTwitchChat(meta.webpageUrl || file, (count, error) => {
       if (error) emit({ stage: "chat", pct: 44, message: `Chat unavailable (${error.message}) — using audio` });
@@ -1136,6 +1142,7 @@ async function runJob(options) {
   }
 
   // 4. Energy.
+  await waitIfPaused();
   emit({ stage: "energy", pct: 46, message: "Measuring loudness across the whole video" });
   const durationSec = meta.durationSec;
   const energy = await measureEnergy(tools.ffmpeg, wavPath, (line) => {
@@ -1157,6 +1164,7 @@ async function runJob(options) {
     }
   }
 
+  await waitIfPaused();
   emit({ stage: "score", pct: 66, message: "Scoring moments for laughs, spikes and payoffs" });
   const moments = pickMoments({
     energy,
@@ -1171,6 +1179,7 @@ async function runJob(options) {
   // 6. Cut + render each.
   const clips = [];
   for (let index = 0; index < moments.length; index += 1) {
+    await waitIfPaused();
     const moment = moments[index];
     const basePct = 70 + (index / moments.length) * 28;
     emit({

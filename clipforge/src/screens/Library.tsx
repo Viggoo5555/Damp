@@ -4,10 +4,12 @@ import { useStore } from "../store";
 import { timecode } from "../lib/util";
 import { bridge } from "../lib/desktop";
 import { Button, Chip, EmptyState, Surface } from "../components/ui";
+import { usePlayer } from "../components/Player";
 import {
   ClockIcon,
   CpuIcon,
   FolderIcon,
+  PlayIcon,
   ScissorsIcon,
   SparkIcon,
   TwitchMark,
@@ -51,6 +53,7 @@ function runtimeLabel(seconds: number): string {
 
 export function Library({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
   const { state } = useStore();
+  const { play } = usePlayer();
 
   const totals = useMemo(() => {
     const runtime = state.clips.reduce((total, clip) => total + Math.max(0, clip.endSec - clip.startSec), 0);
@@ -152,9 +155,19 @@ export function Library({ onNavigate }: { onNavigate: (screen: Screen) => void }
             return (
               <div className="table__row" key={clip.id}>
                 <span className="table__video">
-                  <span className="table__thumb">
+                  <button
+                    type="button"
+                    className="table__thumb"
+                    onClick={() => play(clip, source)}
+                    disabled={!clip.videoPath}
+                    aria-label={`Watch ${clip.title}`}
+                    title={clip.videoPath ? "Play in Offcut" : "No file on disk"}
+                  >
                     <img src={clip.poster} alt="" style={{ objectPosition: clip.posterPosition }} />
-                  </span>
+                    <span className="table__play">
+                      <PlayIcon size={13} />
+                    </span>
+                  </button>
                   <span className="table__titles">
                     <span className="table__title">{clip.title}</span>
                     <span className="table__sub">
@@ -174,11 +187,16 @@ export function Library({ onNavigate }: { onNavigate: (screen: Screen) => void }
                     day: "numeric",
                   })}
                 </span>
-                <span className="mono">
+                <span className="mono table__actions">
                   {clip.videoPath ? (
-                    <button type="button" className="link-btn" onClick={() => void bridge?.reveal(clip.videoPath)}>
-                      Show
-                    </button>
+                    <>
+                      <button type="button" className="link-btn" onClick={() => play(clip, source)}>
+                        Watch
+                      </button>
+                      <button type="button" className="link-btn" onClick={() => void bridge?.reveal(clip.videoPath)}>
+                        Show
+                      </button>
+                    </>
                   ) : (
                     "—"
                   )}

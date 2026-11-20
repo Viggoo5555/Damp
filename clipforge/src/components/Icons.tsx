@@ -57,6 +57,35 @@ export const PlayIcon = (props: IconProps) => (
   </Svg>
 );
 
+export const PauseIcon = (props: IconProps) => (
+  <Svg {...props}>
+    <path d="M9 5.5v13M15 5.5v13" strokeWidth={2.4} />
+  </Svg>
+);
+
+export const VolumeIcon = (props: IconProps) => (
+  <Svg {...props}>
+    <path d="M4 9.5h3L11.5 6v12L7 14.5H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z" />
+    <path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.6 7.6 0 0 1 0 11" />
+  </Svg>
+);
+
+export const MuteIcon = (props: IconProps) => (
+  <Svg {...props}>
+    <path d="M4 9.5h3L11.5 6v12L7 14.5H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z" />
+    <path d="m16 9.5 5 5M21 9.5l-5 5" />
+  </Svg>
+);
+
+export const LoopIcon = (props: IconProps) => (
+  <Svg {...props}>
+    <path d="M4.5 10.5V9a3 3 0 0 1 3-3h11" />
+    <path d="m16 3.5 3 2.5-3 2.5" />
+    <path d="M19.5 13.5V15a3 3 0 0 1-3 3h-11" />
+    <path d="m8 20.5-3-2.5 3-2.5" />
+  </Svg>
+);
+
 export const CheckIcon = (props: IconProps) => (
   <Svg {...props}>
     <path d="m5 12.5 4.5 4.5L19 7" />

@@ -1,7 +1,7 @@
 Unicode true
 Name "Offcut"
 Caption "Offcut Setup"
-OutFile "Offcut-Setup-1.3.0.exe"
+OutFile "Offcut-Setup-1.4.0.exe"
 InstallDir "$LOCALAPPDATA\Programs\Offcut"
 InstallDirRegKey HKCU "Software\Offcut" "InstallDir"
 RequestExecutionLevel user
@@ -30,7 +30,7 @@ Section "Offcut (required)" SecInstall
 
   WriteRegStr HKCU "Software\Offcut" "InstallDir" "$INSTDIR"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Offcut" "DisplayName" "Offcut"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Offcut" "DisplayVersion" "1.0.0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Offcut" "DisplayVersion" "1.4.0"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Offcut" "Publisher" "Offcut"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Offcut" "DisplayIcon" "$INSTDIR\Offcut.exe"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Offcut" "InstallLocation" "$INSTDIR"

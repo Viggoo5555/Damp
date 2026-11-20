@@ -9,6 +9,7 @@ import {
   mediaUrl,
   type EngineResult,
   type JobProgress,
+  type JobState,
   type ToolStatus,
 } from "../lib/desktop";
 import { ClipCard } from "../components/ClipCard";
@@ -85,6 +86,7 @@ export function Studio({
   const [result, setResult] = useState<EngineResult | null>(null);
   const [sort, setSort] = useState<SortMode>("score");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [job, setJob] = useState<JobState>({ running: false, paused: false });
   const handledRequest = useRef<number | null>(null);
 
   const platform = detectPlatform(url);
@@ -103,6 +105,13 @@ export function Studio({
   useEffect(() => {
     if (!bridge) return;
     return bridge.onProgress((next) => setProgress(next));
+  }, []);
+
+  // The main process owns the run, so the pause button and the tray agree.
+  useEffect(() => {
+    if (!bridge) return;
+    void bridge.jobState().then(setJob);
+    return bridge.onJobState((next) => setJob(next));
   }, []);
 
   const start = useCallback(async (rawUrl: string) => {
@@ -327,10 +336,26 @@ export function Studio({
                 </span>
                 <h2>{url.trim()}</h2>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => void bridge?.cancel()}>
-                Cancel
-              </Button>
+              <div className="run__actions">
+                <Button
+                  variant={job.paused ? "primary" : "ghost"}
+                  size="sm"
+                  onClick={() => void (job.paused ? bridge?.resume() : bridge?.pause())}
+                >
+                  {job.paused ? "Resume" : "Pause"}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => void bridge?.cancel()}>
+                  Cancel
+                </Button>
+              </div>
             </header>
+
+            {job.paused ? (
+              <p className="run__paused" role="status">
+                <span className="dot dot--idle" />
+                Paused at the last checkpoint. Nothing is lost — resume and it carries on from here.
+              </p>
+            ) : null}
 
             <ol className="steps">
               {steps.map((step, index) => {
@@ -394,6 +419,9 @@ export function Studio({
               <span className="mono">1080 × 1920</span>
               <span className="mono">h.264</span>
             </div>
+            <p className="run__aside-note">
+              Closing the window keeps this run going in the tray. Pause holds it at the next step.
+            </p>
           </aside>
         </Surface>
       ) : null}

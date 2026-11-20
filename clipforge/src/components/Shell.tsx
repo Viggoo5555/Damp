@@ -1,6 +1,7 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Screen } from "../types";
 import { useStore } from "../store";
+import { bridge, type JobState } from "../lib/desktop";
 import { ChartIcon, CompassIcon, CpuIcon, ScissorsIcon, UploadIcon } from "./Icons";
 import { Chip } from "./ui";
 import { cx } from "../lib/util";
@@ -57,6 +58,7 @@ export function Shell({
   children: ReactNode;
 }) {
   const { state } = useStore();
+  const [job, setJob] = useState<JobState>({ running: false, paused: false });
   const contentRef = useRef<HTMLElement>(null);
   const active = NAV.find((item) => item.id === screen) ?? NAV[0];
   const readyClips = state.clips.filter((clip) => clip.status === "ready").length;
@@ -65,6 +67,12 @@ export function Shell({
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0 });
   }, [screen]);
+
+  useEffect(() => {
+    if (!bridge) return;
+    void bridge.jobState().then(setJob);
+    return bridge.onJobState(setJob);
+  }, []);
 
   return (
     <div className="app">
@@ -120,6 +128,12 @@ export function Shell({
             <p>{headline}</p>
           </div>
           <div className="topbar__meta">
+            {job.running ? (
+              <Chip tone={job.paused ? "warn" : "live"}>
+                <span className={cx("dot", job.paused && "dot--idle")} />
+                {job.paused ? "run paused" : "rendering"}
+              </Chip>
+            ) : null}
             <Chip tone={state.clips.length ? "ready" : "neutral"}>
               <span className={cx("dot", !state.clips.length && "dot--idle")} />
               {state.clips.length} {state.clips.length === 1 ? "cut" : "cuts"}

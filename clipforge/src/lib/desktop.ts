@@ -44,6 +44,12 @@ export interface JobProgress {
   message: string;
 }
 
+/** Whether the main process is mid-run and whether it is holding at a checkpoint. */
+export interface JobState {
+  running: boolean;
+  paused: boolean;
+}
+
 export interface ToolStatus {
   ready: boolean;
   missing: string[];
@@ -59,7 +65,11 @@ interface Bridge {
   installTools: () => Promise<{ ok: boolean; error?: string }>;
   run: (payload: { url: string; maxClips?: number; subtitleStyle?: string }) => Promise<RunResponse>;
   cancel: () => Promise<{ ok: boolean }>;
+  pause: () => Promise<JobState>;
+  resume: () => Promise<JobState>;
+  jobState: () => Promise<JobState>;
   onProgress: (callback: (progress: JobProgress) => void) => () => void;
+  onJobState: (callback: (state: JobState) => void) => () => void;
   reveal: (target?: string) => Promise<{ ok: boolean }>;
   clipsDir: () => Promise<string>;
   copyText: (text: string) => Promise<{ ok: boolean }>;

@@ -4,6 +4,7 @@ import { detectHardware } from "./lib/hardware";
 import type { BrowseItem } from "./lib/library";
 import { StoreProvider, useStore } from "./store";
 import { Shell } from "./components/Shell";
+import { PlayerHost } from "./components/Player";
 import { Setup } from "./screens/Setup";
 import { Browse } from "./screens/Browse";
 import { Studio } from "./screens/Studio";
@@ -60,6 +61,7 @@ function Workspace() {
   if (!state.setupComplete) return <Setup />;
 
   return (
+    <PlayerHost>
     <Shell screen={screen} onNavigate={navigate}>
       {screen === "browse" ? <Browse onClip={startFromBrowse} /> : null}
       {screen === "studio" ? (
@@ -75,6 +77,7 @@ function Workspace() {
       {screen === "export" ? <Export onNavigate={navigate} focusClipId={focusClipId} /> : null}
       {screen === "library" ? <Library onNavigate={navigate} /> : null}
     </Shell>
+    </PlayerHost>
   );
 }
 

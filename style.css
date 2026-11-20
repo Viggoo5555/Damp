@@ -565,7 +565,9 @@ dialog::backdrop { background: rgba(8, 14, 18, 0.72); }
 #acc-close,
 #lock,
 #acc-create,
-#acc-logout {
+#acc-logout,
+#unread-close,
+#unread-later {
   padding: 7px 14px;
   border: 1px solid var(--line);
   border-radius: 4px;
@@ -581,7 +583,9 @@ dialog::backdrop { background: rgba(8, 14, 18, 0.72); }
 #acc-close:hover,
 #lock:hover,
 #acc-create:hover,
-#acc-logout:hover { border-color: var(--fog); background: var(--pane-hi); }
+#acc-logout:hover,
+#unread-close:hover,
+#unread-later:hover { border-color: var(--fog); background: var(--pane-hi); }
 
 .list { border-top: 1px solid var(--line); }
 
@@ -2620,3 +2624,20 @@ dialog {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ============================================================
+   "While you were away": the count of messages waiting when a
+   player comes back to the site.
+   ============================================================ */
+
+#unread-dialog { width: min(420px, calc(100% - 32px)); }
+
+#unread-text {
+  color: var(--mist);
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+#unread-text strong { color: var(--lamp); font-weight: 700; }
+
+#unread-dialog .save-actions { margin-bottom: 0; }

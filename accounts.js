@@ -860,6 +860,41 @@
     toastTimer = setTimeout(function () { box.hidden = true; }, 5000);
   }
 
+  function unreadChats() {
+    const list = [];
+    if (!user) return list;
+    chatSummaries.forEach(function (chat, uid) {
+      if (chat.lastFrom && chat.lastFrom !== user.uid && chat.lastAt > (seen[chat.id] || 0)) list.push(uid);
+    });
+    return list;
+  }
+
+  // A message that arrived while the page was closed is easy to miss, so the
+  // first look at this player's chats says how many are waiting. Once per visit:
+  // after that the dots and the toasts do the talking.
+  let greetedUnread = false;
+
+  function greetUnread() {
+    if (greetedUnread || !user) return;
+    greetedUnread = true;
+    const waiting = unreadChats().length;
+    if (!waiting) return;
+    byId("unread-count").textContent = String(waiting);
+    byId("unread-word").textContent = waiting === 1 ? "notification" : "notifications";
+    const dialog = byId("unread-dialog");
+    if (!dialog.open) dialog.showModal();
+  }
+
+  byId("unread-close").addEventListener("click", function () { byId("unread-dialog").close(); });
+  byId("unread-later").addEventListener("click", function () { byId("unread-dialog").close(); });
+  byId("unread-open").addEventListener("click", function () {
+    byId("unread-dialog").close();
+    openPeople();
+  });
+  byId("unread-dialog").addEventListener("click", function (event) {
+    if (event.target === byId("unread-dialog")) byId("unread-dialog").close();
+  });
+
   function watchMessages() {
     if (notifyUnsub || !fb || !user) return;
     notifyUnsub = fb.f.onSnapshot(
@@ -882,6 +917,7 @@
             if (data.lastAt) notified[doc.id] = data.lastAt;
           });
           notifyFirst = false;
+          greetUnread();
           return;
         }
         snap.forEach(function (doc) {
@@ -930,6 +966,7 @@
           if (notifyUnsub) { notifyUnsub(); notifyUnsub = null; notifyFirst = true; }
           notified = {};
           chatSummaries = new Map();
+          greetedUnread = false;
           refreshUnread();
         }
         showAccount();

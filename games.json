@@ -1,5 +1,12 @@
 [
   {
+    "title": "Bad Hair Day",
+    "description": "A glam salon for terrible hair. Brush out the tangles, snip it even, blow in volume, wind in curls, dye it any colour and add a bow, then show your customer the mirror.",
+    "file": "games/bad-hair-day.html",
+    "category": "Makeover",
+    "image": "img/bad-hair-day.png"
+  },
+  {
     "title": "Flappy Bird",
     "description": "Classic arcade bird game with custom skins and worlds shop.",
     "file": "games/Flappy Bird.html",

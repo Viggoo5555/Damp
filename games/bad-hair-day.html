@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bad Hair Day — the glam salon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#fffafd; --plum:#3f102c; --plum-soft:#7c3a63;
+    --pink:#ff5aa6; --pink-d:#e02f7e; --pink-l:#ffd7e9; --blush:#ffe7f2;
+    --gold:#f5c451; --gold-d:#c99433; --mint:#8fd8cc;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;overflow:hidden;color:var(--plum);
+    font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-text-size-adjust:100%;overscroll-behavior:none;
+    background:linear-gradient(#ffe9f5,#ffd3e8)}
+  #app{height:100dvh;display:flex;flex-direction:column}
+  /* ---------- top bar ---------- */
+  #top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 14px 5px;
+    padding-top:calc(9px + env(safe-area-inset-top,0px));
+    background:linear-gradient(#fff6fb,#ffe2f0);border-bottom:2px solid rgba(200,120,165,.35);position:relative;z-index:2}
+  #top .who{min-width:0}
+  #top b{font-family:"Pacifico",cursive;font-size:25px;line-height:1.05;display:block;font-weight:400;
+    color:var(--pink-d);text-shadow:0 1px 0 #fff,0 3px 8px rgba(224,47,126,.18)}
+  #cwish{display:block;font-size:12.5px;color:var(--plum-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+  #top .right{display:flex;align-items:center;gap:7px}
+  #cnum{font-size:11px;font-weight:900;letter-spacing:.1em;color:var(--plum-soft);
+    background:rgba(255,255,255,.75);border:1.5px solid var(--pink-l);border-radius:20px;padding:4px 9px}
+  #restart{width:34px;height:34px;border:2px solid var(--gold-d);border-radius:50%;background:#fff;color:var(--plum-soft);
+    font-size:15px;line-height:1;cursor:pointer;box-shadow:0 2px 0 rgba(201,148,51,.45)}
+  #restart:active{transform:translate(1px,1px)}
+  /* ---------- stage ---------- */
+  #stage{position:relative;flex:1;min-height:0}
+  #c{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+  #hint{position:absolute;left:50%;top:8px;transform:translateX(-50%);max-width:90%;text-align:center;
+    font-size:12.5px;font-weight:700;padding:6px 14px;border:2px solid rgba(224,47,126,.4);border-radius:22px;
+    background:rgba(255,255,255,.9);color:var(--plum-soft);box-shadow:0 4px 12px rgba(224,47,126,.16);
+    transition:opacity .5s;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #hint.hide{opacity:0}
+  /* ---------- bottom sheet ---------- */
+  #ui{flex:none;position:relative;z-index:2;
+    background:linear-gradient(#fff4fa,#ffdcec);
+    border-top:2px solid rgba(224,47,126,.28);
+    box-shadow:0 -8px 24px rgba(224,47,126,.12);
+    padding:9px 10px calc(9px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px}
+  #tools{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;justify-content:center}
+  #tools::-webkit-scrollbar{display:none}
+  .tool{flex:none;width:52px;height:52px;display:grid;place-items:center;padding:4px 0 2px;
+    border:2px solid var(--gold-d);border-radius:14px;background:linear-gradient(#ffffff,#fff0f7);
+    cursor:pointer;color:var(--plum-soft);position:relative;transition:transform .08s,background .15s;
+    box-shadow:0 2px 0 rgba(201,148,51,.35)}
+  .tool::after{content:"";position:absolute;inset:2px 2px 55% 2px;border-radius:10px 10px 40% 40%;
+    background:linear-gradient(rgba(255,255,255,.85),rgba(255,255,255,0))}
+  .tool svg{width:23px;height:23px;display:block;position:relative;z-index:1}
+  .tool span{font-size:9px;font-weight:900;letter-spacing:.02em;text-transform:uppercase;margin-top:-1px;position:relative;z-index:1}
+  .tool.on{background:linear-gradient(#ff7ab8,var(--pink-d));color:#fff;border-color:#fff;
+    box-shadow:0 0 0 2px var(--pink),0 3px 10px rgba(224,47,126,.45)}
+  .tool.on::after{background:linear-gradient(rgba(255,255,255,.38),rgba(255,255,255,0))}
+  .tool:active{transform:translate(1px,1px)}
+  #sub{display:none;justify-content:center;gap:8px;align-items:center;min-height:0}
+  #sub.on{display:flex}
+  .sw{width:28px;height:28px;border:2px solid #fff;border-radius:50%;cursor:pointer;position:relative;
+    box-shadow:0 0 0 1.5px var(--gold-d),inset 0 2px 4px rgba(0,0,0,.18)}
+  .sw.on::after{content:"";position:absolute;inset:-6px;border:2px solid var(--pink-d);border-radius:50%}
+  .clipbtn{width:38px;height:34px;border:2px solid var(--gold-d);border-radius:11px;background:#fff;cursor:pointer;
+    display:grid;place-items:center;box-shadow:0 2px 0 rgba(201,148,51,.3)}
+  .clipbtn.on{background:linear-gradient(#ffd0e6,#ffa6cd)}
+  #bar{display:flex;align-items:center;gap:10px;flex:none;padding:0 2px}
+  #tidyWrap{flex:1;height:15px;border:2px solid var(--gold-d);border-radius:9px;background:#fff;overflow:hidden;position:relative;
+    box-shadow:inset 0 1px 4px rgba(224,47,126,.14)}
+  #tidy{display:block;height:100%;width:0%;border-radius:7px;
+    background:linear-gradient(90deg,#ffafd3,var(--pink),#ff8f4d,var(--gold));transition:width .2s;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.75)}
+  #tidyWrap b{position:absolute;inset:0;display:grid;place-items:center;font-size:8.5px;font-weight:900;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--plum);opacity:.45}
+  #done{font-family:"Nunito",sans-serif;font-weight:900;letter-spacing:.02em;font-size:14px;padding:10px 17px;
+    border:2.5px solid #fff;border-radius:14px;color:#fff;cursor:pointer;flex:none;
+    background:linear-gradient(#ff79b7,var(--pink-d));
+    box-shadow:0 0 0 2px var(--gold-d),0 4px 12px rgba(224,47,126,.4)}
+  #done:active{transform:translate(1px,2px);box-shadow:0 0 0 2px var(--gold-d),0 1px 4px rgba(224,47,126,.4)}
+  /* ---------- result ---------- */
+  #result{position:fixed;inset:0;z-index:9;display:grid;place-items:center;padding:16px;
+    background:radial-gradient(circle at 50% 35%,rgba(255,120,180,.45),rgba(63,16,44,.6));backdrop-filter:blur(3px)}
+  #result[hidden]{display:none}
+  #card{width:min(430px,100%);max-height:calc(100dvh - 32px);overflow:auto;
+    background:linear-gradient(#fffafd,#ffeaf4);
+    border:3px solid #fff;border-radius:24px;
+    box-shadow:0 0 0 3px var(--gold-d),0 18px 40px rgba(63,16,44,.45);
+    padding:0 0 14px;text-align:center;overflow-x:hidden}
+  #card header{background:linear-gradient(#ff7ab8,var(--pink-d));padding:12px 16px 10px;color:#fff;
+    border-bottom:3px solid var(--gold-d)}
+  #card h2{font-family:"Pacifico",cursive;font-weight:400;font-size:30px;margin:0 0 2px;text-shadow:0 2px 0 rgba(140,20,80,.4)}
+  #card p.sub{margin:0;font-size:12.5px;color:#ffe3f1;font-weight:700}
+  #stars{font-size:31px;letter-spacing:5px;line-height:1;margin:12px 0 10px;color:var(--gold);
+    text-shadow:0 2px 0 var(--gold-d),0 4px 10px rgba(201,148,51,.4)}
+  #shots{display:flex;gap:9px;justify-content:center;margin:0 12px 12px}
+  #shots figure{margin:0;flex:1;max-width:168px}
+  #shots img{width:100%;display:block;border:2.5px solid #fff;border-radius:12px;background:#ffd9ec;
+    box-shadow:0 0 0 1.5px var(--gold-d),0 4px 10px rgba(224,47,126,.2)}
+  #shots figcaption{font-size:9.5px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--plum-soft);margin-top:4px}
+  #breakdown{display:grid;gap:6px;margin:0 20px 14px;text-align:left}
+  #breakdown div{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:800;color:var(--plum-soft)}
+  #breakdown i{height:9px;border-radius:6px;background:linear-gradient(90deg,var(--pink),#ffa6cd);display:block;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
+  #breakdown span{width:64px;text-transform:uppercase;letter-spacing:.08em;font-size:10px}
+  #card button{font-family:"Nunito",sans-serif;font-weight:900;font-size:14px;padding:11px 22px;border:2.5px solid #fff;
+    border-radius:14px;background:linear-gradient(#ff79b7,var(--pink-d));color:#fff;cursor:pointer;
+    box-shadow:0 0 0 2px var(--gold-d),0 4px 12px rgba(224,47,126,.35)}
+  #card button:active{transform:translate(1px,2px)}
+  @media (max-height:620px){
+    .tool{width:46px;height:46px}
+    .tool svg{width:20px;height:20px}
+    .tool span{font-size:8px}
+    #done{font-size:12.5px;padding:8px 13px}
+    #top b{font-size:21px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <div class="who"><b id="cname">Bibi</b><span id="cwish">wants soft, glossy waves</span></div>
+    <div class="right"><span id="cnum">1 / 5</span><button id="restart" title="Start this customer again" aria-label="Restart">↺</button></div>
+  </header>
+
+  <main id="stage">
+    <canvas id="c"></canvas>
+    <div id="hint">Drag across the hair with the brush to untangle it</div>
+  </main>
+
+  <footer id="ui">
+    <div id="tools"></div>
+    <div id="sub"><div id="palette" style="display:flex;gap:8px"></div><div id="clips" style="display:flex;gap:7px"></div></div>
+    <div id="bar">
+      <div id="tidyWrap"><i id="tidy"></i><b>glam</b></div>
+      <button id="done">Finish look</button>
+    </div>
+  </footer>
+</div>
+
+<div id="result" hidden>
+  <div id="card">
+    <header>
+      <h2 id="rTitle">Gorgeous!</h2>
+      <p class="sub" id="rSub"></p>
+    </header>
+    <div id="stars">☆☆☆</div>
+    <div id="shots">
+      <figure><img id="beforeImg" alt="before"><figcaption>before</figcaption></figure>
+      <figure><img id="afterImg" alt="after"><figcaption>after</figcaption></figure>
+    </div>
+    <div id="breakdown"></div>
+    <button id="next">Next customer</button>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ============================================================
+   Bad Hair Day — a glam salon. Every lock is drawn as a bundle
+   of fine strands so the hair catches light like real hair.
+   ============================================================ */
+
+const canvas = document.getElementById('c');
+let ctx = canvas.getContext('2d');
+const stageEl = document.getElementById('stage');
+const $ = id => document.getElementById(id);
+
+/* the salon and the customer are painted into cached layers, so an idle frame
+   is just two blits — only a tool stroke or a blink repaints the hair */
+const sceneCv = document.createElement('canvas');
+const sctx = sceneCv.getContext('2d');
+const bgCv = document.createElement('canvas');
+const bctx = bgCv.getContext('2d');
+let sceneDirty = true, bgDirty = true, fastPaint = false;
+
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+const rnd = (a = 1, b = 0) => b + Math.random() * (a - b);
+const TAU = Math.PI * 2;
+const hash01 = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const smoothstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+/* ---------- colour helpers ---------- */
+function hex2rgb(h) {
+  h = h.replace('#', '');
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  const n = parseInt(h, 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+const rgb2hex = (r, g, b) => '#' + [r, g, b].map(v => clamp(Math.round(v), 0, 255).toString(16).padStart(2, '0')).join('');
+function mixc(a, b, t) {
+  const A = hex2rgb(a), B = hex2rgb(b);
+  return rgb2hex(lerp(A[0], B[0], t), lerp(A[1], B[1], t), lerp(A[2], B[2], t));
+}
+function shade(c, k) {
+  const [r, g, b] = hex2rgb(c);
+  return k < 0 ? rgb2hex(r * (1 + k), g * (1 + k), b * (1 + k)) : rgb2hex(lerp(r, 255, k), lerp(g, 255, k), lerp(b, 255, k));
+}
+const rgba = (c, a) => { const [r, g, b] = hex2rgb(c); return `rgba(${r},${g},${b},${a})`; };
+
+/* ---------- the salon's customers ---------- */
+const CUSTOMERS = [
+  {
+    name: 'Bibi', wish: 'wants soft, glossy waves', hair: '#d8a954', skin: '#f7cfae', smock: '#ff9ec9',
+    len: 1.55, bad: 1.0, uneven: 0.36, want: { curl: 0.55, vol: 0.5, len: 0.95 },
+    tip: 'Brush out the nest, then curl soft waves through it',
+    lip: '#e05f86', iris: '#6b93a8', earring: '#f5c451',
+  },
+  {
+    name: 'Lola', wish: 'wants it sleek and sharp', hair: '#2b2029', skin: '#e8b48c', smock: '#b8a4e0',
+    len: 1.05, bad: 1.0, uneven: 0.55, want: { curl: 0.08, vol: 0.34, len: 0.72 },
+    tip: 'Iron it flat, then snip the sides even',
+    lip: '#c74a6d', iris: '#4a3527', earring: '#ffd7e9',
+  },
+  {
+    name: 'Rosa', wish: 'wants big bouncy curls', hair: '#a4552f', skin: '#d9a077', smock: '#ffc9a8',
+    len: 1.35, bad: 0.85, uneven: 0.22, want: { curl: 0.92, vol: 0.8, len: 0.9 },
+    tip: 'Blow-dry for volume, then curl every lock',
+    lip: '#b8435f', iris: '#5c7a4a', earring: '#f5c451',
+  },
+  {
+    name: 'Sasha', wish: 'wants a neat short crop', hair: '#7a6250', skin: '#f3c8a4', smock: '#a8d8d0',
+    len: 2.0, bad: 0.8, uneven: 0.6, want: { curl: 0.12, vol: 0.28, len: 0.42 },
+    tip: 'Far too long — snip it short and straighten it',
+    lip: '#d9677f', iris: '#7a5a3a', earring: '#ffffff',
+  },
+  {
+    name: 'Nell', wish: 'wants glossy and smooth', hair: '#e2cfa9', skin: '#f6cfb2', smock: '#ffb3c8',
+    len: 1.7, bad: 1.0, uneven: 0.18, want: { curl: 0.1, vol: 0.56, len: 0.95 },
+    tip: 'Tame the frizz, then iron it until it shines',
+    lip: '#e2688a', iris: '#8fae6d', earring: '#ffd7e9',
+  },
+];
+
+const DYES = ['#e6c17a', '#2a1b24', '#b06a3c', '#f0e3d0', '#ff4fa0', '#b492e0', '#5fb2ad', '#d98f7a'];
+const CLIPS = ['bow', 'flower', 'star'];
+
+/* ---------- view + state ---------- */
+const view = { cx: 0, cy: 0, R: 90, w: 0, h: 0, dpr: 1, glitter: [] };
+const S = {
+  idx: 0, tool: 'brush', dye: '#ff4fa0', clip: 'bow',
+  locks: [], clips: [], parts: [], sparks: [],
+  time: 0, phase: 'style', before: '', after: '',
+  pointer: { x: 0, y: 0, down: false, inside: false, prevX: 0, prevY: 0, moved: false },
+  blink: 2, lidClosed: false, gazeX: 0, gazeY: 0, cheer: 0, heat: 0, snips: 0,
+};
+
+let progress = { unlocked: 1, best: {} };
+try { progress = Object.assign(progress, JSON.parse(localStorage.getItem('badhair-v1') || '{}')); } catch (e) {}
+const saveProgress = () => { try { localStorage.setItem('badhair-v1', JSON.stringify(progress)); } catch (e) {} };
+
+/* ---------- tools ---------- */
+const TOOLS = [
+  { id: 'brush', label: 'Brush', hint: 'Drag through the hair to untangle and smooth it' },
+  { id: 'scissors', label: 'Snip', hint: 'Click the hair to cut it shorter where you click' },
+  { id: 'dryer', label: 'Dry', hint: 'Hold on the hair to blow in volume' },
+  { id: 'iron', label: 'Iron', hint: 'Hold on the hair to flatten frizz and add shine' },
+  { id: 'curl', label: 'Curl', hint: 'Hold on the hair to wind in curls' },
+  { id: 'dye', label: 'Dye', hint: 'Pick a colour, then drag it through the hair' },
+  { id: 'clip', label: 'Clip', hint: 'Click in the hair to add a little something' },
+];
+const ICONS = {
+  brush: '<path d="M4 20c2.6 0 3.4-1.4 3.4-3.2 0-1.6 1.2-2.4 2.4-2.4" /><path d="M8 13.6 15.6 6a2.4 2.4 0 0 1 3.4 3.4L11.4 17" /><path d="M13 8.5l2.6 2.6"/>',
+  scissors: '<circle cx="6.5" cy="6.5" r="2.4"/><circle cx="6.5" cy="17.5" r="2.4"/><path d="M8.6 8 19 17.5M8.6 16 19 6.5"/>',
+  dryer: '<path d="M3.6 9.2h7.2l5.6-3.1v11.8L10.8 14.8H3.6z"/><path d="M6 14.8v4.6h3.2v-4.6"/><path d="M18.4 10.4h2.2M18.4 13.6h1.6"/>',
+  iron: '<path d="M4 15.4h11.4c2.6 0 4.2-1.6 4.2-4.2 0-2.4-1.8-4-4.4-4H7.4c-2 0-3.4 1.4-3.4 3.4z"/><path d="M3.4 18.4h16.4"/><path d="M8.4 8v3.4"/>',
+  curl: '<path d="M7 19.4c-2.4-1.4-2.4-4.4 0-5.8 2.6-1.5 5.4.2 5.4 2.6 0 2-1.8 3.2-3.4 2.4"/><path d="M13.4 13.8c1.8-2.2 1.1-5.2-1.5-6.1-2.2-.8-4.4.7-4.4 2.8"/><path d="M9.6 6.2c.9-1.7 3-2.4 4.8-1.5"/>',
+  dye: '<path d="M10 3.4h4v3.2l3 4.2v7.4a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-7.4l3-4.2z"/><path d="M7 13.4h10"/>',
+  clip: '<path d="M12 4.6l1.9 4.1 4.5.5-3.3 3.1.9 4.5-4-2.2-4 2.2.9-4.5-3.3-3.1 4.5-.5z"/>',
+};
+const svgIcon = id => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[id]}</svg>`;
+
+/* ---------- hair model ---------- */
+const N = 14;              // spine samples per hank
+const INK = '#3f102c';
+
+function layout() {
+  const r = stageEl.getBoundingClientRect();
+  const dpr = Math.min(devicePixelRatio || 1, 1.5);   // 1.5 keeps strands crisp without the cost of 2x
+  S.stageW = r.width; S.stageH = r.height;
+  if (canvas.width !== Math.round(r.width * dpr) || canvas.height !== Math.round(r.height * dpr)) {
+    canvas.width = Math.round(r.width * dpr);
+    canvas.height = Math.round(r.height * dpr);
+  }
+  if (sceneCv.width !== canvas.width || sceneCv.height !== canvas.height) {
+    sceneCv.width = canvas.width; sceneCv.height = canvas.height;
+    bgCv.width = canvas.width; bgCv.height = canvas.height;
+  }
+  view.w = r.width; view.h = r.height; view.dpr = dpr;
+  bgDirty = true; sceneDirty = true;
+  view.R = Math.max(62, Math.min(r.width * 0.235, r.height * 0.29, 134));
+  view.cx = r.width * 0.5;
+  view.cy = r.height * 0.53;
+  if (!view.glitter.length) {
+    for (let i = 0; i < 46; i++) {
+      view.glitter.push({ x: Math.random(), y: Math.random() * 0.82, r: rnd(3.4, 1.2), p: rnd(TAU), s: rnd(1.6, 0.5) });
+    }
+  }
+  placeRoots();
+}
+
+function makeLock(a, side, def, i) {
+  const bad = def.bad;
+  const len = def.len * (1 + (Math.random() - 0.5) * def.uneven);
+  const off = [];
+  for (let k = 0; k < N; k++) {
+    off.push({ x: (Math.random() - 0.5) * 0.9 * bad, y: (Math.random() - 0.5) * 0.55 * bad });
+  }
+  return {
+    a, side, sideSign: side, idx: i,
+    anchor: { u: 0, v: 0 }, spreadMax: 0.2,
+    root: { x: 0, y: 0 },
+    len: clamp(len, 0.45, 2.4),
+    lenScale: 1,
+    vol: 0.55,
+    curl: rnd(0.3, 0.04),
+    noisy: bad,
+    off,
+    width: rnd(0.145, 0.115),
+    spreadK: rnd(1.2, 0.82),
+    phase: rnd(TAU),
+    freq: rnd(3.8, 2.4),
+    bang: false,
+    base: mixc(def.hair, '#f0d8a8', 0.04 + 0.07 * bad),
+    dye: null,
+    dyeT: 1,
+    shine: 0,
+    pts: [],
+  };
+}
+
+function buildHair(def) {
+  S.locks = [];
+  const per = 15;
+  for (let layer = 0; layer < 2; layer++) {
+    for (const side of [-1, 1]) {
+      for (let i = 0; i < per; i++) {
+        const t = i / (per - 1);
+        const l = makeLock(0, side, def, layer * 100 + (side > 0 ? 50 : 0) + i);
+        l.back = layer === 0;
+        l.sideSign = side;
+        // the hank grows out of the hairline: temples first, ears behind
+        const a = lerp(layer ? 0.33 : 0.285, layer ? 0.72 : 0.555, t) * Math.PI;
+        const rad = layer ? 0.91 : 0.93;
+        l.anchor = { u: Math.sin(side * a) * rad, v: -Math.cos(side * a) * rad * 1.02 };
+        l.spreadMax = (layer ? 0.44 : 0.17) * (0.8 + 0.55 * t);
+        l.len = clamp(def.len * (0.7 + 0.32 * t) * (0.9 + 0.2 * Math.random()) * (1 + (Math.random() - 0.5) * def.uneven), 0.5, 1.5);
+        l.width = layer ? rnd(0.125, 0.1) : rnd(0.115, 0.092);
+        l.base = shade(l.base, rnd(0.055, -0.075));
+        S.locks.push(l);
+      }
+    }
+  }
+  S.clips = [];
+  placeRoots();
+}
+
+/* roots sit on the hairline; layout() re-places them whenever the stage resizes */
+function placeRoots() {
+  for (const l of S.locks) {
+    l.root.x = view.cx + l.anchor.u * view.R;
+    l.root.y = view.cy + l.anchor.v * view.R;
+  }
+}
+
+function crownSpine(l) {
+  const R = view.R, cx = view.cx, cy = view.cy;
+  const pts = l.pts;
+  for (let i = 0; i < N; i++) {
+    const t = i / (N - 1);
+    const a = lerp(l.crownA0, l.crownA1, t);
+    const rad = (0.99 + 0.02 * Math.sin(t * 3 + l.phase)) * (1 - 0.04 * t);
+    const nx = l.off[i].x * l.noisy * R * 0.035;
+    const ny = l.off[i].y * l.noisy * R * 0.03;
+    pts[i] = {
+      x: cx + Math.sin(a) * R * rad * 0.94 + nx + l.anchor.u * R * 0.6 * (1 - t),
+      y: cy - Math.cos(a) * R * rad + ny,
+    };
+  }
+  return pts;
+}
+
+function spine(l) {
+  if (l.crown) return crownSpine(l);
+  const R = view.R;
+  const pts = l.pts;
+  const len = R * l.len * l.lenScale;
+  const sway = Math.sin(S.time * 1.3 + l.phase) * R * 0.008;
+  for (let i = 0; i < N; i++) {
+    const t = i / (N - 1);
+    const spread = l.sideSign * R * l.spreadMax * Math.pow(t, 0.85) * (0.6 + l.vol * 0.85) * l.spreadK;
+    const curl = l.curl * R * 0.3 * Math.sin(t * l.freq + l.phase * 0.5) * Math.pow(t, 1.2);
+    const nx = l.off[i].x * l.noisy * R * 0.12;
+    const ny = l.off[i].y * l.noisy * R * 0.09;
+    const wob = Math.sin(S.time * 1.1 + l.phase + t * 2.2) * R * 0.005 * t;
+    pts[i] = {
+      x: l.root.x + spread + curl + nx + sway * t + wob,
+      y: l.root.y + len * t + ny * 0.8,
+    };
+  }
+  return pts;
+}
+
+function nearLock(l, x, y, rad) {
+  let best = -1, bd = rad * rad;
+  for (let i = 0; i < N; i++) {
+    const p = l.pts[i];
+    if (!p) continue;
+    const d = (p.x - x) ** 2 + (p.y - y) ** 2;
+    if (d < bd) { bd = d; best = i; }
+  }
+  return best;
+}
+
+/* ---------- particles ---------- */
+function snip(x, y) {
+  for (let i = 0; i < 7; i++) {
+    S.parts.push({ x, y, vx: rnd(2.2, -2.2), vy: rnd(-0.6, -2.4), r: rnd(1.9, 0.9), a: rnd(TAU), life: 1.1, max: 1.1 });
+  }
+}
+function sparkle(x, y, n = 8) {
+  for (let i = 0; i < n; i++) {
+    const a = rnd(TAU);
+    S.sparks.push({ x, y, vx: Math.cos(a) * rnd(2.6, 0.8), vy: Math.sin(a) * rnd(2.6, 0.8) - 0.5, life: rnd(1.1, 0.6), size: rnd(6, 2.4) });
+  }
+}
+
+/* ---------- tools ---------- */
+function applyTool(x, y, dt, pressed) {
+  const R = view.R;
+  const tool = S.tool;
+  const rad = R * (tool === 'dye' ? 0.36 : 0.27);
+  let touched = false;
+  for (const l of S.locks) {
+    const i = nearLock(l, x, y, rad);
+    if (i < 0) continue;
+    touched = true;
+    if (tool === 'brush') {
+      const p = l.pts[i];
+      const dx = x - p.x, dy = y - p.y;
+      p.x += dx * 0.34; p.y += dy * 0.34;
+      for (let k = 0; k < N; k++) {
+        const w = 1 - Math.min(1, Math.abs(k - i) / 5);
+        l.off[k].x = lerp(l.off[k].x, 0, 0.55 * w);
+        l.off[k].y = lerp(l.off[k].y, 0, 0.55 * w);
+      }
+      l.noisy = Math.max(0, l.noisy - dt * 1.5);
+    } else if (tool === 'dryer') {
+      l.vol = Math.min(1.35, l.vol + dt * 0.85);
+      l.noisy = Math.min(1.1, l.noisy + dt * 0.06);
+      l.shine = Math.max(0, l.shine - dt * 0.2);
+    } else if (tool === 'iron') {
+      l.noisy = Math.max(0, l.noisy - dt * 1.9);
+      l.curl = lerp(l.curl, 0.05, 1 - Math.exp(-2.2 * dt));
+      l.vol = lerp(l.vol, 0.62, 1 - Math.exp(-1.4 * dt));
+      l.shine = Math.min(1, l.shine + dt * 1.7);
+      for (let k = 0; k < N; k++) { l.off[k].x *= 0.9; l.off[k].y *= 0.9; }
+    } else if (tool === 'curl') {
+      l.curl = Math.min(1.3, l.curl + dt * 1.15);
+      l.noisy = Math.max(0, l.noisy - dt * 0.35);
+    } else if (tool === 'dye') {
+      if (l.dye !== S.dye) { l.dye = S.dye; l.dyeT = 0; }
+      l.dyeT = Math.min(1, l.dyeT + dt * 1.4);
+    } else if (tool === 'scissors' && pressed) {
+      const cutT = i / (N - 1);
+      const next = clamp(cutT, 0.16, 1) * l.lenScale;
+      if (next < l.lenScale - 0.02) {
+        const p = l.pts[i];
+        snip(p.x, p.y);
+        l.lenScale = next;
+        S.snips++;
+      }
+    }
+  }
+  if (touched) {
+    if (tool === 'dryer') S.heat = Math.min(1, S.heat + dt * 2);
+    if (tool === 'iron') S.heat = Math.min(1, S.heat + dt * 2);
+  }
+  return touched;
+}
+
+/* ---------- scoring ---------- */
+function scoreNow() {
+  const def = CUSTOMERS[S.idx];
+  let noisy = 0, curl = 0, vol = 0, len = 0, shine = 0, n = 0, ln = 0;
+  let minL = 9, maxL = 0;
+  for (const l of S.locks) {
+    noisy += l.noisy;
+    if (!l.bang && !l.crown) {
+      curl += l.curl; vol += l.vol; shine += l.shine;
+      const L = l.len * l.lenScale;
+      len += L; minL = Math.min(minL, L); maxL = Math.max(maxL, L);
+      ln++;
+    }
+    n++;
+  }
+  noisy /= n;
+  curl /= ln; vol /= ln; shine /= ln; len /= ln;
+  const tidy = clamp(1 - noisy / 0.85, 0, 1);
+  const even = clamp(1 - (maxL - minL) / (def.len * 0.9), 0, 1);
+  const curlMatch = clamp(1 - Math.abs(curl - def.want.curl) / 0.75, 0, 1);
+  const volMatch = clamp(1 - Math.abs(vol - def.want.vol) / 0.7, 0, 1);
+  const lenMatch = clamp(1 - Math.abs(len - def.len * def.want.len) / 0.85, 0, 1);
+  const gloss = clamp(shine, 0, 1);
+  const total = tidy * 0.34 + even * 0.14 + curlMatch * 0.17 + volMatch * 0.15 + lenMatch * 0.12 + gloss * 0.08;
+  return { tidy, even, curlMatch, volMatch, lenMatch, gloss, total: clamp(total, 0, 1), curl, vol, len, shine };
+}
+
+const starsFor = t => (t >= 0.82 ? 3 : t >= 0.62 ? 2 : 1);
+
+/* ============================================================
+   Painting — pink salon, mirror bulbs, doll face, real hair
+   ============================================================ */
+
+function drawBackground() {
+  const w = view.w, h = view.h, R = view.R;
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#ffe7f4');
+  g.addColorStop(0.45, '#ffd9eb');
+  g.addColorStop(1, '#ffc9e1');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+
+  // soft glow behind the customer
+  const glow = ctx.createRadialGradient(view.cx, view.cy - R * 0.4, R * 0.3, view.cx, view.cy, R * 3.4);
+  glow.addColorStop(0, 'rgba(255,255,255,.85)');
+  glow.addColorStop(0.5, 'rgba(255,190,224,.35)');
+  glow.addColorStop(1, 'rgba(255,154,205,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, w, h);
+
+  // glitter speckles
+  ctx.save();
+  for (const s of view.glitter) {
+    const tw = 0.35 + 0.65 * Math.abs(Math.sin(S.time * s.s + s.p));
+    ctx.globalAlpha = 0.5 * tw;
+    ctx.fillStyle = '#ffffff';
+    const gx = s.x * w + Math.sin(S.time * 0.4 + s.p) * 4;
+    const gy = s.y * h;
+    ctx.beginPath();
+    ctx.moveTo(gx, gy - s.r); ctx.quadraticCurveTo(gx, gy, gx + s.r, gy);
+    ctx.quadraticCurveTo(gx, gy, gx, gy + s.r); ctx.quadraticCurveTo(gx, gy, gx - s.r, gy);
+    ctx.quadraticCurveTo(gx, gy, gx, gy - s.r);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // vanity mirror with warm bulbs
+  const mx = view.cx, my = view.cy - R * 0.52;
+  const mw = R * 2.5, mh = R * 3.0;
+  const topY = my - mh / 2;
+  const archR = mw / 2;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(mx - mw / 2, my + mh / 2);
+  ctx.lineTo(mx - mw / 2, topY + archR);
+  ctx.arc(mx, topY + archR, archR, Math.PI, 0);
+  ctx.lineTo(mx + mw / 2, my + mh / 2);
+  ctx.closePath();
+  const mg = ctx.createLinearGradient(mx - mw / 2, topY, mx + mw / 2, my + mh / 2);
+  mg.addColorStop(0, '#dff0f4');
+  mg.addColorStop(0.4, '#f6fbfc');
+  mg.addColorStop(0.62, '#e6f2f5');
+  mg.addColorStop(1, '#c9e0e6');
+  ctx.fillStyle = mg;
+  ctx.fill();
+  // mirror reflection streak
+  ctx.save();
+  ctx.clip();
+  ctx.globalAlpha = 0.35;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.moveTo(mx - mw * 0.36, topY);
+  ctx.lineTo(mx - mw * 0.16, topY);
+  ctx.lineTo(mx + mw * 0.04, my + mh / 2);
+  ctx.lineTo(mx - mw * 0.16, my + mh / 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+  // rebuild the arch before framing it — the streak clip replaced the path
+  ctx.beginPath();
+  ctx.moveTo(mx - mw / 2, my + mh / 2);
+  ctx.lineTo(mx - mw / 2, topY + archR);
+  ctx.arc(mx, topY + archR, archR, Math.PI, 0);
+  ctx.lineTo(mx + mw / 2, my + mh / 2);
+  ctx.closePath();
+  ctx.strokeStyle = '#f5c451';
+  ctx.lineWidth = Math.max(6, R * 0.075);
+  ctx.stroke();
+  ctx.strokeStyle = '#fff4d0';
+  ctx.lineWidth = Math.max(1.6, R * 0.018);
+  ctx.stroke();
+  ctx.restore();
+
+  // bulbs around the arch
+  const bulbs = 13;
+  for (let i = 0; i < bulbs; i++) {
+    const a = Math.PI + (i / (bulbs - 1)) * Math.PI;
+    const bx = mx + Math.cos(a) * archR * 1.05;
+    const by = topY + archR + Math.sin(a) * archR * 1.05;
+    const tw = 0.55 + 0.45 * Math.abs(Math.sin(S.time * 2 + i));
+    const rg = ctx.createRadialGradient(bx, by, 0, bx, by, R * 0.16);
+    rg.addColorStop(0, `rgba(255,248,220,${0.95 * tw})`);
+    rg.addColorStop(0.45, `rgba(255,215,140,${0.45 * tw})`);
+    rg.addColorStop(1, 'rgba(255,190,120,0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath(); ctx.arc(bx, by, R * 0.16, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx, by, Math.max(3, R * 0.045), 0, TAU);
+    ctx.fillStyle = '#fffaf0'; ctx.fill();
+    ctx.strokeStyle = 'rgba(201,148,51,.55)'; ctx.lineWidth = 1.2; ctx.stroke();
+  }
+
+  // marble counter
+  const counterY = view.cy + R * 1.5;
+  const cg = ctx.createLinearGradient(0, counterY, 0, h);
+  cg.addColorStop(0, '#fff6fb');
+  cg.addColorStop(0.25, '#ffe9f3');
+  cg.addColorStop(1, '#f7cfe2');
+  ctx.fillStyle = cg;
+  ctx.fillRect(0, counterY, w, h - counterY);
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.strokeStyle = '#e2a9c6';
+  ctx.lineWidth = 1.2;
+  for (let i = 0; i < 7; i++) {
+    const y0 = counterY + 12 + i * ((h - counterY) / 7);
+    ctx.beginPath();
+    ctx.moveTo(-10, y0);
+    ctx.bezierCurveTo(w * 0.3, y0 - 9, w * 0.6, y0 + 11, w + 10, y0 - 3);
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.fillStyle = '#f5c451';
+  ctx.fillRect(0, counterY - 4, w, 6);
+  ctx.strokeStyle = '#c99433';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(0, counterY + 2); ctx.lineTo(w, counterY + 2); ctx.stroke();
+
+  // a couple of glam bottles on the counter edge
+  drawBottle(w * 0.06, counterY + 6, R * 0.16, '#ff8fc4', '#fff');
+  drawBottle(w * 0.94, counterY + 4, R * 0.13, '#d9a7ff', '#fff');
+}
+
+function drawBottle(x, y, s, body, cap) {
+  if (s < 8 || !ctx.roundRect) return;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = rgba(body, 0.9);
+  ctx.beginPath();
+  ctx.roundRect(-s * 0.36, s * 0.35, s * 0.72, s * 0.9, s * 0.14);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.45)';
+  ctx.beginPath();
+  ctx.roundRect(-s * 0.24, s * 0.44, s * 0.16, s * 0.66, s * 0.08);
+  ctx.fill();
+  ctx.fillStyle = cap;
+  ctx.beginPath();
+  ctx.roundRect(-s * 0.16, s * 0.02, s * 0.32, s * 0.38, s * 0.08);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawShoulders(smock) {
+  const R = view.R, cx = view.cx, cy = view.cy;
+  // silk smock
+  ctx.beginPath();
+  ctx.moveTo(cx - R * 1.85, cy + R * 2.2);
+  ctx.quadraticCurveTo(cx - R * 1.55, cy + R * 1.02, cx - R * 0.4, cy + R * 0.95);
+  ctx.lineTo(cx + R * 0.4, cy + R * 0.95);
+  ctx.quadraticCurveTo(cx + R * 1.55, cy + R * 1.02, cx + R * 1.85, cy + R * 2.2);
+  ctx.closePath();
+  const g = ctx.createLinearGradient(cx - R, cy + R, cx + R, cy + R * 2.1);
+  g.addColorStop(0, shade(smock, 0.22));
+  g.addColorStop(0.45, smock);
+  g.addColorStop(1, shade(smock, -0.2));
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.strokeStyle = rgba('#7c1d4c', 0.5);
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  // satin folds
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = Math.max(1.4, R * 0.02);
+  for (let i = -2; i <= 2; i++) {
+    if (!i) continue;
+    ctx.beginPath();
+    ctx.moveTo(cx + i * R * 0.24, cy + R * 1.02);
+    ctx.quadraticCurveTo(cx + i * R * 0.4, cy + R * 1.5, cx + i * R * 0.62, cy + R * 2.1);
+    ctx.stroke();
+  }
+  ctx.restore();
+  // collar
+  ctx.beginPath();
+  ctx.moveTo(cx - R * 0.32, cy + R * 0.98);
+  ctx.quadraticCurveTo(cx, cy + R * 1.36, cx + R * 0.32, cy + R * 0.98);
+  ctx.strokeStyle = rgba('#ffffff', 0.8);
+  ctx.lineWidth = Math.max(2, R * 0.03);
+  ctx.stroke();
+}
+
+function drawHead(def) {
+  const R = view.R, cx = view.cx, cy = view.cy, skin = def.skin;
+
+  // neck
+  ctx.beginPath();
+  ctx.moveTo(cx - R * 0.25, cy + R * 0.5);
+  ctx.quadraticCurveTo(cx - R * 0.27, cy + R * 0.86, cx - R * 0.34, cy + R * 1.02);
+  ctx.lineTo(cx + R * 0.34, cy + R * 1.02);
+  ctx.quadraticCurveTo(cx + R * 0.27, cy + R * 0.86, cx + R * 0.25, cy + R * 0.5);
+  ctx.closePath();
+  const ng = ctx.createLinearGradient(cx - R * 0.3, 0, cx + R * 0.3, 0);
+  ng.addColorStop(0, shade(skin, -0.26));
+  ng.addColorStop(0.5, shade(skin, -0.12));
+  ng.addColorStop(1, shade(skin, -0.26));
+  ctx.fillStyle = ng;
+  ctx.fill();
+
+  // ears + pearls
+  for (const s of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(cx + s * R * 0.87, cy + R * 0.04, R * 0.11, R * 0.165, 0, 0, TAU);
+    ctx.fillStyle = shade(skin, -0.05);
+    ctx.fill();
+    ctx.strokeStyle = rgba('#a8705a', 0.45);
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx + s * R * 0.89, cy + R * 0.23, R * 0.045, 0, TAU);
+    const pg = ctx.createRadialGradient(cx + s * R * 0.89 - R * 0.015, cy + R * 0.215, 0, cx + s * R * 0.89, cy + R * 0.23, R * 0.05);
+    pg.addColorStop(0, '#ffffff');
+    pg.addColorStop(1, def.earring);
+    ctx.fillStyle = pg;
+    ctx.fill();
+  }
+
+  // head
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, R * 0.85, R * 1.0, 0, 0, TAU);
+  const hg = ctx.createRadialGradient(cx - R * 0.3, cy - R * 0.42, R * 0.15, cx, cy + R * 0.1, R * 1.18);
+  hg.addColorStop(0, shade(skin, 0.16));
+  hg.addColorStop(0.55, skin);
+  hg.addColorStop(1, shade(skin, -0.18));
+  ctx.fillStyle = hg;
+  ctx.fill();
+
+  // cheek warmth
+  ctx.save();
+  ctx.globalAlpha = 0.4;
+  for (const s of [-1, 1]) {
+    const cg = ctx.createRadialGradient(cx + s * R * 0.5, cy + R * 0.24, 0, cx + s * R * 0.5, cy + R * 0.24, R * 0.26);
+    cg.addColorStop(0, '#ef8fa6');
+    cg.addColorStop(1, 'rgba(239,143,166,0)');
+    ctx.fillStyle = cg;
+    ctx.beginPath();
+    ctx.ellipse(cx + s * R * 0.5, cy + R * 0.24, R * 0.26, R * 0.17, 0, 0, TAU);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  drawFace(def);
+}
+
+function drawFace(def) {
+  const R = view.R, cx = view.cx, cy = view.cy;
+  const sc = scoreNow();
+  const happy = S.phase === 'result' ? 1 : clamp((sc.total - 0.28) / 0.6, 0, 1);
+  const blink = S.blink < 0.14 ? 0.1 : 1;
+
+  // eyes
+  for (const s of [-1, 1]) {
+    const ex = cx + s * R * 0.35 + S.gazeX * R * 0.03;
+    const ey = cy - R * 0.04 + S.gazeY * R * 0.02;
+    const ew = R * 0.17, eh = R * 0.2 * blink;
+
+    // eye white
+    ctx.beginPath();
+    ctx.ellipse(ex, ey, ew, eh, 0, 0, TAU);
+    ctx.fillStyle = '#fffdfa';
+    ctx.fill();
+    ctx.strokeStyle = rgba('#5a2b44', 0.55);
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+
+    if (blink > 0.5) {
+      const gx = ex + S.gazeX * R * 0.05, gy = ey + S.gazeY * R * 0.035;
+      // iris
+      const ir = ctx.createRadialGradient(gx - R * 0.03, gy - R * 0.04, R * 0.01, gx, gy, R * 0.115);
+      ir.addColorStop(0, shade(def.iris, 0.45));
+      ir.addColorStop(0.55, def.iris);
+      ir.addColorStop(1, shade(def.iris, -0.55));
+      ctx.beginPath();
+      ctx.ellipse(gx, gy, R * 0.105, R * 0.115, 0, 0, TAU);
+      ctx.fillStyle = ir;
+      ctx.fill();
+      // pupil
+      ctx.beginPath();
+      ctx.ellipse(gx, gy, R * 0.048, R * 0.055, 0, 0, TAU);
+      ctx.fillStyle = '#21121b';
+      ctx.fill();
+      // catchlights
+      ctx.beginPath();
+      ctx.arc(gx - R * 0.035, gy - R * 0.045, R * 0.032, 0, TAU);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(gx + R * 0.04, gy + R * 0.035, R * 0.014, 0, TAU);
+      ctx.fillStyle = 'rgba(255,255,255,.8)';
+      ctx.fill();
+      // lower lid shimmer
+      ctx.beginPath();
+      ctx.ellipse(ex, ey + R * 0.13, R * 0.1, R * 0.02, 0, 0, Math.PI);
+      ctx.fillStyle = 'rgba(255,255,255,.6)';
+      ctx.fill();
+    } else {
+      // closed lid
+      ctx.beginPath();
+      ctx.moveTo(ex - ew, ey);
+      ctx.quadraticCurveTo(ex, ey + R * 0.05, ex + ew, ey);
+      ctx.strokeStyle = '#5a2b44';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // upper lash line with a flick
+    ctx.beginPath();
+    ctx.moveTo(ex - ew * (s > 0 ? 0.98 : 1), ey - R * 0.01);
+    ctx.quadraticCurveTo(ex, ey - eh - R * 0.03, ex + ew * (s > 0 ? 1.02 : 1), ey - R * 0.03);
+    ctx.strokeStyle = '#2c1522';
+    ctx.lineWidth = Math.max(2.2, R * 0.026);
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    // flicked lashes
+    for (let k = 0; k < 3; k++) {
+      const lx = ex + s * ew * (0.55 + k * 0.22);
+      const ly = ey - eh * (0.55 - k * 0.16) - R * 0.01;
+      ctx.beginPath();
+      ctx.moveTo(lx, ly);
+      ctx.quadraticCurveTo(lx + s * R * 0.03, ly - R * 0.05, lx + s * R * 0.06, ly - R * 0.055);
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+    }
+
+    // brow
+    const by = cy - R * 0.32 - happy * R * 0.015;
+    ctx.beginPath();
+    ctx.moveTo(ex - s * R * 0.15, by + R * 0.03);
+    ctx.quadraticCurveTo(ex, by - R * 0.075 - happy * R * 0.015, ex + s * R * 0.15, by + R * 0.01);
+    ctx.strokeStyle = rgba(shade(def.hair, -0.22), 0.85);
+    ctx.lineWidth = Math.max(2, R * 0.022);
+    ctx.stroke();
+  }
+
+  // nose
+  ctx.beginPath();
+  ctx.moveTo(cx + R * 0.015, cy + R * 0.07);
+  ctx.quadraticCurveTo(cx + R * 0.075, cy + R * 0.18, cx - R * 0.02, cy + R * 0.19);
+  ctx.strokeStyle = rgba(shade(def.skin, -0.45), 0.55);
+  ctx.lineWidth = Math.max(1.6, R * 0.018);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(cx - R * 0.005, cy + R * 0.13, R * 0.03, R * 0.02, 0, 0, TAU);
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.fill();
+
+  // lips — glossy, smile grows with the score
+  const mw = R * (0.15 + happy * 0.08);
+  const my = cy + R * 0.34;
+  const open = R * (0.05 + happy * 0.07);
+  ctx.beginPath();
+  ctx.moveTo(cx - mw, my);
+  ctx.quadraticCurveTo(cx - mw * 0.4, my - R * 0.055, cx, my - R * 0.03);
+  ctx.quadraticCurveTo(cx + mw * 0.4, my - R * 0.055, cx + mw, my);
+  ctx.quadraticCurveTo(cx, my + open * 1.6, cx - mw, my);
+  ctx.closePath();
+  const lg = ctx.createLinearGradient(cx, my - R * 0.06, cx, my + open * 1.6);
+  lg.addColorStop(0, shade(def.lip, 0.18));
+  lg.addColorStop(0.5, def.lip);
+  lg.addColorStop(1, shade(def.lip, -0.3));
+  ctx.fillStyle = lg;
+  ctx.fill();
+  ctx.strokeStyle = rgba(shade(def.lip, -0.5), 0.6);
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  // gloss highlight
+  ctx.beginPath();
+  ctx.ellipse(cx - mw * 0.28, my - R * 0.015, mw * 0.26, R * 0.018, -0.15, 0, TAU);
+  ctx.fillStyle = 'rgba(255,255,255,.7)';
+  ctx.fill();
+}
+/* ---------- hair geometry ---------- */
+function lockTone(l) {
+  let c = l.base;
+  if (l.dye && l.dyeT > 0) c = mixc(c, l.dye, clamp(l.dyeT, 0, 1));
+  return c;
+}
+
+function lockWidth(l, t) {
+  const R = view.R;
+  // long locks end in a point; short fringe and crown locks keep their width
+  const tip = (l.bang || l.crown)
+    ? 1 - smoothstep(0.9, 1, t) * 0.45
+    : 1 - smoothstep(0.76, 1, t) * 0.94;
+  return R * l.width * (0.3 + 0.7 * Math.pow(1 - t, 0.8)) * tip * (0.78 + l.vol * 0.55) * (l.back ? 1.2 : 1);
+}
+
+function ribbon(target, l, scale) {
+  const k = scale == null ? 1 : scale;
+  const pts = l.pts;
+  const left = [], right = [];
+  for (let i = 0; i < N; i++) {
+    const p = pts[i];
+    const q = pts[Math.min(N - 1, i + 1)], r = pts[Math.max(0, i - 1)];
+    let tx = q.x - r.x, ty = q.y - r.y;
+    const m = Math.hypot(tx, ty) || 1;
+    tx /= m; ty /= m;
+    const nx = -ty, ny = tx;
+    const w = lockWidth(l, i / (N - 1)) * k;
+    left.push({ x: p.x + nx * w, y: p.y + ny * w });
+    right.push({ x: p.x - nx * w, y: p.y - ny * w });
+  }
+  if (target.beginPath) target.beginPath();   // Path2D has no beginPath — it accumulates subpaths
+  target.moveTo(left[0].x, left[0].y);
+  for (let i = 1; i < N; i++) {
+    const a = left[i - 1], b = left[i];
+    target.quadraticCurveTo(a.x, a.y, (a.x + b.x) / 2, (a.y + b.y) / 2);
+  }
+  target.lineTo(left[N - 1].x, left[N - 1].y);
+  target.lineTo(right[N - 1].x, right[N - 1].y);
+  for (let i = N - 2; i >= 0; i--) {
+    const a = right[i + 1], b = right[i];
+    target.quadraticCurveTo(a.x, a.y, (a.x + b.x) / 2, (a.y + b.y) / 2);
+  }
+  target.closePath();
+}
+
+/* one fine strand following the hank's spine */
+function traceStrand(l, k, count, endT, tone, alpha, width, uOverride) {
+  const pts = l.pts, N1 = N - 1, R = view.R;
+  const s = hash01(l.idx * 37.1 + k * 91.7);
+  const u = uOverride != null ? uOverride : ((k + 0.5) / count) * 2 - 1;
+  const steps = 11;
+  const X = [], Y = [];
+  for (let i = 0; i <= steps; i++) {
+    const tt = (i / steps) * endT;
+    const fi = tt * N1;
+    const i0 = Math.min(N1 - 1, Math.floor(fi)), i1 = i0 + 1, f = fi - i0;
+    const p0 = pts[i0], p1 = pts[i1];
+    let tx = p1.x - p0.x, ty = p1.y - p0.y;
+    const m = Math.hypot(tx, ty) || 1;
+    tx /= m; ty /= m;
+    const w = lockWidth(l, tt);
+    const weave = Math.sin(tt * (4 + l.curl * 9) + s * TAU) * (0.07 + 0.2 * l.curl);
+    const jit = (hash01(l.idx * 7.3 + k * 3.1 + i * 17.7) - 0.5) * (0.12 + l.noisy * 0.55);
+    const off = clamp(u * (0.92 + 0.12 * s) + weave + jit * 0.55, -1.02, 1.02) * w;
+    X.push(lerp(p0.x, p1.x, f) + (-ty) * off);
+    Y.push(lerp(p0.y, p1.y, f) + tx * off);
+  }
+  ctx.beginPath();
+  ctx.moveTo(X[0], Y[0]);
+  for (let i = 1; i < steps; i++) {
+    ctx.quadraticCurveTo(X[i], Y[i], (X[i] + X[i + 1]) / 2, (Y[i] + Y[i + 1]) / 2);
+  }
+  ctx.lineTo(X[steps], Y[steps]);
+  ctx.strokeStyle = tone;
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = width;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+  return { x: X[steps], y: Y[steps] };
+}
+
+function drawHank(l, opts) {
+  const o = opts || {};
+  const R = view.R;
+  const tone = lockTone(l);
+  const boost = o.darkness || 0;
+  const density = o.density || (l.back ? 0.72 : 1);
+
+  // soft mass: three feathered passes so no hard slab edges show
+  const p0 = l.pts[0], pL = l.pts[N - 1];
+  const g = ctx.createLinearGradient(p0.x, p0.y, pL.x, pL.y);
+  g.addColorStop(0, shade(tone, -0.46 - boost));
+  g.addColorStop(0.3, shade(tone, -0.17 - boost));
+  g.addColorStop(0.62, shade(tone, -0.02 - boost));
+  g.addColorStop(1, shade(tone, 0.08 - boost));
+  const passes = [[1.0, 0.24], [0.88, 0.36], [0.62, 0.36]];
+  for (const [k, a] of passes) {
+    ribbon(ctx, l, k);
+    ctx.save();
+    ctx.globalAlpha = a * (l.back ? 0.85 : 1) * (o.body == null ? 1 : o.body);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // soft seam between neighbouring locks reads as clumped hair
+  if (!fastPaint && !l.crown && !l.bang) {
+    traceStrand(l, 30 + l.idx, 3, 0.62, shade(tone, -0.52 - boost), 0.13, Math.max(1.2, R * 0.009), 0.92);
+  }
+
+  // fine strands
+  const count = Math.max(3, Math.round((l.back ? 5 : 8) * density * (R > 112 ? 1 : 0.8) * (fastPaint ? 0.45 : 1)));
+  for (let k = 0; k < count; k++) {
+    const v = hash01(l.idx * 101.3 + k * 7.77);
+    const tk = v < 0.24 ? 0.3 : v < 0.6 ? 0.06 : -0.16 - 0.2 * v;
+    const toneS = shade(tone, tk - boost);
+    const endT = 0.45 + 0.55 * hash01(l.idx * 3.3 + k * 11.1);
+    const alpha = (0.12 + 0.24 * hash01(k * 2.7 + l.idx * 1.3)) * (l.back ? 0.85 : 1);
+    const width = (0.6 + 1.1 * hash01(k * 5.3 + l.idx * 1.7)) * (R / 100) * (l.back ? 1.1 : 1);
+    traceStrand(l, k, count, endT, toneS, alpha, width);
+  }
+
+  // broad soft clumps break up the flat body
+  for (let c = 0; c < (fastPaint ? 0 : 3); c++) {
+    const u = -0.5 + c * 0.8;
+    traceStrand(l, c + 21, 4, 0.9, shade(tone, -0.42 - boost), 0.1, Math.max(2.4, R * 0.028), u);
+  }
+
+  // a specular streak down the lit side of every lock — the doll-hair gloss
+  const shine = o.shine != null ? o.shine : l.shine;
+  if (!l.bang && !fastPaint) {
+    ctx.save();
+    ctx.lineCap = 'round';
+    for (let pass = 0; pass < 2; pass++) {
+      ctx.beginPath();
+      const i0 = 1 + pass, i1 = Math.max(i0 + 2, Math.round(N * (0.5 + pass * 0.12)));
+      for (let i = i0; i <= i1; i++) {
+        const p = l.pts[i];
+        const q = l.pts[Math.min(N - 1, i + 1)], r = l.pts[Math.max(0, i - 1)];
+        const m = Math.hypot(q.x - r.x, q.y - r.y) || 1;
+        const nx = -(q.y - r.y) / m, ny = (q.x - r.x) / m;
+        const off = (-0.42 + pass * 0.3) * lockWidth(l, i / (N - 1)) * (l.sideSign || 1);
+        const x = p.x + nx * off, y = p.y + ny * off;
+        i === i0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.globalAlpha = (0.14 + shine * 0.38) * (1 - pass * 0.45);
+      ctx.strokeStyle = shade(tone, 0.55);
+      ctx.lineWidth = Math.max(1.4, R * 0.015 * (0.85 + shine) * (1 - pass * 0.5));
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // a couple of short wisps keep messy hair looking fuzzy without spider webs
+  if (l.noisy > 0.35 && !l.bang) {
+    const s = hash01(l.idx * 57.7);
+    const i0 = Math.round((0.22 + 0.3 * s) * (N - 1));
+    const p = l.pts[i0];
+    const dir = l.sideSign || 1;
+    const ex = p.x + dir * R * (0.05 + 0.07 * s) * (0.5 + l.noisy * 0.6);
+    const ey = p.y - R * 0.03 * (0.5 + l.noisy * 0.6);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.quadraticCurveTo(p.x + dir * R * 0.05, p.y - R * 0.045, ex, ey);
+    ctx.strokeStyle = shade(tone, 0.2);
+    ctx.globalAlpha = 0.3;
+    ctx.lineWidth = Math.max(0.8, R * 0.007);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* the top of the head: scalp tone plus strands sweeping from the crown */
+function capPath(target) {
+  const R = view.R, cx = view.cx, cy = view.cy;
+  if (target.beginPath) target.beginPath();
+  target.ellipse(cx, cy - R * 0.02, R * 1.0, R * 1.03, 0, Math.PI * 1.02, Math.PI * 1.98);
+  target.quadraticCurveTo(cx + R * 0.68, cy - R * 0.28, cx + R * 0.38, cy - R * 0.38);
+  target.quadraticCurveTo(cx + R * 0.12, cy - R * 0.45, cx - R * 0.18, cy - R * 0.41);
+  target.quadraticCurveTo(cx - R * 0.54, cy - R * 0.33, cx - R * 1.0, cy - R * 0.1);
+  target.closePath();
+}
+
+function drawRoots(def) {
+  const R = view.R, cx = view.cx, cy = view.cy;
+  let tone = def.hair;
+  let n = 0;
+  for (const l of S.locks) { if (l.bang) continue; tone = mixc(tone, lockTone(l), 1 / (n + 2)); n++; }
+
+  capPath(ctx);
+  const g = ctx.createLinearGradient(cx, cy - R * 1.05, cx, cy + R * 0.05);
+  g.addColorStop(0, shade(tone, 0.02));
+  g.addColorStop(0.55, shade(tone, -0.18));
+  g.addColorStop(1, shade(tone, -0.38));
+  ctx.fillStyle = g;
+  ctx.fill();
+
+  // strands sweeping back from the crown
+  const crownX = cx - R * 0.1, crownY = cy - R * 0.5;
+  ctx.save();
+  capPath(ctx);
+  ctx.clip();
+  const count = fastPaint ? 22 : 80;
+  for (let i = 0; i < count; i++) {
+    const t = (i + 0.5) / count;
+    const a = Math.PI * 1.015 + t * Math.PI * 0.97;
+    const s = hash01(i * 7.13);
+    const ex = cx + Math.cos(a) * R * (0.99 + 0.03 * s);
+    const ey = cy + Math.sin(a) * R * (1.01 + 0.04 * s);
+    const sx = crownX + (hash01(i * 3.31) - 0.5) * R * 0.5;
+    const sy = crownY + (hash01(i * 5.17) - 0.5) * R * 0.16;
+    const mx = (sx + ex) / 2 + (sx - cx) * 0.1;
+    const my = (sy + ey) / 2 - R * 0.12;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.quadraticCurveTo(mx, my, ex, ey);
+    const tk = hash01(i * 11.3);
+    ctx.strokeStyle = shade(tone, tk < 0.35 ? 0.22 : tk < 0.7 ? 0.02 : -0.22);
+    ctx.globalAlpha = 0.12 + 0.2 * hash01(i * 2.9);
+    ctx.lineWidth = (0.8 + 1.2 * tk) * (R / 100);
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
+
+  ctx.globalAlpha = 1;
+}
+
+/* a broad specular band across the whole hairstyle */
+function drawSheen(sc) {
+  const R = view.R, cx = view.cx, cy = view.cy;
+  const sil = new Path2D();
+  for (const l of S.locks) if (!l.bang) ribbon(sil, l);
+  capPath(sil);
+  for (const l of S.locks) if (l.bang) ribbon(sil, l);
+
+  const shine = 0.35 + sc.gloss * 0.65;
+  ctx.save();
+  ctx.clip(sil);
+  ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createLinearGradient(cx - R * 0.9, cy - R * 1.05, cx + R * 0.7, cy + R * 0.5);
+  g.addColorStop(0, 'rgba(255,255,255,0)');
+  g.addColorStop(0.22, `rgba(255,248,225,${0.05 * shine})`);
+  g.addColorStop(0.38, `rgba(255,252,235,${0.2 * shine})`);
+  g.addColorStop(0.5, `rgba(255,238,210,${0.1 * shine})`);
+  g.addColorStop(0.7, 'rgba(255,255,255,0)');
+  g.addColorStop(1, 'rgba(255,225,245,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(cx - R * 2, cy - R * 2, R * 4, R * 4);
+
+  // a second, tighter highlight for that glossy doll look
+  const g2 = ctx.createLinearGradient(cx - R * 0.4, cy - R * 0.85, cx + R * 0.35, cy + R * 0.05);
+  g2.addColorStop(0, 'rgba(255,255,255,0)');
+  g2.addColorStop(0.45, `rgba(255,255,255,${0.18 * shine})`);
+  g2.addColorStop(0.55, `rgba(255,255,255,${0.07 * shine})`);
+  g2.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g2;
+  ctx.fillRect(cx - R * 2, cy - R * 2, R * 4, R * 4);
+
+  // crown shine, like a shampoo advert
+  const cg = ctx.createRadialGradient(cx - R * 0.16, cy - R * 0.72, 0, cx - R * 0.16, cy - R * 0.72, R * 0.62);
+  cg.addColorStop(0, `rgba(255,253,240,${0.16 + shine * 0.26})`);
+  cg.addColorStop(1, 'rgba(255,253,240,0)');
+  ctx.fillStyle = cg;
+  ctx.beginPath();
+  ctx.ellipse(cx - R * 0.16, cy - R * 0.72, R * 0.6, R * 0.3, -0.2, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+
+  // contact shadow where the hair sits over the face
+  ctx.save();
+  for (const side of [-1, 1]) {
+    const gx = cx + side * R * 0.72, gy = cy + R * 0.12;
+    const rg = ctx.createRadialGradient(gx, gy, 0, gx, gy, R * 0.46);
+    rg.addColorStop(0, 'rgba(80,34,12,.2)');
+    rg.addColorStop(1, 'rgba(80,34,12,0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.ellipse(gx, gy, R * 0.34, R * 0.8, 0, 0, TAU);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // soft occlusion where the fringe meets the forehead
+  ctx.save();
+  ctx.globalAlpha = 0.1;
+  ctx.globalCompositeOperation = 'multiply';
+  const sh = ctx.createRadialGradient(cx, cy - R * 0.3, R * 0.1, cx, cy - R * 0.3, R * 0.9);
+  sh.addColorStop(0, 'rgba(90,30,60,.55)');
+  sh.addColorStop(1, 'rgba(90,30,60,0)');
+  ctx.fillStyle = sh;
+  ctx.fillRect(cx - R, cy - R, R * 2, R * 1.3);
+  ctx.restore();
+}
+
+function drawClip(c) {
+  const s = view.R * 0.19;
+  ctx.save();
+  ctx.translate(c.x, c.y);
+  ctx.rotate(c.rot);
+  ctx.strokeStyle = 'rgba(63,16,44,.55)';
+  ctx.lineWidth = 1.6;
+  ctx.lineJoin = 'round';
+  if (c.type === 'bow') {
+    for (const k of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(k * s * 1.5, -s * 0.9, k * s * 1.1, s * 0.55);
+      ctx.quadraticCurveTo(k * s * 0.4, s * 0.2, 0, 0);
+      const bg = ctx.createLinearGradient(0, -s, 0, s);
+      bg.addColorStop(0, '#ffadd2');
+      bg.addColorStop(1, '#e0388a');
+      ctx.fillStyle = bg;
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.32, 0, TAU); ctx.fillStyle = '#ffd9ea'; ctx.fill(); ctx.stroke();
+  } else if (c.type === 'flower') {
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * TAU + c.rot;
+      ctx.beginPath();
+      ctx.ellipse(Math.cos(a) * s * 0.8, Math.sin(a) * s * 0.8, s * 0.55, s * 0.4, a, 0, TAU);
+      ctx.fillStyle = '#fff0f7';
+      ctx.fill(); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.4, 0, TAU); ctx.fillStyle = '#f5c451'; ctx.fill(); ctx.stroke();
+  } else {
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * TAU - Math.PI / 2;
+      const r = i % 2 ? s * 0.45 : s * 1.05;
+      const x = Math.cos(a) * r, y = Math.sin(a) * r;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.closePath();
+    const sg = ctx.createLinearGradient(-s, -s, s, s);
+    sg.addColorStop(0, '#ffe9a8');
+    sg.addColorStop(1, '#e0a52f');
+    ctx.fillStyle = sg;
+    ctx.fill(); ctx.stroke();
+  }
+  // sparkle
+  ctx.globalAlpha = 0.5 + 0.5 * Math.abs(Math.sin(S.time * 2 + c.rot));
+  ctx.beginPath();
+  ctx.arc(-s * 0.5, -s * 0.6, s * 0.12, 0, TAU);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+function drawCursor() {
+  if (!S.pointer.inside || S.phase !== 'style') return;
+  const p = S.pointer, R = view.R;
+  ctx.save();
+  ctx.globalAlpha = p.down ? 0.85 : 0.4;
+  ctx.strokeStyle = '#e02f7e';
+  ctx.lineWidth = 1.6;
+  ctx.setLineDash([4, 6]);
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, R * 0.29, 0, TAU);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  if (S.tool === 'scissors') {
+    ctx.beginPath();
+    ctx.moveTo(p.x - 8, p.y + 8); ctx.lineTo(p.x + 8, p.y - 8);
+    ctx.moveTo(p.x + 8, p.y + 8); ctx.lineTo(p.x - 8, p.y - 8);
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawParticles(dt) {
+  for (let i = S.parts.length - 1; i >= 0; i--) {
+    const q = S.parts[i];
+    q.life -= dt;
+    q.vy += dt * 26;
+    q.x += q.vx; q.y += q.vy;
+    q.a += dt * 5;
+    if (q.life <= 0) { S.parts.splice(i, 1); continue; }
+    ctx.save();
+    ctx.globalAlpha = clamp(q.life / q.max, 0, 1);
+    ctx.translate(q.x, q.y);
+    ctx.rotate(q.a);
+    ctx.strokeStyle = '#8a6a4a';
+    ctx.lineWidth = q.r;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-3.4, 0);
+    ctx.quadraticCurveTo(0, -2.4, 3.4, 0);
+    ctx.stroke();
+    ctx.restore();
+  }
+  for (let i = S.sparks.length - 1; i >= 0; i--) {
+    const s = S.sparks[i];
+    s.life -= dt;
+    s.x += s.vx; s.y += s.vy; s.vy += dt * 3;
+    if (s.life <= 0) { S.sparks.splice(i, 1); continue; }
+    ctx.save();
+    ctx.globalAlpha = clamp(s.life, 0, 1);
+    ctx.fillStyle = '#fff8d8';
+    ctx.beginPath();
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * TAU - Math.PI / 2;
+      const r = k % 2 ? s.size * 0.3 : s.size;
+      const x = s.x + Math.cos(a) * r, y = s.y + Math.sin(a) * r;
+      k ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function renderBackgroundLayer() {
+  const main = ctx;
+  ctx = bctx;
+  bctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
+  bctx.clearRect(0, 0, view.w, view.h);
+  drawBackground();
+  ctx = main;
+  bgDirty = false;
+}
+
+function renderSceneLayer() {
+  const main = ctx;
+  if (bgDirty) renderBackgroundLayer();
+  fastPaint = S.phase === 'style' && S.pointer.down;
+  ctx = sctx;
+  sctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
+  sctx.clearRect(0, 0, view.w, view.h);
+  sctx.drawImage(bgCv, 0, 0, view.w, view.h);
+
+  const def = CUSTOMERS[S.idx];
+  const sc = scoreNow();
+  drawShoulders(def.smock);
+  for (const l of S.locks) if (l.back) drawHank(l, { darkness: 0.08 });
+  drawHead(def);
+  drawRoots(def);
+  for (const l of S.locks) if (!l.back && !l.bang && !l.crown) drawHank(l, {});
+  if (!fastPaint) drawSheen(sc);
+  for (const c of S.clips) drawClip(c);
+
+  ctx = main;
+  sceneDirty = false;
+}
+
+function render(dt = 0.016) {
+  if (sceneDirty) renderSceneLayer();
+  const dpr = view.dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, view.w, view.h);
+  ctx.drawImage(sceneCv, 0, 0, view.w, view.h);
+
+  drawParticles(dt);
+  drawCursor();
+
+  if (S.heat > 0.05) {
+    ctx.save();
+    ctx.globalAlpha = clamp(S.heat * 0.18, 0, 0.18);
+    ctx.fillStyle = '#ff9a5a';
+    ctx.fillRect(0, 0, view.w, view.h);
+    ctx.restore();
+    S.heat = Math.max(0, S.heat - dt * 1.4);
+  }
+}
+
+/* ---------- input ---------- */
+function toCanvas(e) {
+  const r = canvas.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+canvas.addEventListener('pointerdown', e => {
+  canvas.setPointerCapture(e.pointerId);
+  const p = toCanvas(e);
+  S.pointer.x = p.x; S.pointer.y = p.y; S.pointer.prevX = p.x; S.pointer.prevY = p.y;
+  S.pointer.down = true; S.pointer.inside = true; S.pointer.moved = false;
+  onPress(p.x, p.y);
+  e.preventDefault();
+});
+canvas.addEventListener('pointermove', e => {
+  const p = toCanvas(e);
+  S.pointer.prevX = S.pointer.x; S.pointer.prevY = S.pointer.y;
+  S.pointer.x = p.x; S.pointer.y = p.y; S.pointer.inside = true;
+  S.gazeX = clamp((p.x - view.cx) / view.R, -1, 1);
+  S.gazeY = clamp((p.y - view.cy) / view.R, -1, 1);
+  if (S.pointer.down) S.pointer.moved = true;
+  sceneDirty = true;
+});
+const endPointer = () => { S.pointer.down = false; sceneDirty = true; };   // repaint at full quality
+canvas.addEventListener('pointerup', endPointer);
+canvas.addEventListener('pointercancel', endPointer);
+canvas.addEventListener('pointerleave', () => { S.pointer.inside = false; S.pointer.down = false; });
+
+function onPress(x, y) {
+  if (S.phase !== 'style') return;
+  if (S.tool === 'scissors') {
+    applyTool(x, y, 0.05, true);
+  } else if (S.tool === 'clip') {
+    const d = Math.hypot(x - view.cx, y - view.cy);
+    if (d < view.R * 1.7 && S.clips.length < 4) {
+      S.clips.push({ x, y, type: S.clip, rot: rnd(0.4, -0.4) });
+      sparkle(x, y, 7);
+      sceneDirty = true;
+    }
+  }
+}
+
+/* ---------- flow ---------- */
+function startCustomer(i) {
+  S.idx = clamp(i, 0, CUSTOMERS.length - 1);
+  S.phase = 'style';
+  S.snips = 0;
+  S.parts = []; S.sparks = []; S.cheer = 0; S.heat = 0;
+  const def = CUSTOMERS[S.idx];
+  layout();
+  buildHair(def);
+  $('cname').textContent = def.name;
+  $('cwish').textContent = def.wish;
+  $('cnum').textContent = (S.idx + 1) + ' / ' + CUSTOMERS.length;
+  $('result').hidden = true;
+  showHint(def.tip, 4200);
+  for (const l of S.locks) spine(l);
+  sceneDirty = true;
+  bgDirty = true;
+  render(0.016);
+  S.before = canvas.toDataURL('image/png');
+  S.tool = 'brush';
+  setTool('brush');
+  updateMeter();
+}
+
+let hintTimer = 0;
+function showHint(msg, ms = 2600) {
+  const el = $('hint');
+  el.textContent = msg;
+  el.classList.remove('hide');
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => el.classList.add('hide'), ms);
+}
+
+function updateMeter() {
+  const s = scoreNow();
+  $('tidy').style.width = Math.round(s.tidy * 100) + '%';
+}
+
+function setTool(id) {
+  S.tool = id;
+  document.querySelectorAll('.tool').forEach(b => b.classList.toggle('on', b.dataset.tool === id));
+  const sub = $('sub');
+  sub.classList.toggle('on', id === 'dye' || id === 'clip');
+  $('palette').style.display = id === 'dye' ? 'flex' : 'none';
+  $('clips').style.display = id === 'clip' ? 'flex' : 'none';
+  const t = TOOLS.find(t => t.id === id);
+  if (t) showHint(t.hint, 2200);
+}
+
+function finish() {
+  if (S.phase !== 'style') return;
+  const s = scoreNow();
+  S.phase = 'result';
+  const stars = starsFor(s.total);
+  const best = Math.max(progress.best[S.idx] || 0, stars);
+  progress.best[S.idx] = best;
+  progress.unlocked = Math.max(progress.unlocked, Math.min(CUSTOMERS.length, S.idx + 2));
+  saveProgress();
+
+  sceneDirty = true;
+  for (let i = 0; i < 28; i++) {
+    setTimeout(() => sparkle(view.cx + rnd(view.R * 1.2, -view.R * 1.2), view.cy - view.R * 0.6 + rnd(view.R * 1.6, -view.R * 0.4), 3), i * 40);
+  }
+  render(0.016);
+  S.after = canvas.toDataURL('image/png');
+
+  $('rTitle').textContent = stars === 3 ? 'Gorgeous!' : stars === 2 ? 'Lovely work' : 'Not quite there';
+  $('rSub').textContent = stars === 3 ? CUSTOMERS[S.idx].name + ' is thrilled with it.'
+    : stars === 2 ? CUSTOMERS[S.idx].name + ' likes it — a little more work next time.'
+    : CUSTOMERS[S.idx].name + ' still wanted ' + CUSTOMERS[S.idx].wish.replace('wants ', '');
+  $('stars').textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+  $('beforeImg').src = S.before;
+  $('afterImg').src = S.after;
+  const rows = [
+    ['tidy', s.tidy], ['even', s.even], ['shape', (s.curlMatch + s.volMatch) / 2], ['length', s.lenMatch], ['shine', s.gloss],
+  ];
+  $('breakdown').innerHTML = rows.map(([k, v]) =>
+    `<div><span>${k}</span><i style="width:${Math.round(clamp(v, 0, 1) * 100)}%"></i></div>`).join('');
+  $('result').hidden = false;
+  $('next').textContent = S.idx + 1 < CUSTOMERS.length ? 'Next customer' : 'Back to the first chair';
+}
+
+$('next').onclick = () => {
+  const next = S.idx + 1 < CUSTOMERS.length ? S.idx + 1 : 0;
+  startCustomer(next);
+};
+$('done').onclick = finish;
+$('restart').onclick = () => startCustomer(S.idx);
+
+/* ---------- tool UI ---------- */
+$('tools').innerHTML = TOOLS.map(t =>
+  `<button class="tool" data-tool="${t.id}" aria-label="${t.label}" title="${t.label}">${svgIcon(t.id)}<span>${t.label}</span></button>`).join('');
+document.querySelectorAll('.tool').forEach(b => { b.onclick = () => setTool(b.dataset.tool); });
+
+$('palette').innerHTML = DYES.map(c =>
+  `<button class="sw" data-c="${c}" style="background:${c}" aria-label="Dye ${c}"></button>`).join('');
+const syncSwatches = () => document.querySelectorAll('.sw').forEach(b => b.classList.toggle('on', b.dataset.c === S.dye));
+document.querySelectorAll('.sw').forEach(b => {
+  b.onclick = () => { S.dye = b.dataset.c; syncSwatches(); setTool('dye'); };
+});
+syncSwatches();
+
+const CLIP_GLYPH = {
+  bow: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#ff8fc4" stroke="#8a1f52" stroke-width="1.4"><path d="M11 12 4 8.4c-1.3 2.6-1 6 0 7.2l7-3.6zM13 12l7-3.6c1.3 2.6 1 6 0 7.2L13 12z"/><circle cx="12" cy="12" r="1.8" fill="#ffd9ea"/></svg>',
+  flower: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff0f7" stroke="#8a1f52" stroke-width="1.2"><circle cx="12" cy="7" r="3"/><circle cx="17" cy="11" r="3"/><circle cx="15" cy="17" r="3"/><circle cx="9" cy="17" r="3"/><circle cx="7" cy="11" r="3"/><circle cx="12" cy="12" r="2" fill="#f5c451"/></svg>',
+  star: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#f5c451" stroke="#c99433" stroke-width="1.3"><path d="M12 3.6 14 9l5.6.6-4.2 3.9 1.2 5.5L12 16.3 7.4 19l1.2-5.5L4.4 9.6 10 9z"/></svg>',
+};
+$('clips').innerHTML = CLIPS.map(c =>
+  `<button class="clipbtn" data-clip="${c}" aria-label="${c}">${CLIP_GLYPH[c]}</button>`).join('');
+const syncClips = () => document.querySelectorAll('.clipbtn').forEach(b => b.classList.toggle('on', b.dataset.clip === S.clip));
+document.querySelectorAll('.clipbtn').forEach(b => {
+  b.onclick = () => { S.clip = b.dataset.clip; syncClips(); setTool('clip'); };
+});
+syncClips();
+
+/* ---------- loop ---------- */
+let last = performance.now();
+let meterT = 0;
+function tick(now) {
+  requestAnimationFrame(tick);
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  S.time += dt;
+
+  S.blink -= dt;
+  if (S.blink <= 0) S.blink = rnd(5.2, 2.6);
+  if (S.blink < 0.14) S.blink = Math.max(0, S.blink);
+
+  let dyeing = false;
+  for (const l of S.locks) {
+    spine(l);
+    if (l.dyeT < 1) { l.dyeT = Math.min(1, l.dyeT + dt * 0.6); dyeing = true; }
+  }
+  if (dyeing) sceneDirty = true;
+  if (S.phase === 'style' && S.pointer.down) sceneDirty = true;
+  const lidClosed = S.blink < 0.14;
+  if (lidClosed !== S.lidClosed) { S.lidClosed = lidClosed; sceneDirty = true; }
+
+  if (S.phase === 'style' && S.pointer.down) {
+    applyTool(S.pointer.x, S.pointer.y, dt, true);
+  }
+  if (S.phase === 'style' && S.pointer.down && S.tool === 'brush') {
+    const steps = 3;
+    for (let i = 1; i <= steps; i++) {
+      applyTool(lerp(S.pointer.prevX, S.pointer.x, i / steps), lerp(S.pointer.prevY, S.pointer.y, i / steps), dt / steps, true);
+    }
+  }
+
+  render(dt);
+  meterT += dt;
+  if (meterT > 0.12) { meterT = 0; if (S.phase === 'style') updateMeter(); }
+}
+
+addEventListener('resize', () => { layout(); });
+if (window.ResizeObserver) new ResizeObserver(() => layout()).observe(stageEl);
+
+/* ---------- boot ---------- */
+layout();
+startCustomer(Math.min(progress.unlocked - 1, 0));
+requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

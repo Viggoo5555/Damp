@@ -1205,6 +1205,18 @@ function envelopeInto(path, back, side) {
       filled[i].b = (filled[i - 1].b + filled[i].b * 2 + filled[i + 1].b) / 4;
     }
   }
+  // keep the inner edge out of her face: a few lock edges reach across the
+  // brow, which let the hair mask and its gloss wash over the forehead
+  const cx0 = view.cx, cy0 = view.cy, R0 = view.R;
+  const faceHalf = y => {
+    const t = clamp((y - cy0) / (R0 * 1.02), -1, 1);
+    return R0 * 0.82 * Math.sqrt(Math.max(0.02, 1 - t * t));
+  };
+  for (const r of filled) {
+    const lim = cx0 + side * faceHalf(r.y) * 0.97;
+    if (side < 0) r.b = Math.min(r.b, lim);
+    else r.a = Math.max(r.a, lim);
+  }
   const outer = filled.map(r => ({ x: side < 0 ? r.a : r.b, y: r.y }));
   const inner = filled.map(r => ({ x: side < 0 ? r.b : r.a, y: r.y }));
   path.moveTo(outer[0].x, outer[0].y);
@@ -1302,10 +1314,12 @@ function paintHair(back) {
 function capPath(target) {
   const R = view.R, cx = view.cx, cy = view.cy;
   if (target.beginPath) target.beginPath();
-  target.ellipse(cx, cy - R * 0.02, R * 1.0, R * 1.03, 0, Math.PI * 1.02, Math.PI * 1.98);
-  target.quadraticCurveTo(cx + R * 0.68, cy - R * 0.28, cx + R * 0.38, cy - R * 0.38);
-  target.quadraticCurveTo(cx + R * 0.12, cy - R * 0.45, cx - R * 0.18, cy - R * 0.41);
-  target.quadraticCurveTo(cx - R * 0.54, cy - R * 0.33, cx - R * 1.0, cy - R * 0.1);
+  // a dome that sits on the skull and stops at the hairline: no wide slab
+  // hanging over her temples
+  target.ellipse(cx, cy - R * 0.02, R * 1.02, R * 1.0, 0, Math.PI, Math.PI * 2);
+  target.quadraticCurveTo(cx + R * 0.62, cy - R * 0.3, cx + R * 0.3, cy - R * 0.36);
+  target.quadraticCurveTo(cx + R * 0.02, cy - R * 0.41, cx - R * 0.3, cy - R * 0.35);
+  target.quadraticCurveTo(cx - R * 0.64, cy - R * 0.28, cx - R * 1.02, cy + R * 0.04);
   target.closePath();
 }
 
@@ -1334,8 +1348,13 @@ function drawRoots(def) {
   ctx.fill();
   ctx.restore();
 
-  // soft sweeps from the part give the crown the flow of combed hair
+  // soft sweeps from the part give the crown the flow of combed hair; they are
+  // clipped to the top of the head so they can never reach her brow
   const partX = cx - R * 0.42, partY = cy - R * 0.55;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(cx - R * 1.1, cy - R * 1.28, R * 2.2, R * 0.92);
+  ctx.clip();
   ctx.filter = 'blur(' + Math.max(1.2, 3 * (R / 100) * (fastPaint ? 0.5 : 1)).toFixed(1) + 'px)';
   for (let i = 0; i < 14; i++) {
     const t = (i + 0.5) / 14;
@@ -1360,11 +1379,11 @@ function drawRoots(def) {
   hairlinePath(ctx);
   ctx.save();
   ctx.lineCap = 'round';
-  ctx.filter = 'blur(' + Math.max(1.5, 4 * (R / 100)).toFixed(1) + 'px)';
-  ctx.lineWidth = R * 0.16;
-  ctx.strokeStyle = 'rgba(96,48,16,0.16)';
-  ctx.stroke();
-  ctx.filter = 'none';
+  for (const [w, a] of [[0.15, 0.05], [0.075, 0.07], [0.032, 0.09]]) {
+    ctx.lineWidth = R * w;
+    ctx.strokeStyle = 'rgba(96,48,16,' + a + ')';
+    ctx.stroke();
+  }
   ctx.restore();
   ctx.globalAlpha = 1;
 }
@@ -1405,7 +1424,8 @@ function drawSheen(sc) {
   envelopeInto(sil, true, 1);
   envelopeInto(sil, false, -1);
   envelopeInto(sil, false, 1);
-  capPath(sil);
+  // the cap path is deliberately left out: its arc closes over the forehead,
+  // which spilled the gloss across her brow as a pale band
   for (const l of S.locks) if (l.bang) ribbon(sil, l);
 
   const shine = 0.35 + sc.gloss * 0.65;
@@ -1455,16 +1475,6 @@ function drawSheen(sc) {
   }
   ctx.restore();
 
-  // soft occlusion where the fringe meets the forehead
-  ctx.save();
-  ctx.globalAlpha = 0.1;
-  ctx.globalCompositeOperation = 'multiply';
-  const sh = ctx.createRadialGradient(cx, cy - R * 0.3, R * 0.1, cx, cy - R * 0.3, R * 0.9);
-  sh.addColorStop(0, 'rgba(90,30,60,.55)');
-  sh.addColorStop(1, 'rgba(90,30,60,0)');
-  ctx.fillStyle = sh;
-  ctx.fillRect(cx - R, cy - R, R * 2, R * 1.3);
-  ctx.restore();
 }
 
 function drawClip(c) {

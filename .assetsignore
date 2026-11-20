@@ -14,3 +14,7 @@ package-lock.json
 
 # the raw download, only used to build models/chess-pieces.glb
 files/chess.glb
+
+# the Windows installer is a repo download, not a Worker asset: it is 78 MiB,
+# well over the 25 MiB limit, and it 404s on the live site anyway
+releases/

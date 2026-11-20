@@ -999,8 +999,15 @@ function startTut(id,from){
   closeAll();tutBegin(0);show();
 }
 function endTut(){tutSw(false);save.tuts[tutId]=1;persist();apply();reset();if(tutFrom==='tree')openTree(true);}
+// A step is a cutscene while the game is still talking and has not handed over
+// control: intro and end. Anything else asks the player to try something.
+const tutCinema=()=>{const k=tutKind();return k==='intro'||k==='end';};
 function tutFlap(){
-  const k=tutKind();if(k==='intro'||k==='end'||k==='color')return;
+  const k=tutKind();
+  // Tapping during a cutscene skips it, and the rest of the tutorial with it,
+  // so nobody has to sit through a story they do not want to watch
+  if(tutCinema()){endTut();return;}
+  if(k==='color')return;
   bird.vy=FLAP*(hasSk('soft')?.94:1);sfx.flap();tutRing=tutT;
   if(k==='flap'&&++tutFlaps>=tutSteps[tutI].n)tutBegin(tutI+1);
 }

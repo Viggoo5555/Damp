@@ -349,6 +349,8 @@ function openPlayer(game) {
   }
   $("player-title").textContent = game.title;
   $("player-newtab").href = encodeURI(game.file);
+  // Lets the account side put the open game in your entry for the people list
+  document.dispatchEvent(new CustomEvent("damp-playing", { detail: game.title }));
   player.hidden = false;
   document.body.classList.add("locked");
   syncLanguageControls();
@@ -362,6 +364,7 @@ function closePlayer() {
   if (window.dampSaves) dampSaves.stop();
   frame.src = "about:blank";
   playing = "";
+  document.dispatchEvent(new CustomEvent("damp-playing", { detail: "" }));
   playerLanguageReady = false;
   stopLoading();
   player.hidden = true;

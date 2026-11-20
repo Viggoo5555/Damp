@@ -438,16 +438,28 @@
       return;
     }
     list.forEach(function (person) {
+      const online = presenceOn(person.at);
       const row = document.createElement("button");
       row.type = "button";
       row.className = "person";
-      row.title = presenceOn(person.at) ? "Online now" : "Offline";
+      row.title = online ? "Online now" : "Offline";
       const dot = document.createElement("span");
-      dot.className = "presence" + (presenceOn(person.at) ? " on" : "");
+      dot.className = "presence" + (online ? " on" : "");
+      const text = document.createElement("span");
+      text.className = "person-text";
       const label = document.createElement("span");
       label.className = "person-name";
       label.textContent = person.name;
-      row.append(dot, label);
+      text.appendChild(label);
+      // Only the game being played right now, and only while they are online:
+      // there is no history behind this, just the one word in their entry.
+      if (online && person.game) {
+        const playing = document.createElement("span");
+        playing.className = "person-playing";
+        playing.textContent = "Playing " + person.game;
+        text.appendChild(playing);
+      }
+      row.append(dot, text);
       if (unreadBy(person.id)) {
         const badge = document.createElement("span");
         badge.className = "unread";
@@ -480,7 +492,7 @@
       peopleDir.length = 0;
       snap.forEach(function (doc) {
         const data = doc.data() || {};
-        if (doc.id !== user.uid) peopleDir.push({ id: doc.id, name: data.name || "player", at: data.at || 0 });
+        if (doc.id !== user.uid) peopleDir.push({ id: doc.id, name: data.name || "player", at: data.at || 0, game: data.game || "" });
       });
       drawPeople();
     }, function (error) {
@@ -755,14 +767,29 @@
 
   // ----- Presence: a small heartbeat so friends can see you are online -----
   let presenceTimer = null;
+  let playingTitle = "";
 
-  function pingPresence() {
-    if (!fb || !user || document.hidden) return;
+  function sendPresence() {
+    if (!fb || !user) return;
     try {
-      fb.f.setDoc(fb.f.doc(fb.db, "people", user.uid), { name: shownName(user), at: Date.now() }, { merge: true })
+      fb.f.setDoc(fb.f.doc(fb.db, "people", user.uid), { name: shownName(user), at: Date.now(), game: playingTitle }, { merge: true })
         .catch(function () { /* offline or the people rules are not published */ });
     } catch (error) { /* not connected */ }
   }
+
+  function pingPresence() {
+    if (document.hidden) return;
+    sendPresence();
+  }
+
+  // The page tells us which game is open so the people list can say what
+  // someone is playing. One short string in the entry they already have.
+  document.addEventListener("damp-playing", function (event) {
+    const title = typeof event.detail === "string" ? event.detail.slice(0, 40) : "";
+    if (title === playingTitle) return;
+    playingTitle = title;
+    sendPresence();
+  });
 
   function presenceVisible() { if (!document.hidden) pingPresence(); }
 

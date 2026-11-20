@@ -357,6 +357,7 @@
     byId("account").hidden = false;
     byId("account").textContent = user ? "Account" : "Log in";
     byId("people").hidden = !user;
+    byId("player-people").hidden = !user;
     byId("acc-in").hidden = !!user;
     byId("acc-out").hidden = !user;
     if (user) byId("acc-who").textContent = shownName(user);
@@ -408,10 +409,13 @@
   }
 
   function refreshUnread() {
-    const dot = byId("people-dot");
-    if (!dot) return;
-    dot.hidden = !user || !Array.from(chatSummaries.values()).some(function (chat) {
+    const unread = !!user && Array.from(chatSummaries.values()).some(function (chat) {
       return chat.lastFrom !== user.uid && chat.lastAt > (seen[chat.id] || 0);
+    });
+    // The header button and the one in the game player light up together
+    ["people-dot", "player-people-dot"].forEach(function (id) {
+      const dot = byId(id);
+      if (dot) dot.hidden = !unread;
     });
   }
 
@@ -574,11 +578,15 @@
     );
   }
 
-  byId("people").addEventListener("click", function () {
+  function openPeople() {
     if (!fb || !user) return;
     peopleDialog.showModal();
     showPeople();
-  });
+  }
+
+  // The header button and the game player both open the same window
+  byId("people").addEventListener("click", openPeople);
+  byId("player-people").addEventListener("click", openPeople);
   byId("people-close").addEventListener("click", function () { peopleDialog.close(); });
   peopleDialog.addEventListener("click", function (event) {
     if (event.target === peopleDialog) peopleDialog.close();

@@ -2444,3 +2444,12 @@ dialog {
   font-size: 0.76rem;
   font-weight: 600;
 }
+
+/* ---------- Messages from inside a game ---------- */
+/* The player covers the header, so the game bar carries its own way in.
+   The window itself is a modal dialog, which sits in the top layer above
+   the player, and new-message toasts now clear the player too. */
+#player-people { position: relative; }
+#player-people svg { width: 18px; height: 18px; fill: currentColor; stroke: none; }
+#player-people:hover { border-color: rgba(242, 198, 94, 0.52); color: var(--lamp); }
+#toast { z-index: 50; }

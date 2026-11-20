@@ -475,7 +475,8 @@ document.addEventListener("keydown", function (event) {
     event.preventDefault();
     search.focus();
   }
-  if (event.key === "Escape" && !player.hidden) {
+  // Escape closes the topmost thing: a chat window first, then the game
+  if (event.key === "Escape" && !player.hidden && !document.querySelector("dialog[open]")) {
     if (player.classList.contains("pseudo-fullscreen")) {
       setPseudoFullscreen(false);
       return;

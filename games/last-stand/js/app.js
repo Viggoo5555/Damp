@@ -1525,6 +1525,7 @@ async function boot() {
   renderHud();
   bootProgress(0.35, 'wiring the neon…');
   const ok = await net.init();
+  renderHud();
   bootProgress(0.55, ok ? 'contacting the arcade…' : 'offline cabinet…');
   if (ok) {
     net.watchAuth(async (user) => {

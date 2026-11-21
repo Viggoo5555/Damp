@@ -94,6 +94,17 @@
       return true;
     },
     canSpend: function (n) { return state.points >= Math.round(+n || 0); },
+    /* A game with nothing to trade still pays out for winning. Give at most
+       `amount`, and never more than the game's daily cap. */
+    reward: function (game, amount, cap) {
+      var give = Math.max(0, Math.round(+amount || 0));
+      if (cap) give = Math.min(give, api.leftToday(game, cap));
+      if (give <= 0) return 0;
+      addToday(game, give);
+      api.add(give);
+      toast("+" + fmt(give) + " Damp points");
+      return give;
+    },
     fmt: fmt,
     leftToday: function (game, cap) { return Math.max(0, (cap || 0) - todayFor(game)); },
     onChange: function (fn) {
@@ -129,6 +140,11 @@
       ".dp-chip .dp-coin{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;",
       "background:linear-gradient(160deg,#f5c98a,#e0a86a);color:#7a5334;font-size:11px}",
       ".dp-chip .dp-tag{font:600 10px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:#a2836c}",
+      ".dp-note{position:fixed;left:14px;bottom:62px;z-index:9999;padding:9px 14px;border-radius:999px;",
+      "background:#5b4436;color:#fff8ee;font:600 13px/1 ui-sans-serif,system-ui,sans-serif;",
+      "box-shadow:0 10px 24px rgba(40,26,18,.3);opacity:0;transform:translateY(6px);",
+      "transition:opacity .18s ease,transform .18s ease;pointer-events:none}",
+      ".dp-note.on{opacity:1;transform:none}",
       ".dp-sheet{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:18px;",
       "background:rgba(58,40,29,.34);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}",
       ".dp-card{width:min(380px,100%);border-radius:18px;background:#fffaf3;color:#4a3a2e;",
@@ -264,6 +280,21 @@
 
     // keep the trading numbers honest if the player earns currency while the panel is open
     setInterval(function () { if (sheet) render(); }, 1200);
+  }
+
+  /* ---------- little note when a win pays out ---------- */
+  var noteT = 0;
+  function toast(text) {
+    var el = document.querySelector(".dp-note");
+    if (!el) {
+      el = document.createElement("div");
+      el.className = "dp-note";
+      document.body.appendChild(el);
+    }
+    el.textContent = text;
+    el.classList.add("on");
+    clearTimeout(noteT);
+    noteT = setTimeout(function () { el.classList.remove("on"); }, 2600);
   }
 
   function escape(text) {

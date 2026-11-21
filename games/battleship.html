@@ -1124,6 +1124,8 @@ async function animateIncoming(res) {
 }
 function endGame(win) {
   if (G.over) return; G.over = true; G.phase = 'over'; G.busy = false; G.turn = null;
+  // sinking the whole fleet pays into the site-wide Damp wallet
+  if (win && !G.dampPaid && window.DampPoints) { G.dampPaid = true; DampPoints.reward('battleship', 20, 120); }
   $('bBattle').classList.add('hide'); $('hint').textContent = ''; turnBox('', '');
   banner(win ? t('victory') : t('defeat'), win ? '' : 'red', true); win ? SND.win() : SND.lose();
   if (G.opp && G.opp.reveal) G.opp.reveal(G.fleet.layout());

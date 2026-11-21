@@ -2118,6 +2118,7 @@ function endGame(kind) {
 
   const winner = kind === 'mate' ? other(G.st.turn) : null;
   const playerWon = winner === G.player;
+  if (playerWon) dampWin();
   $('endT').textContent = kind === 'mate' ? (playerWon ? 'VICTORY' : 'DEFEAT') : 'DRAW';
   $('end').classList.toggle('lose', kind === 'mate' && !playerWon);
 
@@ -2225,6 +2226,7 @@ function toast(text) {
 
 /* ---------- starting a game ---------- */
 function newGame(side, level, online) {
+  G.dampPaid = false;
   G.player = side;
   G.level = level;
   G.online = !!online;
@@ -2404,8 +2406,16 @@ async function openOnline() {
   }
 }
 
+/* a win pays into the site-wide Damp wallet, once per game */
+function dampWin() {
+  if (G.dampPaid || !window.DampPoints) return;
+  G.dampPaid = true;
+  DampPoints.reward('chess', 25, 120);
+}
+
 function showEnd(title, sub, lose) {
   G.over = true;
+  if (title === 'VICTORY') dampWin();
   G.busy = false;
   G.sel = -1; G.legal = [];
   drawOverlays();

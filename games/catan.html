@@ -812,7 +812,7 @@ function newGame(){
   G.b={settlement:Object.create(null),city:Object.create(null),road:Object.create(null)};
   G.bank={wood:19,brick:19,sheep:19,wheat:19,ore:19};
   G.turn=0;G.setupIdx=0;G.rolled=false;G.devUsed=false;G.rolling=false;G.dice=[1,1];
-  G.longest=-1;G.army=-1;G.clickMode=null;G.focus=null;G.freeRoads=0;G.winner=-1;G.over=false;G.turnNum=0;G.log=[];
+  G.longest=-1;G.army=-1;G.clickMode=null;G.focus=null;G.freeRoads=0;G.winner=-1;G.over=false;G.turnNum=0;G.log=[];G.dampPaid=false;
   G.phase='setup';G.mode='setup';
   G.devDeck=[];G.names=GNAMES.slice(0,NP);
   for(let i=0;i<14;i++)G.devDeck.push('knight');
@@ -1963,6 +1963,7 @@ function applySnap(s){
     for(const r of RES){const d=G.players[ME].res[r]-before[r];if(d>0)flyResource(r,d,{x:innerWidth/2,y:innerHeight*.45})}
   }
   if(G.over&&$('over').classList.contains('hide')){
+    if(G.winner===ME)dampWin();
     $('overName').textContent=G.winner===ME?'You win':'You lost';
     $('overText').textContent=G.winner===ME?'Ten points on the island. You rule Catan.':`${P(G.winner).name} reached ten points first.`;
     $('over').classList.remove('hide');
@@ -2343,9 +2344,17 @@ function syncPieces(){
 }
 
 /* ---------- game over ---------- */
+/* a win pays into the site-wide Damp wallet, once per game */
+function dampWin(){
+  if(G.dampPaid||!window.DampPoints)return;
+  G.dampPaid=true;
+  DampPoints.reward('catan',30,120);
+}
+
 function gameOver(){
   G.busy=false;
   hint('');
+  if(G.winner===ME)dampWin();
   $('overName').textContent=G.winner===ME?'You win':'You lost';
   $('overText').textContent=G.winner===ME
     ? `Ten points on the island. You rule Catan.`

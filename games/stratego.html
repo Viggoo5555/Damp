@@ -1037,8 +1037,13 @@ function showFight(cell,att,def,res){
   el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');
   clearTimeout(fightT);fightT=setTimeout(()=>el.classList.add('hide'),2200);
 }
+function dampWin(winner){
+  if(winner!==G.side||G.dampPaid||!window.DampPoints)return;
+  G.dampPaid=true;DampPoints.reward('stratego',25,120);
+}
 function endGame(winner,reason){
   G.over=true;G.winner=winner;G.reason=reason;
+  dampWin(winner);
   $('endT').textContent=winner===G.side?'VICTORY':'DEFEAT';
   $('endS').textContent=winner===G.side?'You '+reason+'.':SIDE_NAME[winner]+' '+reason+'.';
   $('end').classList.toggle('lose',winner!==G.side);
@@ -1071,6 +1076,7 @@ function beginBattle(localEnemy){
 }
 function resizeHud(){}
 function newGame(ai){
+  G.dampPaid=false;
   netClose();
   G.ai=!!ai;G.side='r';
   openSetup(false);
@@ -1219,6 +1225,7 @@ function applyState(m){
   if(G.mode!=='play'&&m.mode==='play'){G.mode='play';$('setup').classList.add('hide');$('online').classList.add('hide');$('menu').classList.add('hide');$('hud').classList.remove('hide')}
   syncPieces();drawMarks();drawHud();
   if(G.over){
+    dampWin(G.winner);
     $('endT').textContent=G.winner===G.side?'VICTORY':'DEFEAT';
     $('endS').textContent=G.winner===G.side?'You '+G.reason+'.':SIDE_NAME[G.winner]+' '+G.reason+'.';
     $('end').classList.toggle('lose',G.winner!==G.side);

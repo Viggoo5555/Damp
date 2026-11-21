@@ -123,5 +123,12 @@
     "file": "games/wildwood-3d.html",
     "category": "Survival",
     "image": "img/wildwood-3d.png"
+  },
+  {
+    "title": "Secret Room",
+    "description": "A cozy bedroom studio. Place, rotate and resize sixty pieces of furniture, paint the walls, change the light, then share the room, visit other players' bedrooms and enter the weekly competition.",
+    "file": "games/secret-room.html",
+    "category": "Simulation",
+    "image": "img/secret-room.png"
   }
 ]

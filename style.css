@@ -2626,6 +2626,47 @@ dialog {
 }
 
 /* ============================================================
+   Giving someone a nickname: a small panel above their chat.
+   The nickname is yours alone, so it never reaches the other
+   player or their score rows.
+   ============================================================ */
+
+.chat-head { flex-wrap: wrap; }
+.chat-head #chat-who {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#chat-nick {
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(7, 17, 22, 0.32);
+  color: var(--fog);
+  font: inherit;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+
+#chat-nick:hover { border-color: rgba(242, 198, 94, 0.5); background: var(--pane-hi); color: var(--lamp); }
+
+#chat-nick-form {
+  margin: 0 0 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(7, 17, 22, 0.45);
+}
+
+#chat-nick-form label { display: block; margin-top: 0; }
+#chat-nick-form label input { width: 100%; }
+#chat-nick-form .note { margin: 8px 0 0; }
+#chat-nick-form .save-actions { margin: 12px 0 0; }
+
+/* ============================================================
    "While you were away": the count of messages waiting when a
    player comes back to the site.
    ============================================================ */

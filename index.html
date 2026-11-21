@@ -205,11 +205,7 @@
 
     <div id="acc-out" hidden>
       <p>Logged in as <strong id="acc-who"></strong></p>
-      <form id="acc-nick-form">
-        <label>Nickname<input id="acc-nick" name="nickname" maxlength="24" autocomplete="off" spellcheck="false"></label>
-        <p class="note">Friends see this in chat, and it is the name on the Flappy Bird board.</p>
-        <button class="button" type="submit">Save nickname</button>
-      </form>
+      <p class="note">Your username is the name friends see. To call someone something else, give them a nickname in People.</p>
       <p class="note">Your progress saves by itself while you play.</p>
       <button id="acc-logout" type="button">Log out</button>
     </div>
@@ -251,7 +247,7 @@
     </div>
 
     <div id="people-list-view">
-      <p class="note">Everyone with a Damp account. Pick someone to message.</p>
+      <p class="note">Everyone with a Damp account. Pick someone to message, or give them a nickname only you see.</p>
       <div id="people-list" class="people-list"></div>
     </div>
 
@@ -259,7 +255,16 @@
       <div class="chat-head">
         <button id="chat-back" type="button">&larr; People</button>
         <strong id="chat-who"></strong>
+        <button id="chat-nick" type="button">Nickname</button>
       </div>
+      <form id="chat-nick-form" hidden>
+        <label>Nickname for <span id="chat-nick-who"></span><input id="chat-nick-input" name="nickname" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Their username"></label>
+        <p class="note">Only you see this. Leave it empty to use their username.</p>
+        <div class="save-actions">
+          <button class="button" type="submit">Save nickname</button>
+          <button id="chat-nick-clear" type="button">Use username</button>
+        </div>
+      </form>
       <div id="chat-log" class="chat-log" aria-live="polite"></div>
       <div id="chat-attach" hidden>
         <img id="chat-attach-img" alt="Picture ready to send">

@@ -224,9 +224,10 @@
     return name.indexOf("@") > -1 ? name : name + MAIL;
   }
 
-  // ----- Nickname: the name friends see in chat and on the Flappy board -----
+  // ----- Nicknames: you name other people, never yourself -----
+  // Your own name is always your username. A nickname you give someone lives on
+  // this device only, so nobody else sees it and they keep their own name.
   const NICK_MAX = 24;
-  let nick = "";  // empty until a nickname is chosen
 
   function accountName(who) {
     const mail = who.email || "";
@@ -245,9 +246,14 @@
     try { localStorage.setItem("damp-nicks", JSON.stringify(all)); } catch (error) { /* storage off */ }
   }
 
-  // Without a nickname the username is the name everywhere
+  // Someone's name as you see it: the nickname you gave them, or their username
+  function personName(uid, fallback) {
+    return nickFor(uid) || fallback || "player";
+  }
+
+  // Your own name is your username everywhere
   function shownName(who) {
-    return nick || accountName(who || user || {});
+    return accountName(who || user || {});
   }
 
   // Writes the name into the header of the page and the account dialog, and
@@ -258,78 +264,18 @@
     window.dampUser = { name: name };
     try { localStorage.setItem("damp-name", name); } catch (error) { /* storage off */ }
     if (byId("acc-who")) byId("acc-who").textContent = name;
-    if (byId("acc-nick")) byId("acc-nick").value = nick;
     pingPresence();
     if (peopleDialog.open) drawPeople();
   }
 
   function useIdentity(who) {
-    nick = who ? nickFor(who.uid) : "";
     if (!who) {
       window.dampUser = null;
       try { localStorage.setItem("damp-name", ""); } catch (error) { /* storage off */ }
       return;
     }
     applyIdentity();
-    loadNick(who);
   }
-
-  // The nickname also lives in the people directory, so it follows the account
-  // to another device.
-  async function loadNick(who) {
-    if (!fb || !user) return;
-    try {
-      const snap = await fb.f.getDoc(fb.f.doc(fb.db, "people", who.uid));
-      if (!snap.exists()) return;
-      const saved = String(snap.data().name || "").trim().slice(0, NICK_MAX);
-      // The directory holds the username until a nickname is chosen
-      if (saved && saved !== accountName(who) && saved !== nick) {
-        nick = saved;
-        setNickFor(who.uid, nick);
-        applyIdentity();
-      }
-    } catch (error) { /* offline, or the people rules are not published */ }
-  }
-
-  // Monday-based week id, the same one the Flappy board uses
-  function weekId(date) {
-    const t = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const day = t.getUTCDay() || 7;
-    t.setUTCDate(t.getUTCDate() + 4 - day);
-    const y = t.getUTCFullYear();
-    return y + "-W" + String(Math.ceil(((t - Date.UTC(y, 0, 1)) / 864e5 + 1) / 7)).padStart(2, "0");
-  }
-
-  // Flappy keeps its own copy of the name in every score row, so a new nickname
-  // has to reach the rows that already exist as well as the ones written later.
-  async function renameBoard(uid, name) {
-    const all = fb.f.doc(fb.db, "flappy", uid);
-    if ((await fb.f.getDoc(all)).exists()) await fb.f.setDoc(all, { name: name }, { merge: true });
-    const weekly = fb.f.doc(fb.db, "flappy_week", weekId(new Date()), "scores", uid);
-    if ((await fb.f.getDoc(weekly)).exists()) await fb.f.setDoc(weekly, { name: name }, { merge: true });
-  }
-
-  async function saveNick() {
-    if (!user || !fb) return;
-    const clean = byId("acc-nick").value.trim().replace(/\s+/g, " ").slice(0, NICK_MAX);
-    if (clean.length < 2) return tell("Nickname: 2 to 24 characters.", true);
-    nick = clean;
-    setNickFor(user.uid, clean);
-    applyIdentity();
-    tell("Saving nickname…");
-    try {
-      await fb.f.setDoc(fb.f.doc(fb.db, "people", user.uid), { name: clean, at: Date.now() }, { merge: true });
-      await renameBoard(user.uid, clean);
-      tell("Saved. Friends see “" + clean + "” in chat and on the Flappy board.");
-    } catch (error) {
-      tell(fbProblem(error), true);
-    }
-  }
-
-  byId("acc-nick-form").addEventListener("submit", function (event) {
-    event.preventDefault();
-    saveNick();
-  });
 
   byId("account").addEventListener("click", function () { dialog.showModal(); });
   byId("acc-close").addEventListener("click", function () { dialog.close(); });
@@ -371,6 +317,7 @@
   let peopleUnsub = null;
   let chatUnsub = null;
   let chatWith = null;
+  let chatReal = "";  // the name they go by, before any nickname you gave them
   // A picture waiting to go out with the next message, as a JPEG data URL
   let pendingImage = "";
 
@@ -427,7 +374,9 @@
     peopleDir.concat(peopleBoard).forEach(function (person) {
       if (!people.has(person.id)) people.set(person.id, person);
     });
-    const list = Array.from(people.values()).sort(function (x, y) { return x.name.localeCompare(y.name); });
+    const list = Array.from(people.values()).sort(function (x, y) {
+      return personName(x.id, x.name).localeCompare(personName(y.id, y.name));
+    });
     const box = byId("people-list");
     box.textContent = "";
     if (!list.length) {
@@ -442,14 +391,15 @@
       const row = document.createElement("button");
       row.type = "button";
       row.className = "person";
-      row.title = online ? "Online now" : "Offline";
+      // A nickname hides their username in the list, so the tooltip keeps it
+      row.title = (nickFor(person.id) ? person.name + " · " : "") + (online ? "Online now" : "Offline");
       const dot = document.createElement("span");
       dot.className = "presence" + (online ? " on" : "");
       const text = document.createElement("span");
       text.className = "person-text";
       const label = document.createElement("span");
       label.className = "person-name";
-      label.textContent = person.name;
+      label.textContent = personName(person.id, person.name);
       text.appendChild(label);
       // Only the game being played right now, and only while they are online:
       // there is no history behind this, just the one word in their entry.
@@ -529,10 +479,14 @@
 
   function openChat(uid, name) {
     chatWith = uid;
+    chatReal = name;
     markSeen(pairId(user.uid, uid), Date.now());
     byId("people-list-view").hidden = true;
     byId("chat-view").hidden = false;
-    byId("chat-who").textContent = name;
+    byId("chat-who").textContent = personName(uid, name);
+    byId("chat-nick-who").textContent = name;
+    byId("chat-nick-input").value = nickFor(uid);
+    byId("chat-nick-form").hidden = true;
     byId("chat-log").textContent = "";
     peopleMsg("");
 
@@ -609,16 +563,51 @@
     if (peopleUnsub) { peopleUnsub(); peopleUnsub = null; }
     if (chatUnsub) { chatUnsub(); chatUnsub = null; }
     chatWith = null;
+    chatReal = "";
+    byId("chat-nick-form").hidden = true;
     setPendingImage("");
   });
 
   byId("chat-back").addEventListener("click", function () {
     if (chatUnsub) { chatUnsub(); chatUnsub = null; }
     chatWith = null;
+    chatReal = "";
+    byId("chat-nick-form").hidden = true;
     setPendingImage("");
     byId("chat-view").hidden = true;
     byId("people-list-view").hidden = false;
     peopleMsg("");
+  });
+
+  // ----- A nickname for this person, kept on this device only -----
+  function refreshChatName() {
+    if (!chatWith) return;
+    byId("chat-who").textContent = personName(chatWith, chatReal);
+    byId("chat-nick-input").value = nickFor(chatWith);
+    byId("chat-nick-form").hidden = true;
+    if (peopleDialog.open) drawPeople();
+  }
+
+  byId("chat-nick").addEventListener("click", function () {
+    const form = byId("chat-nick-form");
+    form.hidden = !form.hidden;
+    if (!form.hidden) byId("chat-nick-input").focus();
+  });
+
+  byId("chat-nick-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    if (!chatWith) return;
+    const clean = byId("chat-nick-input").value.trim().replace(/\s+/g, " ").slice(0, NICK_MAX);
+    setNickFor(chatWith, clean);
+    refreshChatName();
+    peopleMsg(clean ? "Saved. Only you see “" + clean + "”." : "Back to their username.");
+  });
+
+  byId("chat-nick-clear").addEventListener("click", function () {
+    if (!chatWith) return;
+    setNickFor(chatWith, "");
+    refreshChatName();
+    peopleMsg("Back to their username.");
   });
 
   byId("chat-form").addEventListener("submit", function (event) {
@@ -927,7 +916,7 @@
           if (notified[doc.id] && data.lastAt <= notified[doc.id]) return;
           notified[doc.id] = data.lastAt;
           const names = data.names || {};
-          toast(names[data.lastFrom] || "Someone", data.last, doc.id, data.lastFrom);
+          toast(nickFor(data.lastFrom) || names[data.lastFrom] || "Someone", data.last, doc.id, data.lastFrom);
         });
       },
       function () { /* the chat rules are not published yet */ }

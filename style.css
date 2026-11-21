@@ -2741,3 +2741,26 @@ dialog {
   .type { width: auto; padding: 6px 10px; white-space: nowrap; }
   .type[aria-pressed="true"]::after { display: none; }
 }
+
+/* ----- The one ad on the site: one unit at the end of the shelf -----
+   It is hidden until an ad actually fills, so an unfilled or blocked request
+   leaves no gap behind. */
+.ad {
+  margin: 52px auto 8px;
+  max-width: 970px;
+  min-height: 100px;
+}
+.ad-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--fog);
+  text-align: center;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.ad ins { display: block; width: 100%; }
+
+@media (max-width: 640px) {
+  .ad { margin: 38px auto 4px; min-height: 0; }
+}

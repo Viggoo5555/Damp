@@ -153,7 +153,7 @@ function load(s){try{const o=JSON.parse(s);if(!o||typeof o!=='object')return fal
 function save(){if(pend)return;S.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 
 /* Damp points: the site-wide wallet. Starclicker trades Energy into it. */
-if(window.DampPoints)DampPoints.mount({game:'starclicker',label:'Starclicker',unit:'energy',rate:.02,dailyCap:900,
+if(window.DampPoints)DampPoints.mount({game:'starclicker',label:'Starclicker',unit:'energy',rate:.005,dailyCap:120,
   get:function(){return S.e||0},
   spend:function(n){if((S.e||0)<n)return false;S.e-=n;return true},
   save:function(){save();}});

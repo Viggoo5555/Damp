@@ -771,6 +771,7 @@
   </div>
 </div>
 
+<script src="../js/damp-points.js"></script>
 <script>
 (() => {
 'use strict';
@@ -1566,6 +1567,14 @@ function loadSave() {
 }
 let save = loadSave();
 function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* ignore */ } }
+
+/* Damp points: golden seeds trade into the site-wide wallet */
+if (window.DampPoints) DampPoints.mount({
+  game: 'hedgerow', label: 'Hedgerow Hallow', unit: 'golden seeds', rate: 0.05, dailyCap: 120,
+  get: function () { return save.gold || 0; },
+  spend: function (n) { if ((save.gold || 0) < n) return false; save.gold -= n; return true; },
+  save: function () { persist(); }
+});
 
 /* ===================== SOUND ===================== */
 const Sound = (() => {

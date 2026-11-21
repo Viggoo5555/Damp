@@ -159,6 +159,7 @@
   </div>
 </div>
 
+<script src="../js/damp-points.js"></script>
 <script>
 (() => {
 'use strict';
@@ -1899,5 +1900,6 @@ startCustomer(Math.min(progress.unlocked - 1, 0));
 requestAnimationFrame(tick);
 })();
 </script>
+<script>if(window.DampPoints)DampPoints.mount({game:"bad-hair-day",label:"Bad Hair Day",get:function(){return 0}});</script>
 </body>
 </html>

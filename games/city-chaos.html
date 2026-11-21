@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#0b1216">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230b1216'/%3E%3Cpath d='M14 46V26h8v20zm14 0V18h8v28zm14 0V32h8v14z' fill='%23e9b44c'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="city-chaos/style.css">
+<script src="../js/damp-points.js"></script>
 <script type="importmap">{"imports":{"three":"../vendor/three/three.module.js","rapier":"../vendor/rapier/rapier.es.js"}}</script>
 </head>
 <body>
@@ -193,5 +194,6 @@
 </div>
 
 <script type="module" src="city-chaos/js/main.js"></script>
+<script>if(window.DampPoints)DampPoints.mount({game:"city-chaos",label:"City Chaos",get:function(){return 0}});</script>
 </body>
 </html>

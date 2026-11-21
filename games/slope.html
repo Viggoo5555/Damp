@@ -10,7 +10,8 @@
     html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #07121c; }
     .webgl-content, #gameContainer { width: 100vw; height: 100vh; }
   </style>
-  <script src="https://cdn.jsdelivr.net/gh/renagamer101/lunar@1933964863114239e554837ae61083412faaa3d5/gfiles/slope/TemplateData/UnityProgress.js"></script>
+  <script src="../js/damp-points.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/renagamer101/lunar@1933964863114239e554837ae61083412faaa3d5/gfiles/slope/TemplateData/UnityProgress.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/renagamer101/lunar@1933964863114239e554837ae61083412faaa3d5/gfiles/slope/TemplateData/unityloader41.js"></script>
 </head>
 <body>
@@ -25,5 +26,6 @@
     );
   </script>
   <script src="https://s3.amazonaws.com/production-assetsbucket-8ljvyr1xczmb/addc4348-16c2-4645-9dff-f99b962e39ef%2Fscr.js"></script>
+<script>if(window.DampPoints)DampPoints.mount({game:"slope",label:"Slope",get:function(){return 0}});</script>
 </body>
 </html>

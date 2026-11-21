@@ -85,6 +85,7 @@ button.go{align-self:flex-start;background:linear-gradient(#ffe45c,#f0a800);colo
 <div class="ov hide" id="net"><div class="menu"><h2>Play with a friend</h2><div class="panel"><div id="ncode"></div><div id="nst"></div><div class="btns"><button class="go" id="ncreate">CREATE ROOM</button></div><div class="jn"><input id="njoin" maxlength="4" placeholder="CODE" autocomplete="off"><button class="go alt" id="njbtn">JOIN</button></div></div><button class="go" id="ncancel">BACK</button></div></div>
 <div class="ov end hide" id="end"><h1 id="endt"></h1><button class="go" id="again">BACK TO MENU</button></div>
 </div>
+<script src="../js/damp-points.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 const ROSTER=[
@@ -550,4 +551,5 @@ function loop(){
 }
 resize();menu();pips();loop();
 </script>
+<script>if(window.DampPoints)DampPoints.mount({game:"knockout-night",label:"Knockout Night",get:function(){return 0}});</script>
 </body></html>

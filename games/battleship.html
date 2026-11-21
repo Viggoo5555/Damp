@@ -214,6 +214,7 @@ input[type=password]:focus{border-color:var(--brass)}
  </div>
  <div id="toast" class="hide"></div>
 </div>
+<script src="../js/damp-points.js"></script>
 <script>
 'use strict';
 /* =====================================================================
@@ -1652,4 +1653,5 @@ window.__bs = { G, BD, cam, camT, addPeg, boomAt, splashAt, ships: () => ships, 
   if (room) { G.mode = 'online'; openLobby(room.toUpperCase()); }
 })();
 </script>
+<script>if(window.DampPoints)DampPoints.mount({game:"battleship",label:"Battleship",get:function(){return 0}});</script>
 </body></html>

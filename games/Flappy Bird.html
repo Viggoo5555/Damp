@@ -403,7 +403,7 @@ function apply(){FR=birdFrames(hasSk('color')?save.col:'#ffeb2f');shield=hasSk('
 function refreshPts(){$('ptsT').textContent='Points: '+save.pts;$('pts').textContent='Points: '+save.pts;$('skpts').textContent=save.pts;}
 
 /* Damp points: the site-wide wallet. Flappy points buy into it. */
-if(window.DampPoints)DampPoints.mount({game:'flappy',label:'Flappy Bird',unit:'points',rate:.2,dailyCap:900,
+if(window.DampPoints)DampPoints.mount({game:'flappy',label:'Flappy Bird',unit:'points',rate:.05,dailyCap:120,
   get:function(){return save.pts||0},
   spend:function(n){if((save.pts||0)<n)return false;save.pts-=n;return true},
   save:function(){persist();refreshPts();}});

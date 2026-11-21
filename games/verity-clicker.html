@@ -691,7 +691,7 @@ function save(){try{localStorage.setItem(SAVE_KEY,serialize())}catch(e){}}
 
 /* Damp points: the site-wide wallet. Verity points are worth a sliver each,
    since this game counts in quadrillions. */
-if(window.DampPoints)DampPoints.mount({game:'verity',label:'Verity Clicker',unit:'points',rate:.000001,dailyCap:900,
+if(window.DampPoints)DampPoints.mount({game:'verity',label:'Verity Clicker',unit:'points',rate:.000001,dailyCap:120,
   get:function(){return S.pts||0},
   spend:function(n){if((S.pts||0)<n)return false;S.pts-=n;return true},
   save:function(){save();renderAll();}});

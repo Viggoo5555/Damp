@@ -288,6 +288,7 @@ select{font:inherit;color:var(--fg);background:#0d2434;border:2px solid var(--li
 <div id="toast"></div>
 </div>
 
+<script src="../js/damp-points.js"></script>
 <script type="importmap">{"imports":{"three":"../vendor/three/three.module.js"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -2414,4 +2415,5 @@ if(location.hash==='#dev'){
     onlineTest(seat,names){ME=seat;NP=names.length;GNAMES=names.slice();ONLINE=true;G.auto={};startAsGuest()}};
 }
 </script>
+<script>if(window.DampPoints)DampPoints.mount({game:"catan",label:"Catan",get:function(){return 0}});</script>
 </body></html>

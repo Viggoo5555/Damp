@@ -265,6 +265,7 @@ input[type=text]:focus,input[type=password]:focus{border-color:var(--brass)}
  <div id="toast" class="hide"></div>
  <div id="loader"><div class="ring"></div><p>Setting the table</p></div>
 </div>
+<script src="../js/damp-points.js"></script>
 <script type="importmap">
 {"imports":{"three":"../vendor/three/three.module.js"}}
 </script>
@@ -2872,4 +2873,5 @@ if (location.hash === '#dev') {
   window.__chess = { G, legalMoves, makeMove, bestMove, START, NEW_STATE, doMove, newGame, inCheck, sanOf, camera, view, scene, renderer, rebuild, drawOverlays, updateTurnUI, net: NET, templates: TEMPLATES, updateTweens, tweens, piecesRoot };
 }
 </script>
+<script>if(window.DampPoints)DampPoints.mount({game:"chess",label:"Chess",get:function(){return 0}});</script>
 </body></html>

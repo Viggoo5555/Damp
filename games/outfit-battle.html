@@ -3795,7 +3795,7 @@ function readLocal(key) {
 /* Damp points: the site-wide wallet that also pays for Secret Room furniture */
 if (window.DampPoints) {
   window.DampPoints.mount({
-    game: "outfit", label: "Outfit Battle", unit: "coins", rate: 0.5, dailyCap: 900,
+    game: "outfit", label: "Outfit Battle", unit: "coins", rate: 0.02, dailyCap: 120,
     get: () => S.coins || 0,
     spend: (n) => { if ((S.coins || 0) < n) return false; S.coins -= n; return true; },
     save: () => { saveLocal(); renderHud(); }

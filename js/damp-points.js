@@ -19,7 +19,9 @@
      });
 
    The chip in the corner shows the shared balance; tapping it opens the
-   trade panel. `DampPoints.set(n)` overwrites the balance (games whose own
+   trade panel. Pass `chip: false` to drop the corner chip and drive the panel
+   from the game's own HUD instead: `var desk = DampPoints.mount(opts)` then
+   `desk.open()`. `DampPoints.set(n)` overwrites the balance (games whose own
    currency *is* the wallet use that), and `onChange` fires in any tab.
    ===================================================================== */
 (function () {
@@ -186,18 +188,22 @@
     var cap = +opts.dailyCap || 0;
     var sources = Array.isArray(opts.sources) ? opts.sources : [];
 
-    var chip = document.createElement("button");
-    chip.type = "button";
-    chip.className = "dp-chip";
-    chip.setAttribute("aria-label", "Damp points");
-    chip.innerHTML = '<span class="dp-coin">\u25c6</span><span class="dp-amt">' + fmt(state.points) + '</span><span class="dp-tag">Damp</span>';
-    document.body.appendChild(chip);
+    // opt out of the corner chip and open the panel from the game's own HUD
+    var chip = null;
+    if (opts.chip !== false) {
+      chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "dp-chip";
+      chip.setAttribute("aria-label", "Damp points");
+      chip.innerHTML = '<span class="dp-coin">\u25c6</span><span class="dp-amt">' + fmt(state.points) + '</span><span class="dp-tag">Damp</span>';
+      document.body.appendChild(chip);
+      chip.addEventListener("click", open);
+    }
 
     var sheet = null;
-    chip.addEventListener("click", open);
 
     var unsub = api.onChange(function (points) {
-      var amt = chip.querySelector(".dp-amt");
+      var amt = chip && chip.querySelector(".dp-amt");
       if (amt) amt.textContent = fmt(points);
       if (sheet) render();
     });
@@ -321,6 +327,8 @@
 
     // keep the trading numbers honest if the player earns currency while the panel is open
     setInterval(function () { if (sheet) render(); }, 1200);
+
+    return { open: open, close: close };
   }
 
   /* ---------- what each game has saved, and how to take it ---------- */

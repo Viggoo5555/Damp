@@ -195,10 +195,15 @@ function showGames() {
 
 function showChips() {
   chips.replaceChildren();
-  const list = liveGames().filter(inGroup);
+  const all = liveGames();
+  const list = all.filter(inGroup);
   const names = ["All"].concat(categories(list));
   if (!names.includes(category)) category = "All";
-  chips.hidden = names.length < 3;
+  // The type switch lives in this same sidebar, so it can only go away when
+  // there are no games at all. A shelf with a single category keeps the switch
+  // and just drops the category chips.
+  chips.hidden = all.length === 0;
+  const showCats = names.length > 2;
 
   // The type switch sits above the categories: board games on their own, the
   // rest on theirs, or both together.
@@ -220,6 +225,8 @@ function showChips() {
     types.appendChild(button);
   });
   chips.appendChild(types);
+
+  if (!showCats) return;
 
   names.forEach(function (name) {
     const chip = el("button", "chip");

@@ -370,7 +370,36 @@ const railMat = new THREE.LineBasicMaterial({ color: 0x35ff5c, transparent: true
 const towerMat = new THREE.LineBasicMaterial({ color: 0x2bff57, transparent: true, opacity: 0.62, fog: true });
 const redMat = new THREE.LineBasicMaterial({ color: 0xff2433, transparent: true, opacity: 0.98, fog: true });
 const boxGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1));
-const towerGeo = new THREE.WireframeGeometry(new THREE.BoxGeometry(1, 1, 1, 3, 3, 3));
+/* A tower reads as a city block: box edges plus a 3x3 grid on every face.
+   WireframeGeometry draws triangle diagonals, which looks like noise in the
+   distance, so the lattice is built line by line instead. */
+function towerGeometry() {
+  const pts = [];
+  const line = (a, b) => pts.push(a[0], a[1], a[2], b[0], b[1], b[2]);
+  const ring = [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]];
+  for (let i = 0; i < 4; i++) {
+    const a = ring[i], b = ring[(i + 1) % 4];
+    line([a[0], -0.5, a[1]], [b[0], -0.5, b[1]]);
+    line([a[0], 0.5, a[1]], [b[0], 0.5, b[1]]);
+    line([a[0], -0.5, a[1]], [a[0], 0.5, a[1]]);
+    for (let k = 1; k < 3; k++) {
+      const t = k / 3;
+      const x = a[0] + (b[0] - a[0]) * t, z = a[1] + (b[1] - a[1]) * t;
+      line([x, -0.5, z], [x, 0.5, z]);
+    }
+  }
+  for (let k = 1; k < 3; k++) {
+    const y = -0.5 + k / 3;
+    for (let i = 0; i < 4; i++) {
+      const a = ring[i], b = ring[(i + 1) % 4];
+      line([a[0], y, a[1]], [b[0], y, b[1]]);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+  return g;
+}
+const towerGeo = towerGeometry();
 
 /* ---------------- ball ---------------- */
 const ball = new THREE.Group();
@@ -379,8 +408,32 @@ const ballCore = new THREE.Mesh(
   new THREE.SphereGeometry(BALL_R * 0.985, 18, 12),
   new THREE.MeshBasicMaterial({ color: 0x01130a, fog: true })
 );
+function sphereGridGeometry(r, lonCount, latCount) {
+  const pts = [];
+  const seg = 36;
+  for (let i = 1; i < latCount; i++) {
+    const phi = (i / latCount) * Math.PI;
+    const y = Math.cos(phi) * r, rad = Math.sin(phi) * r;
+    for (let j = 0; j < seg; j++) {
+      const a0 = (j / seg) * Math.PI * 2, a1 = ((j + 1) / seg) * Math.PI * 2;
+      pts.push(Math.cos(a0) * rad, y, Math.sin(a0) * rad, Math.cos(a1) * rad, y, Math.sin(a1) * rad);
+    }
+  }
+  for (let k = 0; k < lonCount; k++) {
+    const a = (k / lonCount) * Math.PI * 2;
+    const ca = Math.cos(a), sa = Math.sin(a);
+    for (let j = 0; j < seg / 2; j++) {
+      const p0 = (j / (seg / 2)) * Math.PI, p1 = ((j + 1) / (seg / 2)) * Math.PI;
+      pts.push(Math.sin(p0) * ca * r, Math.cos(p0) * r, Math.sin(p0) * sa * r,
+               Math.sin(p1) * ca * r, Math.cos(p1) * r, Math.sin(p1) * sa * r);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+  return g;
+}
 const ballWire = new THREE.LineSegments(
-  new THREE.WireframeGeometry(new THREE.SphereGeometry(BALL_R, 14, 10)),
+  sphereGridGeometry(BALL_R, 9, 7),
   new THREE.LineBasicMaterial({ color: 0x5aff7d, transparent: true, opacity: 0.95, fog: true })
 );
 const ballGlow = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -402,19 +455,26 @@ const path = { nodes: [], base: 0 };
 const gen = {
   yaw: 0, pitch: 0.2, w: 13, c: 0,
   targetW: 13, targetC: 0, targetCurve: 0, targetPitch: 0.2, curve: 0,
-  s: 0, featureEnd: 40, feature: 'start',
+  fromW: 13, fromC: 0, fromPitch: 0.2, fromCurve: 0,
+  s: 0, featureStart: 0, featureEnd: 40, feature: 'start',
 };
 
 const obstacles = [];
 const obstaclePool = [];
 
+/* Width, centre, pitch and turn rate all ease from where the last section left
+   off to the new target over that section's own length, so the surface never
+   pinches or steps between sections. */
 function generateNode() {
   if (gen.s >= gen.featureEnd) startFeature();
-  gen.curve = lerp(gen.curve, gen.targetCurve, 0.12);
+  const span = Math.max(1, gen.featureEnd - gen.featureStart);
+  const raw = clamp((gen.s - gen.featureStart) / span, 0, 1);
+  const t = raw * raw * (3 - 2 * raw);
+  gen.w = lerp(gen.fromW, gen.targetW, t);
+  gen.c = lerp(gen.fromC, gen.targetC, t);
+  gen.curve = lerp(gen.fromCurve, gen.targetCurve, t);
+  gen.pitch = lerp(gen.fromPitch, gen.targetPitch, t);
   gen.yaw += gen.curve;
-  gen.w = lerp(gen.w, gen.targetW, 0.1);
-  gen.c = lerp(gen.c, gen.targetC, 0.1);
-  gen.pitch = lerp(gen.pitch, gen.targetPitch, 0.04);
 
   const prev = path.nodes[path.nodes.length - 1];
   const p = prev ? prev.p.clone() : new THREE.Vector3(0, 0, 0);
@@ -436,18 +496,33 @@ function nodeAbs(index) {
   return path.nodes[local];
 }
 
-const FRAME = { p: null, dir: null, right: null, normal: null, node: null };
-const _up = new THREE.Vector3(0, 1, 0);
+const FRAME = { p: new THREE.Vector3(), dir: new THREE.Vector3(), right: new THREE.Vector3(), normal: new THREE.Vector3(),
+  node: { w: 13, c: 0, pitch: 0.2, yaw: 0, s: 0 } };
+// "right" is what the camera sees as screen-right, so pressing D moves the ball
+// right: for a camera looking along dir with +Y up that is dir x up.
+function rightAt(yaw) { return new THREE.Vector3(-Math.cos(yaw), 0, Math.sin(yaw)); }
 function frameAt(s, out) {
   const target = out || FRAME;
-  const i = clamp(Math.floor(s / NODE_STEP), path.base, path.base + path.nodes.length - 1);
-  const n = nodeAbs(i);
-  const cp = Math.cos(n.pitch), sp = Math.sin(n.pitch);
-  target.p = n.p.clone();
-  target.dir = new THREE.Vector3(Math.sin(n.yaw) * cp, -sp, Math.cos(n.yaw) * cp);
-  target.right = new THREE.Vector3(Math.cos(n.yaw), 0, -Math.sin(n.yaw));
-  target.normal = new THREE.Vector3().crossVectors(target.dir, target.right).normalize();
-  target.node = n;
+  const f = Math.max(0, s) / NODE_STEP;
+  const i = clamp(Math.floor(f), path.base, path.base + path.nodes.length - 2);
+  const t = clamp(f - i, 0, 1);
+  const ease = t * t * (3 - 2 * t);          // never lands exactly on a node edge
+  const n = nodeAbs(i), n2 = nodeAbs(i + 1);
+
+  target.p.lerpVectors(n.p, n2.p, ease);
+  const pitch = lerp(n.pitch, n2.pitch, ease);
+  const yaw = lerp(n.yaw, n2.yaw, ease);
+  const cp = Math.cos(pitch), sp = Math.sin(pitch);
+  target.dir.set(Math.sin(yaw) * cp, -sp, Math.cos(yaw) * cp).normalize();
+  target.right.set(-Math.cos(yaw), 0, Math.sin(yaw)).normalize();
+  target.normal.crossVectors(target.right, target.dir).normalize();
+
+  const node = target.node;
+  node.w = lerp(n.w, n2.w, ease);
+  node.c = lerp(n.c, n2.c, ease);
+  node.pitch = pitch;
+  node.yaw = yaw;
+  node.s = s;
   return target;
 }
 
@@ -485,7 +560,7 @@ function rebuildChunk(chunk, startIndex) {
 
   for (let i = 0; i < count; i++) {
     const n = nodeAbs(startIndex + i);
-    const right = new THREE.Vector3(Math.cos(n.yaw), 0, -Math.sin(n.yaw));
+    const right = rightAt(n.yaw);
     const lx = n.c - n.w / 2, rx = n.c + n.w / 2;
     const lp = n.p.clone().addScaledVector(right, lx);
     const rp = n.p.clone().addScaledVector(right, rx);
@@ -497,7 +572,7 @@ function rebuildChunk(chunk, startIndex) {
 
     if (i < count - 1) {
       const n2 = nodeAbs(startIndex + i + 1);
-      const r2 = new THREE.Vector3(Math.cos(n2.yaw), 0, -Math.sin(n2.yaw));
+      const r2 = rightAt(n2.yaw);
       const lp2 = n2.p.clone().addScaledVector(r2, n2.c - n2.w / 2);
       const rp2 = n2.p.clone().addScaledVector(r2, n2.c + n2.w / 2);
       rail[ri++] = lp.x; rail[ri++] = lp.y + 0.07; rail[ri++] = lp.z;
@@ -529,7 +604,7 @@ function rebuildChunk(chunk, startIndex) {
   for (let i = 0; i < chunk.towers.length; i++) {
     const t = chunk.towers[i];
     const n = nodeAbs(startIndex + 2 + Math.floor(i * (NODES_PER_CHUNK / chunk.towers.length)));
-    const right = new THREE.Vector3(Math.cos(n.yaw), 0, -Math.sin(n.yaw));
+    const right = rightAt(n.yaw);
     const side = i % 2 === 0 ? -1 : 1;
     const dist = rand(CORRIDOR / 2 - 1.5, CORRIDOR / 2 + 11);
     const base = n.p.clone().addScaledVector(right, side * dist);
@@ -578,7 +653,10 @@ function startFeature() {
     if (Math.random() < 0.5 + 0.4 * d) pushObstacle(at(34), rand(-3, 3), 3, 2.4, 1.5);
   } else if (roll < 0.40) {
     gen.feature = 'turn';
-    const dir = Math.random() < 0.5 ? -1 : 1;
+    // bend back towards the middle of the corridor once the path has swung far
+    let dir = Math.random() < 0.5 ? -1 : 1;
+    if (gen.yaw > 0.3) dir = -1;
+    else if (gen.yaw < -0.3) dir = 1;
     gen.targetW = 13.5; gen.targetC = 0;
     gen.targetCurve = dir * (0.013 + 0.016 * d);
     gen.featureEnd = s0 + 40;
@@ -628,6 +706,11 @@ function startFeature() {
   }
 
   gen.targetPitch = 0.23 + Math.random() * 0.11 + 0.06 * d;
+  gen.fromW = gen.w;
+  gen.fromC = gen.c;
+  gen.fromPitch = gen.pitch;
+  gen.fromCurve = gen.curve;
+  gen.featureStart = gen.s;
 }
 
 function getObstacleMesh() {
@@ -700,7 +783,8 @@ function resetWorld() {
   gen.yaw = 0; gen.pitch = 0.2; gen.w = 13; gen.c = 0;
   gen.targetW = 13; gen.targetC = 0; gen.targetCurve = 0;
   gen.targetPitch = 0.2; gen.curve = 0; gen.s = 0;
-  gen.featureEnd = 46; gen.feature = 'start';
+  gen.fromW = 13; gen.fromC = 0; gen.fromPitch = 0.2; gen.fromCurve = 0;
+  gen.featureStart = 0; gen.featureEnd = 46; gen.feature = 'start';
   generateNode();
   ensureNodes(NODES_PER_CHUNK * (CHUNKS + 1) + 4);
 
@@ -914,7 +998,7 @@ function updateBall(dt) {
   _axis.crossVectors(f.normal, _move);
   if (_axis.lengthSq() > 1e-4) {
     _axis.normalize();
-    _quat.setFromAxisAngle(_axis, (game.speed * dt) / BALL_R);
+    _quat.setFromAxisAngle(_axis, (Math.hypot(game.speed, game.vx) * dt) / BALL_R);
     ball.quaternion.premultiply(_quat);
   }
   ballGlow.material.opacity = 0.62 + Math.sin(performance.now() * 0.004) * 0.1;

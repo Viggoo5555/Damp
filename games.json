@@ -124,7 +124,8 @@
     "description": "The island in low-poly 3D. Command a crew of settlers to fell the fir woods, break stone and raise a village of huts, while you hunt, fish and keep the fires alive long enough to light the rescue beacon.",
     "file": "games/wildwood-3d.html",
     "category": "Survival",
-    "image": "img/wildwood-3d.png"
+    "image": "img/wildwood-3d.png",
+    "hidden": true
   },
   {
     "title": "Secret Room",

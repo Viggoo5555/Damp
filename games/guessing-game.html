@@ -155,7 +155,6 @@ h1{font-size:25px}.sc b{font-size:28px}.sc small{font-size:12px;margin-bottom:2p
 </div></div>
 <div class="toast" id="toast"></div>
 
-<script src="../js/damp-points.js"></script>
 <script>
 /* ===== DATA. Each category has several "sets"; comparisons happen inside one set so units always match.
    Item: [name, value, optionalWikipediaTitleForPicture]. Add sets or items freely. ===== */
@@ -309,6 +308,5 @@ document.addEventListener('keydown',e=>{
  if(e.key==='ArrowRight'){e.preventDefault();guess('higher')}else if(e.key==='ArrowLeft'){e.preventDefault();guess('lower')}});
 setSound();if(innerWidth>760)$('#howd').open=true;newGame();
 </script>
-<script>if(window.DampPoints)DampPoints.mount({game:"guessing-game",label:"Guessing Game",get:function(){return 0}});</script>
 </body>
 </html>

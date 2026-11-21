@@ -100,11 +100,14 @@
       var give = Math.max(0, Math.round(+amount || 0));
       if (cap) give = Math.min(give, api.leftToday(game, cap));
       if (give <= 0) return 0;
+      style();
       addToday(game, give);
       api.add(give);
       toast("+" + fmt(give) + " Damp points");
       return give;
     },
+    /* What the games have saved up, for the trade desk in Secret Room. */
+    sources: sources,
     fmt: fmt,
     leftToday: function (game, cap) { return Math.max(0, (cap || 0) - todayFor(game)); },
     onChange: function (fn) {
@@ -156,7 +159,14 @@
       "background:linear-gradient(160deg,#fdf1e1,#f7e4d3);margin-bottom:14px}",
       ".dp-bal b{font:600 26px/1 Georgia,serif}",
       ".dp-bal span{color:#8a7160;font-size:12px;letter-spacing:.08em;text-transform:uppercase}",
-      ".dp-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid rgba(160,120,95,.16);font-size:13px}",
+      ".dp-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-top:1px solid rgba(160,120,95,.16);font-size:13px}",
+      ".dp-sourcehead{margin:2px 0 2px;font:600 10px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.1em;",
+      "text-transform:uppercase;color:#a2836c}",
+      ".dp-src span{display:flex;flex-direction:column;gap:1px}",
+      ".dp-src em{font-style:normal;font-size:11.5px;color:#9a8371}",
+      ".dp-src button{flex:none;padding:7px 11px;border-radius:999px;border:1px solid rgba(160,120,95,.3);",
+      "background:#fff;color:#4a3a2e;font:600 12px/1 ui-sans-serif,system-ui,sans-serif;cursor:pointer}",
+      ".dp-src button:disabled{opacity:.45;cursor:not-allowed}",
       ".dp-row b{font-weight:600}",
       ".dp-actions{display:flex;gap:8px;margin-top:14px}",
       ".dp-actions button{flex:1;padding:12px 10px;border-radius:12px;border:1px solid rgba(160,120,95,.28);",
@@ -174,6 +184,7 @@
     var rate = +opts.rate || 0;
     var unit = opts.unit || "points";
     var cap = +opts.dailyCap || 0;
+    var sources = Array.isArray(opts.sources) ? opts.sources : [];
 
     var chip = document.createElement("button");
     chip.type = "button";
@@ -220,6 +231,16 @@
       var halfGain = Math.floor((have / 2) * rate);
       var html = '<h2>Damp points</h2><p class="dp-sub">One wallet for every game. Furniture is priced in these.</p>' +
         '<div class="dp-bal"><b>' + fmt(state.points) + '</b><span>Damp points</span></div>';
+      if (sources.length) {
+        html += '<p class="dp-sourcehead">Trade in points from your games</p>';
+        sources.forEach(function (src, i) {
+          var saved = Math.max(0, +src.read() || 0);
+          var left = api.leftToday(src.game, src.cap || 0);
+          var gain = Math.min(Math.floor(saved * src.rate), left);
+          html += '<div class="dp-row dp-src"><span>' + escape(src.label) + '<em>' + fmt(saved) + ' ' + escape(src.unit) + '</em></span>' +
+            '<button type="button" class="dp-trade" data-src="' + i + '"' + (gain > 0 ? '' : ' disabled') + '>Trade \u2192 ' + fmt(gain) + '</button></div>';
+        });
+      }
       if (rate > 0) {
         html += '<div class="dp-row"><span>Your ' + escape(opts.label || "game") + '</span><b>' + fmt(have) + ' ' + escape(unit) + '</b></div>' +
           '<div class="dp-row"><span>Exchange rate</span><b>1 ' + escape(unit) + ' = ' + trim(rate) + ' Damp</b></div>' +
@@ -238,6 +259,9 @@
           if (mode === "close") return close();
           trade(mode === "half" ? Math.floor(have / 2) : have);
         });
+      });
+      card.querySelectorAll("[data-src]").forEach(function (btn) {
+        btn.addEventListener("click", function () { tradeSource(sources[+btn.getAttribute("data-src")]); });
       });
     }
 
@@ -269,6 +293,23 @@
       render();
     }
 
+    /* take everything one game has saved, at its own rate and daily cap */
+    function tradeSource(src) {
+      if (!src) return;
+      var saved = Math.max(0, +src.read() || 0);
+      if (saved <= 0) return flash("Nothing saved in " + src.label + " yet.");
+      var left = api.leftToday(src.game, src.cap || 0);
+      if (left <= 0) return flash("That is all the Damp points " + src.label + " gives today.");
+      var gain = Math.min(Math.floor(saved * src.rate), left);
+      if (gain < 1) return flash("Not worth a full Damp point yet.");
+      var take = Math.min(saved, Math.ceil(gain / src.rate));
+      src.clear(take);
+      addToday(src.game, gain);
+      api.add(gain);
+      flash("+" + fmt(gain) + " Damp points");
+      render();
+    }
+
     function flash(text) {
       if (!sheet) return;
       var foot = sheet.querySelector(".dp-foot");
@@ -280,6 +321,34 @@
 
     // keep the trading numbers honest if the player earns currency while the panel is open
     setInterval(function () { if (sheet) render(); }, 1200);
+  }
+
+  /* ---------- what each game has saved, and how to take it ---------- */
+  var CATALOGUE = [
+    { game: "flappy", label: "Flappy Bird", unit: "points", rate: 0.05, cap: 120, key: "fb-save", field: "pts" },
+    { game: "starclicker", label: "Starclicker", unit: "energy", rate: 0.005, cap: 120, key: "voidfoundry.v1", field: "e" },
+    { game: "verity", label: "Verity Clicker", unit: "points", rate: 0.000001, cap: 120, key: "verityClicker.v1", field: "pts" },
+    { game: "outfit", label: "Outfit Battle", unit: "coins", rate: 0.02, cap: 120, key: "outfit-battle-v1-guest", field: "coins" },
+    { game: "hedgerow", label: "Hedgerow Hallow", unit: "golden seeds", rate: 0.05, cap: 120, key: "hedgerow-hollow-v1", field: "gold" }
+  ];
+  function readSaved(key) {
+    try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (error) { return null; }
+  }
+  function savedNumber(saved, field) {
+    return Math.max(0, +((saved || {})[field]) || 0);
+  }
+  function sources() {
+    return CATALOGUE.map(function (entry) {
+      return {
+        game: entry.game, label: entry.label, unit: entry.unit, rate: entry.rate, cap: entry.cap,
+        read: function () { return savedNumber(readSaved(entry.key), entry.field); },
+        clear: function (n) {
+          var saved = readSaved(entry.key) || {};
+          saved[entry.field] = Math.max(0, savedNumber(saved, entry.field) - Math.round(n || 0));
+          try { localStorage.setItem(entry.key, JSON.stringify(saved)); } catch (error) { /* ignore */ }
+        }
+      };
+    });
   }
 
   /* ---------- little note when a win pays out ---------- */

@@ -134,7 +134,6 @@ textarea{width:100%;background:#050a22;color:var(--t);border:1px solid var(--b);
 </main></div>
 <div id="toasts"></div><div id="fx"></div>
 <div id="ov" hidden><div class="panel"><h2>Welcome back</h2><p id="ovt"></p><button id="ovb" class="big">Collect</button></div></div>
-<script src="../js/damp-points.js"></script>
 <script>
 const $c={},$=s=>/^#[\w-]+$/.test(s)?($c[s]||($c[s]=document.querySelector(s))):document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const tm=s=>s<60?Math.ceil(s)+'s':s<3600?Math.ceil(s/60)+'m':s<86400?(s/3600).toFixed(1)+'h':'1d+';
@@ -152,11 +151,6 @@ let S=fresh(),qty='1',pend=null;
 function load(s){try{const o=JSON.parse(s);if(!o||typeof o!=='object')return false;const f=fresh();for(const k in f)if(typeof f[k]==='number')f[k]=Number.isFinite(o[k])?Math.max(0,o[k]):f[k];if(Array.isArray(o.g))f.g=f.g.map((_,i)=>Number.isFinite(o.g[i])?Math.max(0,Math.floor(o.g[i])):0);for(const k of['u','r','a','pu'])if(o[k]&&typeof o[k]==='object')for(const x in o[k])if(o[k][x])f[k][x]=1;f.q=Math.min(f.q,Q.length);S=f;return true}catch(e){return false}}
 function save(){if(pend)return;S.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 
-/* Damp points: the site-wide wallet. Starclicker trades Energy into it. */
-if(window.DampPoints)DampPoints.mount({game:'starclicker',label:'Starclicker',unit:'energy',rate:.005,dailyCap:120,
-  get:function(){return S.e||0},
-  spend:function(n){if((S.e||0)<n)return false;S.e-=n;return true},
-  save:function(){save();}});
 function M(){const m={all:1,cl:1,cost:1,off:1,crit:.05,es:1,ms:1,tap:0,auto:0,cap:8,hi:1,start:1,g:Array(8).fill(1)};
  [[U,S.u],[R,S.r],[P,S.pu]].forEach(([L,o])=>L.forEach((x,j)=>{if(!o[j])return;const[t,v,i]=x.fx;if(t=='g')m.g[i]*=v;else if(['crit','tap','cap','auto'].includes(t))m[t]+=v;else m[t]*=v}));
  m.all*=(1+.15*S.es)*(1+.02*nu(S.a));return m}

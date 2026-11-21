@@ -1009,29 +1009,6 @@ window.addEventListener("storage", function (event) {
 
 syncLanguageControls();
 
-// ----- Damp points: the one wallet every game trades into -----
-function renderPoints() {
-  const value = document.getElementById("points-value");
-  if (!value) return;
-  const points = window.DampPoints ? DampPoints.balance() : 0;
-  value.textContent = points.toLocaleString("en");
-  const pill = document.getElementById("points");
-  if (pill) pill.title = points.toLocaleString() + " Damp points — spend them on furniture in Secret Room";
-}
-
-(function bindPoints() {
-  const pill = document.getElementById("points");
-  if (pill) {
-    pill.addEventListener("click", function () {
-      window.location.href = "games/secret-room";
-    });
-  }
-  if (window.DampPoints) DampPoints.onChange(renderPoints);
-  renderPoints();
-  // coming back from a game in the browser cache still needs a fresh number
-  window.addEventListener("pageshow", renderPoints);
-})();
-
 // ----- Start -----
 async function start() {
   try {

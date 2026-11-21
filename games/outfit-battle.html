@@ -1467,7 +1467,6 @@ dialog .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top
   <div class="actions"><button class="btn ghost" id="looks-close" type="button">Close</button></div>
 </dialog>
 
-<script src="../js/damp-points.js"></script>
 <script type="importmap">{"imports":{"three":"../vendor/three/three.module.js"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -3790,16 +3789,6 @@ function readLocal(key) {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : null;
   } catch (err) { return null; }
-}
-
-/* Damp points: the site-wide wallet that also pays for Secret Room furniture */
-if (window.DampPoints) {
-  window.DampPoints.mount({
-    game: "outfit", label: "Outfit Battle", unit: "coins", rate: 0.02, dailyCap: 120,
-    get: () => S.coins || 0,
-    spend: (n) => { if ((S.coins || 0) < n) return false; S.coins -= n; return true; },
-    save: () => { saveLocal(); renderHud(); }
-  });
 }
 
 function saveLocal() {

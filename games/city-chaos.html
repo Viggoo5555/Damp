@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>City Chaos – 3D destruction sandbox</title>
+<meta name="description" content="A 3D physics sandbox in a modern city: spawn anything, drive anything, break everything.">
+<meta name="theme-color" content="#0b1216">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230b1216'/%3E%3Cpath d='M14 46V26h8v20zm14 0V18h8v28zm14 0V32h8v14z' fill='%23e9b44c'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="city-chaos/style.css">
+<script type="importmap">{"imports":{"three":"../vendor/three/three.module.js","rapier":"../vendor/rapier/rapier.es.js"}}</script>
+</head>
+<body>
+<canvas id="view" aria-label="City Chaos game view"></canvas>
+
+<div id="hud" aria-hidden="false">
+  <div class="brand">
+    <span class="brand-mark">CITY<span>CHAOS</span></span>
+    <div class="brand-meta">
+      <span id="mode-label">Sandbox</span>
+      <span class="sep"></span>
+      <span id="clock-label">12:00</span>
+      <span class="sep"></span>
+      <span id="fps-label">60 FPS</span>
+    </div>
+  </div>
+
+  <aside class="context" id="context">
+    <div class="context-head">
+      <span id="ctx-title">Physics grabber</span>
+      <kbd id="ctx-key">1</kbd>
+    </div>
+    <p id="ctx-desc">Pick objects up, carry them and throw them.</p>
+    <div class="context-foot">
+      <span id="ctx-target">Nothing selected</span>
+      <div class="health" id="ctx-health" hidden><i id="ctx-health-bar"></i></div>
+    </div>
+  </aside>
+
+  <div class="hints" id="hints"></div>
+
+  <div class="toolbar-wrap">
+    <div class="toolbar" id="toolbar" role="toolbar" aria-label="Tools"></div>
+  </div>
+
+  <div class="crosshair" id="crosshair" aria-hidden="true"><i></i></div>
+  <div class="vignette" aria-hidden="true"></div>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <div class="prompt" id="prompt" hidden></div>
+</div>
+
+<div class="overlay" id="spawn" hidden>
+  <div class="window spawn-window" role="dialog" aria-modal="true" aria-labelledby="spawn-title">
+    <header class="win-head">
+      <div class="win-title">
+        <h2 id="spawn-title">Spawn</h2>
+        <p>Everything here has real physics.</p>
+      </div>
+      <label class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+        <input id="spawn-search" type="search" placeholder="Search objects, vehicles, people…" autocomplete="off" spellcheck="false" aria-label="Search objects">
+      </label>
+      <button class="icon-btn" id="spawn-close" type="button" aria-label="Close spawn menu" title="Close (Tab)">✕</button>
+    </header>
+    <div class="spawn-body">
+      <nav class="spawn-cats" id="spawn-cats" aria-label="Categories"></nav>
+      <section class="spawn-main">
+        <div class="recent" id="spawn-recent" hidden>
+          <h3>Recently used</h3>
+          <div class="recent-row" id="recent-row"></div>
+        </div>
+        <div class="cards" id="spawn-cards"></div>
+        <p class="empty-note" id="spawn-empty" hidden>Nothing matches that search.</p>
+      </section>
+      <aside class="spawn-detail" id="spawn-detail">
+        <div class="detail-thumb" id="detail-thumb" aria-hidden="true"></div>
+        <h3 id="detail-name">Select an object</h3>
+        <p id="detail-desc">Browse the shelf, then spawn it in front of you.</p>
+        <dl class="specs" id="detail-specs"></dl>
+        <button class="primary wide" id="detail-spawn" type="button" disabled>Spawn</button>
+        <p class="fine">Spawns in front of the camera. Resize it or weld it with the tools below.</p>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="pause" hidden>
+  <div class="window settings-window" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+    <header class="win-head">
+      <div class="win-title">
+        <h2 id="pause-title">Paused</h2>
+        <p>Press ESC to jump back in.</p>
+      </div>
+      <button class="icon-btn" id="pause-close" type="button" aria-label="Resume game" title="Resume (ESC)">✕</button>
+    </header>
+
+    <div class="settings">
+      <section>
+        <h3>Display</h3>
+        <label class="row"><span>Graphics quality<em>Render resolution and draw distance</em></span>
+          <select id="set-quality">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+        <label class="row"><span>Shadows<em>Costly on big screens</em></span>
+          <select id="set-shadows">
+            <option value="off">Off</option>
+            <option value="low">Soft</option>
+            <option value="high" selected>Sharp</option>
+          </select>
+        </label>
+        <label class="row"><span>Time of day<em>Streetlights follow the sun</em></span>
+          <select id="set-time">
+            <option value="day">Day</option>
+            <option value="dusk">Dusk</option>
+            <option value="night">Night</option>
+          </select>
+        </label>
+        <label class="row check"><input id="set-fps" type="checkbox" checked><span>Show FPS counter</span></label>
+      </section>
+
+      <section>
+        <h3>Physics</h3>
+        <label class="row"><span>Physics quality<em>Debris, substeps and body budget</em></span>
+          <select id="set-physics">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+        <label class="row"><span>Camera shake<em>Explosions and collapses</em></span>
+          <input id="set-shake" type="range" min="0" max="100" value="70">
+        </label>
+      </section>
+
+      <section>
+        <h3>Input &amp; audio</h3>
+        <label class="row"><span>Mouse sensitivity<em>Looking around</em></span>
+          <input id="set-mouse" type="range" min="20" max="240" value="100">
+        </label>
+        <label class="row"><span>Camera sensitivity<em>Free camera speed</em></span>
+          <input id="set-cam" type="range" min="20" max="240" value="100">
+        </label>
+        <label class="row"><span>Volume<em>Engines, impacts, city</em></span>
+          <input id="set-volume" type="range" min="0" max="100" value="65">
+        </label>
+      </section>
+    </div>
+
+    <footer class="win-foot">
+      <button class="primary" id="resume" type="button">Resume</button>
+      <button id="reset-city" type="button">Rebuild city</button>
+      <button id="freecam" type="button">Free camera</button>
+      <button id="quit" type="button">Controls</button>
+    </footer>
+
+    <div class="controls" id="controls" hidden>
+      <div><kbd>WASD</kbd><span>Move</span></div>
+      <div><kbd>Shift</kbd><span>Sprint</span></div>
+      <div><kbd>Space</kbd><span>Jump / handbrake</span></div>
+      <div><kbd>Mouse</kbd><span>Look</span></div>
+      <div><kbd>Tab</kbd><span>Spawn menu</span></div>
+      <div><kbd>1–9, 0</kbd><span>Tools</span></div>
+      <div><kbd>LMB</kbd><span>Use tool</span></div>
+      <div><kbd>RMB</kbd><span>Grab / throw</span></div>
+      <div><kbd>Wheel</kbd><span>Grab distance</span></div>
+      <div><kbd>R</kbd><span>Rotate held / selected</span></div>
+      <div><kbd>F</kbd><span>Enter or exit vehicle</span></div>
+      <div><kbd>V</kbd><span>Free camera</span></div>
+      <div><kbd>G</kbd><span>Day / night</span></div>
+      <div><kbd>X</kbd><span>Delete pointed object</span></div>
+      <div><kbd>ESC</kbd><span>Pause</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="loading">
+  <div class="loader">
+    <span class="loader-mark">CITY<span>CHAOS</span></span>
+    <p id="load-text">Pouring the concrete…</p>
+    <div class="load-bar"><i id="load-bar"></i></div>
+  </div>
+</div>
+
+<div class="overlay" id="crash" hidden>
+  <div class="window crash-window">
+    <h2>The city hit a snag</h2>
+    <p id="crash-text">Something went wrong while building the world.</p>
+    <button class="primary" onclick="location.reload()">Reload the city</button>
+  </div>
+</div>
+
+<script type="module" src="city-chaos/js/main.js"></script>
+</body>
+</html>

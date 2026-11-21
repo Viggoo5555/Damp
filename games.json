@@ -8,6 +8,13 @@
     "hidden": true
   },
   {
+    "title": "City Chaos",
+    "description": "A 3D physics sandbox in a living city. Walk it, drive it, blow it up: spawn anything, weld your own structures and topple skyscrapers floor by floor with real debris.",
+    "file": "games/city-chaos.html",
+    "category": "Sandbox",
+    "image": "img/city-chaos.png"
+  },
+  {
     "title": "Flappy Bird",
     "description": "Classic arcade bird game with custom skins and worlds shop.",
     "file": "games/Flappy Bird.html",

@@ -1922,18 +1922,67 @@ function measureAvatar(model) {
   const shoulderHalf = Math.abs(shL.x) || 0.19;
   const hipHalf = Math.abs(hipL.x) || 0.09;
   const depth = Math.max(0.16, size.z * 0.8);
+  const waistY = hips.y + 0.1, chestY = spine.y - 0.02;
+
+  // Read the real silhouette off the mesh. Guessed ratios made every garment
+  // tight at the hips and loose at the waist, so the torso is measured in bands.
+  const sample = [];
+  const probe = new THREE.Vector3();
+  model.updateMatrixWorld(true);
+  model.traverse(function (o) {
+    if (!o.isMesh || !o.geometry || !o.geometry.attributes.position) return;
+    const attr = o.geometry.attributes.position;
+    const step = attr.count > 24000 ? 2 : 1;
+    for (let i = 0; i < attr.count; i += step) {
+      probe.fromBufferAttribute(attr, i).applyMatrix4(o.matrixWorld);
+      sample.push(probe.x, probe.y, probe.z);
+    }
+  });
+  const band = function (y, half, maxAbsX, side) {
+    const xs = [], zs = [];
+    for (let i = 0; i < sample.length; i += 3) {
+      const px = sample[i], py = sample[i + 1], pz = sample[i + 2];
+      if (Math.abs(py - y) > half) continue;
+      if (side && px * side < 0) continue;
+      if (maxAbsX && Math.abs(px) > maxAbsX) continue;
+      xs.push(px); zs.push(pz);
+    }
+    if (xs.length < 10) return null;
+    xs.sort((a, b) => a - b);
+    zs.sort((a, b) => a - b);
+    const at = (arr, t) => arr[Math.min(arr.length - 1, Math.max(0, Math.floor(arr.length * t)))];
+    return { min: at(xs, 0.02), max: at(xs, 0.98), back: at(zs, 0.02), front: at(zs, 0.98) };
+  };
+  const hipBand = band(hips.y, 0.055, 0.21);
+  const waistBand = band(waistY, 0.03, 0.2);
+  const chestBand = band(chestY, 0.05, 0.22);
+  const thighBand = band((hipL.y + kneeL.y) * 0.5, 0.035, 0.3, -1);
+  const kneeBand = band(kneeL.y, 0.02, 0.3, -1);
+  const shinBand = band(ankL.y + 0.05, 0.02, 0.3, -1);
+  const hb = hipBand || { min: -0.17, max: 0.17, back: -0.11, front: 0.11 };
+  const wb = waistBand || { min: -0.12, max: 0.12, back: -0.09, front: 0.09 };
+  const cb = chestBand || { min: -0.15, max: 0.15, back: -0.11, front: 0.13 };
+  const tw = thighBand ? (thighBand.max - thighBand.min) / 2 : 0.088;
+  const kw = kneeBand ? (kneeBand.max - kneeBand.min) / 2 : 0.062;
+  const aw = shinBand ? (shinBand.max - shinBand.min) / 2 : 0.045;
   return {
     height: size.y, footY: box.min.y, depth: depth,
     hips, spine, spine1, spine2, neck, head, headEnd, shL, shR, elbL, wriL, hipL, kneeL, ankL, toeL,
     shoulderHalf, hipHalf,
     // this rig runs Spine02 (waist) -> Spine (chest) -> neck, so heights are derived, not assumed
-    waistY: hips.y + 0.1, chestY: spine.y - 0.02, neckY: neck.y,
+    waistY, chestY, neckY: neck.y,
     headY: head.y + (headEnd.y - head.y) * 0.55,
     headR: Math.max(0.09, Math.min(0.12, size.y * 0.06)),
-    waistHalf: shoulderHalf * 0.62, waistDepth: depth * 0.44,
-    chestHalf: shoulderHalf * 0.82, chestDepth: depth * 0.52,
-    hipsHalf: hipHalf + 0.062, hipsDepth: depth * 0.56,
-    thighR: 0.088, kneeR: 0.062, ankleR: 0.042,
+    waistHalf: Math.max(0.1, (Math.abs(wb.min) + Math.abs(wb.max)) / 2),
+    waistDepth: Math.max(0.075, (wb.front - wb.back) / 2),
+    chestHalf: Math.max(0.12, (Math.abs(cb.min) + Math.abs(cb.max)) / 2),
+    chestDepth: Math.max(0.09, (cb.front - cb.back) / 2),
+    hipsHalf: Math.max(0.13, (Math.abs(hb.min) + Math.abs(hb.max)) / 2),
+    hipsDepth: Math.max(0.1, (hb.front - hb.back) / 2),
+    hipsZ: (hb.front + hb.back) / 2,
+    waistZ: (wb.front + wb.back) / 2,
+    chestZ: (cb.front + cb.back) / 2,
+    thighR: tw, kneeR: kw, ankleR: aw,
     footLen: Math.max(0.16, (toeL.z - ankL.z) + 0.04)
   };
 }
@@ -2018,7 +2067,7 @@ function loftGeometry(sections, opts) {
       idx.push(a, c, b, b, c, d);
     }
   }
-  const g = new THREE.BufferGeometry();
+  let g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
   g.setIndex(idx);
@@ -2118,6 +2167,96 @@ function strandMat(color) {
   HAIR_CACHE.set(key, m);
   return m;
 }
+function hairStrandMat(color) {
+  const key = "hh" + color;
+  if (HAIR_CACHE.has(key)) return HAIR_CACHE.get(key);
+  const tint = new THREE.Color(color);
+  const m = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff,
+    vertexColors: true,
+    roughness: 0.55,
+    metalness: 0.0,
+    sheen: 0.65,
+    sheenRoughness: 0.35,
+    sheenColor: tint.clone().lerp(new THREE.Color(0xffffff), 0.35),
+    side: THREE.DoubleSide
+  });
+  HAIR_CACHE.set(key, m);
+  return m;
+}
+/* One tuft of hair as a thin, curved, tapered ribbon. Hundreds of these are
+   merged into a single mesh, so the hair reads as separate strands but still
+   costs one draw call. */
+function hairStrands(HR, cfg) {
+  const pos = [], col = [], idx = [];
+  const base = new THREE.Color(cfg.color);
+  const rand = function (seed, n) {
+    const v = Math.sin(seed * 127.1 + n * 311.7) * 43758.5453;
+    return v - Math.floor(v);
+  };
+  const tangent = new THREE.Vector3();
+  const side = new THREE.Vector3();
+  const radial = new THREE.Vector3();
+  for (let s = 0; s < cfg.count; s++) {
+    const r1 = rand(s, 1), r2 = rand(s, 2), r3 = rand(s, 3), r4 = rand(s, 4), r5 = rand(s, 5), r6 = rand(s, 6), r7 = rand(s, 7);
+    const gap = cfg.gap === undefined ? 0.5 : cfg.gap;
+    const span = Math.PI * 2 - gap * 2;
+    const from = cfg.from === undefined ? gap : cfg.from;
+    const to = cfg.from === undefined ? gap + span : cfg.to;
+    const a = from + (to - from) * ((s + r1 * 0.85) / cfg.count) + (cfg.sweep || 0);
+    const ox = Math.sin(a), oz = Math.cos(a);
+    const th0 = (cfg.th0Min === undefined ? 0.08 : cfg.th0Min) + r2 * (cfg.th0Span === undefined ? 0.22 : cfg.th0Span);
+    const thEnd = th0 + (cfg.travelMin === undefined ? 0.55 : cfg.travelMin) + r3 * (cfg.travelSpan === undefined ? 0.3 : cfg.travelSpan);
+    const L = cfg.len * (0.76 + r4 * 0.42);
+    const w = cfg.width * (0.6 + r5 * 0.75);
+    const phase = r6 * Math.PI * 2;
+    const waves = cfg.waves * (0.75 + r7 * 0.6);
+    const amp = cfg.amp * (0.45 + r4 * 1.2);
+    const pts = [];
+    for (let i = 0; i <= 5; i++) {
+      const t = i / 5;
+      const th = th0 + (thEnd - th0) * t;
+      const r = HR * (1.01 + 0.05 * t);
+      pts.push(new THREE.Vector3(Math.sin(th) * ox * r, Math.cos(th) * r + HR * 0.03, Math.sin(th) * oz * r));
+    }
+    const tail = pts[pts.length - 1].clone();
+    for (let i = 1; i <= 6; i++) {
+      const t = i / 6;
+      const sway = Math.sin(t * waves * Math.PI * 2 + phase) * amp * t;
+      pts.push(new THREE.Vector3(
+        tail.x + ox * (0.09 * t) + oz * sway,
+        tail.y - L * t,
+        tail.z + oz * (0.09 * t) - ox * sway
+      ));
+    }
+    const start = pos.length / 3;
+    const shade = 0.82 + r1 * 0.3;
+    radial.set(ox, 0, oz);
+    for (let i = 0; i < pts.length; i++) {
+      const t = i / (pts.length - 1);
+      const pt = pts[i];
+      const prev = pts[Math.max(0, i - 1)], next = pts[Math.min(pts.length - 1, i + 1)];
+      tangent.subVectors(next, prev).normalize();
+      side.crossVectors(tangent, radial).normalize().multiplyScalar(w * (1 - 0.82 * t));
+      const bow = w * 0.5 * (1 - t);
+      pos.push(pt.x + side.x, pt.y + side.y, pt.z + side.z);
+      pos.push(pt.x + radial.x * bow, pt.y, pt.z + radial.z * bow);
+      pos.push(pt.x - side.x, pt.y - side.y, pt.z - side.z);
+      for (let k = 0; k < 3; k++) col.push(base.r * shade, base.g * shade, base.b * shade);
+    }
+    for (let i = 0; i < pts.length - 1; i++) {
+      const a0 = start + i * 3, b0 = start + (i + 1) * 3;
+      idx.push(a0, b0, a0 + 1, a0 + 1, b0, b0 + 1);
+      idx.push(a0 + 1, b0 + 1, a0 + 2, a0 + 2, b0 + 1, b0 + 2);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
 function strandCard(w, h, bend, taper) {
   const g = new THREE.PlaneGeometry(w, h, 6, 10);
   const p = g.attributes.position;
@@ -2164,6 +2303,17 @@ function buildDoll(look) {
   root.add(model);
   root.updateMatrixWorld(true);
   d.model = model;
+  model.traverse(function (o) {
+    if (!o.isSkinnedMesh) return;
+    const count = o.geometry.attributes.position ? o.geometry.attributes.position.count : 0;
+    if (!d.body || count > d.bodyCount) { d.body = o; d.bodyCount = count; }
+  });
+  // The base model carries its own 3D underwear shells and hair cards, which
+  // push through everything we make. The body texture already paints
+  // underwear, so keep only the body mesh and dress it ourselves.
+  model.traverse(function (o) {
+    if (o.isMesh && o !== d.body) o.visible = false;
+  });
   d.fit = fit;
   d.bones = {};
   ["Hips", "Spine", "Spine01", "Spine02", "neck", "Head", "LeftShoulder", "RightShoulder",
@@ -2255,7 +2405,9 @@ function torsoShell(d, topY, bottomY, opts) {
     const halfX = fit.waistHalf + (fit.chestHalf - fit.waistHalf) * chest * (o.bust === false ? 0.7 : 1) + (fit.hipsHalf - fit.waistHalf) * hip;
     const halfZ = fit.waistDepth + (fit.chestDepth - fit.waistDepth) * chest + (fit.hipsDepth - fit.waistDepth) * hip;
     const ease = o.ease === undefined ? 0.022 : o.ease;
-    sections.push({ y: y, rx: halfX + ease + (o.flare ? o.flare * hip : 0), rz: halfZ + ease, z: o.shift || 0 });
+    const rest = Math.max(0, 1 - chest - hip);
+    const zOff = fit.chestZ * chest + fit.hipsZ * hip + fit.waistZ * rest;
+    sections.push({ y: y, rx: halfX + ease + (o.flare ? o.flare * hip : 0), rz: halfZ + ease, z: zOff + (o.shift || 0) });
   }
   return loftGeometry(sections, { seg: o.seg || 34 });
 }
@@ -2318,16 +2470,16 @@ function buildTop(d, item) {
   const topY = (k === "tube" || k === "corset") ? fit.chestY - 0.01 : fit.neckY + 0.004;
   const shellSections = (k === "tube" || k === "corset")
     ? [
-        { y: fit.chestY + 0.06, rx: fit.chestHalf + 0.018, rz: fit.chestDepth + 0.012 },
-        { y: fit.waistY + 0.015, rx: fit.waistHalf + 0.018, rz: fit.waistDepth + 0.016 }
+        { y: fit.chestY + 0.06, rx: fit.chestHalf + 0.022, rz: fit.chestDepth + 0.02, z: fit.chestZ },
+        { y: fit.waistY + 0.015, rx: fit.waistHalf + 0.02, rz: fit.waistDepth + 0.02, z: fit.waistZ }
       ]
     : [
-        { y: topY + 0.01, rx: fit.shoulderHalf * 0.46, rz: fit.chestDepth * 0.44, z: -0.015 },
-        { y: fit.shL.y + 0.035, rx: fit.shoulderHalf * 0.78, rz: fit.chestDepth * 0.52, z: -0.02 },
-        { y: fit.shL.y - 0.02, rx: fit.shoulderHalf * 1.0, rz: fit.chestDepth * 0.58, z: -0.02 },
-        { y: fit.chestY + 0.02, rx: fit.chestHalf + 0.02, rz: fit.chestDepth + 0.012 },
-        { y: (fit.chestY + fit.waistY) * 0.5, rx: fit.waistHalf * 1.08 + 0.018, rz: fit.waistDepth + 0.018 },
-        { y: bottomY, rx: fit.waistHalf + 0.016, rz: fit.waistDepth + 0.016 }
+        { y: topY + 0.01, rx: fit.shoulderHalf * 0.46, rz: fit.chestDepth * 0.46, z: fit.chestZ * 0.4 - 0.012 },
+        { y: fit.shL.y + 0.035, rx: fit.shoulderHalf * 0.8, rz: fit.chestDepth * 0.62, z: fit.chestZ * 0.7 - 0.01 },
+        { y: fit.shL.y - 0.02, rx: fit.shoulderHalf * 1.0, rz: fit.chestDepth * 0.78, z: fit.chestZ * 0.8 },
+        { y: fit.chestY + 0.02, rx: fit.chestHalf + 0.042, rz: fit.chestDepth + 0.038, z: fit.chestZ },
+        { y: (fit.chestY + fit.waistY) * 0.5, rx: fit.waistHalf * 1.06 + 0.026, rz: fit.waistDepth + 0.03, z: fit.waistZ },
+        { y: bottomY, rx: fit.waistHalf + 0.018, rz: fit.waistDepth + 0.018, z: fit.waistZ }
       ];
   const shell = mesh(loftGeometry(shellSections, { seg: 40 }), cloth);
   attach(d, shell, "Spine01");
@@ -2436,11 +2588,12 @@ function buildBottom(d, item) {
   const endR = short ? topR * 1.02 : wide ? fit.ankleR + 0.05 : tight ? fit.ankleR + 0.008 : fit.ankleR + 0.03;
   // seat
   const seat = mesh(loftGeometry([
-    { y: fit.waistY + 0.004, rx: fit.waistHalf + 0.02, rz: fit.waistDepth * 0.96 },
-    { y: hipY - 0.03, rx: fit.hipsHalf + 0.026, rz: fit.hipsDepth * 0.95 },
-    { y: fit.hips.y + 0.02, rx: fit.hipsHalf + 0.03, rz: fit.hipsDepth * 0.92 },
-    { y: fit.hips.y - 0.08, rx: fit.hipsHalf + topR * 0.92, rz: fit.hipsDepth * 0.86 },
-    { y: fit.hips.y - 0.16, rx: fit.hipsHalf + topR * 0.96, rz: fit.hipsDepth * 0.84 }
+    { y: fit.waistY + 0.004, rx: fit.waistHalf + 0.02, rz: fit.waistDepth + 0.018, z: fit.waistZ },
+    { y: hipY - 0.03, rx: fit.hipsHalf + 0.026, rz: fit.hipsDepth + 0.022, z: fit.hipsZ },
+    { y: fit.hips.y + 0.02, rx: fit.hipsHalf + 0.03, rz: fit.hipsDepth + 0.02, z: fit.hipsZ },
+    { y: fit.hips.y - 0.06, rx: fit.hipsHalf + 0.046, rz: fit.hipsDepth + 0.02, z: fit.hipsZ },
+    { y: fit.hips.y - 0.15, rx: fit.hipsHalf + 0.036, rz: fit.hipsDepth * 0.94, z: fit.hipsZ },
+    { y: fit.hips.y - 0.22, rx: fit.hipsHalf + 0.02, rz: fit.hipsDepth * 0.86, z: fit.hipsZ }
   ], { seg: 36 }), cloth);
   attach(d, seat, "Hips");
 
@@ -2452,19 +2605,15 @@ function buildBottom(d, item) {
     const hipP = hip.getWorldPosition(new THREE.Vector3());
     const kneeP = knee.getWorldPosition(new THREE.Vector3());
     const ankleP = ankle.getWorldPosition(new THREE.Vector3());
-    const legTop = new THREE.Vector3(hipP.x, hipP.y + 0.06, hipP.z);
+    const legTop = new THREE.Vector3(hipP.x, hipP.y + 0.05, hipP.z);
     const kneePt = new THREE.Vector3(kneeP.x, kneeY, kneeP.z);
     const anklePt = new THREE.Vector3(ankleP.x, endY, ankleP.z);
-    const thigh = limbMesh(legTop, kneePt, topR, kneeR, cloth, { seg: 18, rings: 7, depth: 1.03 });
+    const thigh = limbMesh(legTop, kneePt, topR * 1.04, kneeR, cloth, { seg: 20, rings: 8, depth: 1.03 });
     attach(d, thigh, side < 0 ? "LeftUpLeg" : "RightUpLeg");
     if (!short) {
-      const calf = limbMesh(kneePt, anklePt, kneeR, endR, cloth, { seg: 18, rings: 8, depth: 1.02, flare: wide ? 1.14 : 1 });
+      const overlap = new THREE.Vector3(kneePt.x, kneePt.y + 0.035, kneePt.z);
+      const calf = limbMesh(overlap, anklePt, kneeR, endR, cloth, { seg: 20, rings: 9, depth: 1.02, flare: wide ? 1.14 : 1 });
       attach(d, calf, side < 0 ? "LeftLeg" : "RightLeg");
-      // a matching cuff hides the seam where thigh and calf meet
-      const kneeCuff = mesh(new THREE.SphereGeometry(kneeR * 1.02, 14, 10), cloth);
-      kneeCuff.position.copy(kneePt);
-      kneeCuff.scale.set(1, 0.85, 1.02);
-      attach(d, kneeCuff, side < 0 ? "LeftLeg" : "RightLeg");
     }
     if (k === "cargo") {
       const p = mesh(new THREE.BoxGeometry(0.075, 0.1, 0.03), detail);
@@ -2624,8 +2773,8 @@ function buildShoes(d, item) {
     }
     if (k === "sneaker" || k === "runner") {
       const cap = mesh(new THREE.SphereGeometry(0.05, 12, 8), soleMat);
-      cap.scale.set(0.9, 0.5, 1.2);
-      cap.position.set(ankle.x, heel + 0.07, ankle.z + len * 0.42);
+      cap.scale.set(0.95, 0.62, 1.25);
+      cap.position.set(ankle.x, heel + 0.085, ankle.z + len * 0.4);
       group.add(cap);
     }
     if (k === "sandal") {
@@ -2915,13 +3064,28 @@ function buildAccessory(d, item) {
 }
 
 /* ---------- hair styles ---------- */
+const HAIR_STYLES = {
+  long:   { count: 230, len: 4.4, waves: 0.7, amp: 0.05, width: 0.052, gap: 0.92, th0Min: 0.45, travelMin: 1.15, travelSpan: 0.4 },
+  side:   { count: 220, len: 4.0, waves: 0.6, amp: 0.05, width: 0.052, gap: 0.86, th0Min: 0.45, travelMin: 1.1, travelSpan: 0.4, sweep: -0.5 },
+  waves:  { count: 250, len: 3.9, waves: 3.2, amp: 0.16, width: 0.054, gap: 0.95, th0Min: 0.45, travelMin: 1.15, travelSpan: 0.4 },
+  curls:  { count: 260, len: 2.8, waves: 6.2, amp: 0.19, width: 0.054, gap: 0.9, th0Min: 0.45, travelMin: 1.05, travelSpan: 0.35 },
+  bob:    { count: 220, len: 2.0, waves: 0.4, amp: 0.04, width: 0.052, gap: 0.88, th0Min: 0.45, travelMin: 1.15, travelSpan: 0.35 },
+  pixie:  { count: 190, len: 0.85, waves: 0.6, amp: 0.06, width: 0.06, gap: 0.3 },
+  crop:   { count: 175, len: 0.78, waves: 0.7, amp: 0.06, width: 0.06, gap: 0.26 },
+  pony:   { count: 210, len: 1.1, waves: 0.5, amp: 0.04, width: 0.065, gap: 0.62 },
+  halfup: { count: 250, len: 3.5, waves: 1.2, amp: 0.07, width: 0.07, gap: 0.55 },
+  buns:   { count: 205, len: 0.95, waves: 0.4, amp: 0.03, width: 0.065, gap: 0.55 },
+  updo:   { count: 215, len: 0.9, waves: 0.35, amp: 0.02, width: 0.06, gap: 0.5 },
+  braids: { count: 210, len: 0.95, waves: 0.35, amp: 0.03, width: 0.06, gap: 0.5 },
+  twin:   { count: 215, len: 1.15, waves: 0.5, amp: 0.04, width: 0.065, gap: 0.5 }
+};
+
 function buildHair(d) {
   const spec = d.spec;
   const item = itemById(spec.hair) || itemById("hair-silk");
   const kind = item ? item.kind : "long";
   const color = spec.hairColor || HAIR_COLORS[1];
-  const mat = strandMat(color);
-  const solid = hairMat(color);
+  const style = HAIR_STYLES[kind] || HAIR_STYLES.long;
   const HR = d.fit.headR;
   const group = new THREE.Group();
   group.position.set(0, d.fit.headY, 0);
@@ -2930,113 +3094,108 @@ function buildHair(d) {
   if (d.bones.Head) d.bones.Head.attach(group);
   d.hairGroup = group;
 
-  // a crown cap that follows the skull and stops above the brow; it also hides the
-  // bun baked into the base mesh
-  const cap = new THREE.Mesh(new THREE.SphereGeometry(HR * 1.03, 30, 20, 0, Math.PI * 2, 0, Math.PI * 0.54), solid);
-  cap.scale.set(1.02, 1.08, 1.06);
-  cap.position.set(0, HR * 0.06, -HR * 0.03);
-  cap.castShadow = true;
-  group.add(cap);
+  // A smooth cap over the skull that stops just above the brow; the locks below
+  // it overlap its rim so no edge shows.
+  const capMat = hairMat(color);
+  const crown = new THREE.Mesh(new THREE.SphereGeometry(HR * 1.0, 34, 22, 0, Math.PI * 2, 0, Math.PI * 0.3), capMat);
+  crown.scale.set(1.02, 1.06, 1.05);
+  crown.position.set(0, HR * 0.04, -HR * 0.01);
+  crown.castShadow = true;
+  group.add(crown);
 
-  const add = function (geo, x, y, z, rx, ry, rz) {
-    const m = new THREE.Mesh(geo, mat);
-    m.position.set(x || 0, y || 0, z || 0);
-    m.rotation.set(rx || 0, ry || 0, rz || 0);
-    m.castShadow = true;
-    group.add(m);
-    return m;
-  };
+  const mass = new THREE.Mesh(hairStrands(HR, {
+    count: style.count,
+    len: HR * style.len,
+    waves: style.waves,
+    amp: HR * style.amp,
+    width: HR * style.width,
+    gap: style.gap,
+    sweep: style.sweep || 0,
+    color: color
+  }), hairStrandMat(color));
+  mass.castShadow = true;
+  group.add(mass);
 
-  const lengths = {
-    long: HR * 5.4, side: HR * 4.8, waves: HR * 5, bob: HR * 2.2, pixie: HR * 1.2,
-    crop: HR * 1.1, buns: HR * 1.7, updo: HR * 1.6, pony: HR * 3.4, halfup: HR * 4.4,
-    curls: HR * 3.2, braids: HR * 4.4, twin: HR * 3.6
-  };
-  const len = lengths[kind] || HR * 4.2;
-  const loose = kind !== "pixie" && kind !== "crop";
-
-  // strand cards start at the cap rim and fall around the head, front to nape
-  const around = loose ? 26 : 18;
-  for (let i = 0; i < around; i++) {
-    const a = -Math.PI + (i / (around - 1)) * Math.PI * 2;
-    const facing = Math.cos(a);
-    // nothing falls across the face: the fringe below handles the hairline
-    if (facing > 0.34) continue;
-    const drop = len * (0.34 + 0.66 * Math.abs(Math.sin(a * 0.9))) * (0.94 + 0.06 * Math.sin(a * 2.7));
-    const card = add(
-      strandCard(HR * 0.98, drop, HR * 0.1, 0.3),
-      Math.sin(a) * HR * 1.06,
-      HR * 0.52 - drop * 0.5,
-      Math.cos(a) * HR * 0.88,
-      0.05,
-      a * 0.75,
-      Math.sin(a) * 0.05
-    );
-    if (kind === "curls" || kind === "waves") {
-      const p = card.geometry.attributes.position;
-      const amp = kind === "curls" ? HR * 0.13 : HR * 0.08;
-      for (let v = 0; v < p.count; v++) {
-        p.setX(v, p.getX(v) + Math.sin(p.getY(v) * (kind === "curls" ? 44 : 17) + i) * amp);
-      }
-      card.geometry.computeVertexNormals();
-    }
-  }
-
-  // volume behind the head for the long styles
-  if (loose) {
-    const backLen = Math.min(len * 0.9, HR * 3.8);
-    add(strandCard(HR * 2.0, backLen, HR * 0.14, 0.22), 0, HR * 0.4 - backLen * 0.5, -HR * 0.8, 0.06, 0, 0);
-    add(strandCard(HR * 1.4, backLen * 0.85, HR * 0.12, 0.3), -HR * 0.92, HR * 0.2 - backLen * 0.42, -HR * 0.34, 0.04, 0.8, 0.06);
-    add(strandCard(HR * 1.4, backLen * 0.85, HR * 0.12, 0.3), HR * 0.92, HR * 0.2 - backLen * 0.42, -HR * 0.34, 0.04, -0.8, -0.06);
-  }
+  // face-framing strands: they hang beside the cheeks, never across the eyes
+  const frame = new THREE.Mesh(hairStrands(HR, {
+    count: 70,
+    len: HR * (style.len > 2 ? 2.5 : 1.2),
+    waves: 0.9,
+    amp: HR * 0.05,
+    width: HR * 0.035,
+    from: -1.45,
+    to: -0.95,
+    th0Min: 0.62,
+    th0Span: 0.14,
+    travelMin: 0.12,
+    travelSpan: 0.1,
+    color: color
+  }), hairStrandMat(color));
+  const frameR = new THREE.Mesh(hairStrands(HR, {
+    count: 70,
+    len: HR * (style.len > 2 ? 2.5 : 1.2),
+    waves: 0.9,
+    amp: HR * 0.05,
+    width: HR * 0.035,
+    from: 0.95,
+    to: 1.45,
+    th0Min: 0.62,
+    th0Span: 0.14,
+    travelMin: 0.12,
+    travelSpan: 0.1,
+    color: color
+  }), hairStrandMat(color));
+  [frame, frameR].forEach(function (m) { m.castShadow = true; group.add(m); });
 
   if (kind === "pony" || kind === "halfup") {
-    const tail = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, HR * 0.7, -HR * 0.7),
-      new THREE.Vector3(HR * 0.08, HR * 0.3, -HR * 1.35),
-      new THREE.Vector3(HR * 0.16, -HR * 0.75, -HR * 1.4),
-      new THREE.Vector3(HR * 0.06, -HR * 1.7, -HR * 1.2)
-    ]), 20, HR * 0.3, 8, false), solid);
+    const tailCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, HR * 0.72, -HR * 0.62),
+      new THREE.Vector3(HR * 0.06, HR * 0.34, -HR * 1.2),
+      new THREE.Vector3(HR * 0.14, -HR * 0.6, -HR * 1.3),
+      new THREE.Vector3(HR * 0.06, -HR * 1.5, -HR * 1.1)
+    ]);
+    const tail = new THREE.Mesh(new THREE.TubeGeometry(tailCurve, 26, HR * 0.26, 10, false), capMat);
     tail.castShadow = true;
     group.add(tail);
-    const tie = new THREE.Mesh(new THREE.TorusGeometry(HR * 0.26, HR * 0.055, 8, 16), solid);
-    tie.position.set(0, HR * 0.66, -HR * 0.72);
+    const tie = new THREE.Mesh(new THREE.TorusGeometry(HR * 0.24, HR * 0.05, 8, 18), capMat);
+    tie.position.set(0, HR * 0.68, -HR * 0.64);
     tie.rotation.x = Math.PI / 2.3;
     group.add(tie);
   } else if (kind === "buns") {
     [-1, 1].forEach(function (side) {
-      const bun = new THREE.Mesh(new THREE.SphereGeometry(HR * 0.4, 18, 14), solid);
-      bun.position.set(side * HR * 0.9, HR * 0.7, -HR * 0.1);
+      const bun = new THREE.Mesh(new THREE.SphereGeometry(HR * 0.38, 20, 16), capMat);
+      bun.position.set(side * HR * 0.88, HR * 0.7, -HR * 0.1);
+      bun.scale.set(1, 0.95, 1);
       bun.castShadow = true;
       group.add(bun);
     });
   } else if (kind === "updo") {
-    const chignon = new THREE.Mesh(new THREE.SphereGeometry(HR * 0.6, 22, 16), solid);
-    chignon.position.set(0, HR * 0.84, -HR * 0.3);
+    const chignon = new THREE.Mesh(new THREE.SphereGeometry(HR * 0.58, 22, 16), capMat);
+    chignon.position.set(0, HR * 0.8, -HR * 0.3);
+    chignon.scale.set(1.1, 0.9, 1);
     chignon.castShadow = true;
     group.add(chignon);
   } else if (kind === "braids" || kind === "twin") {
     [-1, 1].forEach(function (side) {
       const pts = [];
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < 9; i++) {
         pts.push(new THREE.Vector3(
-          side * HR * (0.96 + Math.sin(i * 1.3) * 0.1),
-          HR * 0.3 - i * HR * 0.42,
-          -HR * 0.3 + Math.cos(i * 1.1) * 0.03
+          side * HR * (0.9 + Math.sin(i * 1.1) * 0.09),
+          HR * 0.34 - i * HR * 0.36,
+          -HR * 0.26 + Math.cos(i * 0.9) * 0.03
         ));
       }
-      const braid = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 26, HR * 0.16, 7, false), solid);
+      const braid = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 30, HR * (kind === "twin" ? 0.13 : 0.15), 8, false), capMat);
       braid.castShadow = true;
       group.add(braid);
+      if (kind === "twin") {
+        const tie = new THREE.Mesh(new THREE.TorusGeometry(HR * 0.16, HR * 0.045, 8, 14), capMat);
+        tie.position.set(side * HR * 0.92, HR * 0.32, -HR * 0.26);
+        tie.rotation.x = Math.PI / 2;
+        group.add(tie);
+      }
     });
-  } else if (kind === "bob" || kind === "pixie" || kind === "crop" || kind === "side") {
-    // a short style keeps a nape panel so the bun never shows from behind
-    add(strandCard(HR * 1.8, len * 0.9, HR * 0.08, 0.25), 0, HR * 0.3 - len * 0.45, -HR * 0.75, 0.05, 0, 0);
   }
-  // a soft centre-parted fringe that sits above the eyes
-  add(strandCard(HR * 1.7, HR * 0.5, HR * 0.03, 0.35), 0, HR * 0.74, HR * 0.6, -0.72, 0, 0);
-  add(strandCard(HR * 0.7, HR * 0.9, HR * 0.02, 0.4), -HR * 0.72, HR * 0.34, HR * 0.5, -0.2, 0.55, 0.05);
-  add(strandCard(HR * 0.7, HR * 0.9, HR * 0.02, 0.4), HR * 0.72, HR * 0.34, HR * 0.5, -0.2, -0.55, -0.05);
 }
 /* =====================================================================
    6. THE STAGE — a glossy runway, arches, a dark audience, one camera.
@@ -3263,7 +3422,8 @@ function initStage() {
   key.target.position.set(0, 1, 0);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
-  key.shadow.bias = -0.0006;
+  key.shadow.bias = -0.0002;
+  key.shadow.normalBias = 0.028;
   key.shadow.camera.near = 1;
   key.shadow.camera.far = 26;
   scene.add(key, key.target);

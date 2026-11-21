@@ -1,0 +1,9 @@
+Avatar base model: "Woman Base Mesh" by Grab3D
+Source: https://grab3d.com/models/characters/woman-base-character/
+License: CC0 1.0 Universal (public domain), no attribution required.
+Downloaded from https://grab3d.com/dl/woman-base-character-rigged/woman-base-character-rigged.glb
+
+Changes made for Outfit Battle:
+- Simplified from 305,702 to 59,998 triangles (gltf-transform / meshoptimizer).
+- Textures resized from 4K to 1K JPEG.
+- Hips translation stripped from the walk/run clips so the character stays on the spot.

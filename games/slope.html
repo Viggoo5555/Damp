@@ -406,34 +406,12 @@ const ball = new THREE.Group();
 ball.scale.setScalar(1.12);
 const ballCore = new THREE.Mesh(
   new THREE.SphereGeometry(BALL_R * 0.985, 18, 12),
-  new THREE.MeshBasicMaterial({ color: 0x01130a, fog: true })
+  new THREE.MeshBasicMaterial({ color: 0x07250f, fog: true })
 );
-function sphereGridGeometry(r, lonCount, latCount) {
-  const pts = [];
-  const seg = 36;
-  for (let i = 1; i < latCount; i++) {
-    const phi = (i / latCount) * Math.PI;
-    const y = Math.cos(phi) * r, rad = Math.sin(phi) * r;
-    for (let j = 0; j < seg; j++) {
-      const a0 = (j / seg) * Math.PI * 2, a1 = ((j + 1) / seg) * Math.PI * 2;
-      pts.push(Math.cos(a0) * rad, y, Math.sin(a0) * rad, Math.cos(a1) * rad, y, Math.sin(a1) * rad);
-    }
-  }
-  for (let k = 0; k < lonCount; k++) {
-    const a = (k / lonCount) * Math.PI * 2;
-    const ca = Math.cos(a), sa = Math.sin(a);
-    for (let j = 0; j < seg / 2; j++) {
-      const p0 = (j / (seg / 2)) * Math.PI, p1 = ((j + 1) / (seg / 2)) * Math.PI;
-      pts.push(Math.sin(p0) * ca * r, Math.cos(p0) * r, Math.sin(p0) * sa * r,
-               Math.sin(p1) * ca * r, Math.cos(p1) * r, Math.sin(p1) * sa * r);
-    }
-  }
-  const g = new THREE.BufferGeometry();
-  g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
-  return g;
-}
+/* geodesic shell: reads as a sphere from every angle and makes the roll
+   obvious, where latitude bands flatten into a target when the pole faces us */
 const ballWire = new THREE.LineSegments(
-  sphereGridGeometry(BALL_R, 9, 7),
+  new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(BALL_R, 2)),
   new THREE.LineBasicMaterial({ color: 0x5aff7d, transparent: true, opacity: 0.95, fog: true })
 );
 const ballGlow = new THREE.Sprite(new THREE.SpriteMaterial({

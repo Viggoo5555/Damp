@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+<meta name="theme-color" content="#07060f" />
+<title>LAST STAND — arcade battle royale</title>
+<meta name="description" content="Eighteen microgames. One survivor. A neon arcade battle royale for 2–20 players." />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="boot" class="boot">
+  <div class="boot-logo">LAST<span>STAND</span></div>
+  <div class="boot-bar"><i></i></div>
+  <div class="boot-msg" id="boot-msg">booting cabinet…</div>
+</div>
+
+<div id="cabinet" class="cabinet is-booting">
+  <div class="wall" aria-hidden="true">
+    <canvas id="wall-canvas"></canvas>
+    <div class="wall-grid"></div>
+    <div class="wall-glow"></div>
+  </div>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <header class="topbar" id="topbar">
+    <button class="wordmark" id="btn-home" title="Main menu">
+      <span class="wm-last">LAST</span><span class="wm-stand">STAND</span>
+      <em>ARCADE ROYALE</em>
+    </button>
+    <div class="top-mid">
+      <div class="chip chip-season" title="Season">
+        <span class="chip-dot"></span>
+        <span id="season-name">SEASON 01</span>
+        <b id="season-days">—</b>
+      </div>
+      <div class="chip chip-net" id="net-chip" title="Connection">
+        <span class="net-dot" id="net-dot"></span>
+        <span id="net-text">offline</span>
+      </div>
+    </div>
+    <div class="top-right">
+      <div class="chip chip-coins" title="Coins"><i class="ico-coin"></i><b id="hud-coins">0</b></div>
+      <button class="chip chip-profile" id="btn-profile" title="Profile">
+        <span class="avatar" id="hud-avatar"></span>
+        <span class="hud-name" id="hud-name">guest</span>
+        <span class="hud-lvl" id="hud-level">1</span>
+      </button>
+    </div>
+    <div class="xp-strip"><i id="hud-xp"></i></div>
+  </header>
+
+  <main class="stage" id="stage">
+
+    <!-- ================= AUTH ================= -->
+    <section class="screen" id="s-auth" data-screen="auth">
+      <div class="auth-wrap">
+        <div class="auth-art">
+          <canvas id="auth-canvas"></canvas>
+          <div class="auth-art-copy">
+            <h1>18 microgames.<br />One survivor.</h1>
+            <p>Fast rounds. Real players. No second chances.</p>
+            <ul class="auth-tags">
+              <li>REFLEX</li><li>TIMING</li><li>MEMORY</li><li>PRECISION</li><li>MOVEMENT</li>
+            </ul>
+          </div>
+        </div>
+        <div class="auth-card">
+          <div class="card-notch"></div>
+          <h2>INSERT COIN</h2>
+          <p class="muted">Sign in to keep your level, coins and rank on every device.</p>
+          <label class="field"><span>PLAYER NAME</span><input id="auth-name" maxlength="16" autocomplete="username" spellcheck="false" placeholder="pixelhero" /></label>
+          <label class="field"><span>PASSWORD</span><input id="auth-pass" type="password" maxlength="64" autocomplete="current-password" placeholder="••••••" /></label>
+          <div class="auth-actions">
+            <button class="btn btn-primary" id="btn-signin">SIGN IN</button>
+            <button class="btn btn-ghost" id="btn-register">CREATE ACCOUNT</button>
+          </div>
+          <div class="auth-sep"><span>or</span></div>
+          <button class="btn btn-wide" id="btn-guest">PLAY AS GUEST</button>
+          <p class="auth-msg" id="auth-msg"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= MENU ================= -->
+    <section class="screen" id="s-menu" data-screen="menu">
+      <div class="menu-grid">
+        <div class="menu-main">
+          <div class="hero">
+            <div class="hero-kicker"><span id="hero-mode">RANKED QUEUE</span> · <span id="hero-players">2–20 PLAYERS</span></div>
+            <h1 class="hero-title">LAST<br /><span>STAND</span></h1>
+            <p class="hero-sub">A neon gauntlet of eighteen microgames. Survive each cut — the worst performance drops out. Last one standing takes the crown.</p>
+            <div class="hero-actions">
+              <button class="btn btn-mega" id="btn-play">
+                <span class="mega-main">PLAY</span>
+                <span class="mega-sub" id="play-sub">find a live match</span>
+              </button>
+              <div class="mode-switch" id="mode-switch" role="group" aria-label="Mode">
+                <button class="on" data-mode="ranked">RANKED</button>
+                <button data-mode="casual">CASUAL</button>
+              </div>
+            </div>
+            <div class="hero-stats" id="hero-stats">
+              <div><b id="hs-queue">0</b><span>in queue</span></div>
+              <div><b id="hs-matches">0</b><span>matches</span></div>
+              <div><b id="hs-winrate">0%</b><span>win rate</span></div>
+              <div><b id="hs-rank">—</b><span>rank</span></div>
+            </div>
+          </div>
+          <nav class="tiles" id="tiles">
+            <button class="tile" data-go="practice"><i class="t-ico i-practice"></i><b>PRACTICE</b><span>train any game</span></button>
+            <button class="tile" data-go="custom"><i class="t-ico i-custom"></i><b>CUSTOM</b><span>room codes</span></button>
+            <button class="tile" data-go="shop"><i class="t-ico i-shop"></i><b>SHOP</b><span>cosmetics</span></button>
+            <button class="tile" data-go="quests"><i class="t-ico i-quests"></i><b>QUESTS</b><span>daily goals</span></button>
+            <button class="tile" data-go="leaderboard"><i class="t-ico i-board"></i><b>BOARD</b><span>global ranks</span></button>
+            <button class="tile" data-go="settings"><i class="t-ico i-settings"></i><b>SETTINGS</b><span>audio &amp; video</span></button>
+          </nav>
+        </div>
+        <aside class="menu-rail">
+          <div class="rail-card player-card">
+            <div class="pc-top">
+              <span class="avatar avatar-lg" id="pc-avatar"></span>
+              <div class="pc-id">
+                <b id="pc-name">guest</b>
+                <span class="pc-rank" id="pc-rank">UNRANKED</span>
+              </div>
+              <span class="pc-lvl"><b id="pc-level">1</b>LVL</span>
+            </div>
+            <div class="pc-bar"><i id="pc-xp"></i><em id="pc-xp-text">0 / 100 XP</em></div>
+            <div class="pc-stats">
+              <div><b id="pc-wins">0</b><span>wins</span></div>
+              <div><b id="pc-played">0</b><span>matches</span></div>
+              <div><b id="pc-elim">0</b><span>knockouts</span></div>
+            </div>
+            <div class="pc-plate" id="pc-plate">NAMEPLATE: STANDARD</div>
+          </div>
+
+          <div class="rail-card season-card">
+            <h3>SEASON <b id="sc-num">01</b></h3>
+            <p class="sc-sub" id="sc-sub">Neon Uprising</p>
+            <div class="sc-track"><i id="sc-fill"></i></div>
+            <div class="sc-row"><span>ends in</span><b id="sc-left">—</b></div>
+            <div class="sc-reward"><i class="ico-coin"></i><b id="sc-reward">250</b><span>at season end</span></div>
+          </div>
+
+          <div class="rail-card quest-card">
+            <h3>DAILY QUESTS <button class="mini-link" data-go="quests">ALL</button></h3>
+            <ul id="rail-quests" class="quest-list"></ul>
+          </div>
+
+          <div class="rail-card board-card">
+            <h3>TOP SURVIVORS <button class="mini-link" data-go="leaderboard">BOARD</button></h3>
+            <ol id="rail-board" class="board-list"></ol>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ================= LOBBY ================= -->
+    <section class="screen" id="s-lobby" data-screen="lobby">
+      <div class="lobby">
+        <header class="lobby-head">
+          <div>
+            <span class="kick">LOBBY</span>
+            <h2 id="lobby-title">NEON UPRISING</h2>
+            <p class="muted" id="lobby-sub">Waiting for players…</p>
+          </div>
+          <div class="lobby-code" id="lobby-code-wrap">
+            <span>ROOM CODE</span>
+            <b id="lobby-code">————</b>
+            <button class="mini-link" id="btn-copy">COPY</button>
+          </div>
+          <button class="btn btn-ghost" id="btn-leave">LEAVE</button>
+        </header>
+        <div class="lobby-body">
+          <div class="lobby-slots" id="lobby-slots"></div>
+          <aside class="lobby-side">
+            <div class="rail-card">
+              <h3>MATCH RULES</h3>
+              <ul class="rules" id="lobby-rules">
+                <li><span>Players</span><b>2–20</b></li>
+                <li><span>Rounds</span><b>until 1 left</b></li>
+                <li><span>Round time</span><b>10–25s</b></li>
+                <li><span>Eliminate</span><b>worst scores</b></li>
+              </ul>
+            </div>
+            <div class="rail-card">
+              <h3>READY CHECK</h3>
+              <div class="ready-pulse" id="ready-pulse"><b id="ready-count">0</b><span>ready</span></div>
+              <button class="btn btn-primary btn-wide" id="btn-ready">I'M READY</button>
+              <p class="muted tiny" id="lobby-hint">Match starts when everyone is ready.</p>
+            </div>
+          </aside>
+        </div>
+        <div class="lobby-countdown" id="lobby-countdown" hidden>
+          <b id="lobby-cd-num">5</b><span>GET READY</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= MATCH ================= -->
+    <section class="screen" id="s-match" data-screen="match">
+      <div class="match">
+        <div class="match-hud">
+          <div class="hud-left">
+            <span class="kick" id="mh-round">ROUND 1</span>
+            <b id="mh-alive">2 ALIVE</b>
+          </div>
+          <div class="hud-timer" id="mh-timer"><i id="mh-timer-fill"></i><b id="mh-timer-text">00</b></div>
+          <div class="hud-right">
+            <span class="kick">YOUR SCORE</span>
+            <b id="mh-score">0</b>
+          </div>
+          <div class="hud-alive" id="mh-pips"></div>
+        </div>
+        <div class="match-canvas-wrap">
+          <canvas id="game-canvas" width="960" height="540"></canvas>
+          <div class="match-overlay" id="match-overlay"></div>
+          <div class="shake-host" id="shake-host"></div>
+        </div>
+        <div class="match-foot">
+          <div id="mf-game" class="mf-game">—</div>
+          <div class="mf-keys" id="mf-keys">click / tap / arrow keys</div>
+          <button class="btn btn-ghost" id="btn-forfeit">FORFEIT</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PANELS ================= -->
+    <section class="screen" id="s-panel" data-screen="panel">
+      <div class="panel">
+        <header class="panel-head">
+          <button class="btn btn-ghost btn-back" id="btn-back">‹ BACK</button>
+          <div><span class="kick" id="panel-kick">PANEL</span><h2 id="panel-title">—</h2></div>
+          <div class="panel-tabs" id="panel-tabs"></div>
+        </header>
+        <div class="panel-body" id="panel-body"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="toasts" id="toasts"></div>
+  <div class="modal-root" id="modal-root"></div>
+  <div class="fx-layer" id="fx-layer"></div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

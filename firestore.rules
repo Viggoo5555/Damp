@@ -265,6 +265,117 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ---------------- Last Stand ----------------
+
+    // Private save: level, XP, coins, rating, cosmetics, quests, records.
+    match /ls_players/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 16
+        && request.resource.data.level is int && request.resource.data.level >= 1 && request.resource.data.level <= 999
+        && request.resource.data.xp is int && request.resource.data.xp >= 0 && request.resource.data.xp <= 10000000
+        && request.resource.data.coins is int && request.resource.data.coins >= 0 && request.resource.data.coins <= 10000000
+        && request.resource.data.rating is int && request.resource.data.rating >= 0 && request.resource.data.rating <= 5000;
+    }
+
+    // The public leaderboard card. Read by everyone signed in, written by its owner.
+    match /ls_board/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'level', 'rating', 'wins', 'matches', 'at'])
+        && request.resource.data.uid == uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 16
+        && request.resource.data.level is int && request.resource.data.level >= 1
+        && request.resource.data.rating is int && request.resource.data.rating >= 0 && request.resource.data.rating <= 5000
+        && request.resource.data.wins is int && request.resource.data.wins >= 0
+        && request.resource.data.matches is int && request.resource.data.matches >= 0;
+    }
+
+    // A heartbeat. Online only counts while the timestamp is fresh.
+    match /ls_presence/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'at', 'inRoom', 'level', 'rating'])
+        && request.resource.data.uid == uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 16
+        && request.resource.data.at is number;
+    }
+
+    // A room holds the roster, the phase clock and the elimination records.
+    // The host drives the match. Anyone else may only claim host once the
+    // stored host heartbeat has gone stale, so a dropped host cannot freeze
+    // the room for everyone else.
+    match /ls_rooms/{code} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.code == code
+        && request.resource.data.host == request.auth.uid
+        && request.resource.data.phase == 'lobby'
+        && request.resource.data.round == 0
+        && request.resource.data.seq == 0
+        && request.resource.data.maxPlayers is int
+        && request.resource.data.maxPlayers >= 2
+        && request.resource.data.maxPlayers <= 20;
+      allow update: if request.auth != null
+        && request.resource.data.code == resource.data.code
+        && request.resource.data.round is int && request.resource.data.round >= 0 && request.resource.data.round <= 40
+        && request.resource.data.seq is int && request.resource.data.seq >= 0 && request.resource.data.seq <= 40
+        && (
+          (request.auth.uid == resource.data.host
+            && request.resource.data.host == resource.data.host)
+          || (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['host', 'hostSeen'])
+            && request.resource.data.host == request.auth.uid
+            && resource.data.hostSeen + 12000 < request.time.toMillis()
+          )
+        );
+      allow delete: if request.auth != null && request.auth.uid == resource.data.host;
+
+      // One seat per player, written only by its owner. Stale seats are
+      // ignored by the client, so a closed tab never keeps a lobby full.
+      match /presence/{uid} {
+        allow read: if request.auth != null;
+        allow create, update: if request.auth != null
+          && request.auth.uid == uid
+          && request.resource.data.uid == uid
+          && request.resource.data.name is string
+          && request.resource.data.name.size() <= 16
+          && request.resource.data.at is number;
+        allow delete: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // One score per player per round, written only by its owner. A round
+      // number already used cannot be rewritten with new numbers, which stops
+      // a player resubmitting a better score after the round closed.
+      match /scores/{uid} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && request.auth.uid == uid
+          && request.resource.data.uid == uid
+          && request.resource.data.seq is int
+          && request.resource.data.score is int
+          && request.resource.data.score >= 0
+          && request.resource.data.score <= 100000
+          && request.resource.data.perf is number
+          && request.resource.data.perf >= 0
+          && request.resource.data.perf <= 1;
+        allow update: if request.auth != null
+          && request.auth.uid == uid
+          && request.resource.data.seq is int
+          && request.resource.data.uid == uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['score', 'perf', 'at', 'name'])
+          && request.resource.data.score is int && request.resource.data.score >= 0 && request.resource.data.score <= 100000
+          && request.resource.data.perf is number && request.resource.data.perf >= 0 && request.resource.data.perf <= 1;
+        allow delete: if request.auth != null
+          && (request.auth.uid == uid
+            || get(/databases/$(database)/documents/ls_rooms/$(code)).data.host == request.auth.uid);
+      }
+    }
+
     // Everything else stays closed.
     match /{document=**} {
       allow read, write: if false;

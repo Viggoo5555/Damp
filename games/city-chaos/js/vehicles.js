@@ -348,7 +348,8 @@ export class Vehicle {
     // steering: yaw rate scales with speed and grip
     if (grounded) {
       const speedFactor = clamp(Math.abs(this.speed) / 8, 0, 1) * (1 - clamp(Math.abs(this.speed) / (maxSpeed * 1.45), 0, 0.72));
-      const targetYaw = -this.steerAngle * 1.55 * speedFactor * (this.speed < 0 ? -1 : 1);
+      // positive yaw turns the nose towards +X, which is left when facing +Z
+      const targetYaw = this.steerAngle * 1.55 * speedFactor * (this.speed < 0 ? -1 : 1);
       const av = body.angvel();
       body.setAngvel({ x: av.x, y: lerp(av.y, targetYaw, clamp(dt * 9, 0, 1)), z: av.z }, true);
 
@@ -417,7 +418,7 @@ export class Vehicle {
       const lift = mass * 9.81 * (0.92 + this.input.throttle * 0.9);
       body.applyImpulse({ x: 0, y: lift * dt, z: 0 }, true);
       const av = body.angvel();
-      const yawTarget = -this.input.steer * 1.4;
+      const yawTarget = this.input.steer * 1.4;
       body.setAngvel({ x: lerp(av.x, controlled ? -this.input.pitch * 0.55 : 0, dt * 2), y: lerp(av.y, yawTarget, dt * 2), z: lerp(av.z, controlled ? this.input.steer * 0.5 : 0, dt * 2) }, true);
       if (controlled) {
         const push = mass * 15 * dt;

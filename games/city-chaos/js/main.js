@@ -341,7 +341,9 @@ function onContact(a, b, speed) {
     if (!target.onDamage && !target.damageable) return;
     const otherMass = Math.max(2, other.mass || other.baseMass || 40);
     const massFactor = clamp(otherMass / 220, 0.1, 11);
-    const amount = Math.max(0, speed - 4.5) * massFactor * 3.2;
+    let amount = Math.max(0, speed - 4.5) * massFactor * 3.2;
+    // a sprinting body-check is enough to take a tree down; a walk just bumps it
+    if (target.data?.tree && other.kind === 'player' && speed > 5) amount *= 10;
     if (amount < 1.5) return;
     game.physics.damage(target, amount, point, null);
   };

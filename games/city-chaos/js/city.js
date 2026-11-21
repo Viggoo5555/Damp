@@ -1080,33 +1080,143 @@ export class City {
   }
 
   addTree(x, z, scale, conifer) {
+    // The visual group is pivoted at the trunk centre so the physics body can
+    // tip the whole tree over without any extra bookkeeping.
+    const centerY = 1.3 * scale + 0.2;
     const group = new THREE.Group();
     const trunk = cylinder(0.16 * scale, 0.22 * scale, 2.6 * scale, 0x6b533d, 6, { flat: true });
-    trunk.position.y = 1.3 * scale;
+    trunk.position.y = 0;
     group.add(trunk);
     if (conifer) {
       for (let i = 0; i < 3; i++) {
         const cone = new THREE.Mesh(new THREE.ConeGeometry((1.6 - i * 0.34) * scale, 2.4 * scale, 7), mat(0x3f6b4b, { flat: true }));
-        cone.position.y = (2.5 + i * 1.35) * scale;
+        cone.position.y = (2.5 + i * 1.35) * scale - 1.3 * scale;
         cone.castShadow = true;
         group.add(cone);
       }
     } else {
       const canopy = new THREE.Mesh(new THREE.IcosahedronGeometry(1.75 * scale, 0), mat(0x4f7a4a, { flat: true }));
-      canopy.position.y = 3.6 * scale;
+      canopy.position.y = 2.3 * scale;
       canopy.scale.set(1, 0.9, 1);
       canopy.castShadow = true;
       group.add(canopy);
       const canopy2 = new THREE.Mesh(new THREE.IcosahedronGeometry(1.2 * scale, 0), mat(0x5b8754, { flat: true }));
-      canopy2.position.set(0.7 * scale, 4.3 * scale, 0.3 * scale);
+      canopy2.position.set(0.7 * scale, 3.0 * scale, 0.3 * scale);
       canopy2.castShadow = true;
       group.add(canopy2);
     }
-    group.position.set(x, 0.2, z);
     this.root.add(group);
+    const entity = this.physics.create({
+      mesh: group, shape: 'cylinder', size: [0.36 * scale, 2.6 * scale, 0.36 * scale],
+      position: [x, centerY, z], fixed: true, kind: 'scenery', name: 'Tree',
+      mass: 900, friction: 0.9, material: 'wood', damageable: true, hp: 24,
+      data: { tree: true, scale, trunkColor: 0x6b533d, leafColor: conifer ? 0x3f6b4b : 0x4f7a4a },
+    });
+    entity.onDamage = (amount, point, normal) => this.hurtTree(entity, amount, point, normal);
+    return this.register(entity);
+  }
+
+  hurtTree(entity, amount, point, normal) {
+    if (!entity || entity.dead || entity.data.falling) return;
+    const position = entity.body.translation();
+    const hit = point && typeof point.x === 'number'
+      ? new THREE.Vector3(point.x, point.y, point.z)
+      : new THREE.Vector3(position.x, position.y, position.z);
+    entity.hp -= amount;
+    this.audio?.impact(hit, clamp(amount / 40, 0.15, 0.9), 'wood');
+    if (this.fx && amount > 3) {
+      const chips = Math.min(6, Math.ceil(amount / 8));
+      for (let i = 0; i < chips; i++) {
+        this.fx.debris(
+          hit.clone(),
+          new THREE.Vector3((Math.random() - 0.5) * 5, 1 + Math.random() * 3.5, (Math.random() - 0.5) * 5),
+          0.16 + Math.random() * 0.18,
+          entity.data.trunkColor ?? 0x6b533d, 2.4
+        );
+      }
+      for (let i = 0; i < 3; i++) {
+        this.fx.debris(
+          hit.clone(),
+          new THREE.Vector3((Math.random() - 0.5) * 4, 1.5 + Math.random() * 3, (Math.random() - 0.5) * 4),
+          0.14 + Math.random() * 0.14,
+          entity.data.leafColor ?? 0x4f7a4a, 2
+        );
+      }
+    }
+    if (entity.hp <= 0) this.fellTree(entity, hit);
+  }
+
+  fellTree(entity, point) {
+    if (!entity || entity.dead || entity.data.falling) return;
+    entity.data.falling = true;
+    entity.data.fallAt = performance.now();
+    entity.hp = 0;
+    entity.damageable = false;
+    entity.frozen = false;
+    entity.body.setBodyType(this.physics.R.RigidBodyType.Dynamic, true);
+    entity.body.enableCcd?.(true);
+    entity.body.setLinearDamping(0.25);
+    entity.body.setAngularDamping(0.45);
+    entity.body.wakeUp();
+    const t = entity.body.translation();
+    let dx = t.x - point.x;
+    let dz = t.z - point.z;
+    const length = Math.hypot(dx, dz) || 1;
+    dx /= length;
+    dz /= length;
+    entity.body.setLinvel({ x: dx * 1.6, y: 0.2, z: dz * 1.6 }, true);
+    // tip it over away from whatever hit it
+    entity.body.setAngvel({ x: dz * 1.9, y: 0, z: -dx * 1.9 }, true);
+    this.audio?.collapse(t, 0.35);
+    this.fx?.dust(new THREE.Vector3(t.x, 0.4, t.z), 5, 1.2);
+  }
+
+  settleTree(entity) {
+    if (!entity || entity.dead || entity.data.settled) return;
+    entity.data.settled = true;
+    const t = entity.body.translation();
+    const scale = entity.data.scale || 1;
+    if (this.fx) {
+      for (let i = 0; i < 6; i++) {
+        this.fx.debris(
+          new THREE.Vector3(
+            t.x + (Math.random() - 0.5) * 2.6 * scale,
+            Math.max(0.35, t.y + (Math.random() - 0.5) * 1.6),
+            t.z + (Math.random() - 0.5) * 2.6 * scale
+          ),
+          new THREE.Vector3((Math.random() - 0.5) * 3.5, 1.2 + Math.random() * 2.6, (Math.random() - 0.5) * 3.5),
+          0.2 + Math.random() * 0.22,
+          entity.data.trunkColor ?? 0x6b533d, 4.5
+        );
+      }
+      for (let i = 0; i < 5; i++) {
+        this.fx.debris(
+          new THREE.Vector3(
+            t.x + (Math.random() - 0.5) * 3 * scale,
+            Math.max(0.35, t.y + Math.random() * 1.2),
+            t.z + (Math.random() - 0.5) * 3 * scale
+          ),
+          new THREE.Vector3((Math.random() - 0.5) * 4, 1 + Math.random() * 2.2, (Math.random() - 0.5) * 4),
+          0.16 + Math.random() * 0.14,
+          entity.data.leafColor ?? 0x4f7a4a, 3.2
+        );
+      }
+      this.fx.dust(new THREE.Vector3(t.x, Math.max(0.3, t.y * 0.5), t.z), 7, 1.5);
+    }
+    this.audio?.impact(t, 0.6, 'wood');
+    this.addStump(t.x, t.z, scale);
+    this.physics.remove(entity, { silent: true });
+    this.entities.delete(entity);
+  }
+
+  addStump(x, z, scale) {
+    const stump = cylinder(0.24 * scale, 0.3 * scale, 0.55, 0x5a4530, 7, { flat: true });
+    stump.castShadow = true;
+    this.root.add(stump);
     this.physics.create({
-      mesh: null, shape: 'cylinder', size: [0.28 * scale, 2.6 * scale, 0.28 * scale],
-      position: [x, 1.3 * scale + 0.2, z], fixed: true, kind: 'scenery', name: 'Tree', mass: 900, friction: 0.9,
+      mesh: stump, shape: 'cylinder', size: [0.3 * scale, 0.55, 0.3 * scale],
+      position: [x, 0.2 + 0.28, z], fixed: true, kind: 'scenery', name: 'Tree stump',
+      mass: 260, friction: 0.9, material: 'wood',
     });
   }
 
@@ -1398,6 +1508,14 @@ export class City {
       if (y < entity.size[1] * 0.6 || (speed < 1.2 && performance.now() - entity.data.fallAt > 900)) {
         this.settleStory(entity);
       }
+    }
+
+    // toppled trees hit the ground and break up into logs
+    for (const entity of this.entities) {
+      if (entity.kind !== 'scenery' || !entity.data?.falling || entity.data.settled || entity.dead) continue;
+      const r = entity.body.rotation();
+      const upY = 1 - 2 * (r.x * r.x + r.z * r.z);
+      if (upY < 0.55 || performance.now() - entity.data.fallAt > 5000) this.settleTree(entity);
     }
 
     // window lights and street lamps follow the sun

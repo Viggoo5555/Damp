@@ -71,7 +71,8 @@
     "title": "10-Minute Dungeon",
     "file": "games/10-minute-dungeon.html",
     "category": "Dungeon",
-    "image": "img/10-minute-dungeon.png"
+    "image": "img/10-minute-dungeon.png",
+    "hidden": true
   },
   {
     "title": "Guess the Color!",

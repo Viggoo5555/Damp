@@ -7,37 +7,106 @@ import { box, mat, clamp, lerp, damp } from './core.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 
+// A low-poly builder: work jacket, hard hat, gloves, boots and a packed
+// rucksack. Limbs hang from hip and shoulder pivots so the walk cycle swings
+// from the joint instead of spinning each box around its own middle.
 function buildCharacter() {
   const group = new THREE.Group();
-  const jacket = 0x63899b;
-  const trousers = 0x454f59;
+  const jacket = 0x5d8797;
+  const jacketDark = 0x456b79;
+  const trousers = 0x3f4a55;
+  const trouserDark = 0x333d46;
   const skin = 0xd6b18d;
-  const torso = box(0.46, 0.62, 0.28, jacket, { flat: true });
-  torso.position.y = 0.22;
-  group.add(torso);
-  const head = box(0.26, 0.28, 0.26, skin, { flat: true });
-  head.position.y = 0.7;
-  group.add(head);
-  const hair = box(0.27, 0.1, 0.27, 0x2c2622, { flat: true });
-  hair.position.y = 0.85;
-  group.add(hair);
-  const pack = box(0.34, 0.4, 0.16, 0xe9b44c, { flat: true });
-  pack.position.set(0, 0.24, -0.2);
-  group.add(pack);
+  const boot = 0x33302c;
+  const glove = 0x2b3338;
+  const pack = 0xe0a93f;
+  const strap = 0xa9752a;
+
+  const add = (parent, mesh, x, y, z) => {
+    mesh.position.set(x, y, z);
+    mesh.castShadow = true;
+    parent.add(mesh);
+    return mesh;
+  };
+
+  // hips, belt and buckle
+  add(group, box(0.4, 0.2, 0.26, trousers, { flat: true }), 0, -0.02, 0);
+  add(group, box(0.42, 0.055, 0.27, 0x2b3238, { flat: true }), 0, 0.09, 0);
+  add(group, box(0.07, 0.05, 0.02, 0xb9c0c2, { flat: true }), 0, 0.09, 0.145);
+
+  // torso: jacket, shoulder yoke, hem, zip, pocket, collar
+  add(group, box(0.46, 0.42, 0.28, jacket, { flat: true }), 0, 0.31, 0);
+  add(group, box(0.5, 0.13, 0.3, jacket, { flat: true }), 0, 0.45, 0);
+  add(group, box(0.47, 0.08, 0.29, jacketDark, { flat: true }), 0, 0.13, 0);
+  add(group, box(0.045, 0.34, 0.02, jacketDark, { flat: true }), 0, 0.32, 0.15);
+  add(group, box(0.13, 0.11, 0.02, jacketDark, { flat: true }), 0.14, 0.37, 0.152);
+  add(group, box(0.3, 0.09, 0.24, 0x3c5f6b, { flat: true }), 0, 0.55, 0);
+
+  // rucksack with flap, straps and a bedroll on top
+  add(group, box(0.28, 0.34, 0.16, pack, { flat: true }), 0, 0.28, -0.23);
+  add(group, box(0.3, 0.08, 0.18, strap, { flat: true }), 0, 0.41, -0.23);
+  add(group, box(0.05, 0.38, 0.03, strap, { flat: true }), -0.1, 0.3, 0.155);
+  add(group, box(0.05, 0.38, 0.03, strap, { flat: true }), 0.1, 0.3, 0.155);
+  const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.28, 7), mat(0x5c6b4a, { flat: true }));
+  roll.rotation.z = Math.PI / 2;
+  roll.position.set(0, 0.49, -0.23);
+  roll.castShadow = true;
+  group.add(roll);
+
+  // neck, head and face
+  add(group, box(0.13, 0.1, 0.13, 0xc9a483, { flat: true }), 0, 0.6, 0);
+  add(group, box(0.24, 0.25, 0.23, skin, { flat: true }), 0, 0.75, 0);
+  add(group, box(0.025, 0.07, 0.055, skin, { flat: true }), -0.125, 0.75, 0);
+  add(group, box(0.025, 0.07, 0.055, skin, { flat: true }), 0.125, 0.75, 0);
+  add(group, box(0.05, 0.038, 0.02, 0x2a2521, { flat: true }), -0.057, 0.775, 0.12);
+  add(group, box(0.05, 0.038, 0.02, 0x2a2521, { flat: true }), 0.057, 0.775, 0.12);
+  add(group, box(0.07, 0.02, 0.02, 0x3a2b23, { flat: true }), -0.057, 0.805, 0.12);
+  add(group, box(0.07, 0.02, 0.02, 0x3a2b23, { flat: true }), 0.057, 0.805, 0.12);
+  add(group, box(0.05, 0.055, 0.045, 0xc79a78, { flat: true }), 0, 0.745, 0.13);
+  add(group, box(0.065, 0.016, 0.02, 0x8a5b4b, { flat: true }), 0, 0.695, 0.12);
+  add(group, box(0.25, 0.09, 0.24, 0x2c2622, { flat: true }), 0, 0.855, -0.005);
+  add(group, box(0.25, 0.18, 0.07, 0x2c2622, { flat: true }), 0, 0.785, -0.095);
+
+  // hard hat: dome, brim and a top ridge
+  const dome = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.18, 0.12, 9), mat(0xf0b73f, { flat: true }));
+  dome.position.set(0, 0.9, 0);
+  dome.castShadow = true;
+  group.add(dome);
+  const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.215, 0.215, 0.03, 10), mat(0xdfa22e, { flat: true }));
+  brim.position.set(0, 0.845, 0.02);
+  brim.castShadow = true;
+  group.add(brim);
+  add(group, box(0.045, 0.045, 0.18, 0xe6ad35, { flat: true }), 0, 0.965, 0);
+
+  // arms from the shoulder pivots
   const arms = [];
+  for (const side of [-1, 1]) {
+    const pivot = new THREE.Group();
+    pivot.position.set(side * 0.3, 0.46, 0);
+    pivot.rotation.z = side * 0.06;
+    group.add(pivot);
+    add(pivot, box(0.165, 0.13, 0.155, jacket, { flat: true }), 0, -0.02, 0);
+    add(pivot, box(0.13, 0.24, 0.14, jacket, { flat: true }), 0, -0.11, 0);
+    add(pivot, box(0.12, 0.05, 0.13, 0x3c5f6b, { flat: true }), 0, -0.225, 0);
+    add(pivot, box(0.115, 0.22, 0.125, jacketDark, { flat: true }), 0, -0.33, 0.008);
+    add(pivot, box(0.13, 0.11, 0.13, glove, { flat: true }), 0, -0.465, 0.012);
+    arms.push(pivot);
+  }
+
+  // legs from the hip pivots, boots included
   const legs = [];
   for (const side of [-1, 1]) {
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.5, 0.13), mat(jacket, { flat: true }));
-    arm.position.set(side * 0.31, 0.33, 0);
-    arm.castShadow = true;
-    group.add(arm);
-    arms.push(arm);
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.52, 0.17), mat(trousers, { flat: true }));
-    leg.position.set(side * 0.13, -0.36, 0);
-    leg.castShadow = true;
-    group.add(leg);
-    legs.push(leg);
+    const pivot = new THREE.Group();
+    pivot.position.set(side * 0.115, -0.06, 0);
+    group.add(pivot);
+    add(pivot, box(0.165, 0.3, 0.18, trousers, { flat: true }), 0, -0.15, 0);
+    add(pivot, box(0.15, 0.05, 0.06, 0x4a5560, { flat: true }), 0, -0.28, 0.085);
+    add(pivot, box(0.15, 0.26, 0.165, trouserDark, { flat: true }), 0, -0.41, 0.005);
+    add(pivot, box(0.185, 0.13, 0.3, boot, { flat: true }), 0, -0.545, 0.045);
+    add(pivot, box(0.19, 0.04, 0.31, 0x211f1c, { flat: true }), 0, -0.6, 0.045);
+    legs.push(pivot);
   }
+
   group.userData.arms = arms;
   group.userData.legs = legs;
   return group;
@@ -87,6 +156,7 @@ export class Player {
     this.vehicle = null;
     this.camInitialised = false;
     this.yaw = this.game.city.spawnFacing ?? Math.PI;
+    this.mesh.rotation.y = this.yaw + Math.PI;
   }
 
   look(dx, dy) {
@@ -145,6 +215,14 @@ export class Player {
       .addScaledVector(flatForward, forwardPressed)
       .addScaledVector(right, sidePressed);
     if (wish.lengthSq() > 0) wish.normalize().multiplyScalar(speed);
+
+    // face the way the character is walking instead of sliding sideways
+    if (wish.lengthSq() > 0.001) {
+      let delta = Math.atan2(wish.x, wish.z) - this.mesh.rotation.y;
+      while (delta > Math.PI) delta -= Math.PI * 2;
+      while (delta < -Math.PI) delta += Math.PI * 2;
+      this.mesh.rotation.y += delta * (1 - Math.exp(-16 * dt));
+    }
 
     const velocity = body.linvel();
     const blend = 1 - Math.exp(-14 * dt);

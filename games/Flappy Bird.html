@@ -178,6 +178,7 @@ h2{font-size:calc(var(--s)*22px);color:var(--hd,#ffa72b)}
 <button id="skip" class="btn sm hide">Skip</button>
 </div>
 </main>
+<script src="../js/damp-points.js"></script>
 <script>
 (()=>{
 const W=288,H=512,GY=432,PW=52,CAP=26,GAP=105,SPD=120,SPACING=170,G=900,FLAP=-276,VMAX=600,BX=84,R=12,STEP=1/120,INK='#543847';
@@ -400,6 +401,12 @@ async function cloudLoad(){
 }
 function apply(){FR=birdFrames(hasSk('color')?save.col:'#ffeb2f');shield=hasSk('shield')?1:0;inv=0;PT=PIPES[save.eq.w];T=WORLDS[save.eq.w];stage.dataset.w=save.eq.w;stage.style.setProperty('--sky',T.sky);stage.style.setProperty('--g1',T.g1);stage.style.setProperty('--sd',T.sd);}
 function refreshPts(){$('ptsT').textContent='Points: '+save.pts;$('pts').textContent='Points: '+save.pts;$('skpts').textContent=save.pts;}
+
+/* Damp points: the site-wide wallet. Flappy points buy into it. */
+if(window.DampPoints)DampPoints.mount({game:'flappy',label:'Flappy Bird',unit:'points',rate:.2,dailyCap:900,
+  get:function(){return save.pts||0},
+  spend:function(n){if((save.pts||0)<n)return false;save.pts-=n;return true},
+  save:function(){persist();refreshPts();}});
 function openShop(o){$('shop').classList.toggle('hide',!o);if(o)renderShop();}
 function renderShop(){
   refreshPts();

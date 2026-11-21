@@ -211,6 +211,7 @@ body.noanim *,body.noanim *::before,body.noanim *::after{animation:none!importan
 <div id="toasts" aria-live="polite"></div>
 <div id="modal"><div class="box" id="modalBox"></div></div>
 <div id="flash"></div>
+<script src="../js/damp-points.js"></script>
 <script>
 'use strict';
 /* ============ DATA ============ */
@@ -687,6 +688,13 @@ function corruptionExtras(){
 function mergeDeep(a,b){for(const k in b){if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])&&a[k]&&typeof a[k]==='object')mergeDeep(a[k],b[k]);else a[k]=b[k]}return a}
 function serialize(){S.lastSave=now();return JSON.stringify(S)}
 function save(){try{localStorage.setItem(SAVE_KEY,serialize())}catch(e){}}
+
+/* Damp points: the site-wide wallet. Verity points are worth a sliver each,
+   since this game counts in quadrillions. */
+if(window.DampPoints)DampPoints.mount({game:'verity',label:'Verity Clicker',unit:'points',rate:.000001,dailyCap:900,
+  get:function(){return S.pts||0},
+  spend:function(n){if((S.pts||0)<n)return false;S.pts-=n;return true},
+  save:function(){save();renderAll();}});
 function loadFromString(str){
   try{const o=JSON.parse(str);const s=mergeDeep(newState(),o);if(!Array.isArray(s.rebirths)||s.rebirths.length<3)s.rebirths=[0,0,0];
     s.form=clamp(s.form|0,0,FORMS.length-1);return s}catch(e){return null}

@@ -4,7 +4,8 @@
     "description": "A glam salon for terrible hair and bare faces. Style the hair first — brush out the tangles, snip, blow in volume, curl, dye and clip — then move to the mirror for eyeshadow, lashes, blush, lipstick and glow, and finish with a score.",
     "file": "games/bad-hair-day.html",
     "category": "Makeover",
-    "image": "img/bad-hair-day.png"
+    "image": "img/bad-hair-day.png",
+    "hidden": true
   },
   {
     "title": "Flappy Bird",

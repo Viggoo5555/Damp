@@ -899,6 +899,254 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ---------------- Little Town ----------------
+
+    // The owner's full town save. Private to that account.
+    match /littletown_saves/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'coins', 'xp', 'level', 'population', 'land', 'updated', 'state'])
+        && request.resource.data.uid == uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 24
+        && request.resource.data.coins is int
+        && request.resource.data.coins >= 0
+        && request.resource.data.coins <= 99999999
+        && request.resource.data.xp is int
+        && request.resource.data.xp >= 0
+        && request.resource.data.xp <= 99999999
+        && request.resource.data.level is int
+        && request.resource.data.level >= 1
+        && request.resource.data.level <= 99
+        && request.resource.data.population is int
+        && request.resource.data.population >= 0
+        && request.resource.data.population <= 9999
+        && request.resource.data.land is int
+        && request.resource.data.land >= 1
+        && request.resource.data.land <= 5
+        && request.resource.data.updated is number
+        && request.resource.data.state is string
+        && request.resource.data.state.size() <= 800000;
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // A published town snapshot. Everyone can browse it (guests too), but
+    // only its owner may change the town. Visitors may move the like counter
+    // by exactly one while creating or deleting their own like row, so the
+    // counter cannot be set to an arbitrary number.
+    match /littletown_towns/{townUid} {
+      allow read: if true;
+
+      allow create: if request.auth != null && request.auth.uid == townUid
+        && request.resource.data.keys().hasOnly(['uid', 'owner', 'name', 'level', 'rating', 'residents', 'happiness', 'buildings', 'decor', 'roads', 'land', 'season', 'likes', 'layout', 'updated'])
+        && request.resource.data.uid == townUid
+        && request.resource.data.owner is string
+        && request.resource.data.owner.size() <= 24
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 24
+        && request.resource.data.level is int
+        && request.resource.data.level >= 1
+        && request.resource.data.level <= 99
+        && request.resource.data.rating is number
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.residents is int
+        && request.resource.data.residents >= 0
+        && request.resource.data.residents <= 9999
+        && request.resource.data.happiness is int
+        && request.resource.data.happiness >= 0
+        && request.resource.data.happiness <= 100
+        && request.resource.data.buildings is int
+        && request.resource.data.buildings >= 0
+        && request.resource.data.buildings <= 500
+        && request.resource.data.decor is int
+        && request.resource.data.decor >= 0
+        && request.resource.data.decor <= 600
+        && request.resource.data.roads is int
+        && request.resource.data.roads >= 0
+        && request.resource.data.roads <= 2000
+        && request.resource.data.land is int
+        && request.resource.data.land >= 1
+        && request.resource.data.land <= 5
+        && request.resource.data.season is string
+        && request.resource.data.season.size() <= 12
+        && request.resource.data.likes is int
+        && request.resource.data.likes == 0
+        && request.resource.data.layout is string
+        && request.resource.data.layout.size() <= 220000
+        && request.resource.data.updated is number;
+
+      allow update: if request.auth != null && (
+        (
+          request.auth.uid == townUid
+          && request.resource.data.uid == resource.data.uid
+          && request.resource.data.likes == resource.data.likes
+          && request.resource.data.keys().hasOnly(['uid', 'owner', 'name', 'level', 'rating', 'residents', 'happiness', 'buildings', 'decor', 'roads', 'land', 'season', 'likes', 'layout', 'updated'])
+          && request.resource.data.owner is string
+          && request.resource.data.owner.size() <= 24
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0
+          && request.resource.data.name.size() <= 24
+          && request.resource.data.level is int
+          && request.resource.data.rating is number
+          && request.resource.data.rating >= 1
+          && request.resource.data.rating <= 5
+          && request.resource.data.residents is int
+          && request.resource.data.happiness is int
+          && request.resource.data.buildings is int
+          && request.resource.data.decor is int
+          && request.resource.data.roads is int
+          && request.resource.data.land is int
+          && request.resource.data.season is string
+          && request.resource.data.season.size() <= 12
+          && request.resource.data.likes is int
+          && request.resource.data.likes >= 0
+          && request.resource.data.likes <= 999999
+          && request.resource.data.layout is string
+          && request.resource.data.layout.size() <= 220000
+          && request.resource.data.updated is number
+        )
+        ||
+        (
+          request.auth.uid != townUid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
+          && request.resource.data.likes is int
+          && (
+            (request.resource.data.likes == resource.data.likes + 1
+              && existsAfter(/databases/$(database)/documents/littletown_towns/$(townUid)/likes/$(request.auth.uid)))
+            ||
+            (request.resource.data.likes == resource.data.likes - 1
+              && resource.data.likes > 0
+              && !existsAfter(/databases/$(database)/documents/littletown_towns/$(townUid)/likes/$(request.auth.uid)))
+          )
+        )
+      );
+
+      allow delete: if request.auth != null && request.auth.uid == townUid;
+
+      // One like per visitor per town, keyed by the visitor's uid.
+      match /likes/{visitorUid} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && visitorUid == request.auth.uid
+          && request.auth.uid != townUid
+          && request.resource.data.keys().hasOnly(['uid', 'name', 'at'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.name is string
+          && request.resource.data.name.size() <= 24
+          && request.resource.data.at is number;
+        allow delete: if request.auth != null && visitorUid == request.auth.uid;
+        allow update: if false;
+      }
+    }
+
+    // A one-way follow; friends are two follows.
+    match /littletown_follows/{followId} {
+      allow read: if request.auth != null
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to is string
+        && request.resource.data.to != request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 24
+        && request.resource.data.at is number
+        && request.resource.data.keys().hasOnly(['from', 'to', 'name', 'at'])
+        && followId == request.resource.data.from + '_' + request.resource.data.to;
+      allow delete: if request.auth != null && resource.data.from == request.auth.uid;
+      allow update: if false;
+    }
+
+    // A simple heartbeat while a mayor is in their town.
+    match /littletown_presence/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'at'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 24
+        && request.resource.data.at is number;
+    }
+
+    // Weekly competition entry, one per mayor per week. Owners may update
+    // their snapshot but cannot change the vote count; voters may only add
+    // exactly one vote while creating their own one-per-week vote row.
+    match /littletown_entries/{entryId} {
+      allow read: if true;
+
+      allow create: if request.auth != null
+        && entryId == request.resource.data.week + '_' + request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.owner is string
+        && request.resource.data.owner.size() <= 24
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 24
+        && request.resource.data.level is int
+        && request.resource.data.level >= 1
+        && request.resource.data.level <= 99
+        && request.resource.data.rating is number
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.residents is int
+        && request.resource.data.residents >= 0
+        && request.resource.data.residents <= 9999
+        && request.resource.data.week is string
+        && request.resource.data.week.size() <= 12
+        && request.resource.data.layout is string
+        && request.resource.data.layout.size() <= 220000
+        && request.resource.data.at is number
+        && request.resource.data.votes == 0
+        && request.resource.data.keys().hasOnly(['week', 'uid', 'owner', 'name', 'level', 'rating', 'residents', 'layout', 'at', 'votes']);
+
+      allow update: if request.auth != null && (
+        (
+          request.auth.uid == resource.data.uid
+          && request.resource.data.uid == resource.data.uid
+          && request.resource.data.week == resource.data.week
+          && request.resource.data.votes == resource.data.votes
+          && request.resource.data.keys().hasOnly(['week', 'uid', 'owner', 'name', 'level', 'rating', 'residents', 'layout', 'at', 'votes'])
+          && request.resource.data.owner is string
+          && request.resource.data.owner.size() <= 24
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0
+          && request.resource.data.name.size() <= 24
+          && request.resource.data.level is int
+          && request.resource.data.rating is number
+          && request.resource.data.residents is int
+          && request.resource.data.layout is string
+          && request.resource.data.layout.size() <= 220000
+          && request.resource.data.at is number
+        )
+        ||
+        (
+          request.auth.uid != resource.data.uid
+          && request.resource.data.votes == resource.data.votes + 1
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes'])
+          && existsAfter(/databases/$(database)/documents/littletown_votes/$(resource.data.week + '_' + request.auth.uid))
+        )
+      );
+
+      allow delete: if request.auth != null && request.auth.uid == resource.data.uid;
+    }
+
+    // One vote per mayor per week, written once and never for yourself.
+    match /littletown_votes/{voteId} {
+      allow read: if request.auth != null && resource.data.from == request.auth.uid;
+      allow create: if request.auth != null
+        && voteId == request.resource.data.week + '_' + request.auth.uid
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to is string
+        && request.resource.data.to != request.auth.uid
+        && request.resource.data.week is string
+        && request.resource.data.week.size() <= 12
+        && request.resource.data.at is number
+        && request.resource.data.keys().hasOnly(['week', 'from', 'to', 'at'])
+        && exists(/databases/$(database)/documents/littletown_entries/$(request.resource.data.week + '_' + request.resource.data.to));
+      allow update, delete: if false;
+    }
+
     // Everything else stays closed.
     match /{document=**} {
       allow read, write: if false;

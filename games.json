@@ -178,5 +178,12 @@
     "file": "games/dream-park/index.html",
     "category": "Simulation",
     "image": "img/dream-park.png"
+  },
+  {
+    "title": "Little Town",
+    "description": "Build a cosy 3D village from a single cottage and a cobbled lane: ninety buildings and decorations, winding roads and riverside paths, animated neighbours with jobs and happiness, daily quests and seasons — then visit other mayors' towns, swap likes and enter the weekly contest.",
+    "file": "games/little-town/index.html",
+    "category": "Simulation",
+    "image": "img/little-town.png"
   }
 ]

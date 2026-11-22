@@ -154,14 +154,16 @@
     "description": "Run a cosy café for adorable animals. Take orders, cook every dish to order, collect thirty-six wandering pets, place and paint a café of your own, then visit real players' cafés, leave hearts and enter the weekly decoration competition.",
     "file": "games/pet-cafe/index.html",
     "category": "Simulation",
-    "image": "img/pet-cafe.png"
+    "image": "img/pet-cafe.png",
+    "hidden": true
   },
   {
     "title": "Last Stand",
     "description": "An eighteen-round neon battle royale of microgames. Everyone plays the same reflex, timing, memory and aim challenges at once, the worst performances drop out, and the last player standing takes the crown. Accounts, ranks, daily quests and cosmetics included.",
     "file": "games/last-stand/index.html",
     "category": "Battle Royale",
-    "image": "img/last-stand.png"
+    "image": "img/last-stand.png",
+    "hidden": true
   },
   {
     "title": "Bake Off!",

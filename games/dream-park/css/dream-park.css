@@ -226,9 +226,13 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 }
 .item-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
 .item-card.locked { opacity: 0.72; cursor: not-allowed; }
-.item-art { height: 84px; background: linear-gradient(160deg, #e8f6fb, #fdf3e3); display: grid; place-items: center; position: relative; overflow: hidden; }
+.item-art { aspect-ratio: 2.6; height: auto; min-height: 92px; background: linear-gradient(160deg, #dceff7, #fbf0dc); display: grid; place-items: center; position: relative; overflow: hidden; }
 .item-art canvas, .item-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .item-art .emoji { font-size: 38px; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.12)); }
+.item-art .item-thumb { position: absolute; inset: 0; z-index: 2; opacity: 0; background: linear-gradient(160deg, #dceff7, #fbf0dc); object-fit: cover; transition: opacity 0.28s ease; }
+.item-art .item-thumb[data-ready="1"] { opacity: 1; }
+.item-art .emoji { position: relative; z-index: 1; }
+.item-card .item-art .lock-tag { z-index: 3; }
 .item-art .lock-tag {
   position: absolute; inset: auto 6px 6px auto;
   background: rgba(47, 62, 70, 0.86); color: #fff; font-size: 9.5px; font-weight: 700;

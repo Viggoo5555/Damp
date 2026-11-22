@@ -398,6 +398,7 @@ function leaveToLobby(silent) {
   game.runtime.ready = false;
   game.runtime.phase = "lobby";
   hidePhaseBar();
+  document.body.classList.remove("decorating-ui");
   try { world.setMode("wide"); world.setCreation(null); } catch (error) { /* scene not ready */ }
   ui.setScreen("lobby");
   ui.refreshHud();
@@ -462,6 +463,7 @@ function applyServerPhase(match) {
 function pulsePhase() { sound("tap"); }
 
 function applyPhaseVisuals(phase) {
+  document.body.classList.toggle("decorating-ui", phase === "decorate");
   try {
     if (phase === "prepare") {
       world.setMode("prep");
@@ -812,12 +814,13 @@ function panelDecorate() {
   const design = myDesign();
   const recipe = recipeById(design.recipeId);
   const shapes = game.allowedShapes(recipe.kind);
-  return `<section class="phase-panel">
+  return `<section class="phase-panel decorating">
     <div class="phase-head">
       <div><p class="eyebrow">Round 4 · decorate</p><h3>Make it yours</h3><p>Pick a topping, then tap the cake. Frosting colours score against the theme.</p></div>
       <div class="spacer"></div>
       <span class="chip"><svg><use href="#i-palette"/></svg>${design.toppings.length} toppings</span>
       <span class="chip"><svg><use href="#i-clock"/></svg>${remaining()}s</span>
+      <button class="btn primary" id="stage-ready">${M.mode === "practice" ? "Present it" : "I'm finished"}</button>
     </div>
     <div class="decor-layout">
       <div class="decor-tools">
@@ -876,10 +879,7 @@ function panelDecorate() {
         </div>
       </div>
       <div class="decor-side">
-        <div class="between">
-          <p class="hint" style="max-width:330px">Drag on the turntable to see the whole cake. Every choice here is rebuilt in 3D immediately.</p>
-          <button class="btn primary" id="stage-ready">${M.mode === "practice" ? "Present it" : "I'm finished"}</button>
-        </div>
+        <p class="hint" style="max-width:330px">Drag on the turntable to see the whole cake. Every choice here is rebuilt in 3D immediately.</p>
       </div>
     </div>
   </section>`;

@@ -580,10 +580,17 @@ function buildSteam() {
 export function setMode(mode) {
   world.mode = mode;
   const cfg = world.cameraModes[mode] || world.cameraModes.wide;
+  const narrow = window.innerWidth < 900;
   world.cameraWanted.az = cfg.az;
   world.cameraWanted.polar = cfg.polar;
   world.cameraWanted.dist = cfg.dist;
   world.cameraWanted.target.set(cfg.target[0], cfg.target[1], cfg.target[2]);
+  if (mode === "decor" && narrow) {
+    // On a phone the decorator is a bottom sheet: lift the cake into the
+    // strip of canvas above it instead of centring it behind the controls.
+    world.cameraWanted.target.y = -0.1;
+    world.cameraWanted.dist = 8.0;
+  }
   const showPrep = mode === "prep";
   const showDecor = mode === "decor";
   const showStage = mode === "stage";

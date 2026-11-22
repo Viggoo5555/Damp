@@ -13,6 +13,7 @@ import {
   CAT_LABEL, TIPS, DEF_BY_ID, xpForLevel
 } from "./data.js";
 import { PIECES, PLAN_DEFAULT, simulatePlan, drawPlan } from "./coaster.js";
+import { mountThumbs } from "./thumbs.js";
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s === undefined || s === null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -253,6 +254,7 @@ export function openPanel(name, keep) {
   panel.hidden = false;
   document.querySelectorAll(".dock button").forEach((b) => b.classList.toggle("on", b.dataset.panel === name));
   panel.innerHTML = renderPanel(name);
+  mountThumbs(panel);
   const body = panel.querySelector(".panel-body");
   if (body) body.scrollTop = 0;
   if (name === "discover" && !ui.discoverLoaded) loadDiscover();
@@ -314,7 +316,7 @@ function itemCard(def, action, note) {
   const affordable = game.S.coins >= price;
   const foot = note !== undefined ? note : `${money(price)}${def.fun !== undefined ? `<span class="fun"><svg><use href="#i-heart"/></svg>${def.fun}</span>` : ""}`;
   return `<button class="item-card ${unlocked ? "" : "locked"}" data-${action}="${def.id}">
-    <span class="item-art"><span class="emoji">${artFor(def)}</span>${unlocked ? "" : `<span class="lock-tag"><svg><use href="#i-lock"/></svg>${esc(lockLabel(def))}</span>`}</span>
+    <span class="item-art"><img class="item-thumb" data-thumb="${esc(def.id)}" alt="" draggable="false"><span class="emoji">${artFor(def)}</span>${unlocked ? "" : `<span class="lock-tag"><svg><use href="#i-lock"/></svg>${esc(lockLabel(def))}</span>`}</span>
     <span class="item-main">
       <b>${esc(def.name)}</b>
       <small>${esc((def.desc || "").slice(0, 62))}</small>
@@ -384,7 +386,7 @@ function renderPaths() {
     + `<div class="panel-body">
       <div class="item-grid">
         ${PATHS.map((p) => `<button class="item-card" data-path="${p.id}">
-          <span class="item-art"><span class="emoji">${p.id === "path" ? "🧱" : p.id === "plaza" ? "🟨" : "🧍"}</span></span>
+          <span class="item-art"><img class="item-thumb" data-thumb="path:${p.id}" alt="" draggable="false"><span class="emoji">${p.id === "path" ? "🧱" : p.id === "plaza" ? "🟨" : "🧍"}</span></span>
           <span class="item-main"><b>${p.name}</b><small>${p.desc}</small><span class="item-foot">${money(p.price)} each</span></span>
         </button>`).join("")}
       </div>
@@ -953,7 +955,7 @@ function renderObjectPanel() {
   const st = game.S.rideState[obj.id];
   return head(def.name, kind === "ride" ? CAT_LABEL[def.cat] + " attraction" : kind === "building" ? "Shop & facility" : "Decoration")
     + `<div class="panel-body">
-      <div class="item-art" style="height:130px;border-radius:14px;margin-bottom:12px"><span class="emoji" style="font-size:64px">${artFor(def)}</span></div>
+      <div class="item-art" style="height:130px;border-radius:14px;margin-bottom:12px"><img class="item-thumb" data-thumb="${esc(def.id)}" alt="" draggable="false"><span class="emoji" style="font-size:64px">${artFor(def)}</span></div>
       <p class="small" style="line-height:1.5;margin:0 0 12px">${esc(def.desc || "")}</p>
       ${kind === "ride" ? `<div class="stat-grid">
         <div class="stat-box"><small>Ride price</small><b>${game.ridePriceFor(obj)}</b><div class="sub">coins per rider</div></div>

@@ -701,6 +701,40 @@ svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1
   .oven-wrap { grid-template-columns: 1fr; }
   .level-wrap { display: none; }
   .brand-text small { display: none; }
+
+  /* The decorating tray becomes a compact bottom sheet on phones and
+     tablets, leaving the cake visible above it for placing toppings. */
+  body.decorating-ui .theme-card,
+  body.decorating-ui .phase-bar { display: none; }
+  .phase-panel.decorating {
+    position: fixed;
+    z-index: 35;
+    left: 8px;
+    right: 8px;
+    bottom: 82px;
+    max-height: 43vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin: 0;
+    padding: 12px;
+    border-radius: 20px;
+  }
+  .phase-panel.decorating .phase-head {
+    position: sticky;
+    top: -12px;
+    z-index: 3;
+    margin: -12px -12px 8px;
+    padding: 12px 12px 8px;
+    background: rgba(255, 250, 243, 0.98);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(122, 74, 88, 0.08);
+  }
+  .phase-panel.decorating .phase-head h3 { font-size: 18px; }
+  .phase-panel.decorating .phase-head p { display: none; }
+  .phase-panel.decorating .decor-layout { display: block; }
+  .phase-panel.decorating .decor-tools { display: block; overflow: visible; padding: 0; }
+  .phase-panel.decorating .decor-side { display: none; }
+  .phase-panel.decorating .phase-head .btn { padding: 8px 11px; font-size: 11px; }
 }
 @media (max-width: 640px) {
   .topbar { margin: 8px 8px 0; padding: 7px 9px; border-radius: 18px; gap: 8px; }

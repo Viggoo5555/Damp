@@ -167,9 +167,9 @@ function buildScenery() {
     }
     g.add(t);
   };
-  tree(-12.5, -8, 1.15, true);
+  tree(-15.5, -10.5, 0.8, true);
   tree(12.5, -7, 1.0, true);
-  tree(-17, 12, 1.3, false);
+  tree(-21, 16, 0.85, false);
   tree(18, 10, 1.2, true);
 
   const hedgeMat = new THREE.MeshStandardMaterial({ color: new THREE.Color("#9cb887"), roughness: 1 });
@@ -838,15 +838,28 @@ export function makePortrait(buildFn, opts = {}) {
       renderer.setClearColor(0x000000, 0);
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.1;
+      renderer.toneMappingExposure = 1.02;
       const scene = new THREE.Scene();
-      scene.add(new THREE.HemisphereLight(0xfff3e2, 0xcbb49d, 1.5));
-      const key = new THREE.DirectionalLight(0xffe9d2, 2.1);
-      key.position.set(3, 5, 4);
+      scene.background = new THREE.Color("#dfc7ae");
+      scene.add(new THREE.HemisphereLight(0xfff3e2, 0x8e705a, 1.15));
+      const key = new THREE.DirectionalLight(0xffebd5, 2.45);
+      key.position.set(3.5, 5.5, 4.5);
       scene.add(key);
-      const rim = new THREE.DirectionalLight(0xb9d2e6, 1.2);
-      rim.position.set(-4, 2, -3);
+      const rim = new THREE.DirectionalLight(0xbfd9ef, 1.0);
+      rim.position.set(-4, 2.2, -3);
       scene.add(rim);
+      // A warm little photo corner makes cream furniture separate from its
+      // card instead of disappearing into a pale square.
+      const wall = new THREE.Mesh(new THREE.PlaneGeometry(18, 12), new THREE.MeshBasicMaterial({ color: "#d7bda5" }));
+      wall.position.set(0, 3.2, -4.2);
+      scene.add(wall);
+      const halo = new THREE.Mesh(new THREE.CircleGeometry(2.35, 48), new THREE.MeshBasicMaterial({ color: "#efdcc7" }));
+      halo.position.set(0, 0.35, -2.6);
+      scene.add(halo);
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(18, 18), new THREE.MeshStandardMaterial({ color: "#c0a084", roughness: 1 }));
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.y = -1.62;
+      scene.add(floor);
       const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 100);
       portrait = { renderer, scene, camera, holder: new THREE.Group() };
       scene.add(portrait.holder);

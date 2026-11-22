@@ -161,6 +161,7 @@
     "description": "An eighteen-round neon battle royale of microgames. Everyone plays the same reflex, timing, memory and aim challenges at once, the worst performances drop out, and the last player standing takes the crown. Accounts, ranks, daily quests and cosmetics included.",
     "file": "games/last-stand/index.html",
     "category": "Battle Royale",
-    "image": "img/last-stand.png"
+    "image": "img/last-stand.png",
+    "hidden": true
   }
 ]

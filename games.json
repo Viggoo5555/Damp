@@ -147,7 +147,8 @@
     "description": "A live runway fashion game. Style a look from eighty-plus pieces in two minutes, walk the runway against up to seven stylists, vote for the room and climb the global board.",
     "file": "games/outfit-battle.html",
     "category": "Fashion",
-    "image": "img/outfit-battle.png"
+    "image": "img/outfit-battle.png",
+    "hidden": true
   },
   {
     "title": "Pet Café",
@@ -170,7 +171,8 @@
     "description": "A live 3D baking competition for two to eight players. Get a mystery theme, weigh and mix for real, time your bake, then frost, pipe, top and write on a cake everyone can see — and vote on. Coins, levels, a shop, daily challenges and a global board included.",
     "file": "games/bake-off/index.html",
     "category": "Cooking",
-    "image": "img/bake-off.png"
+    "image": "img/bake-off.png",
+    "hidden": true
   },
   {
     "title": "Dream Park",
@@ -185,7 +187,8 @@
     "description": "Build a cosy 3D village from a single cottage and a cobbled lane: ninety buildings and decorations, winding roads and riverside paths, animated neighbours with jobs and happiness, daily quests and seasons — then visit other mayors' towns, swap likes and enter the weekly contest.",
     "file": "games/little-town/index.html",
     "category": "Simulation",
-    "image": "img/little-town.png"
+    "image": "img/little-town.png",
+    "hidden": true
   },
   {
     "title": "Cozy Farm",

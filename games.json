@@ -147,7 +147,8 @@
     "description": "A live runway fashion game. Style a look from eighty-plus pieces in two minutes, walk the runway against up to seven stylists, vote for the room and climb the global board.",
     "file": "games/outfit-battle.html",
     "category": "Fashion",
-    "image": "img/outfit-battle.png"
+    "image": "img/outfit-battle.png",
+    "hidden": true
   },
   {
     "title": "Pet Café",

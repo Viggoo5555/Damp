@@ -170,14 +170,16 @@
     "description": "A live 3D baking competition for two to eight players. Get a mystery theme, weigh and mix for real, time your bake, then frost, pipe, top and write on a cake everyone can see — and vote on. Coins, levels, a shop, daily challenges and a global board included.",
     "file": "games/bake-off/index.html",
     "category": "Cooking",
-    "image": "img/bake-off.png"
+    "image": "img/bake-off.png",
+    "hidden": true
   },
   {
     "title": "Dream Park",
     "description": "Build a 3D amusement park from an empty field: thirty working rides, a rollercoaster track workshop, paths, shops and scenery, then open the gates to animated guests who queue, ride, eat and spend. Hire staff, set prices, research, expand and visit other keepers' saved parks.",
     "file": "games/dream-park/index.html",
     "category": "Simulation",
-    "image": "img/dream-park.png"
+    "image": "img/dream-park.png",
+    "hidden": true
   },
   {
     "title": "Little Town",

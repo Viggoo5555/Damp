@@ -708,6 +708,197 @@ service cloud.firestore {
         && request.resource.data.at is int;
     }
 
+    // ---------- Dream Park ----------
+    // The owner's full save. Private: only that account can read or write it.
+    match /dreampark_saves/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'coins', 'xp', 'level', 'land', 'updated', 'state'])
+        && request.resource.data.uid == uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 24
+        && request.resource.data.coins is int
+        && request.resource.data.coins >= 0
+        && request.resource.data.coins <= 99999999
+        && request.resource.data.xp is int
+        && request.resource.data.xp >= 0
+        && request.resource.data.xp <= 99999999
+        && request.resource.data.level is int
+        && request.resource.data.level >= 1
+        && request.resource.data.level <= 99
+        && request.resource.data.land is int
+        && request.resource.data.land >= 4
+        && request.resource.data.land <= 12
+        && request.resource.data.updated is int
+        && request.resource.data.state is string
+        && request.resource.data.state.size() <= 800000;
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // A published park snapshot. Anyone may look at it (discovery works for
+    // guests). Only its owner may write the park; other signed-in keepers may
+    // only change the like counter, and never their own park's.
+    match /dreampark_parks/{uid} {
+      allow read: if true;
+
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['uid', 'owner', 'name', 'level', 'rating', 'visitors', 'staff', 'rides', 'decor', 'likes', 'layout', 'updated'])
+        && request.resource.data.uid == uid
+        && request.resource.data.owner is string
+        && request.resource.data.owner.size() <= 20
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 24
+        && request.resource.data.level is int
+        && request.resource.data.level >= 1
+        && request.resource.data.level <= 99
+        && request.resource.data.rating is number
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.visitors is int
+        && request.resource.data.visitors >= 0
+        && request.resource.data.visitors <= 9999999
+        && request.resource.data.staff is int
+        && request.resource.data.staff >= 0
+        && request.resource.data.staff <= 500
+        && request.resource.data.rides is int
+        && request.resource.data.rides >= 0
+        && request.resource.data.rides <= 60
+        && request.resource.data.decor is int
+        && request.resource.data.decor >= 0
+        && request.resource.data.decor <= 500
+        && request.resource.data.likes is int
+        && request.resource.data.likes >= 0
+        && request.resource.data.likes <= 999999
+        && request.resource.data.layout is string
+        && request.resource.data.layout.size() <= 240000
+        && request.resource.data.updated is int;
+
+      allow update: if request.auth != null
+        && (
+          (request.auth.uid == uid
+            && request.resource.data.uid == resource.data.uid
+            && request.resource.data.keys().hasOnly(['uid', 'owner', 'name', 'level', 'rating', 'visitors', 'staff', 'rides', 'decor', 'likes', 'layout', 'updated'])
+            && request.resource.data.name is string
+            && request.resource.data.name.size() > 0
+            && request.resource.data.name.size() <= 24
+            && request.resource.data.layout is string
+            && request.resource.data.layout.size() <= 240000
+            && request.resource.data.likes is int
+            && request.resource.data.likes >= 0
+            && request.resource.data.likes <= 999999)
+          ||
+          (request.auth.uid != uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
+            && request.resource.data.likes is int
+            && request.resource.data.likes >= 0
+            && request.resource.data.likes <= 999999)
+        );
+
+      allow delete: if request.auth != null && request.auth.uid == uid;
+
+      // One like document per visitor per park. The transaction that writes it
+      // also bumps the counter above.
+      match /likes/{likeUid} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && likeUid == request.auth.uid
+          && request.auth.uid != uid
+          && request.resource.data.keys().hasOnly(['uid', 'name', 'at'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.name is string
+          && request.resource.data.name.size() <= 20
+          && request.resource.data.at is int;
+        allow delete: if request.auth != null && likeUid == request.auth.uid;
+        allow update: if false;
+      }
+    }
+
+    // Friends: each follow row belongs to the keeper who made it.
+    match /dreampark_follows/{followId} {
+      allow read: if request.auth != null
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to is string
+        && request.resource.data.to != request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 20
+        && request.resource.data.at is int
+        && request.resource.data.keys().hasOnly(['from', 'to', 'name', 'at'])
+        && followId == request.resource.data.from + '_' + request.resource.data.to;
+      allow delete: if request.auth != null && resource.data.from == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /dreampark_presence/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'at'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 20
+        && request.resource.data.at is int;
+    }
+
+    // Weekly competition entries. Public to read, one per keeper per week,
+    // and an entry may only gain votes one at a time from a signed-in voter
+    // who is not its owner.
+    match /dreampark_entries/{entryId} {
+      allow read: if true;
+
+      allow create: if request.auth != null
+        && entryId == request.resource.data.week + '_' + request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.votes == 0
+        && request.resource.data.keys().hasOnly(['week', 'uid', 'owner', 'name', 'level', 'rating', 'layout', 'at', 'votes'])
+        && request.resource.data.week is string
+        && request.resource.data.week.size() <= 12
+        && request.resource.data.owner is string
+        && request.resource.data.owner.size() <= 20
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 24
+        && request.resource.data.level is int
+        && request.resource.data.level >= 1
+        && request.resource.data.level <= 99
+        && request.resource.data.rating is number
+        && request.resource.data.layout is string
+        && request.resource.data.layout.size() <= 240000
+        && request.resource.data.at is int;
+
+      allow update: if request.auth != null
+        && (
+          (request.auth.uid == resource.data.uid
+            && request.resource.data.uid == resource.data.uid
+            && request.resource.data.week == resource.data.week
+            && request.resource.data.votes == resource.data.votes
+            && request.resource.data.layout is string
+            && request.resource.data.layout.size() <= 240000)
+          ||
+          (request.auth.uid != resource.data.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes'])
+            && request.resource.data.votes == resource.data.votes + 1
+            && existsAfter(/databases/$(database)/documents/dreampark_votes/$(resource.data.week + '_' + request.auth.uid)))
+        );
+
+      allow delete: if request.auth != null && request.auth.uid == resource.data.uid;
+    }
+
+    // One vote per keeper per week, written once, for someone else.
+    match /dreampark_votes/{voteId} {
+      allow read: if request.auth != null && resource.data.from == request.auth.uid;
+      allow create: if request.auth != null
+        && voteId == request.resource.data.week + '_' + request.auth.uid
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to is string
+        && request.resource.data.to != request.auth.uid
+        && request.resource.data.week is string
+        && request.resource.data.week.size() <= 12
+        && request.resource.data.at is int
+        && request.resource.data.keys().hasOnly(['week', 'from', 'to', 'at'])
+        && exists(/databases/$(database)/documents/dreampark_entries/$(request.resource.data.week + '_' + request.resource.data.to));
+      allow update, delete: if false;
+    }
+
     // Everything else stays closed.
     match /{document=**} {
       allow read, write: if false;

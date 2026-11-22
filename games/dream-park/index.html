@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dream Park — Damp</title>
+<meta name="theme-color" content="#8fd3e8">
+<meta name="description" content="Dream Park is a 3D amusement park builder: lay paths, build thirty rides, run the queues, hire staff and watch real visitors fill the park you designed.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap">
+<link rel="stylesheet" href="css/dream-park.css">
+<script type="importmap">{ "imports": { "three": "../../vendor/three/three.module.js" } }</script>
+</head>
+<body>
+
+<svg class="sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M9.5 9.6c.5-1.4 1.6-2.2 3-2.2 1.8 0 3 1.1 3 2.6 0 2.9-5.4 2.1-5.4 5.2 0 1.6 1.2 2.7 3 2.7 1.5 0 2.6-.9 3.1-2.3M12 5.6v2M12 16.4v2"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 17l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8Z"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.4 2.7-6 6-6s6 2.6 6 6"/><circle cx="17.5" cy="9.5" r="2.4"/><path d="M16 14.2c2.8.4 5 2.7 5 5.8"/></symbol>
+  <symbol id="i-build" viewBox="0 0 24 24"><path d="M3 20h18M5 20V9l7-5 7 5v11M9.5 20v-6h5v6"/></symbol>
+  <symbol id="i-path" viewBox="0 0 24 24"><path d="M8 21c0-4 8-4 8-9s-8-5-8-9"/><path d="M16 21c0-4-8-4-8-9s8-5 8-9"/></symbol>
+  <symbol id="i-tree" viewBox="0 0 24 24"><path d="M12 21v-5M12 16c-4 0-6-2.4-6-5s2-3.6 3-4c-.3-2 1-4 3-4s3.3 2 3 4c1 .4 3 1.4 3 4s-2 5-6 5Z"/></symbol>
+  <symbol id="i-staff" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5 21c0-4 3.2-7 7-7s7 3 7 7"/><path d="M9 20v-3h6v3"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4 18 18M18 6l-1.6 1.6M7.6 16.4 6 18"/></symbol>
+  <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5.5 9.2A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-2.8L14 9V3"/><path d="M8 14h8"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.4 3.8 5.4 3.8 8.5S14.5 18.1 12 20.5c-2.5-2.4-3.8-5.4-3.8-8.5S9.5 5.9 12 3.5Z"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-9.3A4.2 4.2 0 0 1 12 7.6 4.2 4.2 0 0 1 19 10.7c0 4.9-7 9.3-7 9.3Z"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v4a5 5 0 0 1-10 0ZM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 13v4M8 21h8M9 17h6v4H9Z"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3 8h3.5L8.5 5h7L17.5 8H21v11H3Z"/><circle cx="12" cy="13" r="3.4"/></symbol>
+  <symbol id="i-top" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M10 4v16"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m15 9-2 4-4 2 2-4Z"/></symbol>
+  <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 1 2.4 5.7M4 19v-5h5"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-move" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5Z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-gate" viewBox="0 0 24 24"><path d="M4 21V8l8-4 8 4v13M4 21h16M9 21v-6h6v6"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.5 6.5a4 4 0 0 1 5 5L9 22l-3-3L16.5 8.5"/><path d="m6 19 2 2"/><path d="M18 3.5 21 6"/></symbol>
+  <symbol id="i-broom" viewBox="0 0 24 24"><path d="m14 4 6 6M17 7l-7 7M10 14l-4 6 6-4M4 21l2-2"/></symbol>
+  <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10Z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M4 4h13l3 3v13H4Z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 21c0-4 3.4-7 7.5-7s7.5 3 7.5 7"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L20 8l-4-4L4 16Z"/><path d="m14 6 4 4"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v6M12 7.6v.01"/></symbol>
+</svg>
+
+<canvas id="gl" aria-label="Your 3D theme park"></canvas>
+
+<div id="app">
+  <header class="hud">
+    <button class="brand" id="btn-menu" title="Main menu">
+      <svg><use href="#i-gate"/></svg><span>Dream&nbsp;Park</span>
+    </button>
+    <button class="pill name-pill" id="btn-parkname" title="Rename park"><b id="park-name">Sunny Meadows</b><svg class="tiny"><use href="#i-edit"/></svg></button>
+    <div class="pill money"><svg><use href="#i-coin"/></svg><b id="hud-coins">12,000</b></div>
+    <div class="pill stars" id="hud-stars" title="Park rating">★★★★☆</div>
+    <div class="pill" title="Visitors in the park"><svg><use href="#i-users"/></svg><b id="hud-guests">0</b><span class="dim">/ <span id="hud-cap">24</span></span></div>
+    <div class="pill level-pill" title="Park level"><span>Lv</span><b id="hud-level">1</b><span class="xpbar"><i id="hud-xp"></i></span></div>
+    <div class="spacer"></div>
+    <button class="pill open-btn" id="btn-open" title="Open or close the park"><svg><use href="#i-gate"/></svg><b>Open park</b></button>
+    <button class="icon-btn" id="btn-settings" title="Settings"><svg><use href="#i-gear"/></svg></button>
+  </header>
+
+  <div class="dayline">
+    <span id="hud-day">Day 1</span>
+    <div class="daybar"><i id="hud-day-fill"></i></div>
+    <span id="hud-clock">09:00</span>
+    <span class="day-extra" id="hud-weather">Sunny · 22°</span>
+  </div>
+
+  <aside class="camera-bar">
+    <button data-cam="orbit" title="Free camera"><svg><use href="#i-compass"/></svg></button>
+    <button data-cam="top" title="Top-down build view"><svg><use href="#i-top"/></svg></button>
+    <button data-cam="overview" title="Park overview"><svg><use href="#i-globe"/></svg></button>
+    <button data-cam="inspect" title="Look at the selected ride"><svg><use href="#i-camera"/></svg></button>
+  </aside>
+
+  <div class="hintbar" id="hint" hidden></div>
+
+  <nav class="dock" id="dock">
+    <button data-panel="build"><span class="dock-ico"><svg><use href="#i-build"/></svg></span>Build</button>
+    <button data-panel="paths"><span class="dock-ico"><svg><use href="#i-path"/></svg></span>Paths</button>
+    <button data-panel="decor"><span class="dock-ico"><svg><use href="#i-tree"/></svg></span>Decor</button>
+    <button data-panel="staff"><span class="dock-ico"><svg><use href="#i-staff"/></svg></span>Staff</button>
+    <button data-panel="manage"><span class="dock-ico"><svg><use href="#i-wrench"/></svg></span>Manage</button>
+    <button data-panel="research"><span class="dock-ico"><svg><use href="#i-flask"/></svg></span>Research</button>
+    <button data-panel="discover"><span class="dock-ico"><svg><use href="#i-globe"/></svg></span>Discover</button>
+    <button data-panel="profile"><span class="dock-ico"><svg><use href="#i-user"/></svg></span>Profile</button>
+  </nav>
+
+  <section class="panel" id="panel" hidden aria-live="polite"></section>
+</div>
+
+<div class="toasts" id="toasts"></div>
+<div class="modals" id="modals"></div>
+
+<!-- boot / sign in -->
+<div class="gate" id="gate" hidden>
+  <div class="gate-card">
+    <div class="gate-brand"><svg><use href="#i-gate"/></svg><span>Dream Park</span></div>
+    <button class="icon-btn" id="gate-close" hidden title="Back to the park"><svg><use href="#i-close"/></svg></button>
+    <h1>Build the park<br>you always wanted.</h1>
+    <p class="gate-sub">Rides, paths, guests, staff and a park that keeps running while you watch. Sign in to keep it on every device and visit other players' parks.</p>
+    <div class="gate-tabs">
+      <button class="on" data-gate="in">Sign in</button>
+      <button data-gate="up">Create account</button>
+    </div>
+    <form id="gate-form">
+      <label>USERNAME<input id="gate-name" autocomplete="username" maxlength="20" placeholder="e.g. parkbuilder" required></label>
+      <label>PASSWORD<input id="gate-pass" type="password" autocomplete="current-password" minlength="6" placeholder="At least 6 characters" required></label>
+      <p class="form-error" id="gate-error" hidden></p>
+      <button class="btn primary wide" id="gate-submit" type="submit">Sign in <svg><use href="#i-arrow"/></svg></button>
+    </form>
+    <div class="gate-or"><span>or</span></div>
+    <button class="btn soft wide" id="gate-guest">Build as a guest</button>
+    <p class="gate-note" id="gate-note">Guest parks live on this device. Sign in any time to sync them.</p>
+    <a class="gate-back" id="gate-back" href="../../index.html">← Back to all games</a>
+  </div>
+</div>
+
+<!-- main menu -->
+<div class="menu" id="menu" hidden>
+  <div class="menu-card">
+    <div class="menu-top">
+      <div class="menu-brand"><svg><use href="#i-gate"/></svg><span>Dream Park</span></div>
+      <button class="icon-btn" id="menu-close" title="Close"><svg><use href="#i-close"/></svg></button>
+    </div>
+    <h2>Your park</h2>
+    <p class="menu-park" id="menu-park">Sunny Meadows</p>
+    <div class="menu-stats" id="menu-stats"></div>
+    <button class="btn primary wide big" id="menu-play"><svg><use href="#i-play"/></svg> Enter the park</button>
+    <div class="menu-grid">
+      <button id="menu-build"><svg><use href="#i-build"/></svg><span>Build</span></button>
+      <button id="menu-discover"><svg><use href="#i-globe"/></svg><span>Discover</span></button>
+      <button id="menu-weekly"><svg><use href="#i-trophy"/></svg><span>Weekly contest</span></button>
+      <button id="menu-settings"><svg><use href="#i-gear"/></svg><span>Settings</span></button>
+    </div>
+    <p class="menu-account" id="menu-account"></p>
+    <p class="menu-tip" id="menu-tip"></p>
+  </div>
+</div>
+
+<!-- full screen loading -->
+<div class="boot" id="boot"><div class="boot-cake"><span></span><span></span><span></span></div><p id="boot-line">Opening the gates…</p></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

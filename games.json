@@ -171,5 +171,12 @@
     "file": "games/bake-off/index.html",
     "category": "Cooking",
     "image": "img/bake-off.png"
+  },
+  {
+    "title": "Dream Park",
+    "description": "Build a 3D amusement park from an empty field: thirty working rides, a rollercoaster track workshop, paths, shops and scenery, then open the gates to animated guests who queue, ride, eat and spend. Hire staff, set prices, research, expand and visit other keepers' saved parks.",
+    "file": "games/dream-park/index.html",
+    "category": "Simulation",
+    "image": "img/dream-park.png"
   }
 ]

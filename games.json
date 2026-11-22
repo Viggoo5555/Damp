@@ -195,6 +195,7 @@
     "description": "A small 3D tractor game in a quiet valley. Plough, sow, water, feed and harvest a field of five crops, hitch seven working tools on the back of the tractor, cut hay and haul bales — then sell every kilo at the farm shop, where prices drift like a real commodity market.",
     "file": "games/cozy-farm/index.html",
     "category": "Simulation",
-    "image": "img/cozy-farm.png"
+    "image": "img/cozy-farm.png",
+    "hidden": true
   }
 ]

@@ -170,8 +170,7 @@
     "description": "A live 3D baking competition for two to eight players. Get a mystery theme, weigh and mix for real, time your bake, then frost, pipe, top and write on a cake everyone can see — and vote on. Coins, levels, a shop, daily challenges and a global board included.",
     "file": "games/bake-off/index.html",
     "category": "Cooking",
-    "image": "img/bake-off.png",
-    "hidden": true
+    "image": "img/bake-off.png"
   },
   {
     "title": "Dream Park",

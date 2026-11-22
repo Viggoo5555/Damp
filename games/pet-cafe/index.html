@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pet Café — Damp</title>
+<meta name="theme-color" content="#f6e9da">
+<meta name="description" content="Run a cosy café for adorable animals: take orders, bake, decorate and collect thirty-six little friends.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap">
+<link rel="stylesheet" href="css/pet-cafe.css">
+<script type="importmap">{ "imports": { "three": "../../vendor/three/three.module.js" } }</script>
+</head>
+<body>
+
+<svg class="sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1Z"/></symbol>
+    <symbol id="i-build" viewBox="0 0 24 24"><path d="M3 20h18M6 20V9h12v11M9 9V5h6v4M10 13h4"/></symbol>
+    <symbol id="i-pot" viewBox="0 0 24 24"><path d="M4 9h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4ZM4 9V7h16v2M8 3v2M12 3v2M16 3v2M19 11h2"/></symbol>
+    <symbol id="i-paw" viewBox="0 0 24 24"><ellipse cx="7" cy="8" rx="2.2" ry="2.8"/><ellipse cx="12" cy="6.2" rx="2.2" ry="2.9"/><ellipse cx="17" cy="8" rx="2.2" ry="2.8"/><path d="M12 11c3.4 0 5.8 2.4 5.8 5 0 2.4-2.2 3.6-5.8 3.6S6.2 18.4 6.2 16c0-2.6 2.4-5 5.8-5Z"/></symbol>
+    <symbol id="i-shop" viewBox="0 0 24 24"><path d="M4 9h16l-1 11H5ZM8 9V6a4 4 0 0 1 8 0v3M9 13h.01M15 13h.01"/></symbol>
+    <symbol id="i-friends" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.4 2.7-6 6-6s6 2.6 6 6"/><circle cx="17.5" cy="9.5" r="2.4"/><path d="M16 14.2c2.8.4 5 2.7 5 5.8"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.3 3.6 5.2 3.6 8.5s-1.2 6.2-3.6 8.5c-2.4-2.3-3.6-5.2-3.6-8.5S9.6 5.8 12 3.5Z"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20.5c0-3.9 3.1-7 7-7s7 3.1 7 7"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M9.5 9.6c.5-1.4 1.6-2.2 3-2.2 1.8 0 3 1.1 3 2.6 0 2.9-5.4 2.1-5.4 5.2 0 1.6 1.2 2.7 3 2.7 1.5 0 2.6-.9 3.1-2.3M12 5.6v2M12 16.4v2"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.2s-8-4.8-8-10A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8 3.2c0 5.2-8 10-8 10Z"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 17l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8Z"/></symbol>
+    <symbol id="i-gift" viewBox="0 0 24 24"><path d="M4 10h16v10H4ZM3 6.5h18V10H3ZM12 6.5V20M12 6.5S8 6.5 8 4a2 2 0 0 1 4 0c0 2.5 0 2.5 0 2.5Zm0 0S16 6.5 16 4a2 2 0 0 0-4 0"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4 18 18M18 6l-1.6 1.6M7.6 16.4 6 18"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2H4.5ZM10 20a2 2 0 0 0 4 0"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v4a5 5 0 0 1-10 0ZM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 13v4M8 21h8M9 17h6v4H9Z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13M10 11v5M14 11v5"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m10 6 6 6-6 6"/></symbol>
+    <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 10v4h3l5 4V6L7 10ZM16 8.5a5 5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 10v4h3l5 4V6L7 10ZM16 9l5 6M21 9l-5 6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol>
+    <symbol id="i-visit" viewBox="0 0 24 24"><path d="M4 11h16M12 3v18M7 6l-4 5 4 5M17 6l4 5-4 5"/></symbol>
+    <symbol id="i-basket" viewBox="0 0 24 24"><path d="M4 10h16l-1.6 9H5.6ZM8 10l2-6M16 10l-2-6M9 14v2M12 14v2M15 14v2"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4ZM12 16.5a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z"/></symbol>
+    <symbol id="i-paint" viewBox="0 0 24 24"><path d="M4 20 8 8l8-4 4 4-4 8-12 4ZM8 8l8 8M9 4l-2 8"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="m12 3 8 4v10l-8 4-8-4V7ZM4 7l8 4 8-4M12 11v10"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s6-5.3 6-10a6 6 0 1 0-12 0c0 4.7 6 10 6 10Z"/><circle cx="12" cy="11" r="2.2"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></symbol>
+    <symbol id="i-heart-filled" viewBox="0 0 24 24"><path d="M12 20.2s-8-4.8-8-10A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8 3.2c0 5.2-8 10-8 10Z" fill="currentColor"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20l1-4 11-11 3 3-11 11ZM15 5l3 3"/></symbol>
+  </defs>
+</svg>
+
+<div id="stage"><canvas id="gl" aria-label="Your café, in 3D"></canvas></div>
+<div class="scene-vignette" aria-hidden="true"></div>
+
+<div id="boot" class="boot">
+  <div class="boot-card">
+    <div class="boot-mark"><span class="boot-cup"></span><span class="boot-steam s1"></span><span class="boot-steam s2"></span></div>
+    <h1>Pet Café</h1>
+    <p id="boot-line">Warming the ovens…</p>
+    <div class="boot-bar"><i></i></div>
+  </div>
+</div>
+
+<!-- ============================ LOGIN ============================ -->
+<section id="gate" class="gate" hidden>
+  <div class="gate-card">
+    <div class="gate-visual">
+      <div class="gate-awning" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="gate-window" aria-hidden="true">
+        <div class="gw-sky"></div>
+        <div class="gw-plant"></div>
+        <div class="gw-table"></div>
+        <div class="gw-cat"><b></b><i></i></div>
+        <div class="gw-cup"></div>
+      </div>
+      <p class="gate-quote">“A little café, a lot of paws.”</p>
+      <div class="gate-paws" aria-hidden="true"><svg><use href="#i-paw"/></svg><svg><use href="#i-paw"/></svg><svg><use href="#i-paw"/></svg></div>
+    </div>
+    <div class="gate-form">
+      <button class="icon-btn gate-back" id="gate-back" type="button" aria-label="Back to your café" hidden><svg><use href="#i-x"/></svg></button>
+      <div class="gate-brand"><svg><use href="#i-paw"/></svg><span>Pet Café</span></div>
+      <h2>Come in, the kettle's on.</h2>
+      <p class="gate-sub">Your café, your animals and your layout follow you to any device. Save to the cloud, or start as a guest on this one.</p>
+      <div class="gate-tabs" role="tablist">
+        <button type="button" class="gate-tab on" data-gate-tab="in" role="tab" aria-selected="true">Sign in</button>
+        <button type="button" class="gate-tab" data-gate-tab="new" role="tab" aria-selected="false">Create account</button>
+      </div>
+      <form id="gate-form" autocomplete="on">
+        <label class="field"><span>Username</span><input id="gate-name" name="username" type="text" maxlength="20" autocomplete="username" placeholder="e.g. butterbean" required></label>
+        <label class="field"><span>Password</span><input id="gate-pass" name="password" type="password" minlength="6" autocomplete="current-password" placeholder="At least 6 characters" required></label>
+        <p id="gate-error" class="gate-error" role="alert" hidden></p>
+        <button class="btn primary wide" id="gate-submit" type="submit"><span>Sign in</span><svg><use href="#i-right"/></svg></button>
+      </form>
+      <div class="gate-or"><span>or</span></div>
+      <button class="btn ghost wide" id="gate-guest" type="button">Play as a guest</button>
+      <p class="gate-note" id="gate-note">Guest progress saves on this device. Sign in any time to take it to the cloud.</p>
+      <p class="gate-note"><a class="link" href="../../index.html">← Back to all games</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ APP ============================ -->
+<div id="app" class="app" hidden>
+
+  <header id="topbar" class="topbar">
+    <button class="brand" id="brand" type="button" title="Back to your café">
+      <span class="brand-mark"><svg><use href="#i-paw"/></svg></span>
+      <span class="brand-text"><strong id="cafe-name">Pet Café</strong><small id="cafe-tagline">your little café</small></span>
+    </button>
+    <div class="level-wrap">
+      <div class="level-line"><span>Lv <b id="level-value">1</b></span><span id="xp-value" class="muted">0 / 130 XP</span></div>
+      <div class="xp-bar"><i id="xp-fill"></i></div>
+    </div>
+    <div class="top-stats">
+      <button class="stat coin" id="stat-coins" type="button" title="Coins"><svg><use href="#i-coin"/></svg><b id="coin-value">0</b></button>
+      <span class="stat heart" title="Hearts on your café"><svg><use href="#i-heart-filled"/></svg><b id="like-value">0</b></span>
+      <span class="stat treat" title="Animal treats"><svg><use href="#i-paw"/></svg><b id="treat-value">0</b></span>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn gift" id="btn-daily" type="button" title="Daily reward"><svg><use href="#i-gift"/></svg><i class="dot" id="daily-dot" hidden></i></button>
+      <button class="icon-btn" id="btn-quests" type="button" title="Daily quests"><svg><use href="#i-trophy"/></svg></button>
+      <button class="icon-btn" id="btn-settings" type="button" title="Settings"><svg><use href="#i-settings"/></svg></button>
+    </div>
+  </header>
+
+  <nav id="rail" class="rail" aria-label="Café sections">
+    <button type="button" class="rail-btn on" data-nav="cafe"><svg><use href="#i-home"/></svg><span>Café</span></button>
+    <button type="button" class="rail-btn" data-nav="build"><svg><use href="#i-build"/></svg><span>Build</span></button>
+    <button type="button" class="rail-btn" data-nav="cook"><svg><use href="#i-pot"/></svg><span>Kitchen</span></button>
+    <button type="button" class="rail-btn" data-nav="animals"><svg><use href="#i-paw"/></svg><span>Animals</span><i class="badge" id="animal-badge" hidden></i></button>
+    <button type="button" class="rail-btn" data-nav="shop"><svg><use href="#i-shop"/></svg><span>Shop</span></button>
+    <button type="button" class="rail-btn" data-nav="friends"><svg><use href="#i-friends"/></svg><span>Friends</span></button>
+    <button type="button" class="rail-btn" data-nav="discover"><svg><use href="#i-globe"/></svg><span>Discover</span></button>
+    <button type="button" class="rail-btn" data-nav="profile"><svg><use href="#i-user"/></svg><span>You</span></button>
+  </nav>
+
+  <div id="hud" class="hud">
+    <div class="hud-card today">
+      <div class="hud-row"><span class="hud-label">Today</span><span id="save-pill" class="save-pill">Saved</span></div>
+      <div class="hud-big"><b id="today-earnings">0</b><svg><use href="#i-coin"/></svg></div>
+      <div class="hud-sub"><span id="today-guests">0 guests</span><span class="dot-sep">·</span><span id="rep-label">Reputation 62</span></div>
+      <div class="rep-bar"><i id="rep-fill"></i></div>
+    </div>
+    <div class="hud-card hint" id="hud-tip">
+      <svg class="hud-spark"><use href="#i-sun"/></svg>
+      <p id="tip-text">Click a guest's bubble to take their order.</p>
+    </div>
+  </div>
+
+  <div id="orders" class="orders" aria-live="polite"></div>
+  <div id="bubbles" class="bubbles"></div>
+  <div id="floaters" class="floaters" aria-hidden="true"></div>
+
+  <div class="camera-tools">
+    <button type="button" class="round-btn" id="cam-left" title="Turn the view left"><svg><use href="#i-left"/></svg></button>
+    <button type="button" class="round-btn" id="cam-right" title="Turn the view right"><svg><use href="#i-right"/></svg></button>
+    <button type="button" class="round-btn" id="cam-reset" title="Reset the view"><svg><use href="#i-home"/></svg></button>
+    <button type="button" class="round-btn" id="cam-sound" title="Sound on or off"><svg><use href="#i-sound"/></svg></button>
+  </div>
+
+  <div id="visitbar" class="visitbar" hidden>
+    <div class="visit-who">
+      <span class="visit-eyebrow">Visiting</span>
+      <strong id="visit-name">A café</strong>
+      <span id="visit-meta" class="muted">Level 1</span>
+    </div>
+    <div class="visit-actions">
+      <button class="btn small" id="visit-like" type="button"><svg><use href="#i-heart"/></svg><span>Leave a heart</span></button>
+      <div class="rate-stars" id="visit-rate" role="group" aria-label="Rate this café">
+        <button type="button" data-stars="1" aria-label="1 star">★</button><button type="button" data-stars="2" aria-label="2 stars">★</button><button type="button" data-stars="3" aria-label="3 stars">★</button><button type="button" data-stars="4" aria-label="4 stars">★</button><button type="button" data-stars="5" aria-label="5 stars">★</button>
+      </div>
+      <button class="btn small ghost" id="visit-back" type="button"><svg><use href="#i-left"/></svg><span>My café</span></button>
+    </div>
+  </div>
+
+  <section id="panel" class="panel" hidden aria-label="Café menu">
+    <header class="panel-head">
+      <div class="panel-heading">
+        <p class="eyebrow" id="panel-eyebrow">Your café</p>
+        <h2 id="panel-title">Menu</h2>
+        <p class="sub" id="panel-sub"></p>
+      </div>
+      <button type="button" class="icon-btn close" id="panel-close" aria-label="Close"><svg><use href="#i-x"/></svg></button>
+    </header>
+    <div class="tabs" id="panel-tabs" role="tablist"></div>
+    <div class="panel-body" id="panel-body"></div>
+  </section>
+
+  <div id="buildbar" class="buildbar" hidden>
+    <div class="build-top">
+      <div class="build-title"><svg><use href="#i-build"/></svg><span>Build mode</span><small id="build-hint">Pick a piece, then tap the floor to place it.</small></div>
+      <div class="build-tools">
+        <button type="button" class="chip-btn" id="build-rotate" title="Rotate (R)"><svg><use href="#i-rotate"/></svg><span>Rotate</span></button>
+        <button type="button" class="chip-btn" id="build-remove" title="Remove (X)"><svg><use href="#i-trash"/></svg><span>Remove</span></button>
+        <button type="button" class="chip-btn" id="build-snap" title="Snap to the grid"><svg><use href="#i-pin"/></svg><span>Snap</span></button>
+        <button type="button" class="chip-btn" id="build-expand" title="Expand the café"><svg><use href="#i-plus"/></svg><span>Expand</span></button>
+      </div>
+      <button type="button" class="btn small primary" id="build-done">Done</button>
+    </div>
+    <div class="build-cats" id="build-cats"></div>
+    <div class="build-strip" id="build-items"></div>
+  </div>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <div class="sheet-scrim" id="sheet-scrim" hidden></div>
+</div>
+
+<!-- ============================ DIALOGS ============================ -->
+<div class="modal" id="cook-modal" hidden>
+  <div class="modal-card cook">
+    <button class="icon-btn modal-close" id="cook-close" type="button" aria-label="Close"><svg><use href="#i-x"/></svg></button>
+    <div class="cook-head">
+      <div class="cook-art" id="cook-art"></div>
+      <div>
+        <p class="eyebrow" id="cook-station">Pastry oven</p>
+        <h2 id="cook-name">Vanilla Cloud Cake</h2>
+        <p class="sub" id="cook-for">For Bun</p>
+      </div>
+    </div>
+    <div class="cook-ing" id="cook-ing"></div>
+    <div class="meter-wrap">
+      <div class="meter-labels"><span>A little raw</span><span>Just right</span><span>A touch over</span></div>
+      <div class="meter" id="cook-meter"><i class="meter-zone"></i><i class="meter-needle" id="cook-needle"></i></div>
+      <p class="hint center" id="cook-hint">Start the oven, then stop it when the needle is in the golden zone.</p>
+    </div>
+    <div class="cook-result" id="cook-result" hidden></div>
+    <div class="cook-actions">
+      <button class="btn ghost" id="cook-cancel" type="button">Put it back</button>
+      <button class="btn primary" id="cook-start" type="button">Start cooking</button>
+      <button class="btn primary" id="cook-stop" type="button" hidden>Stop!</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="detail-modal" hidden>
+  <div class="modal-card detail">
+    <button class="icon-btn modal-close" id="detail-close" type="button" aria-label="Close"><svg><use href="#i-x"/></svg></button>
+    <div id="detail-body" class="detail-body"></div>
+  </div>
+</div>
+
+<div class="modal" id="daily-modal" hidden>
+  <div class="modal-card daily">
+    <button class="icon-btn modal-close" id="daily-close" type="button" aria-label="Close"><svg><use href="#i-x"/></svg></button>
+    <div class="daily-head">
+      <span class="daily-gift"><svg><use href="#i-gift"/></svg></span>
+      <div><p class="eyebrow">Daily reward</p><h2>Something for the tip jar</h2><p class="sub" id="daily-sub">Open the café every day for a bigger treat.</p></div>
+    </div>
+    <div class="daily-days" id="daily-days"></div>
+    <button class="btn primary wide" id="daily-claim" type="button">Claim today's reward</button>
+  </div>
+</div>
+
+<div class="modal" id="confirm-modal" hidden>
+  <div class="modal-card confirm">
+    <div class="confirm-icon" id="confirm-icon"><svg><use href="#i-check"/></svg></div>
+    <h2 id="confirm-title">Are you sure?</h2>
+    <p id="confirm-text" class="sub"></p>
+    <div class="confirm-actions">
+      <button class="btn ghost" id="confirm-no" type="button">Never mind</button>
+      <button class="btn primary" id="confirm-yes" type="button">Yes</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -528,6 +528,186 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+
+    /* ------------------------------------------------------------------
+       BAKE OFF!
+       Saves stay private; public profiles are readable by signed-in
+       bakers. Matches are shared documents: everyone in a match can read
+       the room, but each player may only write their own entry, and only
+       the host (or anyone once the phase deadline has passed) may move the
+       match on. A host who has gone quiet can be replaced. Votes are one
+       document per voter, written once, never for yourself. Rewards are
+       claimed once per account per match.
+       ------------------------------------------------------------------ */
+    function bakeoffMatch(matchId) {
+      return get(/databases/$(database)/documents/bakeoff_matches/$(matchId)).data;
+    }
+
+    // The full save, private to its owner.
+    match /bakeoff_saves/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // The public card the leaderboard reads.
+    match /bakeoff_profiles/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'level', 'xp', 'wins', 'matches', 'bestScore', 'chef', 'updated'])
+        && request.resource.data.uid == uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 20
+        && request.resource.data.level is int
+        && request.resource.data.level >= 1
+        && request.resource.data.level <= 99
+        && request.resource.data.xp is int
+        && request.resource.data.xp >= 0
+        && request.resource.data.xp <= 9999999
+        && request.resource.data.wins is int
+        && request.resource.data.wins >= 0
+        && request.resource.data.wins <= 99999
+        && request.resource.data.matches is int
+        && request.resource.data.matches >= 0
+        && request.resource.data.matches <= 99999
+        && request.resource.data.bestScore is int
+        && request.resource.data.bestScore >= 0
+        && request.resource.data.bestScore <= 200
+        && request.resource.data.chef is map
+        && request.resource.data.updated is number;
+    }
+
+    // A live match. Everyone signed in can read a room (public matchmaking
+    // needs to find open rooms); writes are confined to players in it.
+    match /bakeoff_matches/{matchId} {
+      allow read: if request.auth != null;
+
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['code', 'public', 'hostUid', 'createdAt', 'phase', 'phaseEndsAt', 'seq', 'themeId', 'themeSeed', 'players', 'results'])
+        && request.resource.data.hostUid == request.auth.uid
+        && request.resource.data.code is string
+        && request.resource.data.code.size() >= 4
+        && request.resource.data.code.size() <= 8
+        && request.resource.data.public is bool
+        && request.resource.data.createdAt is int
+        && request.resource.data.phase == 'lobby'
+        && request.resource.data.phaseEndsAt is int
+        && request.resource.data.seq is int
+        && request.resource.data.themeId is string
+        && request.resource.data.themeSeed is string
+        && request.resource.data.results is string
+        && request.resource.data.players is map
+        && request.resource.data.players.size() == 1
+        && request.auth.uid in request.resource.data.players
+        && request.resource.data.players[request.auth.uid].keys().hasOnly(['name', 'level', 'chef', 'joinedAt', 'at', 'ready', 'readyPhase', 'score', 'design', 'left'])
+        && request.resource.data.players[request.auth.uid].name is string
+        && request.resource.data.players[request.auth.uid].name.size() <= 20;
+
+      // A baker stepping into a room that is still in its lobby.
+      allow update: if request.auth != null
+        && !(request.auth.uid in resource.data.players)
+        && resource.data.phase == 'lobby'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players'])
+        && request.resource.data.players.diff(resource.data.players).affectedKeys().hasOnly([request.auth.uid])
+        && request.resource.data.players.size() <= 8
+        && request.resource.data.players[request.auth.uid].keys().hasOnly(['name', 'level', 'chef', 'joinedAt', 'at', 'ready', 'readyPhase', 'score', 'design', 'left'])
+        && request.resource.data.players[request.auth.uid].name is string
+        && request.resource.data.players[request.auth.uid].name.size() <= 20
+        && request.resource.data.players[request.auth.uid].at is int;
+
+      // A player updating their own entry, or the host moving the round on.
+      allow update: if request.auth != null
+        && request.auth.uid in resource.data.players
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['phase', 'phaseEndsAt', 'seq', 'themeId', 'hostUid', 'startedAt', 'players', 'results'])
+        && request.resource.data.players.diff(resource.data.players).affectedKeys().hasOnly([request.auth.uid])
+        && request.resource.data.players.size() <= 8
+        && request.resource.data.players[request.auth.uid].keys().hasOnly(['name', 'level', 'chef', 'joinedAt', 'at', 'ready', 'readyPhase', 'score', 'design', 'left'])
+        && request.resource.data.players[request.auth.uid].name is string
+        && request.resource.data.players[request.auth.uid].name.size() <= 20
+        && request.resource.data.players[request.auth.uid].design is string
+        && request.resource.data.players[request.auth.uid].design.size() <= 2400
+        && request.resource.data.players[request.auth.uid].score is int
+        && request.resource.data.players[request.auth.uid].score >= 0
+        && request.resource.data.players[request.auth.uid].score <= 200
+        && request.resource.data.players[request.auth.uid].at is int
+        && (request.resource.data.phase == resource.data.phase
+            || request.auth.uid == resource.data.hostUid
+            || request.time.toMillis() > resource.data.phaseEndsAt)
+        && (request.resource.data.hostUid == resource.data.hostUid
+            || (request.resource.data.hostUid == request.auth.uid
+                && resource.data.hostUid in resource.data.players
+                && request.time.toMillis() - resource.data.players[resource.data.hostUid].at > 14000));
+
+      // One vote per voter, written once, for someone else in this match.
+      match /votes/{voterUid} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && voterUid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['from', 'to', 'at'])
+          && request.resource.data.from == request.auth.uid
+          && request.resource.data.to is string
+          && request.resource.data.to != request.auth.uid
+          && request.resource.data.to in bakeoffMatch(matchId).players
+          && request.resource.data.at is int;
+        allow update, delete: if false;
+      }
+    }
+
+    // One reward claim per account per match, owned by that account.
+    match /bakeoff_claims/{claimId} {
+      allow read: if request.auth != null
+        && claimId == resource.data.matchId + '_' + request.auth.uid;
+      allow create: if request.auth != null
+        && claimId == request.resource.data.matchId + '_' + request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.matchId is string
+        && request.resource.data.matchId.size() <= 64
+        && request.resource.data.at is int
+        && request.resource.data.keys().hasOnly(['uid', 'matchId', 'at']);
+      allow update, delete: if false;
+    }
+
+    // Friends are mutual follows, as in the café.
+    match /bakeoff_follows/{followId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to is string
+        && request.resource.data.to != request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 20
+        && request.resource.data.at is number
+        && request.resource.data.keys().hasOnly(['from', 'to', 'name', 'at'])
+        && followId == request.resource.data.from + '_' + request.resource.data.to;
+      allow delete: if request.auth != null && resource.data.from == request.auth.uid;
+      allow update: if false;
+    }
+
+    // A single pending invitation per recipient, written by the host.
+    match /bakeoff_invites/{toUid} {
+      allow read, delete: if request.auth != null
+        && (request.auth.uid == toUid || request.auth.uid == resource.data.from);
+      allow create: if request.auth != null
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to == toUid
+        && request.resource.data.fromName is string
+        && request.resource.data.fromName.size() <= 20
+        && request.resource.data.matchId is string
+        && request.resource.data.code is string
+        && request.resource.data.theme is string
+        && request.resource.data.at is number
+        && request.resource.data.keys().hasOnly(['from', 'fromName', 'to', 'matchId', 'code', 'theme', 'at']);
+      allow update: if false;
+    }
+
+    match /bakeoff_presence/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'state', 'at'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 20
+        && request.resource.data.state is string
+        && request.resource.data.at is int;
+    }
+
     // Everything else stays closed.
     match /{document=**} {
       allow read, write: if false;

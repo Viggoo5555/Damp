@@ -221,6 +221,7 @@
     "title": "Draw & Pass",
     "description": "The drawing-telephone party game: write a sentence, draw somebody else's, guess that drawing, and watch the whole mess come back around in the big reveal. 3-16 players, live rooms, no download.",
     "file": "games/draw-and-pass.html",
-    "category": "Party"
+    "category": "Party",
+    "image": "img/draw-pass.jpg"
   }
 ]

@@ -419,40 +419,19 @@ function closePlayer() {
 
 $("player-close").addEventListener("click", function () { location.hash = ""; });
 
-// The game bar stays out of the way: it slides down only when the pointer
-// touches the very top edge, and leaves again as soon as the pointer moves off
-// it, so the top corners of the game keep their own buttons.
+// The game bar has no strip of its own: the top of the window brings its
+// controls down, anything below that takes them straight out again, and clicks
+// anywhere but the controls fall through to the game.
 (function () {
-  const EDGE = 6;
-  const LINGER = 260;
-  let hideTimer = 0;
-
-  function showBar() {
-    clearTimeout(hideTimer);
-    player.classList.add("bar-open");
-  }
-
-  function hideBar() {
-    clearTimeout(hideTimer);
-    if (!player.classList.contains("bar-open")) return;
-    hideTimer = setTimeout(function () { player.classList.remove("bar-open"); }, LINGER);
-  }
-
-  function hideNow() {
-    clearTimeout(hideTimer);
-    player.classList.remove("bar-open");
-  }
-
-  // Clicks and hovers reach the game through the bar, so only its controls count.
-  function onControl(event) {
-    const target = event.target;
-    return Boolean(target && target.closest && target.closest(".player-bar button, .player-bar a"));
-  }
+  const EDGE = 96;
 
   function watch(event) {
     if (player.hidden || event.pointerType === "touch") return;
-    if (event.clientY <= EDGE || onControl(event)) showBar();
-    else hideBar();
+    player.classList.toggle("bar-open", event.clientY <= EDGE);
+  }
+
+  function hideNow() {
+    player.classList.remove("bar-open");
   }
 
   // The games are same-origin, so moves inside the frame move the bar too.

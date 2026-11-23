@@ -2787,14 +2787,20 @@ dialog {
     right: 0;
     left: 0;
     z-index: 3;
+    /* No strip of its own: the game shows straight through, and only the
+       controls take the pointer, so pressing anywhere else reaches the game. */
+    background: none;
+    border-bottom-color: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     transform: translateY(-100%);
     opacity: 0;
     pointer-events: none;
     transition: transform 0.22s ease, opacity 0.22s ease;
   }
 
-  /* Only the controls take the pointer. The strip itself lets clicks and hovers
-     through, so a game's own buttons in the top corners stay usable. */
+  /* Only the controls take the pointer. Everything around them lets clicks and
+     hovers through, so a game's own buttons in the top corners stay usable. */
   .player-bar button,
   .player-bar a { pointer-events: auto; }
 

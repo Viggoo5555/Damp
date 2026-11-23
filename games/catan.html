@@ -287,6 +287,7 @@ select{font:inherit;color:var(--fg);background:#0d2434;border:2px solid var(--li
 </div>
 
 <script src="../js/damp-points.js"></script>
+<script src="../js/damp-relay.js"></script>
 <script type="importmap">{"imports":{"three":"../vendor/three/three.module.js"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -1791,6 +1792,7 @@ async function hostRoom(){
     for(let i=0;i<3;i++){
       const pc=newPc();const dc=pc.createDataChannel('g');
       const conn={seat:0,dc,pc,name:'',code:seatCodes[i]};
+      pc.addEventListener('connectionstatechange',()=>{if(pc.connectionState==='failed')useSlowSeat(conn)});
       wireSeat(conn);
       await pc.setLocalDescription(await pc.createOffer());await gathered(pc);
       const ref=fb.F.doc(fb.db,'rooms',seatCodes[i]);
@@ -1800,6 +1802,7 @@ async function hostRoom(){
         const d=s.data();
         if(d&&d.answer&&pc.signalingState==='have-local-offer'){
           conn.name=String(d.guestName||'Player').slice(0,20);
+          armSlowSeat(conn);
           pc.setRemoteDescription(d.answer).catch(()=>onStatus('Could not connect to a friend.','bad'));
         }
       });
@@ -1869,6 +1872,8 @@ async function joinRoom(raw){
       await gathered(pc);
       await fb.F.updateDoc(ref,{guest:fb.auth.currentUser.uid,guestName:myName(),answer:{type:'answer',sdp:pc.localDescription.sdp}});
       NET.code=sc;NET.lobbyCode=code;NET.ref=ref;
+      pc.addEventListener('connectionstatechange',()=>{if(pc.connectionState==='failed')useSlowGuest()});
+      armSlowGuest();
       showRoom(code,false);
       onStatus('Joined. Waiting for the host to start…','ok');
       $('onRoomNote').textContent='Waiting for the host to start…';
@@ -1900,11 +1905,33 @@ function startAsGuest(){
   G.mode='setup';newGame();resetCam();
   setStatus('Catan','Settling the island');updateHud();
 }
+/* Schools and offices often block the direct link. When that happens a seat or a
+   guest moves onto this site's room relay instead: slower, but it only needs the
+   page itself to load. Each seat keeps its own relay room, keyed by its code. */
+function useSlowSeat(conn){
+  if(conn.slow||NET.started||!window.DampRelay)return;
+  conn.slow=true;onStatus('The direct link is blocked here. Switching to the slower route...','');
+  conn.slowLink=window.DampRelay.open({code:'K'+conn.code,role:'host',onpeer:ch=>{
+    if(NET.started){try{ch.close()}catch(e){};return}
+    conn.dc=ch;wireSeat(conn);
+  },onwaiting:()=>{},onfail:()=>onStatus('A friend could not use the slower route.','bad')});
+}
+function armSlowSeat(conn){clearTimeout(conn.slowTimer);conn.slowTimer=setTimeout(()=>useSlowSeat(conn),7000)}
+function useSlowGuest(){
+  if(NET.started||NET.slowGuest||!window.DampRelay)return;
+  onStatus('The direct link is blocked here. Switching to the slower route...','');
+  NET.slowGuest=window.DampRelay.open({code:'K'+NET.code,role:'guest',onpeer:ch=>{
+    if(NET.started){try{ch.close()}catch(e){};return}
+    NET.dc=ch;wireGuest(ch);
+  },onfail:()=>onStatus('The slower route is busy. Ask for a new room.','bad')});
+}
+function armSlowGuest(){clearTimeout(NET.slowTimer);NET.slowTimer=setTimeout(useSlowGuest,7000)}
 function netClose(){
   for(const u of NET.unsubs){try{u()}catch(e){}}
   NET.unsubs=[];
   const old=NET.conns;
   for(const c of old){
+    try{c.slowLink&&c.slowLink.close()}catch(e){}
     try{c.dc.close();c.pc.close()}catch(e){}
     try{c.ref&&NET.fb&&NET.fb.F.deleteDoc(c.ref)}catch(e){}
   }
@@ -1915,6 +1942,8 @@ function netClose(){
     try{NET.lobbyRef&&NET.fb.F.deleteDoc(NET.lobbyRef)}catch(e){}
     for(const c of NET.conns){try{c.ref&&NET.fb.F.deleteDoc(c.ref)}catch(e){}}
   }
+  try{NET.slowGuest&&NET.slowGuest.close()}catch(e){}
+  clearTimeout(NET.slowTimer);NET.slowGuest=null;NET.slowTimer=0;
   NET.dc=null;NET.pc=null;NET.ref=null;NET.lobbyRef=null;NET.role=null;NET.started=false;NET.code='';NET.lobbyCode='';
 }
 

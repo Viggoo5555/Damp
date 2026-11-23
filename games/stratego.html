@@ -250,6 +250,7 @@ input[type=text]:focus,input[type=password]:focus{border-color:var(--brass)}
 </div>
 
 <script src="../js/damp-points.js"></script>
+<script src="../js/damp-relay.js"></script>
 <script type="importmap">
 {"imports":{"three":"../vendor/three/three.module.js"}}
 </script>
@@ -1143,7 +1144,9 @@ async function hostRoom(){
     onStatus('Creating a room…');
     const fb=await fbInit();
     if(!fb.user){onStatus('Sign in first, then create the room.','bad');return}
-    netClose();NET.role='host';NET.pc=newPc();wire(NET.pc.createDataChannel('g'));
+    netClose();NET.role='host';NET.pc=newPc();
+    NET.pc.addEventListener('connectionstatechange',()=>{if(NET.pc&&NET.pc.connectionState==='failed')useSlowRoute('host')});
+    wire(NET.pc.createDataChannel('g'));
     await NET.pc.setLocalDescription(await NET.pc.createOffer());await gathered(NET.pc);
     const L='ABCDEFGHJKMNPQRSTUVWXYZ';let code,ref;
     for(let i=0;i<8;i++){code=Array.from({length:4},()=>L[Math.random()*L.length|0]).join('');ref=fb.F.doc(fb.db,'rooms',code);if(!(await fb.F.getDoc(ref)).exists())break}
@@ -1153,7 +1156,7 @@ async function hostRoom(){
     $('onCode').textContent=code;$('onRoomNote').textContent='Waiting for your friend to join…';
     $('onInvite2').classList.remove('hide');
     NET.unsub=fb.F.onSnapshot(ref,s=>{const d=s.data();
-      if(d&&d.answer&&NET.pc&&!NET.pc.remoteDescription){NET.pc.setRemoteDescription(d.answer).catch(()=>onStatus('Could not connect to your friend.','bad'))}});
+      if(d&&d.answer&&NET.pc&&!NET.pc.remoteDescription){NET.pc.setRemoteDescription(d.answer).catch(()=>onStatus('Could not connect to your friend.','bad'));armSlow('host')}});
   }catch(e){onStatus('Could not create the room ('+(e.code||e.message)+').','bad')}
 }
 async function joinRoom(code){
@@ -1172,6 +1175,9 @@ async function joinRoom(code){
     await NET.pc.setLocalDescription(await NET.pc.createAnswer());
     await gathered(NET.pc);
     await fb.F.updateDoc(ref,{guest:fb.user.uid,guestName:meName(),answer:{type:'answer',sdp:NET.pc.localDescription.sdp}});
+    NET.code=c;
+    NET.pc.addEventListener('connectionstatechange',()=>{if(NET.pc&&NET.pc.connectionState==='failed')useSlowRoute('guest')});
+    armSlow('guest');
     $('onMain').classList.add('hide');$('onRoom').classList.remove('hide');$('onPick').classList.add('hide');
     $('onCode').textContent=c;$('onRoomNote').textContent='Joined. Waiting for the host to start…';
     $('onInvite2').classList.add('hide');
@@ -1232,7 +1238,25 @@ function applyState(m){
   }
   G.busy=false;
 }
+/* Schools and offices often block the direct link, so when it fails the two
+   players meet on this site's room relay instead: slower, but it only needs the
+   page itself to load. */
+function dropSlowRoute(){
+  clearTimeout(NET.slowTimer);NET.slowTimer=0;NET.slow=false;
+  if(NET.slowLink){try{NET.slowLink.close()}catch(e){}}
+  NET.slowLink=null;
+}
+function armSlow(role){clearTimeout(NET.slowTimer);NET.slowTimer=setTimeout(()=>useSlowRoute(role),7000)}
+function useSlowRoute(role){
+  if(NET.on||NET.slow||!window.DampRelay)return;
+  NET.slow=true;onStatus('The direct link is blocked here. Switching to the slower route...','');
+  NET.slowLink=window.DampRelay.open({code:'S'+NET.code,role:role,onpeer:ch=>{
+    if(NET.on){try{ch.close()}catch(e){};return}
+    wire(ch);
+  },onwaiting:()=>onStatus('Waiting for your friend on the slower route...','ok'),onfail:()=>onStatus('The slower route is busy. Make a new room.','bad')});
+}
 function netClose(){
+  dropSlowRoute();
   try{NET.unsub&&NET.unsub()}catch(e){}
   try{NET.dc&&NET.dc.close();NET.pc&&NET.pc.close()}catch(e){}
   if(NET.ref&&NET.fb)NET.fb.F.deleteDoc(NET.ref).catch(()=>{});

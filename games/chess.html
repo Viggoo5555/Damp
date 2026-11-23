@@ -265,6 +265,7 @@ input[type=text]:focus,input[type=password]:focus{border-color:var(--brass)}
  <div id="loader"><div class="ring"></div><p>Setting the table</p></div>
 </div>
 <script src="../js/damp-points.js"></script>
+<script src="../js/damp-relay.js"></script>
 <script type="importmap">
 {"imports":{"three":"../vendor/three/three.module.js"}}
 </script>
@@ -2429,6 +2430,10 @@ function showEnd(title, sub, lose) {
 function connected(role, oppName) {
   clearTimeout(NET.timer);
   const pc = NET.pc, dc = NET.dc;
+  if (G.online) { try { if (dc && dc.close) dc.close(); } catch (e) { } return; }
+  clearTimeout(NET.slowTimer);
+  if (NET.slowLink && !(dc && dc.label === 'relay')) { try { NET.slowLink.close(); } catch (e) { } }
+  NET.slowLink = null; NET.slow = false;
   NET.pc = NET.dc = null;
   if (NET.ref && NET.fb) NET.fb.F.deleteDoc(NET.ref).catch(() => { });
   NET.ref = null;
@@ -2454,6 +2459,40 @@ function connected(role, oppName) {
   newGame(role === 'host' ? 'w' : 'b', 2, true);
   toast('Connected to ' + NET.name);
   SND.check();
+}
+
+/* A school or office network can block the direct link. When that happens both
+   players move onto the site's room relay: slower, but it only needs the page
+   itself to load. */
+function dropSlowRoute() {
+  clearTimeout(NET.slowTimer);
+  NET.slowTimer = 0;
+  NET.slow = false;
+  if (NET.slowLink) { try { NET.slowLink.close(); } catch (e) { } }
+  NET.slowLink = null;
+}
+
+function armSlow(role) {
+  clearTimeout(NET.slowTimer);
+  NET.slowTimer = setTimeout(() => useSlowRoute(role), 7000);
+}
+
+function useSlowRoute(role) {
+  if (G.online || NET.slow || !window.DampRelay) return;
+  NET.slow = true;
+  onStatus('The direct link is blocked here. Switching to the slower route...', '');
+  NET.slowLink = window.DampRelay.open({
+    code: NET.code,
+    role: role,
+    onpeer: ch => {
+      if (G.online) { try { ch.close(); } catch (e) { } return; }
+      NET.dc = ch;
+      NET.pc = null;
+      connected(role, role === 'host' ? (NET.peerName || 'Friend') : (NET.hostName || 'Friend'));
+    },
+    onwaiting: () => onStatus('Waiting for your friend on the slower route...', 'ok'),
+    onfail: () => onStatus('The slower route is busy. Start a new table.', 'bad')
+  });
 }
 
 function onNetMessage(event) {
@@ -2502,6 +2541,7 @@ function leaveOnline() {
   NET.dead = true;
   clearInterval(NET.hb);
   clearTimeout(NET.timer);
+  dropSlowRoute();
   try { if (NET.dc) NET.dc.close(); if (NET.pc) NET.pc.close(); } catch (e) { }
   NET.dc = NET.pc = null;
   try { if (NET.unsub) NET.unsub(); } catch (e) { }
@@ -2521,6 +2561,7 @@ function leaveOnline() {
 
 async function closeRoom() {
   clearTimeout(NET.timer);
+  dropSlowRoute();
   try { if (NET.unsub) NET.unsub(); } catch (e) { }
   NET.unsub = null;
   if (NET.ref && NET.fb) { try { await NET.fb.F.deleteDoc(NET.ref); } catch (e) { } }
@@ -2562,6 +2603,7 @@ async function hostRoom() {
     if (!fb || !fb.auth.currentUser) { onStatus('Sign in first.', 'bad'); return; }
     const pc = newPc();
     NET.pc = pc;
+    pc.addEventListener('connectionstatechange', () => { if (pc.connectionState === 'failed') useSlowRoute('host'); });
     const dc = pc.createDataChannel('chess');
     NET.dc = dc;
     let guestName = '';
@@ -2597,6 +2639,8 @@ async function hostRoom() {
       const d = snap.data();
       if (d && d.answer && pc.signalingState === 'have-local-offer') {
         guestName = d.guestName || '';
+        NET.peerName = guestName;
+        armSlow('host');
         onStatus('Your friend is joining\u2026', 'ok');
         pc.setRemoteDescription(d.answer).catch(() => onStatus('That join attempt failed. Send the code again.', 'bad'));
       }
@@ -2627,6 +2671,9 @@ async function joinRoom(raw) {
     if (Date.now() - (d.at || 0) > 45 * 60 * 1000) { onStatus('That table is too old. Ask for a fresh code.', 'bad'); return; }
     const pc = newPc();
     NET.pc = pc;
+    NET.code = code;
+    NET.hostName = d.hostName || 'Friend';
+    pc.addEventListener('connectionstatechange', () => { if (pc.connectionState === 'failed') useSlowRoute('guest'); });
     pc.ondatachannel = e => {
       NET.dc = e.channel;
       e.channel.onopen = () => connected('guest', d.hostName);
@@ -2640,6 +2687,7 @@ async function joinRoom(raw) {
       answer: { type: 'answer', sdp: pc.localDescription.sdp }
     });
     onStatus('Connecting to ' + (d.hostName || 'your friend') + '\u2026', 'ok');
+    armSlow('guest');
     clearTimeout(NET.timer);
     NET.timer = setTimeout(() => {
       if (!G.online) onStatus('Could not connect. Ask your friend to create a new room.', 'bad');

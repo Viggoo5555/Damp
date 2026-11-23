@@ -95,7 +95,7 @@ async function leaderboard(request, env, waitUntil) {
 // The racing game asks for its board at /api/v6/leaderboard and expects the
 // shape Kodub's own server returns: { total, entries, userEntry }. Times live
 // in Firestore as milliseconds, so lower is better and rows go `frames asc`.
-// games/polytrack/damp.js writes the rows for the signed-in account.
+// games/skals-track/damp.js writes the rows for the signed-in account.
 const POLYTRACK_CAR = 'AAQAAAAAAI4AU44AUwAAAA';
 
 function polytrackRow(doc, rank) {

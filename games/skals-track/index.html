@@ -1,0 +1,26 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SkalsTrack</title><meta name="theme-color" content="#28346a"><meta name="description" content="PolyTrack - a low-poly racing game by Kodub."><link rel="preload" href="forced_square.woff2" as="font" type="font/woff2" crossorigin="anonymous"/><link rel="preload" href="images/logo.png" as="image" type="image/png"/><link rel="preload" href="images/google_play.svg" as="image" type="image/svg+xml"/><link rel="preload" href="images/reddit.svg" as="image" type="image/svg+xml"/><link rel="preload" href="images/discord.svg" as="image" type="image/svg+xml"/><link rel="manifest" href="manifest.json"/><meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no"><style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-color:#28346a;}#file-warning{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-family:"Segoe UI",system-ui,sans-serif;color:#e9ecff;padding:24px;box-sizing:border-box;}#file-warning .card{max-width:640px;background:#1e2757;border:2px solid #5a6ab8;border-radius:12px;padding:28px 32px;line-height:1.5;}#file-warning h1{margin:0 0 4px;font-size:30px;letter-spacing:1px;}#file-warning p{margin:14px 0 0;font-size:17px;}#file-warning code{background:#2c3878;padding:2px 7px;border-radius:5px;font-size:16px;}#file-warning a.button{display:inline-block;margin-top:22px;background:#3b4a9e;color:#fff;text-decoration:none;padding:11px 20px;border-radius:8px;font-size:17px;}#file-warning a.button:hover{background:#4b5cbb;}#file-warning .muted{margin-top:18px;font-size:14px;opacity:0.65;}/* the menu footer with the kodub/Google Play/Discord/Reddit links */#ui>.menu-ui>.info{display:none!important;}</style></head><body><canvas id="screen"></canvas><div id="ui"></div><div id="transition-layer"></div><script>
+(function () {
+  if (location.protocol === "file:") {
+    document.title = "PolyTrack - use play.bat";
+    var wrap = document.createElement("div");
+    wrap.id = "file-warning";
+    wrap.innerHTML =
+      '<div class="card">' +
+      "<h1>Start the game with play.bat</h1>" +
+      "<p>Browsers don't let a game load its files when <code>index.html</code> is opened straight from the folder, which is why this page shows an error instead of the game.</p>" +
+      "<p>Double-click <code>play.bat</code> in the PolyTrack folder. It starts the small local server and opens the game at <code>http://127.0.0.1:8123/</code>.</p>" +
+      '<a class="button" href="http://127.0.0.1:8123/">Already started it? Open the game</a>' +
+      '<div class="muted">Keep the server window open while you play. Closing it stops the game.</div>' +
+      "</div>";
+    document.body.appendChild(wrap);
+    return;
+  }
+
+  ["error_screen.bundle.js", "main.bundle.js", "damp.js"].forEach(function (src) {
+    var script = document.createElement("script");
+    script.src = src;
+    script.async = false;
+    document.body.appendChild(script);
+  });
+})();
+</script></body></html>

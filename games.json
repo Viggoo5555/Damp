@@ -66,7 +66,8 @@
     "description": "Click your star, grow it and add orbiting planets.",
     "file": "games/Starclicker.html",
     "category": "Clicker",
-    "image": "img/starclicker.png"
+    "image": "img/starclicker.png",
+    "hidden": true
   },
   {
     "title": "Verity Clicker",

@@ -1,0 +1,1015 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#5b2be0">
+<title>Draw &amp; Pass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1d1340;--p1:#7c4dff;--p2:#ff4d8d;--p3:#00c2ff;--p4:#ffc83d;--ok:#22c55e;--bad:#ef4444}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:'Fredoka','Nunito',ui-rounded,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:var(--ink);min-height:100vh;background:linear-gradient(135deg,#4c1fd1 0%,#8e3cf0 40%,#ff4d8d 100%) fixed;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 12% 18%,rgba(0,194,255,.4),transparent 38%),radial-gradient(circle at 90% 85%,rgba(255,200,61,.35),transparent 40%)}
+button,input,select{font-family:inherit;color:inherit}
+#app{position:relative;max-width:1200px;margin:0 auto;padding:12px 12px 56px}
+.card{background:#fff;border-radius:26px;padding:18px;box-shadow:0 12px 34px rgba(25,0,70,.28);margin-bottom:14px}
+.center{text-align:center;justify-content:center}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grow{flex:1;min-width:0}
+.dim{opacity:.6}
+h2{margin:0 0 8px;font-size:1.3rem}
+
+/* logo */
+.logo{font-size:clamp(2.6rem,9vw,4.6rem);font-weight:700;line-height:1;margin:0;color:#fff;text-shadow:0 5px 0 rgba(0,0,0,.25);letter-spacing:-1px}
+.logo span{display:inline-block}
+.logo .a{color:#ffc83d;transform:rotate(-5deg)}.logo .b{color:#00e0ff;transform:rotate(4deg);margin:0 .08em}.logo .c{color:#ff9bd0;transform:rotate(-3deg)}
+.tag{color:#fff;opacity:.92;font-size:1.15rem;margin:8px 0 18px}
+
+/* buttons / inputs */
+.btn{border:0;border-radius:16px;padding:12px 20px;font-size:1.05rem;font-weight:600;cursor:pointer;color:#fff;background:var(--p1);box-shadow:0 5px 0 rgba(0,0,0,.22);transition:transform .08s,box-shadow .08s,filter .15s}
+.btn:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.22)}
+.btn.pink{background:var(--p2)}.btn.blue{background:var(--p3);color:#06324a}.btn.yellow{background:var(--p4);color:#4a3200}.btn.green{background:var(--ok)}.btn.dark{background:var(--ink)}
+.btn.ghost{background:rgba(255,255,255,.22);box-shadow:none}
+.btn.big{font-size:1.25rem;padding:14px 26px}
+.btn:disabled{filter:grayscale(.8) opacity(.55);cursor:not-allowed}
+.icon-btn{border:0;background:#f1ecff;border-radius:12px;width:40px;height:40px;font-size:1.15rem;cursor:pointer}
+.inp,.sel{width:100%;font-size:1.1rem;padding:12px 14px;border-radius:14px;border:3px solid #e6defa;outline:none;background:#fff}
+.inp:focus,.sel:focus{border-color:var(--p1)}
+.code-in{text-align:center;letter-spacing:.2em;font-weight:700;text-transform:uppercase}
+
+/* home */
+.home{max-width:580px;margin:5vh auto 0;text-align:center}
+.home .card{text-align:left}
+.swatches{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+.sw{width:32px;height:32px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.12);cursor:pointer}
+.sw.on{box-shadow:0 0 0 4px var(--ink)}
+.how{margin:10px 0 0;padding-left:1.2em;line-height:1.55}
+.or{text-align:center;opacity:.5;font-weight:600;margin:12px 0}
+
+/* lobby */
+.lobby-grid{display:grid;gap:14px;grid-template-columns:1fr}
+@media(min-width:860px){.lobby-grid{grid-template-columns:1.2fr 1fr}}
+.code{font-size:clamp(2.4rem,9vw,3.6rem);letter-spacing:.22em;font-weight:700;color:var(--p1);margin:4px 0 8px}
+.players{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.pl{display:flex;align-items:center;gap:10px;background:#f6f2ff;border-radius:16px;padding:8px 12px;min-width:0}
+.pl b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl.off{opacity:.45}
+.av{border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;flex:none;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.setting{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0;font-weight:500}
+.setting .sel{width:auto;padding:8px 10px;font-size:1rem}
+.setting input[type=checkbox]{width:22px;height:22px}
+
+/* topbar / timer */
+.topbar{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.96);border-radius:20px;padding:10px 12px;margin-bottom:8px;box-shadow:0 8px 22px rgba(25,0,70,.25)}
+.topbar .t{flex:1;min-width:0}
+.hdr-title{font-size:1.25rem;font-weight:700;line-height:1.15}
+.hdr-sub{font-size:.95rem;opacity:.65}
+.timer{font-size:1.6rem;font-weight:700;min-width:64px;text-align:center;background:var(--ink);color:#fff;border-radius:14px;padding:6px 10px}
+.timer.low{background:var(--bad);animation:pulse .45s infinite alternate}
+.bar{height:9px;background:rgba(255,255,255,.35);border-radius:6px;overflow:hidden;margin-bottom:10px}
+.bar>i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ffc83d,#ff4d8d);transition:width .25s linear}
+@keyframes pulse{to{transform:scale(1.08)}}
+
+/* prompt / text blocks */
+.quote{font-size:clamp(1.4rem,4.5vw,2.2rem);font-weight:600;text-align:center;padding:12px 6px;line-height:1.25;word-break:break-word}
+.ptext{background:#fff;border-radius:20px;padding:10px 16px;margin-bottom:10px;text-align:center;box-shadow:0 8px 22px rgba(25,0,70,.2)}
+.ptext small{display:block;opacity:.55;font-weight:500}
+.ptext b{font-size:clamp(1.2rem,4vw,1.8rem);font-weight:700;word-break:break-word}
+
+/* studio */
+.studio{display:grid;gap:10px;grid-template-columns:minmax(0,1fr);grid-template-areas:"canvas" "tools" "palette"}
+.cvwrap{grid-area:canvas;display:flex;justify-content:center}
+.cv,.cvview{display:block;width:min(100%,max(320px,calc((100vh - 270px)*1.3333)));height:auto;aspect-ratio:4/3;background:#fff;border-radius:18px;border:4px solid #fff;box-shadow:0 10px 28px rgba(25,0,70,.35);touch-action:none;cursor:crosshair;user-select:none;-webkit-user-select:none}
+.cvview{cursor:default;touch-action:auto}
+.tools{grid-area:tools;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;background:rgba(255,255,255,.95);border-radius:18px;padding:8px}
+.tool{border:0;background:#f1ecff;border-radius:14px;padding:6px 10px;min-width:56px;cursor:pointer;font-size:1.3rem;display:flex;flex-direction:column;align-items:center;line-height:1.1}
+.tool small{font-size:.68rem;font-weight:600;opacity:.7}
+.tool.on{background:var(--p1);color:#fff}
+.tool:disabled{opacity:.4}
+.sizes{display:flex;gap:6px;align-items:center}
+.szb{border:0;background:#f1ecff;border-radius:14px;width:46px;height:46px;display:grid;place-items:center;cursor:pointer}
+.szb i{display:block;border-radius:50%;background:var(--ink)}
+.szb.on{background:var(--p1)}.szb.on i{background:#fff}
+.palette{grid-area:palette;display:grid;grid-template-columns:repeat(14,1fr);gap:5px;background:rgba(255,255,255,.95);border-radius:18px;padding:8px}
+.swc{aspect-ratio:1;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1.5px rgba(0,0,0,.18);cursor:pointer;padding:0;min-width:0}
+.swc.on{box-shadow:0 0 0 3px var(--ink)}
+.colorpick{grid-column:span 2;width:100%;height:100%;min-height:30px;border:0;border-radius:10px;padding:0;background:none;cursor:pointer}
+.curcol{width:46px;height:46px;border-radius:14px;border:3px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.15)}
+@media(min-width:900px){
+ .studio{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"palette canvas tools";align-items:start}
+ .palette{grid-template-columns:repeat(2,34px);align-content:start}
+ .colorpick{grid-column:span 2}
+ .tools{flex-direction:column;flex-wrap:nowrap;align-items:stretch;width:92px}
+ .tools .sizes{flex-direction:column}
+ .szb{width:100%}
+}
+.actions{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+
+/* guess */
+.guess-box{max-width:720px;margin:0 auto}
+.note{text-align:center;opacity:.8;font-weight:500;margin:8px 0;color:#fff}
+
+/* wait */
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chip{display:flex;align-items:center;gap:8px;background:#f6f2ff;border-radius:999px;padding:5px 12px 5px 5px;font-weight:600}
+.chip.done{background:#dcfce7}.chip.off{opacity:.45}
+.spinner{font-size:3rem;animation:wob 1.4s infinite ease-in-out;display:inline-block}
+@keyframes wob{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(12deg)}}
+
+/* reveal */
+.dots{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:0 0 10px}
+.dots i{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.4)}
+.dots i.on{background:#ffc83d;transform:scale(1.35)}.dots i.past{background:#fff}
+.rlist{max-width:640px;margin:0 auto}
+.rc{background:#fff;border-radius:24px;padding:14px;margin:0 auto 14px;box-shadow:0 10px 26px rgba(25,0,70,.28)}
+.rc.pop{animation:pop .5s cubic-bezier(.2,1.5,.4,1)}
+@keyframes pop{from{transform:scale(.6) translateY(30px);opacity:0}to{transform:none;opacity:1}}
+.rc-h{display:flex;align-items:center;gap:10px;font-weight:600;margin-bottom:6px}
+.rc canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;border-radius:14px;border:3px solid #eee;background:#fff}
+.rc .quote{padding:8px 4px}
+.pills{display:flex;gap:6px;flex-wrap:wrap;min-height:6px;margin-top:8px}
+.pill{background:#f1ecff;border-radius:999px;padding:2px 10px;font-weight:600}
+.dock{position:sticky;bottom:8px;z-index:5;display:grid;gap:8px;max-width:640px;margin:0 auto}
+.reactbar{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;background:rgba(255,255,255,.96);border-radius:22px;padding:6px;box-shadow:0 8px 22px rgba(25,0,70,.3)}
+.emo{border:0;background:transparent;font-size:1.7rem;cursor:pointer;border-radius:12px;padding:4px 8px;transition:transform .1s}
+.emo:active{transform:scale(1.4)}
+.ctl{background:rgba(255,255,255,.96);border-radius:22px;padding:8px;box-shadow:0 8px 22px rgba(25,0,70,.3)}
+.floaty{position:fixed;bottom:90px;font-size:2.4rem;z-index:70;pointer-events:none;animation:floatup 2.2s ease-out forwards}
+@keyframes floatup{from{transform:translateY(0) scale(.6);opacity:1}to{transform:translateY(-55vh) scale(1.5) rotate(18deg);opacity:0}}
+
+/* vote / results */
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.vcard{background:#fff;border-radius:22px;padding:12px;box-shadow:0 10px 26px rgba(25,0,70,.28);display:flex;flex-direction:column;gap:8px}
+.vcard.mine{outline:4px dashed var(--p4)}
+.vcard.picked{outline:4px solid var(--ok)}
+.vcard.win{outline:5px solid var(--p4);background:#fffbe8}
+.thumbs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.thumb{background:#f6f2ff;border-radius:12px;overflow:hidden;min-height:90px;display:grid;place-items:center;text-align:center;font-weight:600;padding:4px;font-size:.95rem;word-break:break-word}
+.thumb canvas{display:block;width:100%;height:auto}
+.thumb small{display:block;font-weight:500;opacity:.55;font-size:.72rem}
+.votebar{height:12px;border-radius:8px;background:#eee;overflow:hidden}
+.votebar i{display:block;height:100%;background:linear-gradient(90deg,#ffc83d,#ff4d8d)}
+.banner{background:linear-gradient(135deg,#ffc83d,#ff9bd0);border-radius:26px;padding:18px;text-align:center;margin-bottom:14px;box-shadow:0 12px 30px rgba(25,0,70,.3)}
+.banner b{font-size:clamp(1.4rem,5vw,2.2rem)}
+.modal{position:fixed;inset:0;z-index:60;background:rgba(15,0,50,.78);overflow:auto;padding:14px}
+.modal .in{max-width:660px;margin:0 auto}
+.conf{position:fixed;top:-14px;width:10px;height:16px;z-index:80;animation:fall linear forwards;pointer-events:none}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:16px;z-index:100;font-weight:600;max-width:90vw;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.35);transition:opacity .4s}
+.toast.out{opacity:0}
+.err{color:#b42318;font-weight:600}
+code{background:#f1ecff;padding:2px 6px;border-radius:6px;font-size:.9em}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<noscript>Draw &amp; Pass needs JavaScript.</noscript>
+
+<script type="module">
+
+/* ====================================================================
+   1) THE ROOM SERVER
+   Draw & Pass runs on this site's own Cloudflare Worker (see worker.js,
+   class Draw). Nothing is stored in Firestore, so the game needs no
+   Firebase setup, no sign-in and no Firestore rules.
+   ==================================================================== */
+
+// <PURE>
+/* ====================================================================
+   2) PURE HELPERS — prompts, stroke format, painters, fill, chain maths
+   ==================================================================== */
+const CW = 960, CH = 720;
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const num = (v, a, b, d = 0) => { v = +v; return Number.isFinite(v) ? clamp(v, a, b) : d; };
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const article = w => /^[aeiou]/i.test(w) ? "an" : "a";
+
+const PROMPTS = [
+"A cat driving a school bus","A penguin sunbathing on a beach","Grandma skateboarding down a hill","A giant pizza chasing a tiny man","A dragon roasting marshmallows","Two snails racing in the Olympics","An octopus playing five instruments","A shark wearing a business suit","A robot learning to ride a bike","A sloth who is late for work",
+"A wizard stuck in an elevator","Santa Claus on vacation","A mermaid at the dentist","A cow on a rollercoaster","A ghost doing laundry","A pirate using a smartphone","A hippo in a bubble bath","A frog conducting an orchestra","A snowman at the beach","An astronaut walking a dog on the moon",
+"A banana slipping on a person","A fish riding a bicycle","A bear learning to knit","A tiny dinosaur in a teacup","A giraffe trying on hats","A monkey running a restaurant","A knight afraid of a small mouse","A squirrel burying a gold bar","A crab doing taxes","An owl teaching a class",
+"A vampire at a sunny picnic","A lion getting a haircut","A turtle winning a race","A chicken crossing a busy road","A unicorn stuck in traffic","Two penguins sharing an umbrella","A kangaroo packing a suitcase","A pig flying an airplane","A cactus getting a hug","A donut with legs running away",
+"A bee wearing a tiny crown","A moose in a bakery","A flamingo doing ballet","A walrus playing the piano","A goose causing chaos at a wedding","A mailman chased by a friendly dragon","A chef cooking with a flamethrower","A clown stuck in a tiny car","A wizard ordering pizza","A superhero doing grocery shopping",
+"A detective investigating a missing cookie","A farmer riding a giant chicken","A pirate learning to swim","A dentist who is afraid of teeth","A baby boss in a meeting","A hamburger on a skateboard","Spaghetti tangled around a bicycle","A watermelon wearing sunglasses","Ice cream melting on a hot day","A taco throwing a party",
+"A sandwich with a surprise inside","A cupcake with a tiny castle on top","An angry pancake","Sushi sailing down a river","A pizza slice winning a medal","A soccer match between cats and dogs","A goat playing basketball","Penguins curling on ice","An elephant doing gymnastics","A snail running a marathon",
+"Sumo wrestling in a bouncy castle","A fish playing golf","A skier racing down a giant ice cream","A boxing kangaroo","A bear surfing a big wave","A castle floating on a cloud","A friendly monster under the bed","A fairy fixing a car engine","A troll selling umbrellas under a bridge","A dragon afraid of fire",
+"A haunted house with a disco inside","A giant beanstalk in a backyard","A wizard duel with rubber chickens","A talking tree giving advice","A magic carpet stuck in traffic","A robot making breakfast","Aliens visiting a farm","A spaceship parked at a gas station","An astronaut planting a flag on a cheese moon","A time machine made from a bathtub",
+"Robots on a dance floor","A UFO abducting a cow","A cyborg gardener","A space station full of cats","A rocket launched from a backyard shed","A messy bedroom with a surprise guest","Brushing teeth with a giant toothbrush","A busy morning at the bus stop","A lost sock searching for its pair","Someone sneezing in a library",
+"A birthday cake on fire","Waiting in a very long line","An umbrella turned inside out","A traffic jam of bicycles","A broken umbrella in a storm","A treehouse city in the clouds","A beach party in winter","A lighthouse on a tiny island","A campsite visited by a bear","A haunted library",
+"A market full of strange fruits","An underwater bus station","A farm run by robots","A snowy mountain village","A pirate cove with a secret door","Raining cats and dogs","A piece of cake","Butterflies in my stomach","The elephant in the room","Biting the bullet",
+"Cold feet at a wedding","Breaking the ice","Head in the clouds","Spilling the beans","Barking up the wrong tree","A dog wearing a wig at a disco","A cat sleeping in a bread basket","A bunny magician pulling out a human","A very long dachshund wearing socks","A duck leading a parade",
+"A hedgehog giving a high five","A koala hugging a router","A llama in pajamas","A parrot telling secrets","A turkey planning an escape","A toddler directing traffic","Grandpa playing video games","A teacher riding a scooter","A librarian with ninja skills","A mechanic fixing a spaceship",
+"A pigeon flying a plane","A tiny king on a giant throne","A bakery run by raccoons","A musician with eight arms","A painter whose painting comes alive","A mail truck made of snails","A birthday party for a robot","A picnic ruined by ants","A talking toaster","A rainbow bridge",
+"A shark in a swimming pool","A volcano erupting confetti","A very tall snowman","A pumpkin carving itself","A scarecrow taking a day off","A bear stuck in a honey jar","A mountain made of cheese","A bicycle with square wheels","A castle made of sand","A boat full of ducks",
+"A cloud that rains pizza","A fish wearing roller skates","An octopus doing laundry","A roller coaster through a kitchen","A giant cat knocking over a city","The world's worst haircut","A raccoon DJ","A cowboy riding a llama","A ninja delivering pizza","A sleepy dragon guarding a pillow",
+"A teddy bear on a motorbike","A clownfish at a circus","A banana boat full of monkeys","A zombie at a yoga class","A cat burglar who is actually a cat","A dog walking a human","A bird building a nest out of spaghetti","A fish bowl with a tiny castle","A snail with a rocket on its shell","A snowman melting at a barbecue",
+"A moose wearing a scarf","A crocodile at the hairdresser","A sheep counting humans","A tiger doing ballet","A rabbit racing a rocket","A sad balloon","A robot crying at a wedding","A cheerful trash can","A grumpy cloud","A fancy potato in a top hat",
+"A hamster running a giant wheel to power a city","A goldfish escaping its bowl","A bat hanging out at a coffee shop","A polar bear in a desert","A cat DJ at a school dance",
+"A grandma on a jet ski","A cowboy lost in a supermarket","A dinosaur riding the bus","A mouse trap with a tiny piece of cake","A pencil that draws itself",
+"A bear fishing with a fishing rod made of spaghetti","A magician whose rabbit does the tricks","A baby dragon learning to breathe fire","A pirate captain who is terrified of the sea","Sheep jumping over a very tall fence"
+];
+const ADJ = ["sleepy","angry","tiny","giant","fancy","dizzy","grumpy","sparkly","haunted","shy","hungry","invisible","flying","dancing","soggy","royal","tired","brave","goofy","spooky"];
+const ANI = ["cat","dog","penguin","octopus","giraffe","hamster","dragon","crocodile","llama","owl","frog","shark","snail","bear","duck","flamingo","goat","raccoon","narwhal","T-rex"];
+const JOB = ["plumber","astronaut","chef","dentist","pirate","wizard","detective","firefighter","clown","farmer","barber","knight","ninja","mermaid","robot"];
+const DOING = ["riding a unicycle","juggling bananas","eating spaghetti","playing the drums","doing yoga","painting a masterpiece","flying a kite","baking a cake","skateboarding","singing in the shower","building a sandcastle","fishing for socks","taking a selfie","mowing the lawn","walking a tiny dog","reading a map upside down","blowing giant bubbles","playing chess","delivering pizza","dancing the tango"];
+const PLACE = ["on the moon","in a bathtub","at a wedding","in the supermarket","underwater","at the dentist","on a rollercoaster","in a haunted house","at the North Pole","in a traffic jam","in a library","on a pirate ship","at a birthday party","inside a giant sandwich"];
+
+function genPrompt() {
+  const k = rnd(4);
+  if (k === 0) { const a = pick(ADJ); return `${cap(article(a))} ${a} ${pick(ANI)} ${pick(DOING)}`; }
+  if (k === 1) { const n = pick(ANI); return `${cap(article(n))} ${n} ${pick(DOING)} ${pick(PLACE)}`; }
+  if (k === 2) { const j = pick(JOB); return `${cap(article(j))} ${j} ${pick(DOING)} ${pick(PLACE)}`; }
+  const a = pick(ADJ), j = pick(JOB); return `${cap(article(a))} ${a} ${j} ${pick(DOING)}`;
+}
+const randomPrompt = () => Math.random() < 0.6 ? pick(PROMPTS) : genPrompt();
+
+/* ---- drawing ops: {t:'s',c,w,p:[x,y,...]} stroke · {t:'f',c,x,y} fill · {t:'x'} clear ---- */
+function blank(ctx) { ctx.globalAlpha = 1; ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, CW, CH); }
+function strokeDot(ctx, st) { ctx.fillStyle = st.c; ctx.beginPath(); ctx.arc(st.p[0], st.p[1], st.w / 2, 0, Math.PI * 2); ctx.fill(); }
+// piece k of a stroke with m>=2 points: 0 = start→mid, 1..m-2 = smooth curves, m-1 = mid→end
+function strokePiece(ctx, st, k) {
+  const p = st.p, m = p.length / 2;
+  const X = i => p[2 * i], Y = i => p[2 * i + 1];
+  const mx = i => (X(i) + X(i + 1)) / 2, my = i => (Y(i) + Y(i + 1)) / 2;
+  ctx.strokeStyle = st.c; ctx.lineWidth = st.w; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.beginPath();
+  if (k === 0) { ctx.moveTo(X(0), Y(0)); ctx.lineTo(mx(0), my(0)); }
+  else if (k === m - 1) { ctx.moveTo(mx(m - 2), my(m - 2)); ctx.lineTo(X(m - 1), Y(m - 1)); }
+  else { ctx.moveTo(mx(k - 1), my(k - 1)); ctx.quadraticCurveTo(X(k), Y(k), mx(k), my(k)); }
+  ctx.stroke();
+}
+function floodFill(ctx, sx, sy, hex) {
+  const W = CW, H = CH;
+  sx = clamp(sx | 0, 0, W - 1); sy = clamp(sy | 0, 0, H - 1);
+  const img = ctx.getImageData(0, 0, W, H), d = img.data;
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  const i0 = (sy * W + sx) * 4, tr = d[i0], tg = d[i0 + 1], tb = d[i0 + 2];
+  if (Math.abs(tr - r) + Math.abs(tg - g) + Math.abs(tb - b) < 10) return;
+  const tol = 90, seen = new Uint8Array(W * H);
+  const ok = (x, y) => { const q = y * W + x; if (seen[q]) return false; const p = q * 4; return Math.abs(d[p] - tr) + Math.abs(d[p + 1] - tg) + Math.abs(d[p + 2] - tb) <= tol; };
+  const stack = [sx, sy];
+  while (stack.length) {
+    const y = stack.pop(), x = stack.pop();
+    if (!ok(x, y)) continue;
+    let x1 = x, x2 = x;
+    while (x1 > 0 && ok(x1 - 1, y)) x1--;
+    while (x2 < W - 1 && ok(x2 + 1, y)) x2++;
+    let up = false, dn = false;
+    for (let xx = x1; xx <= x2; xx++) {
+      const q = y * W + xx, p = q * 4;
+      seen[q] = 1; d[p] = r; d[p + 1] = g; d[p + 2] = b; d[p + 3] = 255;
+      if (y > 0) { const o = ok(xx, y - 1); if (o && !up) stack.push(xx, y - 1); up = o; }
+      if (y < H - 1) { const o = ok(xx, y + 1); if (o && !dn) stack.push(xx, y + 1); dn = o; }
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+const opUnits = o => o.t === "s" ? Math.max(1, o.p.length / 2) : 1;
+function paintUnits(ctx, o, a, b) {
+  if (o.t === "s") { const m = o.p.length / 2; if (m < 2) strokeDot(ctx, o); else for (let k = a; k < b; k++) strokePiece(ctx, o, k); }
+  else if (o.t === "f") floodFill(ctx, o.x, o.y, o.c);
+  else blank(ctx);
+}
+const paintOp = (ctx, o) => paintUnits(ctx, o, 0, opUnits(o));
+
+const MAXSTR = 380000;
+const packOps = ops => JSON.stringify(ops.map(o => o.t === "s" ? ["s", o.c, o.w, o.p] : o.t === "f" ? ["f", o.c, o.x, o.y] : ["x"]));
+function thinPts(p) { const q = []; for (let i = 0; i < p.length; i += 4) q.push(p[i], p[i + 1]); const n = p.length; if (q[q.length - 2] !== p[n - 2] || q[q.length - 1] !== p[n - 1]) q.push(p[n - 2], p[n - 1]); return q; }
+function encodeOps(ops) {
+  const lx = ops.map(o => o.t).lastIndexOf("x");
+  let arr = ops.slice(lx + 1), s = packOps(arr);
+  for (let g = 0; g < 8 && s.length > MAXSTR; g++) { arr = arr.map(o => o.t === "s" && o.p.length > 8 ? { ...o, p: thinPts(o.p) } : o); s = packOps(arr); }
+  return s;
+}
+const HEX = /^#[0-9a-fA-F]{6}$/;
+function decodeOps(str) {
+  let a; try { a = JSON.parse(str || "[]"); } catch (e) { return []; }
+  if (!Array.isArray(a)) return [];
+  const out = [];
+  for (const o of a.slice(0, 3000)) {
+    if (!Array.isArray(o)) continue;
+    if (o[0] === "s") {
+      if (typeof o[1] !== "string" || !HEX.test(o[1]) || !Array.isArray(o[3])) continue;
+      let p = o[3].slice(0, 30000); if (p.length % 2) p.pop(); if (p.length < 2) continue;
+      out.push({ t: "s", c: o[1], w: num(o[2], 1, 90, 6), p: p.map(v => num(v, -100, 1100)) });
+    } else if (o[0] === "f") {
+      if (typeof o[1] !== "string" || !HEX.test(o[1])) continue;
+      out.push({ t: "f", c: o[1], x: num(o[2], 0, CW - 1), y: num(o[3], 0, CH - 1) });
+    } else if (o[0] === "x") out.push({ t: "x" });
+  }
+  return out;
+}
+/* chain passing: chain started by player at seat q is handled at step s (s>=1) by seat (q+s-1) mod n */
+const stepKind = s => s === 0 ? "prompt" : (s % 2 === 1 ? "draw" : "guess");
+function chainOf(order, uid, step) { const n = order.length, p = order.indexOf(uid), off = step === 0 ? 0 : step - 1; return order[(((p - off) % n) + n) % n]; }
+// </PURE>
+
+/* ====================================================================
+   3) STATE + UI HELPERS
+   ==================================================================== */
+const AVC = ["#ff5252","#ff9800","#f2b100","#7cb518","#10a38a","#1da1f2","#5c6bc0","#ab47bc","#ec407a","#8d6e63","#607d8b","#00b86b","#ff6e40","#7c4dff","#00b8d4","#d500f9"];
+const EMOJIS = ["🤣","😍","😮","👏","🔥","💀","🤔","😭"];
+const COLORS = ["#000000","#4b4b4b","#9b9b9b","#ffffff","#7b3f00","#b5651d","#f5c9a0","#8d5524","#e53935","#ff7043","#ff9800","#ffc107","#ffeb3b","#cddc39",
+                "#8bc34a","#43a047","#00897b","#00bcd4","#29b6f6","#1e63ff","#3949ab","#7e57c2","#ab47bc","#ec407a","#ff80ab","#f8bbd0","#6d4c41","#263238"];
+const SIZES = [3, 7, 14, 26, 44];
+const app = document.getElementById("app");
+const S = { uid: null, name: "", color: 0, code: null, room: null, roomRef: null, unsub: null, subs: {}, offsets: [], offset: 0, lastTs: 0, beatSentAt: 0,
+  local: {}, key: "", live: null, cleanup: [], entries: {}, votes: {}, votesReady: false, reacts: [], reactInit: false, busy: false, sound: true, prefill: "" };
+let db = null, auth = null;
+
+function el(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") e.className = v;
+    else if (k === "style" && typeof v === "object") Object.assign(e.style, v);
+    else if (k.startsWith("on") && typeof v === "function") e.addEventListener(k.slice(2), v);
+    else if (v === true) e.setAttribute(k, "");
+    else e.setAttribute(k, v);
+  }
+  for (const kid of kids.flat(Infinity)) { if (kid == null || kid === false) continue; e.append(kid.nodeType ? kid : document.createTextNode(String(kid))); }
+  return e;
+}
+function toast(msg, ms = 2800) { const t = el("div", { class: "toast" }, msg); document.body.append(t); setTimeout(() => t.classList.add("out"), ms); setTimeout(() => t.remove(), ms + 450); }
+const nameOf = uid => { const p = S.room && S.room.players && S.room.players[uid]; return p ? p.name : "Player"; };
+function avatar(uid, size = 38) {
+  const p = S.room && S.room.players && S.room.players[uid];
+  return el("div", { class: "av", style: { background: AVC[(p ? p.color : 0) % 16], width: size + "px", height: size + "px", fontSize: Math.round(size * 0.45) + "px" } }, ((p && p.name) || "?").trim().charAt(0).toUpperCase());
+}
+const now = () => Date.now() + S.offset;
+const tsMs = t => (t && typeof t.toMillis === "function") ? t.toMillis() : null;
+const isOn = p => !!(p && p.online);
+const durFor = step => { const r = S.room; return step === 0 ? r.promptTime : (step % 2 === 1 ? r.drawTime : r.guessTime); };
+
+function runCleanup() { const c = S.cleanup; S.cleanup = []; c.forEach(f => { try { f(); } catch (e) {} }); document.querySelectorAll(".modal").forEach(m => m.remove()); }
+function mount(key, build) {
+  if (S.key === key) return false;
+  runCleanup(); S.key = key; S.live = null; app.replaceChildren(); window.scrollTo(0, 0);
+  build();
+  return true;
+}
+// tiny sounds
+let actx = null;
+document.addEventListener("pointerdown", () => { try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); } catch (e) {} }, { once: false });
+function beep(freq = 660, dur = 0.09) { if (!S.sound || !actx) return; try { const o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = freq; o.type = "sine"; g.gain.value = 0.06; o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + dur); } catch (e) {} }
+
+function mkHeader(title, sub, total, withTimer = true) {
+  const num = el("div", { class: "timer" }, "--");
+  const fill = el("i");
+  const mute = el("button", { class: "icon-btn", title: "Sound on/off", onclick: () => { S.sound = !S.sound; mute.textContent = S.sound ? "🔊" : "🔇"; } }, S.sound ? "🔊" : "🔇");
+  const leave = el("button", { class: "icon-btn", title: "Leave game", onclick: () => { if (confirm("Leave this game?")) leaveRoom(); } }, "🚪");
+  const node = el("div", {}, el("div", { class: "topbar" }, el("div", { class: "t" }, el("div", { class: "hdr-title" }, title), el("div", { class: "hdr-sub" }, sub)), mute, leave, withTimer ? num : null), withTimer ? el("div", { class: "bar" }, fill) : null);
+  function start(onExpire) {
+    if (!withTimer) return;
+    let fired = false, lastSec = -1;
+    const tick = () => {
+      const left = Math.max(0, (S.room.stepEndsAt - now()) / 1000);
+      num.textContent = Math.ceil(left);
+      fill.style.width = clamp(left / total * 100, 0, 100) + "%";
+      num.classList.toggle("low", left <= 10);
+      if (left <= 5 && left > 0) { const sec = Math.ceil(left); if (sec !== lastSec) { lastSec = sec; beep(sec === 1 ? 880 : 620); } }
+      if (left <= 0.1 && !fired) { fired = true; try { onExpire && onExpire(); } catch (e) { console.warn(e); } }
+    };
+    tick();
+    const iv = setInterval(tick, 200);
+    S.cleanup.push(() => clearInterval(iv));
+  }
+  return { node, start };
+}
+
+/* ====================================================================
+   4) DRAWING STUDIO
+   ==================================================================== */
+function createStudio(draftKey) {
+  let ops = [], tool = "pen", color = "#000000", size = SIZES[1], cur = null;
+  try { const raw = localStorage.getItem(draftKey); if (raw) ops = decodeOps(raw); } catch (e) {}
+  const canvas = el("canvas", { class: "cv", width: CW, height: CH });
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const redraw = () => { blank(ctx); ops.forEach(o => paintOp(ctx, o)); };
+  const save = () => { try { localStorage.setItem(draftKey, encodeOps(ops)); } catch (e) {} };
+  redraw();
+
+  const pt = e => { const r = canvas.getBoundingClientRect(); return [Math.round(clamp((e.clientX - r.left) * CW / r.width, 0, CW)), Math.round(clamp((e.clientY - r.top) * CH / r.height, 0, CH))]; };
+  const addPt = (x, y) => {
+    const p = cur.p, lx = p[p.length - 2], ly = p[p.length - 1];
+    if (Math.abs(x - lx) + Math.abs(y - ly) < 2) return;
+    p.push(x, y); strokePiece(ctx, cur, p.length / 2 - 2);
+  };
+  const endStroke = () => {
+    if (!cur) return;
+    const m = cur.p.length / 2;
+    if (m >= 2) strokePiece(ctx, cur, m - 1);
+    ops.push(cur); cur = null; save(); updBtns();
+  };
+  canvas.addEventListener("pointerdown", e => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    e.preventDefault();
+    const [x, y] = pt(e);
+    if (tool === "fill") { floodFill(ctx, x, y, color); ops.push({ t: "f", c: color, x, y }); save(); updBtns(); return; }
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+    cur = { t: "s", c: tool === "eraser" ? "#ffffff" : color, w: size, p: [x, y] };
+    strokeDot(ctx, cur);
+  });
+  canvas.addEventListener("pointermove", e => {
+    if (!cur) return; e.preventDefault();
+    const list = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+    for (const ev of (list.length ? list : [e])) { const [x, y] = pt(ev); addPt(x, y); }
+  });
+  canvas.addEventListener("pointerup", endStroke);
+  canvas.addEventListener("pointercancel", endStroke);
+  canvas.addEventListener("contextmenu", e => e.preventDefault());
+
+  const tbtn = {};
+  const mkTool = (id, icon, label) => { const b = el("button", { class: "tool", title: label, "aria-label": label, onclick: () => setTool(id) }, icon, el("small", {}, label)); tbtn[id] = b; return b; };
+  function setTool(t) { tool = t; Object.entries(tbtn).forEach(([k, b]) => b.classList.toggle("on", k === t)); canvas.style.cursor = t === "fill" ? "cell" : "crosshair"; }
+  const undoB = el("button", { class: "tool", title: "Undo (Ctrl+Z)", "aria-label": "Undo", onclick: undo }, "↩️", el("small", {}, "Undo"));
+  const clearB = el("button", { class: "tool", title: "Clear canvas", "aria-label": "Clear", onclick: clearAll }, "🗑️", el("small", {}, "Clear"));
+  function undo() { if (cur || !ops.length) return; ops.pop(); redraw(); save(); updBtns(); }
+  function clearAll() { if (cur || !ops.length) return; if (ops[ops.length - 1].t === "x") return; ops.push({ t: "x" }); redraw(); save(); updBtns(); }
+  function updBtns() { undoB.disabled = !ops.length; clearB.disabled = !ops.length || ops[ops.length - 1].t === "x"; }
+
+  const curCol = el("div", { class: "curcol", style: { background: color } });
+  const swatches = COLORS.map(c => el("button", { class: "swc", "aria-label": c, style: { background: c }, onclick: () => { color = c; if (tool === "eraser") setTool("pen"); markColor(); } }));
+  const picker = el("input", { type: "color", class: "colorpick", value: "#000000", "aria-label": "Custom colour", oninput: () => { color = picker.value; if (tool === "eraser") setTool("pen"); markColor(); } });
+  function markColor() { swatches.forEach((b, i) => b.classList.toggle("on", COLORS[i] === color)); curCol.style.background = color; }
+  const sizeBtns = SIZES.map(s => el("button", { class: "szb", "aria-label": "Brush size " + s, onclick: () => { size = s; markSize(); } }, el("i", { style: { width: Math.max(4, Math.min(s, 30)) + "px", height: Math.max(4, Math.min(s, 30)) + "px" } })));
+  function markSize() { sizeBtns.forEach((b, i) => b.classList.toggle("on", SIZES[i] === size)); }
+
+  const root = el("div", { class: "studio" },
+    el("div", { class: "cvwrap" }, canvas),
+    el("div", { class: "tools" }, mkTool("pen", "✏️", "Pen"), mkTool("eraser", "🧽", "Eraser"), mkTool("fill", "🪣", "Fill"), undoB, clearB, el("div", { class: "sizes" }, sizeBtns), curCol),
+    el("div", { class: "palette" }, swatches, picker));
+  setTool("pen"); markColor(); markSize(); updBtns();
+
+  const onKey = e => {
+    if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); }
+    else if (!e.ctrlKey && !e.metaKey) { const k = e.key.toLowerCase(); if (k === "b" || k === "p") setTool("pen"); else if (k === "e") setTool("eraser"); else if (k === "f") setTool("fill"); }
+  };
+  document.addEventListener("keydown", onKey);
+  return { root, key: draftKey, encode: () => { endStroke(); return encodeOps(ops); }, destroy: () => document.removeEventListener("keydown", onKey) };
+}
+
+/* replay helpers for reveal */
+function animateOps(ctx, ops, ms) {
+  blank(ctx);
+  const total = ops.reduce((a, o) => a + opUnits(o), 0);
+  if (!total) return () => {};
+  const dur = ms || clamp(total * 9, 900, 3400);
+  let oi = 0, ui = 0, drawn = 0, raf = 0, stopped = false;
+  const t0 = performance.now();
+  const frame = t => {
+    if (stopped) return;
+    const target = Math.min(total, Math.floor((t - t0) / dur * total));
+    while (drawn < target && oi < ops.length) {
+      const o = ops[oi], u = opUnits(o), need = Math.min(u - ui, target - drawn);
+      paintUnits(ctx, o, ui, ui + need); ui += need; drawn += need;
+      if (ui >= u) { oi++; ui = 0; }
+    }
+    if (drawn < total) raf = requestAnimationFrame(frame);
+  };
+  raf = requestAnimationFrame(frame);
+  return () => { stopped = true; cancelAnimationFrame(raf); };
+}
+function showDrawing(canvas, strokes, animate) {
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const ops = decodeOps(strokes);
+  if (animate) { S.cleanup.push(animateOps(ctx, ops)); return; }
+  blank(ctx); ops.forEach(o => paintOp(ctx, o));
+}
+function thumbCanvas(strokes) {
+  const big = document.createElement("canvas"); big.width = CW; big.height = CH;
+  const bctx = big.getContext("2d", { willReadFrequently: true });
+  blank(bctx); decodeOps(strokes).forEach(o => paintOp(bctx, o));
+  const small = document.createElement("canvas"); small.width = 320; small.height = 240;
+  small.getContext("2d").drawImage(big, 0, 0, 320, 240);
+  return small;
+}
+
+/* ====================================================================
+   5) THE ROOM — one WebSocket to this site's Cloudflare Worker
+   --------------------------------------------------------------------
+   The room lives in a Durable Object on dampgames' own Worker rather than
+   in Firestore: one object per code holds the whole game in memory and
+   pushes every change straight down the open socket. A move costs a single
+   round trip, nothing polls, and no traffic goes player-to-player, so a
+   school network that blocks direct connections plays just as well.
+   ==================================================================== */
+const CODE_CH = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const newCode = () => Array.from({ length: 5 }, () => CODE_CH[rnd(CODE_CH.length)]).join("");
+const socketURL = (code, create) => (location.protocol === "https:" ? "wss:" : "ws:") + "//" + location.host + "/api/draw/" + encodeURIComponent(code) +
+  "?uid=" + encodeURIComponent(S.uid) + "&name=" + encodeURIComponent(S.name) + "&color=" + S.color + (create ? "&new=1" : "");
+
+let sock = null, reconnectTimer = 0, leaving = false;
+
+function send(msg) {
+  if (!sock || sock.readyState !== 1) { toast("Not connected — hold on a moment"); return false; }
+  try { sock.send(JSON.stringify(msg)); return true; } catch (e) { return false; }
+}
+const setRoom = patch => send({ t: "set", patch: patch });
+const setRev = (chain, step) => send({ t: "rev", chain: chain, step: step });
+const sendReact = emoji => send({ t: "react", emoji: emoji });
+const vote = chain => send({ t: "vote", chain: chain });
+const startGame = () => send({ t: "start" });
+const goVote = () => send({ t: "phase", phase: "vote" });
+const playAgain = () => send({ t: "again" });
+
+function readName(inp) {
+  const n = inp.value.trim().replace(/\s+/g, " ").slice(0, 20);
+  if (!n) { toast("Pick a name first!"); inp.focus(); return null; }
+  S.name = n;
+  try { localStorage.setItem("dp_name", n); localStorage.setItem("dp_color", String(S.color)); } catch (e) {}
+  return n;
+}
+
+function addReact(r) {
+  if (!r) return;
+  S.reacts.push(r);
+  if (!S.seen) S.seen = new Set();
+  const id = r.at + "|" + r.from;
+  if (S.seen.has(id)) return;
+  S.seen.add(id);
+  if (r.from !== S.uid && S.key.startsWith("reveal")) floatEmoji(r.emoji);
+}
+function applyState(msg) {
+  S.room = msg.room;
+  if (msg.now) S.offset = msg.now - Date.now();
+  if (msg.entries) S.entries = msg.entries;
+  if (msg.votes) { S.votes = msg.votes; S.votesReady = true; }
+  if (msg.reactions) { S.reacts = msg.reactions.slice(); S.seen = new Set(S.reacts.map(r => r.at + "|" + r.from)); }
+  if (!S.seen) S.seen = new Set();
+}
+
+function connectRoom(code, create) {
+  return new Promise((resolve, reject) => {
+    let ws;
+    try { ws = new WebSocket(socketURL(code, create)); } catch (e) { reject(new Error("Could not reach the game server")); return; }
+    sock = ws;
+    let settled = false;
+    const fail = message => { if (settled) return; settled = true; try { ws.close(); } catch (e) {} reject(new Error(message)); };
+    ws.onmessage = event => {
+      let msg; try { msg = JSON.parse(event.data); } catch (e) { return; }
+      if (msg.t === "state") {
+        applyState(msg);
+        if (!settled) { settled = true; resolve(code); }
+        route();
+        return;
+      }
+      if (msg.t === "missing") return fail("No room with that code");
+      if (msg.t === "taken") return fail("taken");
+      if (msg.t === "started") return fail("That game has already started");
+      if (msg.t === "full") return fail("That room is full (16 players)");
+      if (msg.t === "entry") {
+        if (msg.key && msg.entry) { S.entries[msg.key] = msg.entry; if (S.prevWatch) S.prevWatch(); if (S.live) S.live(); }
+        return;
+      }
+      if (msg.t === "react") { addReact(msg.reaction); if (S.live) S.live(); return; }
+      if (msg.t === "pong") { S.offset = msg.now - Date.now(); return; }
+    };
+    ws.onclose = () => {
+      if (!settled) { settled = true; reject(new Error("Could not reach the game server")); return; }
+      if (leaving || !S.code) return;
+      toast("Reconnecting to the room…");
+      let tries = 0;
+      const again = () => {
+        if (leaving || !S.code) return;
+        tries += 1;
+        connectRoom(S.code, false).then(() => toast("Back in ✓")).catch(() => {
+          if (tries < 30) reconnectTimer = setTimeout(again, 1500);
+          else { toast("Lost the room"); leaveRoom(); }
+        });
+      };
+      clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(again, 700);
+    };
+    ws.onerror = () => {};
+  });
+}
+
+async function createRoom() {
+  for (let attempt = 0; attempt < 6; attempt++) {
+    try { await enterRoom(newCode(), true); return; } catch (e) { if (e.message !== "taken") throw e; }
+  }
+  throw new Error("Could not find a free room code — try again");
+}
+async function joinRoom(raw) {
+  const code = String(raw || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!/^[A-Z0-9]{4,8}$/.test(code)) throw new Error("Enter a valid room code");
+  await enterRoom(code, false);
+}
+async function enterRoom(code, create) {
+  stopRoom();
+  S.code = code; S.room = null; S.entries = {}; S.votes = {}; S.votesReady = false; S.reacts = []; S.seen = new Set();
+  S.key = ""; S.local = {}; S.offset = 0; leaving = false;
+  await connectRoom(code, create);
+  try { localStorage.setItem("dp_room", code); } catch (e) {}
+  try { history.replaceState(null, "", "?room=" + code); } catch (e) {}
+}
+function stopRoom() {
+  clearTimeout(reconnectTimer);
+  if (sock) { const s = sock; sock = null; try { s.close(); } catch (e) {} }
+  S.prevWatch = null;
+}
+function leaveRoom() {
+  if (S.room && S.room.phase === "lobby") send({ t: "leave" });
+  leaving = true;
+  stopRoom();
+  S.code = null; S.room = null; S.key = ""; S.local = {}; S.prefill = "";
+  S.entries = {}; S.votes = {}; S.votesReady = false; S.reacts = []; S.seen = new Set();
+  try { localStorage.removeItem("dp_room"); } catch (e) {}
+  try { history.replaceState(null, "", location.pathname); } catch (e) {}
+  mount("home", buildHome);
+}
+
+/* ---- what the screens call ---- */
+function watchPrev(cb) {
+  const r = S.room;
+  const key = `${chainOf(r.order, S.uid, r.step)}|${r.step - 1}`;
+  const push = () => cb(S.entries[key] || null);
+  S.prevWatch = push;
+  S.cleanup.push(() => { if (S.prevWatch === push) S.prevWatch = null; });
+  push();
+}
+function hasSubmitted() {
+  const r = S.room, p = r.players[S.uid];
+  return (!!p && p.done >= r.step) || S.local.sub === `${r.round}:${r.step}`;
+}
+async function submit(kind, payload) {
+  const r = S.room;
+  if (!r || r.phase !== "play") return false;
+  const step = r.step, key = `${r.round}:${step}`;
+  if (S.local.sub === key) return false;
+  S.local.sub = key;
+  if (r.players[S.uid]) r.players[S.uid].done = step;
+  const ok = send(Object.assign({ t: "submit", kind: kind }, payload));
+  if (!ok) S.local.sub = null;
+  route();
+  return ok;
+}
+
+/* ---- router ---- */
+function route() {
+  const r = S.room; if (!r) return;
+  const me = r.players && r.players[S.uid];
+  if (!me) { toast("That game has already started"); leaveRoom(); return; }
+  let changed = false;
+  switch (r.phase) {
+    case "lobby": changed = mount("lobby", buildLobby); break;
+    case "play": {
+      if (!r.order.includes(S.uid)) { changed = mount("spectate:" + r.round, buildSpectate); break; }
+      const kind = stepKind(r.step), st = hasSubmitted() ? "wait" : kind;
+      changed = mount(`play:${r.round}:${r.step}:${st}`, st === "wait" ? buildWait : kind === "prompt" ? buildPrompt : kind === "draw" ? buildDraw : buildGuess);
+      break;
+    }
+    case "reveal": changed = mount("reveal:" + r.round, buildReveal); break;
+    case "vote": changed = mount("vote:" + r.round, buildVote); break;
+    case "results": changed = mount("results:" + r.round, buildResults); break;
+  }
+  if (!changed && S.live) S.live();
+}
+
+/* ====================================================================
+   6) SCREENS
+   ==================================================================== */
+function logo() { return el("h1", { class: "logo" }, el("span", { class: "a" }, "Draw"), el("span", { class: "b" }, "&"), el("span", { class: "c" }, "Pass")); }
+
+function buildHome() {
+  const nameIn = el("input", { class: "inp", maxlength: 20, placeholder: "Your name", value: S.name, autocomplete: "off" });
+  const sw = el("div", { class: "swatches" }, AVC.map((c, i) => el("button", { class: "sw" + (i === S.color ? " on" : ""), style: { background: c }, "aria-label": "Colour " + (i + 1), onclick: () => { S.color = i; [...sw.children].forEach((b, j) => b.classList.toggle("on", j === i)); } })));
+  const codeIn = el("input", { class: "inp code-in", maxlength: 8, placeholder: "ROOM CODE", value: S.prefill || "", autocomplete: "off", autocapitalize: "characters" });
+  codeIn.addEventListener("input", () => { codeIn.value = codeIn.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); });
+  const create = el("button", { class: "btn pink big", onclick: async () => { if (!readName(nameIn)) return; create.disabled = true; try { await createRoom(); } catch (e) { toast(e.message || "Could not create room", 4500); create.disabled = false; } } }, "✨ Create a room");
+  const join = el("button", { class: "btn blue big", onclick: async () => { if (!readName(nameIn)) return; join.disabled = true; try { await joinRoom(codeIn.value); } catch (e) { toast(e.message || "Could not join", 4000); join.disabled = false; } } }, "Join");
+  codeIn.addEventListener("keydown", e => { if (e.key === "Enter") join.click(); });
+  app.append(el("div", { class: "home" }, logo(), el("p", { class: "tag" }, "The drawing-telephone party game · 3–16 players"),
+    el("div", { class: "card" },
+      el("h2", {}, "Who are you?"), nameIn, sw,
+      el("div", { class: "or" }, "· · ·"),
+      create,
+      el("div", { class: "or" }, "or join friends"),
+      el("div", { class: "row" }, el("div", { class: "grow" }, codeIn), join)),
+    el("div", { class: "card" }, el("h2", {}, "How it works"),
+      el("ol", { class: "how" },
+        el("li", {}, "Everyone gets a secret sentence and draws it."),
+        el("li", {}, "Drawings are passed on — the next player guesses what it is."),
+        el("li", {}, "Guesses are passed on — the next player draws the guess."),
+        el("li", {}, "Keep going until every chain has visited everyone."),
+        el("li", {}, "Watch the hilarious reveal, react, and vote for the funniest chain!")))));
+  if (!S.name) setTimeout(() => nameIn.focus(), 50);
+}
+
+function buildLobby() {
+  const isHost = () => S.room.host === S.uid;
+  const codeEl = el("div", { class: "code" }, S.code);
+  const copy = el("button", { class: "btn blue", onclick: async () => {
+    const url = location.origin + location.pathname + "?room=" + S.code;
+    try { await navigator.clipboard.writeText(url); toast("Invite link copied!"); } catch (e) { prompt("Copy this invite link:", url); } } }, "📋 Copy invite link");
+  const list = el("div", { class: "players" });
+  const mkSel = (label, key, opts, fmt) => {
+    const s = el("select", { class: "sel", onchange: () => { if (!isHost()) return; setRoom({ [key]: +s.value }); } }, opts.map(o => el("option", { value: o }, fmt(o))));
+    return { key, s, node: el("label", { class: "setting" }, el("span", {}, label), s) };
+  };
+  const sels = [mkSel("🎲 Sentence time", "promptTime", [15, 20, 30, 45, 60], v => v + "s"), mkSel("🎨 Drawing time", "drawTime", [30, 45, 60, 75, 90, 120], v => v + "s"), mkSel("🤔 Guessing time", "guessTime", [15, 20, 30, 45, 60], v => v + "s")];
+  const cb = el("input", { type: "checkbox", onchange: () => { if (!isHost()) return; setRoom({ customPrompts: cb.checked }); } });
+  const cbRow = el("label", { class: "setting" }, el("span", {}, "✍️ Let players write their own sentence"), cb);
+  const info = el("div", { class: "dim", style: { fontSize: ".95rem", marginTop: "6px" } });
+  const startBtn = el("button", { class: "btn green big", onclick: startGame }, "Start game");
+  const leave = el("button", { class: "btn ghost", onclick: leaveRoom }, "← Leave");
+
+  app.append(
+    el("div", { class: "row", style: { justifyContent: "space-between", marginBottom: "8px" } }, el("div", { style: { transform: "scale(.5)", transformOrigin: "left center", height: "44px", whiteSpace: "nowrap" } }, logo()), leave),
+    el("div", { class: "lobby-grid" },
+      el("div", {}, el("div", { class: "card center" }, el("div", { class: "dim" }, "Room code"), codeEl, copy),
+        el("div", { class: "card" }, el("h2", {}, "Players"), list)),
+      el("div", {}, el("div", { class: "card" }, el("h2", {}, "Game settings"), ...sels.map(x => x.node), cbRow, info),
+        el("div", { class: "card center" }, startBtn))));
+
+  const update = () => {
+    const r = S.room, host = isHost();
+    const ents = Object.entries(r.players).sort((a, b) => (a[0] === r.host ? -1 : b[0] === r.host ? 1 : a[1].name.localeCompare(b[1].name)));
+    list.replaceChildren(...ents.map(([u, p]) => el("div", { class: "pl" + (isOn(p) ? "" : " off") }, avatar(u), el("b", {}, p.name + (u === S.uid ? " (you)" : "")), u === r.host ? el("span", { title: "Host" }, "👑") : null)));
+    const on = ents.filter(([u, p]) => u === S.uid || isOn(p)).length;
+    sels.forEach(x => { if (document.activeElement !== x.s) x.s.value = String(r[x.key]); x.s.disabled = !host; });
+    cb.checked = !!r.customPrompts; cb.disabled = !host;
+    info.textContent = `${on} connected · each chain will have ${Math.max(on, 3)} turns`;
+    startBtn.disabled = !host || on < 3;
+    startBtn.textContent = !host ? "Waiting for the host to start…" : on < 3 ? `Need ${3 - on} more player${3 - on > 1 ? "s" : ""}` : `Start game (${on} players)`;
+  };
+  S.live = update; update();
+}
+
+function buildSpectate() {
+  const { node } = mkHeader("Game in progress", "You joined too late to play — you can still watch the reveal!", 1, false);
+  app.append(node, el("div", { class: "card center" }, el("div", { class: "spinner" }, "👀"), el("h2", {}, "Hang tight"), el("p", {}, "When the reveal starts, you'll see every chain here.")));
+}
+
+function buildPrompt() {
+  const r = S.room;
+  let text = randomPrompt();
+  const h = mkHeader("Step 0 · Your sentence", "Everyone gets one — keep it secret until the reveal!", r.promptTime);
+  const big = el("div", { class: "quote" }, text);
+  const custom = el("input", { class: "inp", maxlength: 100, placeholder: "…or type your own sentence", autocomplete: "off" });
+  const go = () => { const t = (custom.value.trim() || text).slice(0, 100); S.local.myPrompt = t; submit("prompt", { text: t }); };
+  custom.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+  const reroll = el("button", { class: "btn yellow", onclick: () => { text = randomPrompt(); big.textContent = text; custom.value = ""; } }, "🎲 New sentence");
+  app.append(h.node, el("div", { class: "card" }, el("div", { class: "dim center" }, "You will draw this:"), big,
+    el("div", { class: "actions" }, reroll), r.customPrompts ? el("div", { style: { marginTop: "12px" } }, custom) : null,
+    el("div", { class: "actions" }, el("button", { class: "btn green big", onclick: go }, "Lock it in ✓"))));
+  h.start(go);
+}
+
+function buildDraw() {
+  const r = S.room, step = r.step;
+  const h = mkHeader(`Step ${step} of ${r.n} · Draw!`, step === 1 ? "Draw your own sentence" : "Draw what the last player guessed", durFor(step));
+  const textEl = el("b", {}, "…");
+  const box = el("div", { class: "ptext" }, el("small", {}, "Draw this:"), textEl);
+  const studio = createStudio(`dp_draft_${S.code}_${r.round}_${step}`);
+  S.cleanup.push(() => studio.destroy());
+  const finish = () => { const strokes = studio.encode(); submit("draw", { strokes }).then(() => { try { localStorage.removeItem(studio.key); } catch (e) {} }); };
+  if (step === 1 && S.local.myPrompt) textEl.textContent = S.local.myPrompt;
+  watchPrev(e => { if (e && e.text) textEl.textContent = e.text; });
+  app.append(h.node, box, studio.root, el("div", { class: "actions" }, el("button", { class: "btn green big", onclick: finish }, "Done ✓")));
+  h.start(finish);
+}
+
+function buildGuess() {
+  const r = S.room, step = r.step;
+  const h = mkHeader(`Step ${step} of ${r.n} · Guess!`, "What is this a drawing of?", durFor(step));
+  const canvas = el("canvas", { class: "cvview", width: CW, height: CH });
+  const cctx = canvas.getContext("2d"); blank(cctx);
+  const note = el("div", { class: "note" }, "Waiting for the drawing…");
+  const inp = el("input", { class: "inp", maxlength: 100, placeholder: "Type your guess…", autocomplete: "off" });
+  const go = () => submit("guess", { text: (inp.value.trim() || "???").slice(0, 100) });
+  inp.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+  watchPrev(e => {
+    if (!e) return;
+    const ops = decodeOps(e.strokes); blank(cctx); ops.forEach(o => paintOp(cctx, o));
+    note.textContent = ops.length ? "Take your best guess!" : "Blank page — the artist ran out of time! Guess anyway 😅";
+  });
+  app.append(h.node, el("div", { class: "cvwrap" }, canvas), note,
+    el("div", { class: "guess-box" }, el("div", { class: "card" }, inp, el("div", { class: "actions" }, el("button", { class: "btn green big", onclick: go }, "Send guess ✓")))));
+  h.start(go);
+  if (window.matchMedia("(pointer:fine)").matches) setTimeout(() => inp.focus(), 100);
+}
+
+function buildWait() {
+  const r = S.room;
+  const h = mkHeader("Submitted ✓", `Step ${r.step} of ${r.n} · waiting for everyone else…`, durFor(r.step));
+  const chips = el("div", { class: "chips" });
+  app.append(h.node, el("div", { class: "card center" }, el("div", { class: "spinner" }, "✏️"), el("h2", {}, "Nice work!"), el("p", { class: "dim" }, "The next round starts as soon as everyone is done."), chips));
+  const upd = () => { const rr = S.room; chips.replaceChildren(...rr.order.map(u => { const p = rr.players[u], d = p && p.done >= rr.step; return el("div", { class: "chip" + (d ? " done" : "") + (isOn(p) ? "" : " off") }, avatar(u, 28), nameOf(u), d ? "✓" : "…"); })); };
+  S.live = upd; upd(); h.start(() => {});
+}
+
+/* ---- reveal ---- */
+function floatEmoji(emoji) {
+  const f = el("div", { class: "floaty", style: { left: (8 + Math.random() * 80) + "vw" } }, emoji);
+  document.body.append(f); setTimeout(() => f.remove(), 2400);
+}
+const VERB = { prompt: "wrote the sentence", draw: "drew it", guess: "guessed" };
+const ICON = { prompt: "✍️", draw: "🎨", guess: "🤔" };
+function pillsFor(key) { const c = {}; S.reacts.forEach(x => { if (`${x.chain}|${x.step}` === key) c[x.emoji] = (c[x.emoji] || 0) + 1; }); return Object.entries(c); }
+function buildCard(chain, step, animate) {
+  const key = `${chain}|${step}`;
+  const card = el("div", { class: "rc" + (animate ? " pop" : "") });
+  const head = el("div", { class: "rc-h" }), body = el("div", {}, el("div", { class: "quote dim" }, "…")), pills = el("div", { class: "pills" });
+  card.append(head, body, pills);
+  card._key = key; card._pills = pills; card._filled = false;
+  card._fill = () => {
+    const e = S.entries[key]; if (!e) return false;
+    head.replaceChildren(avatar(e.author, 32), el("span", {}, `${ICON[e.kind]} ${nameOf(e.author)} ${VERB[e.kind]}`), e.auto ? el("span", { class: "dim" }, "(skipped)") : null);
+    if (e.kind === "draw") { const cv = el("canvas", { width: CW, height: CH }); body.replaceChildren(cv); showDrawing(cv, e.strokes, animate); }
+    else body.replaceChildren(el("div", { class: "quote" }, e.kind === "prompt" ? "“" + e.text + "”" : e.text));
+    card._filled = true; return true;
+  };
+  card._fill();
+  return card;
+}
+function refreshCards(root) {
+  root.querySelectorAll(".rc").forEach(c => {
+    if (!c._filled) c._fill();
+    c._pills.replaceChildren(...pillsFor(c._key).map(([e, n]) => el("span", { class: "pill" }, e + " " + n)));
+  });
+}
+function openChain(chain) {
+  const m = el("div", { class: "modal" }), inn = el("div", { class: "in" });
+  const close = el("button", { class: "btn yellow", onclick: () => m.remove() }, "✕ Close");
+  inn.append(el("div", { class: "row", style: { justifyContent: "space-between", color: "#fff", margin: "6px 0 12px" } }, el("h2", { style: { margin: 0 } }, nameOf(chain) + "'s chain"), close));
+  for (let s = 0; s <= S.room.n; s++) inn.append(buildCard(chain, s, false));
+  m.append(inn); m.addEventListener("click", e => { if (e.target === m) m.remove(); });
+  document.body.append(m); refreshCards(inn);
+}
+
+function buildReveal() {
+  let shownChain = null, shownCount = -1, init = true, auto = false, autoIv = null;
+  const sub = el("div", { class: "hdr-sub" });
+  const leave = el("button", { class: "icon-btn", title: "Leave game", onclick: () => { if (confirm("Leave this game?")) leaveRoom(); } }, "🚪");
+  const dots = el("div", { class: "dots" });
+  const list = el("div", { class: "rlist" });
+  const ctl = el("div", { class: "row center ctl" });
+  let lastReact = 0;
+  const react = el("div", { class: "reactbar" }, EMOJIS.map(e => el("button", { class: "emo", "aria-label": "React " + e, onclick: () => {
+    const t = Date.now(); if (t - lastReact < 180) return; lastReact = t;
+    sendReact(e);
+    floatEmoji(e);
+  } }, e)));
+  app.append(el("div", { class: "topbar" }, el("div", { class: "t" }, el("div", { class: "hdr-title" }, "🎉 The big reveal"), sub), leave), dots, list, el("div", { class: "dock" }, react, ctl));
+
+  const next = () => {
+    const r = S.room; if (r.host !== S.uid) return;
+    let c = r.revChain, s = r.revStep;
+    if (s < r.n) s++; else { c++; s = 0; }
+    if (c >= r.n) { goVote(); return; }
+    setRev(c, s);
+  };
+  const showAll = () => { const r = S.room; if (r.host === S.uid) setRev(r.revChain, r.n); };
+  const setAuto = v => { auto = v; clearInterval(autoIv); if (auto) autoIv = setInterval(() => { if (S.room && S.room.host === S.uid) next(); }, 5500); live(); };
+  S.cleanup.push(() => clearInterval(autoIv));
+
+  function live() {
+    const r = S.room, chain = r.order[r.revChain], count = r.revStep;
+    if (chain !== shownChain || count < shownCount) { shownChain = chain; shownCount = -1; list.replaceChildren(); }
+    while (shownCount < count) {
+      shownCount++;
+      const card = buildCard(chain, shownCount, !init && shownCount === count);
+      list.append(card);
+      if (!init) setTimeout(() => card.scrollIntoView({ behavior: "smooth", block: "center" }), 120);
+    }
+    init = false;
+    sub.textContent = `Chain ${r.revChain + 1} of ${r.n} · started by ${nameOf(chain)}`;
+    dots.replaceChildren(...r.order.map((u, i) => el("i", { class: i === r.revChain ? "on" : i < r.revChain ? "past" : "" })));
+    refreshCards(list);
+    const host = r.host === S.uid;
+    const lastOne = r.revStep >= r.n && r.revChain >= r.n - 1;
+    ctl.replaceChildren(...(host ? [
+      el("button", { class: "btn pink", onclick: next }, lastOne ? "Finish → Voting 🗳️" : r.revStep >= r.n ? "Next chain ▶▶" : "Next ▶"),
+      el("button", { class: "btn blue", onclick: showAll, disabled: r.revStep >= r.n }, "Show whole chain"),
+      el("button", { class: "btn " + (auto ? "yellow" : "ghost"), style: auto ? {} : { color: "#1d1340", background: "#f1ecff" }, onclick: () => setAuto(!auto) }, auto ? "⏸ Auto" : "▶ Auto"),
+      el("button", { class: "btn ghost", style: { color: "#1d1340", background: "#f1ecff" }, onclick: () => { if (confirm("Skip to voting?")) goVote(); } }, "Skip ⏭")
+    ] : [el("div", { class: "dim" }, `${nameOf(r.host)} is driving the reveal — react away! 👇`)]));
+  }
+  S.live = live; live();
+}
+
+function chainSummary(chain) {
+  const r = S.room, first = S.entries[`${chain}|1`], last = S.entries[`${chain}|${r.n}`];
+  const mk = (e, label) => {
+    const d = el("div", { class: "thumb" });
+    if (!e) { d.append(el("span", { class: "dim" }, "…")); return d; }
+    if (e.kind === "draw") d.append(thumbCanvas(e.strokes)); else d.append(el("div", {}, el("small", {}, label), e.text));
+    return d;
+  };
+  return el("div", { class: "thumbs" }, mk(first, "first drawing"), mk(last, "final result"));
+}
+function buildVote() {
+  const r0 = S.room;
+  const h = mkHeader("🗳️ Vote for the funniest chain", "Pick the one that made you laugh the most (not your own!)", 75);
+  const status = el("div", { class: "note" });
+  const grid = el("div", { class: "vgrid" });
+  app.append(h.node, status, grid);
+  let built = false, builtCount = 0;
+  const cast = chain => {
+    if (S.votes[S.uid]) return;
+    S.votes[S.uid] = chain; live();
+    vote(chain);
+  };
+  function live() {
+    const r = S.room, loaded = Object.keys(S.entries).length;
+    if (!built || loaded !== builtCount) {
+      built = true; builtCount = loaded;
+      grid.replaceChildren(...r.order.map(c => {
+        const mine = c === S.uid;
+        const card = el("div", { class: "vcard", "data-c": c }, el("div", { class: "row" }, avatar(c, 32), el("b", {}, nameOf(c) + "'s chain")), chainSummary(c),
+          el("div", { class: "row" }, el("button", { class: "btn blue", onclick: () => openChain(c) }, "👀 View"), mine ? el("span", { class: "dim" }, "your chain") : el("button", { class: "btn pink vb", onclick: () => cast(c) }, "😂 Funniest!")));
+        return card;
+      }));
+    }
+    const my = S.votes[S.uid], voted = r.order.filter(u => S.votes[u]).length;
+    status.textContent = my ? `Vote locked in ✓  ·  ${voted}/${r.order.length} voted` : `${voted}/${r.order.length} voted`;
+    grid.querySelectorAll(".vcard").forEach(c => {
+      const id = c.getAttribute("data-c"), b = c.querySelector(".vb");
+      c.classList.toggle("mine", id === S.uid); c.classList.toggle("picked", my === id);
+      if (b) { b.disabled = !!my; b.textContent = my === id ? "✅ Your vote" : "😂 Funniest!"; }
+    });
+  }
+  S.live = live; live(); h.start(() => {});
+}
+
+function buildResults() {
+  const r = S.room;
+  const tally = {}; r.order.forEach(c => { tally[c] = 0; }); Object.values(S.votes).forEach(c => { if (c in tally) tally[c]++; });
+  const sorted = r.order.slice().sort((a, b) => tally[b] - tally[a]);
+  const max = tally[sorted[0]] || 0, winners = max > 0 ? sorted.filter(c => tally[c] === max) : [];
+  const banner = el("div", { class: "banner" });
+  const grid = el("div", { class: "vgrid" });
+  const btns = el("div", { class: "actions" });
+  app.append(el("div", { class: "topbar" }, el("div", { class: "t" }, el("div", { class: "hdr-title" }, "🏆 Results"), el("div", { class: "hdr-sub" }, "Tap View to replay any chain")), el("button", { class: "icon-btn", title: "Leave", onclick: leaveRoom }, "🚪")), banner, grid, btns);
+  let confettiDone = false, builtCount = -1;
+  function live() {
+    const rr = S.room, loaded = Object.keys(S.entries).length + Object.keys(S.votes).length;
+    if (loaded !== builtCount) {
+      builtCount = loaded;
+      const tally2 = {}; rr.order.forEach(c => { tally2[c] = 0; }); Object.values(S.votes).forEach(c => { if (c in tally2) tally2[c]++; });
+      const sorted2 = rr.order.slice().sort((a, b) => tally2[b] - tally2[a]), max2 = tally2[sorted2[0]] || 0;
+      const win2 = max2 > 0 ? sorted2.filter(c => tally2[c] === max2) : [];
+      banner.replaceChildren(win2.length ? el("div", {}, el("div", { style: { fontSize: "3rem" } }, "🏆"), el("b", {}, win2.map(nameOf).join(" & ") + (win2.length > 1 ? " tie" : "'s chain wins")), el("div", {}, `with ${max2} vote${max2 === 1 ? "" : "s"}!`)) : el("b", {}, "No votes were cast — everyone's a winner! 🎉"));
+      grid.replaceChildren(...sorted2.map(c => el("div", { class: "vcard" + (win2.includes(c) ? " win" : "") }, el("div", { class: "row" }, avatar(c, 32), el("b", { class: "grow" }, nameOf(c) + "'s chain"), el("b", {}, `${tally2[c]} 😂`)),
+        el("div", { class: "votebar" }, el("i", { style: { width: (max2 ? tally2[c] / max2 * 100 : 0) + "%" } })), chainSummary(c), el("button", { class: "btn blue", onclick: () => openChain(c) }, "👀 View chain"))));
+      if (win2.length && !confettiDone && S.votesReady) { confettiDone = true; confetti(); }
+    }
+    const host = rr.host === S.uid;
+    btns.replaceChildren(host ? el("button", { class: "btn green big", onclick: playAgain }, "🔁 Play again") : el("div", { class: "note" }, `Waiting for ${nameOf(rr.host)} to start another round…`), el("button", { class: "btn ghost", onclick: leaveRoom }, "Leave"));
+  }
+  S.live = live; live();
+}
+function confetti() {
+  const cols = ["#ffc83d", "#ff4d8d", "#00c2ff", "#7c4dff", "#22c55e"];
+  for (let i = 0; i < 70; i++) {
+    const p = el("i", { class: "conf", style: { left: Math.random() * 100 + "vw", background: pick(cols), animationDelay: Math.random() * 1.2 + "s", animationDuration: 2.5 + Math.random() * 2 + "s" } });
+    document.body.append(p); setTimeout(() => p.remove(), 6500);
+  }
+}
+
+/* ====================================================================
+   7) BOOT
+   ==================================================================== */
+function boot() {
+  try {
+    S.uid = localStorage.getItem("dp_uid") || "";
+    if (!S.uid) {
+      S.uid = "u" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+      localStorage.setItem("dp_uid", S.uid);
+    }
+    S.name = localStorage.getItem("dp_name") || "";
+    const c = parseInt(localStorage.getItem("dp_color"), 10);
+    S.color = Number.isFinite(c) ? clamp(c, 0, 15) : rnd(16);
+  } catch (e) {
+    if (!S.uid) S.uid = "u" + Math.random().toString(36).slice(2, 10);
+  }
+  const urlCode = (new URLSearchParams(location.search).get("room") || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  let saved = "";
+  try { saved = localStorage.getItem("dp_room") || ""; } catch (e) {}
+  const tryCode = urlCode || saved;
+  if (tryCode && S.name) {
+    enterRoom(tryCode, false).catch(() => {
+      try { localStorage.removeItem("dp_room"); } catch (e) {}
+      S.prefill = urlCode;
+      mount("home", buildHome);
+    });
+    return;
+  }
+  if (tryCode) S.prefill = tryCode;
+  mount("home", buildHome);
+}
+boot();
+setInterval(() => { if (sock && sock.readyState === 1) send({ t: "ping" }); }, 25000);
+</script>
+</body>
+</html>

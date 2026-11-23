@@ -19,11 +19,14 @@
     "bindings": [
       { "name": "ROOMS", "class_name": "Room" },
       // PolyTrack's invites: hosts and joiners meet here to swap WebRTC offers.
-      { "name": "SIGNALS", "class_name": "Signal" }
+      { "name": "SIGNALS", "class_name": "Signal" },
+      // Draw & Pass keeps each party room here and pushes every move to the players.
+      { "name": "DRAWS", "class_name": "Draw" }
     ]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["Room"] },
-    { "tag": "v2", "new_sqlite_classes": ["Signal"] }
+    { "tag": "v2", "new_sqlite_classes": ["Signal"] },
+    { "tag": "v3", "new_sqlite_classes": ["Draw"] }
   ]
 }

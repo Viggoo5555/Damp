@@ -502,6 +502,427 @@ export default {
       if (!env.ROOMS) return new Response('Rooms are not set up', { status: 503 });
       return env.ROOMS.get(env.ROOMS.idFromName(room[1])).fetch(request);
     }
+    const draw = url.pathname.match(/^\/api\/draw\/([A-Za-z0-9]{4,8})$/);
+    if (draw && (request.headers.get('Upgrade') || '').toLowerCase() === 'websocket') {
+      if (!env.DRAWS) return new Response('Draw rooms are not set up', { status: 503 });
+      return env.DRAWS.get(env.DRAWS.idFromName(draw[1].toUpperCase())).fetch(request);
+    }
     return env.ASSETS.fetch(request);
   }
 };
+
+// ---------- Draw & Pass rooms ----------
+// A drawing-telephone party game: everyone writes a sentence, draws somebody
+// else's, guesses that drawing, and so on until every chain has come back
+// round. One Durable Object holds a whole room in memory and pushes every
+// change down the open sockets, so a move costs a single round trip. Nothing
+// polls a database, nothing is peer-to-peer, and nothing leaves this domain,
+// which keeps it as quick at school as it is at home.
+//
+//   wss://<site>/api/draw/<CODE>?uid=..&name=..&color=..&new=1   open a room
+//   wss://<site>/api/draw/<CODE>?uid=..&name=..&color=..         join one
+//
+// The object answers with {t:'state'} snapshots and small deltas
+// ({t:'entry'}, {t:'react'}) and takes {t:'start'|'submit'|'vote'|'rev'|
+// 'phase'|'again'|'set'|'leave'|'ping'} back from the players.
+
+const DRAW_FILLERS = [
+  'A cat riding a bicycle', 'A robot baking a cake', 'Two snails at the cinema',
+  'A dragon in a bathtub', 'A penguin on stilts', 'A wizard with a flat tyre',
+  'A frog in a tuxedo', 'A shark at the dentist', 'A bear on a scooter',
+  'A llama in pyjamas', 'An octopus juggling hats', 'A mouse with a suitcase'
+];
+
+const drawKind = step => (step === 0 ? 'prompt' : step % 2 === 1 ? 'draw' : 'guess');
+
+function drawChain(order, uid, step) {
+  const n = order.length, p = order.indexOf(uid);
+  if (p < 0 || !n) return null;
+  const off = step === 0 ? 0 : step - 1;
+  return order[(((p - off) % n) + n) % n];
+}
+
+function drawShuffle(list) {
+  const out = list.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const swap = out[i]; out[i] = out[j]; out[j] = swap;
+  }
+  return out;
+}
+
+function drawText(value, max) {
+  return String(value == null ? '' : value).replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+export class Draw {
+  constructor(state) {
+    this.state = state;
+    this.room = null;
+    this.entries = {};
+    this.votes = {};
+    this.reacts = [];
+    this.socks = new Map();
+    this.ready = state.blockConcurrencyWhile(async () => {
+      const saved = await state.storage.get('room');
+      if (!saved) return;
+      this.room = saved.room || null;
+      this.entries = saved.entries || {};
+      this.votes = saved.votes || {};
+      this.reacts = saved.reacts || [];
+      if (this.room && this.room.players) {
+        for (const player of Object.values(this.room.players)) player.online = false;
+      }
+    });
+  }
+
+  sockets() {
+    const all = [];
+    for (const set of this.socks.values()) for (const ws of set) all.push(ws);
+    return all;
+  }
+
+  save() {
+    this.state.storage.put('room', { room: this.room, entries: this.entries, votes: this.votes, reacts: this.reacts }).catch(() => { /* fine */ });
+  }
+
+  send(ws, message) {
+    try { ws.send(JSON.stringify(message)); } catch (error) { /* gone */ }
+  }
+
+  push(ws, withEntries) {
+    this.send(ws, {
+      t: 'state',
+      now: Date.now(),
+      room: this.room,
+      entries: withEntries ? this.entries : null,
+      votes: this.votes,
+      reactions: this.reacts
+    });
+  }
+
+  spread(withEntries) {
+    for (const ws of this.sockets()) this.push(ws, !!withEntries);
+  }
+
+  members() {
+    return Object.keys(this.room.players).filter(uid => this.room.players[uid].online);
+  }
+
+  durFor(step) {
+    const room = this.room;
+    const seconds = step === 0 ? room.promptTime : step % 2 === 1 ? room.drawTime : room.guessTime;
+    return Math.max(10, Math.min(180, Number(seconds) || 30));
+  }
+
+  async fetch(request) {
+    await this.ready;
+    if ((request.headers.get('Upgrade') || '').toLowerCase() !== 'websocket') {
+      return new Response('Expected a WebSocket', { status: 426 });
+    }
+    const url = new URL(request.url);
+    const uid = drawText(url.searchParams.get('uid'), 40) || 'anon';
+    const name = drawText(url.searchParams.get('name'), 20) || 'Player';
+    const color = Math.max(0, Math.min(15, parseInt(url.searchParams.get('color'), 10) || 0));
+    const create = url.searchParams.get('new') === '1';
+
+    const pair = new WebSocketPair();
+    const client = pair[0], server = pair[1];
+    server.accept();
+
+    const refuse = reason => {
+      this.send(server, { t: reason });
+      try { server.close(1000, reason); } catch (error) { /* gone */ }
+      return new Response(null, { status: 101, webSocket: client });
+    };
+
+    if (!this.room) {
+      if (!create) return refuse('missing');
+      this.room = {
+        host: uid, phase: 'lobby', round: 0, step: -1, stepEndsAt: 0, n: 0,
+        order: [], next: {}, players: {}, promptTime: 30, drawTime: 60, guessTime: 30,
+        customPrompts: true, revChain: 0, revStep: 0, createdAt: Date.now()
+      };
+      this.entries = {}; this.votes = {}; this.reacts = [];
+    } else if (create && this.room.host !== uid && !this.room.players[uid]) {
+      return refuse('taken');
+    }
+
+    let player = this.room.players[uid];
+    if (!player) {
+      if (this.room.phase !== 'lobby') return refuse('started');
+      if (Object.keys(this.room.players).length >= 16) return refuse('full');
+      player = this.room.players[uid] = { done: -1 };
+    }
+    player.name = name;
+    player.color = color;
+    player.online = true;
+    player.seen = Date.now();
+
+    let set = this.socks.get(uid);
+    if (!set) this.socks.set(uid, set = new Set());
+    set.add(server);
+
+    server.addEventListener('message', event => {
+      let message = null;
+      try { message = JSON.parse(event.data); } catch (error) { return; }
+      if (message && typeof message === 'object') this.onMessage(uid, server, message);
+    });
+    const gone = () => {
+      const mine = this.socks.get(uid);
+      if (mine) { mine.delete(server); if (!mine.size) this.socks.delete(uid); }
+      if (!this.socks.has(uid)) {
+        const self = this.room && this.room.players[uid];
+        if (self) { self.online = false; self.seen = Date.now(); }
+      }
+      this.after();
+    };
+    server.addEventListener('close', gone);
+    server.addEventListener('error', gone);
+
+    // Everyone gets a fresh snapshot; the socket that just arrived also gets the
+    // drawings so far, which is what a late spectator or a reconnect needs.
+    for (const ws of this.sockets()) this.push(ws, ws === server);
+    this.save();
+    this.arm();
+    return new Response(null, { status: 101, webSocket: client });
+  }
+
+  onMessage(uid, ws, message) {
+    const room = this.room;
+    if (!room) return;
+    if (message.t === 'ping') { this.send(ws, { t: 'pong', now: Date.now() }); return; }
+    const player = room.players[uid];
+    if (!player) return;
+    player.seen = Date.now();
+
+    switch (message.t) {
+      case 'set': {
+        if (room.host !== uid) return;
+        const patch = message.patch || {};
+        if (typeof patch.customPrompts === 'boolean') room.customPrompts = patch.customPrompts;
+        for (const key of ['promptTime', 'drawTime', 'guessTime']) {
+          const value = Number(patch[key]);
+          if (Number.isFinite(value)) room[key] = Math.max(10, Math.min(180, Math.round(value)));
+        }
+        this.after();
+        return;
+      }
+      case 'start': this.start(uid); return;
+      case 'submit': this.submit(uid, message); return;
+      case 'vote': this.castVote(uid, message.chain); return;
+      case 'react': this.react(uid, message.emoji); return;
+      case 'rev': {
+        if (room.host !== uid) return;
+        room.revChain = Math.max(0, Math.min(room.n - 1, Math.round(Number(message.chain) || 0)));
+        room.revStep = Math.max(0, Math.min(room.n, Math.round(Number(message.step) || 0)));
+        this.after();
+        return;
+      }
+      case 'phase': {
+        if (room.host !== uid) return;
+        if (message.phase === 'vote') this.toVote();
+        else if (message.phase === 'results') this.toResults();
+        return;
+      }
+      case 'again': if (room.host === uid) this.reset(); return;
+      case 'leave': {
+        if (room.phase === 'lobby' && room.players[uid]) {
+          delete room.players[uid];
+          if (room.host === uid) {
+            const rest = Object.keys(room.players);
+            if (rest.length) room.host = rest[0];
+          }
+        }
+        this.after();
+        return;
+      }
+      default: return;
+    }
+  }
+
+  start(uid) {
+    const room = this.room;
+    if (!room || room.host !== uid) return;
+    const online = this.members();
+    if (online.length < 3) return;
+    const order = drawShuffle(online).slice(0, 16);
+    const next = {};
+    order.forEach((who, i) => { next[who] = order[(i + 1) % order.length]; });
+    room.phase = 'play';
+    room.round = (room.round || 0) + 1;
+    room.step = 0;
+    room.n = order.length;
+    room.order = order;
+    room.next = next;
+    room.revChain = 0;
+    room.revStep = 0;
+    room.stepEndsAt = Date.now() + this.durFor(0) * 1000 + 2000;
+    for (const key of Object.keys(room.players)) room.players[key].done = -1;
+    this.entries = {};
+    this.votes = {};
+    this.reacts = [];
+    this.after(true);
+  }
+
+  submit(uid, message) {
+    const room = this.room;
+    if (!room || room.phase !== 'play') return;
+    const step = room.step, kind = drawKind(step);
+    if (message.kind !== kind) return;
+    const player = room.players[uid];
+    if (!player || player.done >= step) return;
+    const chain = drawChain(room.order, uid, step);
+    if (!chain) return;
+    const key = chain + '|' + step;
+    if (this.entries[key]) return;
+    const entry = { round: room.round, chain: chain, step: step, kind: kind, author: uid, viewer: step === 0 ? uid : room.next[uid] };
+    if (kind === 'draw') {
+      const strokes = typeof message.strokes === 'string' ? message.strokes : '';
+      if (strokes.length > 400000) return;
+      entry.strokes = strokes || '[]';
+    } else {
+      entry.text = drawText(message.text, 120) || (kind === 'prompt' ? 'Something silly' : '???');
+    }
+    this.entries[key] = entry;
+    player.done = step;
+    for (const ws of this.sockets()) this.send(ws, { t: 'entry', key: key, entry: entry });
+    this.after();
+  }
+
+  castVote(uid, chain) {
+    const room = this.room;
+    if (!room || room.phase !== 'vote') return;
+    if (!room.order.includes(chain)) return;
+    this.votes[uid] = chain;
+    this.after();
+  }
+
+  react(uid, emoji) {
+    const room = this.room;
+    if (!room) return;
+    const glyph = drawText(emoji, 8);
+    if (!glyph) return;
+    const reaction = { from: uid, chain: room.order[room.revChain] || null, step: room.revStep, emoji: glyph, at: Date.now() };
+    this.reacts.push(reaction);
+    if (this.reacts.length > 400) this.reacts = this.reacts.slice(-400);
+    for (const ws of this.sockets()) this.send(ws, { t: 'react', reaction: reaction });
+    this.after();
+  }
+
+  advance() {
+    const room = this.room;
+    if (!room) return;
+    const step = room.step;
+    for (const who of room.order) {
+      const player = room.players[who];
+      const chain = drawChain(room.order, who, step);
+      if (!chain) continue;
+      const key = chain + '|' + step;
+      if (this.entries[key]) { if (player) player.done = step; continue; }
+      const kind = drawKind(step);
+      const entry = { round: room.round, chain: chain, step: step, kind: kind, author: who, viewer: step === 0 ? who : room.next[who], auto: true };
+      if (kind === 'draw') entry.strokes = '[]';
+      else if (kind === 'prompt') entry.text = DRAW_FILLERS[Math.floor(Math.random() * DRAW_FILLERS.length)];
+      else entry.text = '…';
+      this.entries[key] = entry;
+      for (const ws of this.sockets()) this.send(ws, { t: 'entry', key: key, entry: entry });
+      if (player) player.done = step;
+    }
+    if (step >= room.n) {
+      room.phase = 'reveal';
+      room.revChain = 0;
+      room.revStep = 0;
+      room.stepEndsAt = 0;
+    } else {
+      room.step = step + 1;
+      room.stepEndsAt = Date.now() + this.durFor(room.step) * 1000 + 2000;
+    }
+    this.after();
+  }
+
+  toVote() {
+    const room = this.room;
+    if (!room) return;
+    room.phase = 'vote';
+    room.stepEndsAt = Date.now() + 75000;
+    this.votes = {};
+    this.after();
+  }
+
+  toResults() {
+    const room = this.room;
+    if (!room) return;
+    room.phase = 'results';
+    room.stepEndsAt = 0;
+    this.after();
+  }
+
+  reset() {
+    const room = this.room;
+    if (!room) return;
+    room.phase = 'lobby';
+    room.step = -1;
+    room.stepEndsAt = 0;
+    room.n = 0;
+    room.order = [];
+    room.next = {};
+    room.revChain = 0;
+    room.revStep = 0;
+    for (const key of Object.keys(room.players)) room.players[key].done = -1;
+    this.entries = {};
+    this.votes = {};
+    this.reacts = [];
+    this.after(true);
+  }
+
+  // Every change ends up here: finish the step when everyone online is done,
+  // then tell the room and re-arm the clock.
+  after(withEntries) {
+    const room = this.room;
+    if (!room) return;
+    if (room.phase === 'play') {
+      const waiting = room.order.filter(who => room.players[who] && room.players[who].online);
+      if (waiting.length && waiting.every(who => (room.players[who].done ?? -1) >= room.step)) { this.advance(); return; }
+    }
+    if (room.phase === 'vote') {
+      const waiting = room.order.filter(who => room.players[who] && room.players[who].online);
+      if (waiting.length && waiting.every(who => this.votes[who])) { this.toResults(); return; }
+    }
+    this.save();
+    this.spread(!!withEntries);
+    this.arm();
+  }
+
+  arm() {
+    const room = this.room;
+    if (!room) return;
+    let at = 0;
+    if (room.phase === 'play') at = room.stepEndsAt + 2200;
+    else if (room.phase === 'vote') at = room.stepEndsAt + 500;
+    else at = Date.now() + 25000;
+    this.state.storage.setAlarm(Math.max(Date.now() + 500, at)).catch(() => { /* fine */ });
+  }
+
+  async alarm() {
+    await this.ready;
+    const room = this.room;
+    if (!room) return;
+    const now = Date.now();
+    const host = room.players[room.host];
+    if (!host || (!host.online && now - (host.seen || 0) > 30000)) {
+      const replacement = this.members()[0];
+      if (replacement) room.host = replacement;
+    }
+    if (room.phase === 'lobby') {
+      for (const [uid, player] of Object.entries(room.players)) {
+        if (uid === room.host) continue;
+        if (!player.online && now - (player.seen || 0) > 60000) delete room.players[uid];
+      }
+    }
+    if (room.phase === 'play' && now >= room.stepEndsAt + 1800) this.advance();
+    else if (room.phase === 'vote' && now >= room.stepEndsAt) this.toResults();
+    else this.after();
+    this.arm();
+  }
+}

@@ -60,13 +60,14 @@
       }
 
       ws.onmessage = function (event) {
-        var message = null;
-        try { message = JSON.parse(event.data); } catch (error) { return; }
         if (paired) {
-          // Everything after the handshake is the other player's game data.
+          // Everything after the handshake is the other player's game data, and
+          // it is passed along exactly as it arrived.
           if (link && link.onmessage) link.onmessage({ data: event.data });
           return;
         }
+        var message = null;
+        try { message = JSON.parse(event.data); } catch (error) { return; }
         if (!message || typeof message !== 'object') return;
         if (message.t === 'peer') {
           paired = true;

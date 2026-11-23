@@ -4,11 +4,10 @@
    One document per room (fl_rooms/CODE) holds the whole game: who is in,
    the prompt, everyone's answers, the scores and the gamble. Every device
    listens to that document and draws what it says. The host is the only
-   one who moves the room forward (new prompt, reveal, next round); each
-   player writes only their own answer and their own gamble choice.
+   one who moves the room forward; each player writes only their own
+   answer and their own gamble choice.
 
-   With no Firebase (or no login) the game still works on one phone, which
-   is what the game opens with.
+   With no Firebase (or no login) the game still works on one phone.
    ====================================================================== */
 (function () {
   "use strict";
@@ -33,7 +32,7 @@
   // ---------------------------------------------------------------- helpers
   function errText(e) {
     const code = String((e && (e.code || e.message)) || "ukendt fejl");
-    if (code.indexOf("permission-denied") >= 0) return "Firebase afviste det (permission-denied). Reglerne for fl_rooms er ikke publiceret endnu.";
+    if (code.indexOf("permission-denied") >= 0) return "Firebase afviste det. Reglerne for fl_rooms er ikke publiceret endnu.";
     if (code.indexOf("unavailable") >= 0) return "Ingen forbindelse til Firebase lige nu.";
     if (code.indexOf("not-found") >= 0) return "Der findes ingen kamp med den kode.";
     return code;
@@ -57,10 +56,14 @@
     return storedName();
   }
 
-  function modes(active) {
+  function modeSwitch() {
     return '<div class="modes">' +
-      '<button class="sec' + (active === "local" ? " on" : "") + '" onclick="setup()">📱 Én telefon</button>' +
-      '<button class="sec' + (active === "online" ? " on" : "") + '" onclick="flt.setup()">🌐 Hver sin telefon</button>' +
+      '<button class="mode" onclick="window.setup()"><span class="mode-icon">' + IC.phone + "</span>" +
+        '<span class="mode-text"><b>Én telefon</b><small>I deles om skærmen og giver den videre</small></span>' +
+        '<span class="mode-go">›</span></button>' +
+      '<div class="mode mode--on"><span class="mode-icon">' + IC.net + "</span>" +
+        '<span class="mode-text"><b>Hver sin telefon</b><small>Alle deltager fra egen enhed med en kode</small></span>' +
+        '<span class="mode-check">' + IC.check + "</span></div>" +
       "</div>";
   }
 
@@ -82,8 +85,8 @@
     return wanted + " " + Math.floor(Math.random() * 90 + 10);
   }
 
-  // The one-phone game keeps its scores and players in S; the online screens
-  // reuse its board() and orb() by filling that same shape in.
+  // The one-phone game keeps players and scores in S; the online screens reuse
+  // its board() and orb() art by filling that same shape in.
   function syncState(room) {
     const people = roster(room);
     S.players = people.map(function (p) { return p.name; });
@@ -107,7 +110,7 @@
       const remaining = Math.max(0, seconds - (Date.now() - t0) / 1000);
       bar.style.width = (remaining / seconds * 100) + "%";
       if (left) left.textContent = String(Math.ceil(remaining));
-      if (wrap && remaining <= 5) wrap.classList.add("lo");
+      if (wrap && remaining <= 5) wrap.classList.add("low");
       if (remaining <= 0) {
         clearTimer();
         const mine = (net.room && net.room.answers) ? net.room.answers[net.uid] : null;
@@ -116,6 +119,22 @@
     };
     tick();
     net.timer = setInterval(tick, 200);
+  }
+
+  function peopleRows(room, stateFor) {
+    return roster(room).map(function (p, i) {
+      const state = stateFor ? stateFor(p) : "";
+      if (state === "me") {
+        return '<div class="seat"><span class="seat-dot" style="--dot:' + pcol(p.name) + '"></span>' +
+          '<span class="seat-name">' + esc(p.name) + "</span>" +
+          '<span class="pill pill--gold">dig</span></div>';
+      }
+      const mark = state === "done" ? '<span class="seat-mark ok">' + IC.check + "</span>"
+        : p.uid === room.host ? '<span class="seat-mark">vært</span>' : "";
+      return '<div class="seat' + (state === "done" ? " seat--done" : "") + '">' +
+        '<span class="seat-dot" style="--dot:' + pcol(p.name) + '"></span>' +
+        '<span class="seat-name">' + esc(p.name) + "</span>" + mark + "</div>";
+    }).join("");
   }
 
   // ------------------------------------------------------------------ firebase
@@ -158,57 +177,79 @@
   // --------------------------------------------------------------- the screens
   function drawStart() {
     clearTimer();
-    let inner = "";
+    let side = "";
     if (net.err) {
-      inner = '<div class="card"><p class="bad">' + esc(net.err) + "</p>" +
-        '<button class="sec" onclick="flt.setup()">Prøv igen</button></div>';
+      side = '<div class="panel"><div class="panel-head"><h2>Det gik ikke</h2></div>' +
+        '<p class="lead">' + esc(net.err) + "</p>" +
+        '<div class="row"><button class="ghost" onclick="flt.setup()">Prøv igen</button></div></div>';
     } else if (net.loading || !net.fb) {
-      inner = '<div class="card"><p class="mut">Indlæser Firebase…</p></div>';
+      side = '<div class="panel"><p class="hint">Forbinder til Firebase…</p></div>';
     } else if (!net.uid) {
-      inner = '<div class="card"><h2>Log ind først</h2>' +
-        '<p class="note">Spil over nettet bruger samme konto som resten af Damp. Log ind med knappen øverst på siden, og kom så tilbage hertil.</p>' +
-        '<a href="/" target="_top"><button class="sec">Åbn Damp og log ind</button></a>' +
-        '<button onclick="flt.recheck()">Jeg er logget ind nu</button></div>';
+      side = '<div class="panel"><div class="panel-head"><h2>Log ind først</h2></div>' +
+        '<p class="lead">Spil over nettet bruger samme konto som resten af Damp. Log ind med knappen øverst på siden, og kom så tilbage hertil.</p>' +
+        '<div class="row"><a class="button-link" href="/" target="_top">Åbn Damp og log ind</a>' +
+        '<button class="ghost" onclick="flt.recheck()">Jeg er logget ind nu</button></div></div>';
     } else {
-      const guess = storedName();
-      inner = '<div class="card"><b>Dit navn</b>' +
-        '<input id="nick" maxlength="14" autocomplete="nickname" placeholder="Navn" value="' + esc(guess) + '">' +
-        '<button onclick="flt.create()">Opret en kamp</button></div>' +
-        '<div class="card"><b>Har du en kode?</b>' +
-        '<input id="joincode" maxlength="4" autocomplete="off" placeholder="FX AB3K" value="' + esc(net.pendingCode || "") + '" style="text-transform:uppercase;letter-spacing:.2em">' +
-        '<button onclick="flt.join()">Deltag</button></div>' +
-        '<div class="how" onclick="how()">▸ SÅDAN SPILLER I</div>' +
-        '<div class="card" id="hw" hidden>Alle svarer på samme spørgsmål på hver sin telefon inden for tiden. Hver gang en anden skriver det samme som dig, får du et point. Vinderne af en runde kan gamble rundens point eller alle deres point – gambler flere, tager én hele puljen. ⚡ Speedrunder har 3 hurtige spørgsmål med halv tid.</div>';
+      side = '<div class="panel"><div class="panel-head"><h2>Dit navn</h2></div>' +
+        '<label class="field"><span>Vises til de andre</span>' +
+        '<input id="nick" maxlength="14" autocomplete="nickname" placeholder="Navn" value="' + esc(storedName()) + '"></label>' +
+        '<div class="row"><button class="primary" onclick="flt.create()">Opret kamp</button></div></div>' +
+        '<div class="panel"><div class="panel-head"><h2>Har du en kode?</h2></div>' +
+        '<label class="field"><span>Fire tegn fra værten</span>' +
+        '<input id="joincode" class="code-input" maxlength="4" autocomplete="off" placeholder="AB3K" value="' + esc(net.pendingCode || "") + '"></label>' +
+        '<div class="row"><button class="ghost" onclick="flt.join()">Deltag</button></div></div>';
     }
-    app.innerHTML = '<div class="hero"><div class="logo">FLERTAL</div><div class="sub">FØLG FLOKKEN</div></div>' +
-      modes("online") + inner;
+
+    app.innerHTML = topbar(pill("Hver sin telefon", "gold")) +
+      '<section class="stage stage--setup">' +
+        '<div class="col">' +
+          '<div class="hero"><h1 class="hero-title">Alle svarer fra deres egen enhed</h1>' +
+          '<p class="lead">Værten opretter en kamp og får en kode på fire tegn. De andre skriver koden ind hos sig selv — så svarer alle samtidig, og resultatet lander på alle skærme på én gang.</p></div>' +
+          '<div class="panel"><div class="panel-head"><h2>Spil på</h2></div>' + modeSwitch() + "</div>" +
+          '<button class="link" onclick="how()">Sådan tælles point</button>' +
+          '<div class="panel panel--quiet" id="hw" hidden>' +
+            "<p>Hvert svar giver et point for hver anden spiller, der skrev det samme. Gruppen med flest stemmer får point til alle sine medlemmer.</p>" +
+            "<p>Vinderne af en runde må gamble: rundens point eller hele deres saldo går i en fælles pulje, og én trækkes som vinder.</p>" +
+          "</div>" +
+        "</div>" +
+        '<aside class="col col--side">' + side + "</aside>" +
+      "</section>";
   }
 
   function drawLobby(room) {
     const mine = net.uid;
     const host = room.host === mine;
     const people = roster(room);
-    const rows = people.map(function (p) {
-      return '<div class="who-row"><span>' + esc(p.name) +
-        (p.uid === mine ? '<span class="pill">DIG</span>' : "") + "</span>" +
-        '<span class="mut">' + (p.uid === room.host ? "vært" : "") + "</span></div>";
-    }).join("");
-    app.innerHTML = modes("online") +
-      '<div class="card"><h2>Rumkode</h2><div class="code" id="roomcode">' + esc(room.code) + "</div>" +
-      '<p class="note" style="text-align:center">De andre vælger “🌐 Hver sin telefon” og skriver koden.</p>' +
-      '<button class="sec" onclick="flt.copy()">Kopiér invitationslink</button>' +
-      '<p class="mut" id="copynote"></p></div>' +
-      '<div class="card"><b>Spillere (' + people.length + "/" + MAX + ")</b>" + rows + "</div>" +
-      (host
-        ? '<div class="card"><b>Antal runder</b><input id="rn" type="number" min="1" max="15" value="' + (room.rounds || 5) + '">' +
-          '<p><b>⚡ Speedrunder</b> <span class="mut">(3 hurtige spørgsmål, halv tid)</span></p>' +
-          '<input id="sr" type="number" min="0" max="10" value="' + (room.speed || 0) + '">' +
-          (people.length < 2
-            ? '<p class="note">I skal være mindst 2 spillere.</p><button disabled>Start spillet</button>'
-            : '<button onclick="flt.start()">Start spillet</button>') +
-          "</div>"
-        : '<div class="card"><p class="mut">Venter på at værten starter spillet…</p></div>') +
-      '<button class="sec" onclick="flt.leave()">Forlad kampen</button>';
+    app.innerHTML = topbar(pill("Kode " + room.code, "gold")) +
+      '<section class="stage stage--setup">' +
+        '<div class="col">' +
+          '<div class="hero"><h1 class="hero-title">Alle er med, når værten starter</h1>' +
+          '<p class="lead">Del koden med dem, der skal spille. De vælger “Hver sin telefon”, skriver koden og dukker op her med det samme.</p></div>' +
+          '<div class="panel"><div class="panel-head"><h2>Spillere</h2>' +
+          '<span class="panel-note">' + people.length + " af " + MAX + "</span></div>" +
+          '<div class="seats">' + peopleRows(room, function (p) { return p.uid === mine ? "me" : ""; }) + "</div></div>" +
+        "</div>" +
+        '<aside class="col col--side">' +
+          '<div class="panel"><div class="panel-head"><h2>Rumkode</h2></div>' +
+            '<p class="roomcode">' + esc(room.code) + "</p>" +
+            '<button class="ghost" onclick="flt.copy()">Kopiér invitationslink</button>' +
+            '<p class="hint" id="copynote">De andre åbner linket eller skriver koden.</p>' +
+          "</div>" +
+          (host
+            ? '<div class="panel"><div class="panel-head"><h2>Runder</h2></div>' +
+              '<div class="fields">' +
+                '<label class="field"><span>Runder</span><input id="rn" type="number" min="1" max="15" value="' + (room.rounds || 5) + '" inputmode="numeric"></label>' +
+                '<label class="field"><span>Speedrunder</span><input id="sr" type="number" min="0" max="10" value="' + (room.speed || 0) + '" inputmode="numeric"></label>' +
+              "</div>" +
+              '<p class="hint">En speedrunde samler tre hurtige spørgsmål med halv tid.</p>' +
+              (people.length < 2
+                ? '<p class="hint">I skal være mindst to spillere.</p><button class="primary" disabled>Start spillet</button>'
+                : '<div class="row"><button class="primary" onclick="flt.start()">Start spillet</button></div>') +
+              "</div>"
+            : '<div class="panel panel--quiet"><p class="hint">Værten vælger antal runder og starter spillet.</p></div>') +
+          '<button class="link" onclick="flt.leave()">Forlad kampen</button>' +
+        "</aside>" +
+      "</section>";
   }
 
   function drawAsk(room) {
@@ -218,25 +259,37 @@
     const mine = (room.answers || {})[net.uid];
     const total = roster(room).length;
     const answered = Object.keys(room.answers || {}).length;
-    const head = '<p class="mut">' + (speed ? "⚡ Speedrunde · spørgsmål " + (room.qi + 1) + "/3 · " : "") +
-      "Runde " + room.round + " af " + room.rounds + "</p>";
-    let body;
-    if (mine) {
-      body = '<div class="card"><h2><span class="ck">✔</span> Svar låst</h2>' +
-        '<p class="mut">' + answered + " af " + total + " har svaret. Svarene vises, når alle er færdige.</p>" +
-        (room.host === net.uid
-          ? '<button onclick="flt.reveal()">Vis resultatet nu</button>'
-          : '<p class="mut">Venter på de andre…</p>') +
+    const head = '<p class="roundline">Runde ' + room.round + " af " + room.rounds +
+      (speed ? '<span class="sep">·</span>Speedrunde, spørgsmål ' + (room.qi + 1) + " af 3" : "") + "</p>";
+
+    const main = mine
+      ? '<div class="handoff">' +
+          '<span class="handoff-icon ok">' + IC.check + "</span>" +
+          "<h1>Svar låst</h1>" +
+          '<p class="lead">' + answered + " af " + total + " har svaret. Svarene vises, når alle er færdige.</p>" +
+          (room.host === net.uid
+            ? '<button class="ghost" onclick="flt.reveal()">Vis resultatet nu</button>'
+            : '<p class="hint">Venter på de andre…</p>') +
+        "</div>"
+      : '<div class="panel">' +
+          '<div class="timer" id="tm"><i id="tb"></i><b id="ts">' + Math.ceil(seconds) + "</b><span>sekunder</span></div>" +
+          '<input id="a" class="answer-input" autocomplete="off" placeholder="Dit svar" aria-label="Dit svar" ' +
+          'onkeydown="if(event.key===\'Enter\')flt.answer()">' +
+          '<div class="row"><button class="primary" onclick="flt.answer()">Lås svar</button>' +
+          '<span class="hint">Svar som flokken, ikke som dig.</span></div>' +
         "</div>";
-    } else {
-      body = '<div class="card"><h2>Dit svar</h2>' +
-        '<div class="tm" id="tm"><i id="tb"></i><b id="ts">' + Math.ceil(seconds) + "</b></div>" +
-        '<p class="mut">Skriv det svar, du tror flest andre skriver.</p>' +
-        '<input id="a" autocomplete="off" placeholder="Dit svar" onkeydown="if(event.key===\'Enter\')flt.answer()">' +
-        '<button onclick="flt.answer()">Lås svar</button></div>';
-    }
-    app.innerHTML = modes("online") + head + '<div class="q">' + esc(prompt) + "</div>" + body +
-      '<div class="card"><b>Stilling</b>' + board() + "</div>";
+
+    app.innerHTML = topbar(pill("Runde " + room.round + " af " + room.rounds, "quiet")) +
+      '<section class="stage">' +
+        '<div class="col">' + head + '<h1 class="prompt">' + esc(prompt) + "</h1>" + main + "</div>" +
+        '<aside class="col col--side">' +
+          '<div class="panel panel--quiet"><div class="panel-head"><h2>Hvem har svaret</h2>' +
+          '<span class="panel-note">' + answered + " af " + total + "</span></div>" +
+          '<div class="seats">' + peopleRows(room, function (p) { return (room.answers || {})[p.uid] ? "done" : ""; }) + "</div></div>" +
+          '<div class="panel"><div class="panel-head"><h2>Stilling</h2></div>' + board() + "</div>" +
+        "</aside>" +
+      "</section>";
+
     if (!mine) {
       const input = document.getElementById("a");
       if (input) input.focus();
@@ -244,57 +297,48 @@
     } else {
       clearTimer();
     }
-    // The host presses the button, but it also moves on by itself when everyone is in.
     if (room.host === net.uid && total >= 2 && answered >= total) {
       const key = room.round + "-" + room.qi;
       if (net.autoKey !== key) { net.autoKey = key; flt.reveal(); }
     }
   }
 
-  function questionCard(entry) {
-    const top = entry.list && entry.list.length ? entry.list[0].m.length : 0;
-    return '<div class="card"><div class="q">' + esc(entry.q) + "</div>" +
-      (entry.list || []).map(function (g) {
-        return '<div class="grp ' + (g.m.length === top && top > 1 ? "top" : "") + '">' +
-          "<div><b>" + esc(g.t) + '</b><span class="tg">' + tier(g.m.length) + "</span>" +
-          '<div class="who">' + g.m.map(esc).join(", ") + "</div></div>" +
-          '<div class="pts">+' + (g.m.length - 1) + "</div></div>";
-      }).join("") +
-      (top <= 1 ? '<p class="mut">Ingen ramte det samme – ingen point denne gang.</p>' : "") +
-      "</div>";
-  }
-
   function gambleCard(room) {
     const res = room.lastResult || {};
     const winners = res.winners || [];
-    const gamblers = room.gamble || { picks: {} };
-    const picks = gamblers.picks || {};
+    const gamble = room.gamble || { picks: {} };
+    const picks = gamble.picks || {};
     const mine = winners.indexOf(net.uid) >= 0;
     const points = (res.points || {})[net.uid] || 0;
     const total = (room.scores || {})[net.uid] || 0;
     const names = winners.map(function (uid) { return nameOf(room, uid); }).join(", ");
 
-    if (gamblers.result) {
-      return '<div class="card"><b>🎲 Kassen er åbnet</b><p>' + esc(gamblers.result) + "</p></div>";
+    if (gamble.result) {
+      return '<div class="panel"><div class="panel-head"><h2>Kassen er åbnet</h2></div>' +
+        '<p class="lead">' + esc(gamble.result) + "</p></div>";
     }
 
-    let inner = '<div class="gb">Vinderne (' + esc(names) + ") kan gamble deres point</div>";
+    let body = '<p class="lead">Vinderne (<span class="accent">' + esc(names) + "</span>) kan satse deres point.</p>";
     if (mine && !picks[net.uid]) {
-      inner += '<p class="mut">Du har ' + total + " point i alt og fik " + points + " denne runde.</p>" +
-        (points < total ? '<button onclick="flt.gamblePick(\'round\')">Gamble rundens ' + points + "</button> " : "") +
-        '<button onclick="flt.gamblePick(\'all\')">Gamble alle ' + total + "</button> " +
-        '<button class="sec" onclick="flt.gamblePick(\'keep\')">Behold mine point</button>';
+      body += '<div class="stakes">' +
+        '<div class="stake"><small>I alt</small><b>' + total + "</b></div>" +
+        '<div class="stake"><small>Fra runden</small><b>' + points + "</b></div>" +
+        '<div class="stake"><small>Gamblere</small><b>' + winners.filter(function (uid) { return picks[uid] && picks[uid] !== "keep"; }).length + " af " + winners.length + "</b></div>" +
+        "</div>" +
+        '<div class="row">' +
+        (points < total ? '<button onclick="flt.gamblePick(\'round\')">Rundens ' + points + "</button>" : "") +
+        '<button onclick="flt.gamblePick(\'all\')">Alle ' + total + "</button>" +
+        '<button class="ghost" onclick="flt.gamblePick(\'keep\')">Behold point</button></div>';
     } else if (mine) {
-      inner += '<p class="mut">Dit valg er gemt.</p>';
+      body += '<p class="hint">Dit valg er gemt.</p>';
     }
-    const decided = winners.filter(function (uid) { return picks[uid] && picks[uid] !== "keep"; });
-    inner += '<p class="mut">' + decided.length + " af " + winners.length + " gambler.</p>";
     if (room.host === net.uid) {
-      inner += '<button onclick="flt.gambleRoll()"' + (decided.length ? "" : " disabled") + ">🎲 Træk vinderen</button>";
-    } else {
-      inner += '<p class="mut">Værten trækker vinderen.</p>';
+      const decided = winners.filter(function (uid) { return picks[uid] && picks[uid] !== "keep"; });
+      body += '<div class="row"><button class="primary primary--gold" onclick="flt.gambleRoll()"' +
+        (decided.length ? "" : " disabled") + '>Træk vinderen</button>' +
+        '<span class="hint">Alle valg skal ind, før kassen kan åbnes.</span></div>';
     }
-    return '<div class="card">' + inner + "</div>";
+    return '<div class="panel">' + body + "</div>";
   }
 
   function drawReveal(room) {
@@ -302,53 +346,65 @@
     const speed = !!res.sp;
     const cards = speed
       ? (room.spRes || []).map(questionCard).join("")
-      : (res.q !== undefined ? questionCard(res) : "");
+      : (res.q !== undefined ? '<h1 class="prompt">' + esc(res.q) + "</h1>" + questionCard({ q: "", list: res.list || [] }) : "");
     let controls = "";
     if (!speed) {
-      if (room.gamble) {
-        controls = gambleCard(room);
-      } else if ((res.winners || []).length) {
-        controls = '<div class="card"><p class="mut">Vinderne af runden: ' +
-          esc((res.winners || []).map(function (uid) { return nameOf(room, uid); }).join(", ")) + "</p>" +
+      if (room.gamble) controls = gambleCard(room);
+      else if ((res.winners || []).length) {
+        const names = (res.winners || []).map(function (uid) { return nameOf(room, uid); }).join(", ");
+        controls = '<div class="panel"><p class="lead">Rundens vindere: <span class="accent">' + esc(names) + "</span></p>" +
           (room.host === net.uid
-            ? '<button onclick="flt.gambleStart()">🎲 Gamble</button>'
-            : '<p class="mut">Værten åbner kassen.</p>') +
+            ? '<div class="row"><button class="primary primary--gold" onclick="flt.gambleStart()">Gamble point</button></div>'
+            : '<p class="hint">Værten åbner kassen.</p>') +
           "</div>";
       }
     }
     const last = room.round >= room.rounds;
-    const nextLabel = last ? "Se vinderen" : "Næste runde";
-    const waiting = room.host === net.uid
-      ? '<button class="sec" onclick="flt.next()">' + nextLabel + "</button>"
-      : '<p class="mut">Venter på værten…</p>';
-    app.innerHTML = modes("online") +
-      '<p class="mut">' + (speed ? "⚡ Speedrunde færdig · " : "") + "Runde " + room.round + " af " + room.rounds + "</p>" +
-      cards +
-      '<div class="card"><b>Stilling</b>' + board() + "</div>" +
-      controls + waiting;
+    const next = room.host === net.uid
+      ? '<button class="primary" onclick="flt.next()">' + (last ? "Se vinderen" : "Næste runde") + "</button>"
+      : '<p class="hint">Venter på værten…</p>';
+    app.innerHTML = topbar(pill("Runde " + room.round + " af " + room.rounds, "quiet")) +
+      '<section class="stage">' +
+        '<div class="col">' +
+          '<p class="roundline">' + (speed ? "Speedrunde færdig" : "Resultat") + "</p>" +
+          cards + '<div class="actions">' + next + "</div>" +
+        "</div>" +
+        '<aside class="col col--side">' +
+          '<div class="panel"><div class="panel-head"><h2>Stilling</h2></div>' + board() + "</div>" +
+          controls +
+        "</aside>" +
+      "</section>";
   }
 
   function drawEnd(room) {
-    const board$ = board();
-    const top = S.players.slice().sort(function (a, b) { return (S.scores[b] || 0) - (S.scores[a] || 0); });
-    const best = top.length ? S.scores[top[0]] || 0 : 0;
-    const winners = top.filter(function (n) { return (S.scores[n] || 0) === best; });
-    app.innerHTML = modes("online") +
-      '<div class="big"><span class="troph">🏆</span></div>' +
-      '<h1 style="text-align:center">' + winners.map(esc).join(" & ") + "</h1>" +
-      '<p style="text-align:center">' + (winners.length > 1 ? "deler sejren – I tænker lige ens!" : "tænker mest som flokken og vinder!") + "</p>" +
-      '<div class="card"><b>Slutstilling</b>' + board$ + "</div>" +
-      (room.host === net.uid
-        ? '<button onclick="flt.again()">Spil igen</button>'
-        : '<p class="mut" style="text-align:center">Værten kan starte en ny kamp.</p>') +
-      '<button class="sec" onclick="flt.leave()">Forlad kampen</button>';
+    const names = S.players.slice().sort(function (a, b) { return (S.scores[b] || 0) - (S.scores[a] || 0); });
+    const best = names.length ? S.scores[names[0]] || 0 : 0;
+    const winners = names.filter(function (n) { return (S.scores[n] || 0) === best; });
+    app.innerHTML = topbar(pill("Slut", "quiet")) +
+      '<section class="stage">' +
+        '<div class="col">' +
+          '<div class="panel winner">' +
+            '<span class="winner-icon">' + IC.trophy + "</span>" +
+            '<p class="roundline">' + room.rounds + " runder senere</p>" +
+            '<h1 class="winner-name">' + winners.map(esc).join(" & ") + "</h1>" +
+            '<p class="lead">' + (winners.length > 1 ? "deler sejren. I tænker lige ens." : "tænkte mest som flokken og vandt med " + best + " point.") + "</p>" +
+            '<div class="row">' +
+              (room.host === net.uid
+                ? '<button class="primary" onclick="flt.again()">Spil igen</button>'
+                : '<button class="ghost" onclick="flt.again()" disabled>Værten starter forfra</button>') +
+            "</div>" +
+          "</div>" +
+          '<button class="link" onclick="flt.leave()">Forlad kampen</button>' +
+        "</div>" +
+        '<aside class="col col--side"><div class="panel"><div class="panel-head"><h2>Slutstilling</h2></div>' + board() + "</div></aside>" +
+      "</section>";
     confetti();
   }
 
   function draw() {
     if (!net.code) { drawStart(); return; }
     if (!net.room) {
-      app.innerHTML = modes("online") + '<div class="card"><p class="mut">Forbinder til kampen…</p></div>';
+      app.innerHTML = topbar("") + '<section class="stage stage--narrow"><div class="col"><div class="panel"><p class="hint">Forbinder til kampen…</p></div></div></section>';
       return;
     }
     const room = net.room;
@@ -439,7 +495,7 @@
       if (!snap.exists()) { net.err = "Der findes ingen kamp med koden " + code + "."; drawStart(); return; }
       const room = snap.data();
       if (!(room.players || {})[net.uid]) {
-        if (roster(room).length >= MAX) { net.err = "Kampen er fuld (8 spillere)."; drawStart(); return; }
+        if (roster(room).length >= MAX) { net.err = "Kampen er fuld. Der er plads til otte."; drawStart(); return; }
         const patchDoc = {};
         patchDoc["players." + net.uid] = { name: freeName(room, name), at: Date.now() };
         await dbMod.updateDoc(ref, patchDoc);
@@ -499,7 +555,7 @@
     if ((room.answers || {})[net.uid]) return;
     const field = document.getElementById("a");
     const text = String(value !== undefined ? value : (field ? field.value : "")).trim().slice(0, 60);
-    if (!text) { if (field) field.classList.add("sh"); return; }
+    if (!text) { if (field) field.classList.add("shake"); return; }
     clearTimer();
     try {
       const patchDoc = {};
@@ -591,7 +647,7 @@
     const scores = Object.assign({}, room.scores || {});
 
     if (!gamblers.length) {
-      try { await patch({ gamble: { picks: picks, result: "Ingen valgte at gamble." }, updatedAt: Date.now() }); }
+      try { await patch({ gamble: { picks: picks, result: "Ingen valgte at gamble denne gang." }, updatedAt: Date.now() }); }
       catch (e) { net.err = errText(e); draw(); }
       return;
     }
@@ -609,13 +665,12 @@
       const uid = gamblers[0];
       const amount = stake[uid];
       const win = Math.random() < 0.5;
-      const roll = win ? 0 : 1;
       spin([
-        { t: nameOf(room, uid) + " dobler", p: 0.5, c: "#4b69ff" },
-        { t: "💥 Ingenting", p: 0.5, c: "#7a869a" }
-      ], roll, function () {
-        if (win) { scores[uid] = (scores[uid] || 0) + amount; finish(nameOf(room, uid) + " fordoblede sin indsats til " + (amount * 2) + "! 🎉"); }
-        else { scores[uid] = (scores[uid] || 0) - amount; finish(nameOf(room, uid) + " tabte sin indsats. 💀"); }
+        { t: nameOf(room, uid) + " dobler", p: 0.5, c: "#8b7bff" },
+        { t: "Ingenting", p: 0.5, c: "#5b5a80" }
+      ], win ? 0 : 1, function () {
+        if (win) { scores[uid] = (scores[uid] || 0) + amount; finish(nameOf(room, uid) + " fordoblede sin indsats til " + (amount * 2) + " point."); }
+        else { scores[uid] = (scores[uid] || 0) - amount; finish(nameOf(room, uid) + " tabte sin indsats."); }
       });
       return;
     }
@@ -627,11 +682,10 @@
       if (ticket <= stake[gamblers[i]]) { winner = gamblers[i]; break; }
       ticket -= stake[gamblers[i]];
     }
-    const index = gamblers.indexOf(winner);
-    spin(gamblers.map(function (uid) { return { t: nameOf(room, uid), p: stake[uid] / pool }; }), index, function () {
+    spin(gamblers.map(function (uid) { return { t: nameOf(room, uid), p: stake[uid] / pool }; }), gamblers.indexOf(winner), function () {
       gamblers.forEach(function (uid) { scores[uid] = (scores[uid] || 0) - stake[uid]; });
       scores[winner] = (scores[winner] || 0) + pool;
-      finish(nameOf(room, winner) + " vinder puljen på " + pool + " point! 🏆");
+      finish(nameOf(room, winner) + " vandt puljen på " + pool + " point.");
     });
   }
 
@@ -673,7 +727,6 @@
         const people = roster(room).filter(function (p) { return p.uid !== net.uid; });
         const patchDoc = {};
         patchDoc["players." + net.uid] = dbMod.deleteField();
-        // The room needs a host to keep moving: hand it to the first player left.
         if (room.host === net.uid && people.length) patchDoc.host = people[0].uid;
         await dbMod.updateDoc(dbMod.doc(net.db, COL, code), patchDoc);
       }
@@ -682,22 +735,22 @@
     net.code = null;
     net.room = null;
     try { history.replaceState(null, "", location.pathname); } catch (e) { /* fine */ }
-    setup();
+    onlineSetup();
   }
 
   function copy() {
     const link = location.origin + "/games/flertal/?room=" + net.code;
     const note = document.getElementById("copynote");
-    const done = function (okText) { if (note) note.textContent = okText; };
+    const done = function (text) { if (note) note.textContent = text; };
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(link).then(function () { done("Link kopieret."); }, function () { done(link); });
+      navigator.clipboard.writeText(link).then(function () { done("Linket er kopieret."); }, function () { done(link); });
     } else {
       done(link);
     }
   }
 
   async function recheck() {
-    if (!net.fb) { setup(); return; }
+    if (!net.fb) { onlineSetup(); return; }
     const authMod = net.fb.authMod;
     const user = authMod.getAuth(net.app).currentUser;
     net.uid = user ? user.uid : null;
@@ -711,7 +764,7 @@
     again: again, leave: leave, copy: copy, recheck: recheck
   };
 
-  // ---- the page starts on one phone, exactly as before -------------------
+  // The page opens on one phone, exactly as before.
   const params = new URLSearchParams(location.search);
   const invite = (params.get("room") || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
   if (invite) {

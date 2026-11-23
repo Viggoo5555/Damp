@@ -1,10 +1,10 @@
 /*
-  Damp board for PolyTrack.
+  Damp board for SkalsTrack.
 
-  PolyTrack keeps the best run of every track in localStorage and normally sends
+  SkalsTrack keeps the best run of every track in localStorage and normally sends
   it to Kodub's own server. That server only accepts the desktop app, so on Damp
   the board is Firestore instead: the signed-in account's best time for each
-  official track is copied to polytrack_tracks/{trackId}/scores/{uid}, and
+  official track is copied to skalstrack_tracks/{trackId}/scores/{uid}, and
   worker.js reads the same collection back into the game's leaderboard panel.
   Everything here fails softly: the game never depends on it.
 */
@@ -16,7 +16,7 @@
     projectId: "damp-2406a",
     appId: "1:940989851976:web:f8fd07c258afa71fd22b7d"
   };
-  var COLLECTION = "polytrack_tracks";
+  var COLLECTION = "skalstrack_tracks";
   var RECORD_PREFIX = "polytrack_v5_prod_record_";
   var MIN_MS = 5000;
   var MAX_MS = 3600000;
@@ -137,7 +137,7 @@
           saveSynced();
           say("Damp board: " + formatTime(frames) + " on " + TRACKS[trackId]);
         } catch (error) {
-          // Most likely the Firestore rules for polytrack_tracks are not published yet.
+          // Most likely the Firestore rules for skalstrack_tracks are not published yet.
           console.debug("Damp board:", error && error.message ? error.message : error);
         }
       }

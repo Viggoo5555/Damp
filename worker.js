@@ -144,7 +144,7 @@ async function polytrackLeaderboard(request, env) {
   const amount = Math.min(Math.max(Number(params.get('amount')) || 20, 1), 50);
   const skip = Math.min(Math.max(Number(params.get('skip')) || 0, 0), 200);
   const key = env.FIREBASE_API_KEY || DEFAULT_KEY;
-  const parent = 'polytrack_tracks/' + trackId;
+  const parent = 'skalstrack_tracks/' + trackId;
   const docsUrl = 'https://firestore.googleapis.com/v1/projects/' + PROJECT +
     '/databases/(default)/documents/' + parent + '/scores?pageSize=' + Math.min(skip + amount, 250) +
     '&orderBy=' + encodeURIComponent('frames asc') + '&key=' + key;

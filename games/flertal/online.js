@@ -385,7 +385,7 @@
         '<div class="col">' +
           '<div class="panel winner">' +
             '<span class="winner-icon">' + IC.trophy + "</span>" +
-            '<p class="roundline">' + room.rounds + " runder senere</p>" +
+            '<p class="roundline">' + room.rounds + (room.rounds === 1 ? " runde" : " runder") + " senere</p>" +
             '<h1 class="winner-name">' + winners.map(esc).join(" & ") + "</h1>" +
             '<p class="lead">' + (winners.length > 1 ? "deler sejren. I tænker lige ens." : "tænkte mest som flokken og vandt med " + best + " point.") + "</p>" +
             '<div class="row">' +

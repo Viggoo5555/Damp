@@ -46,7 +46,7 @@ const s1=document.querySelector(".shoot"),s2=s1.cloneNode();s2.style.top="30%";s
 function spin(it,wi,cb){const TW=126,N=66,L=56,rc=p=>p>=.4?"#4b69ff":p>=.2?"#8847ff":p>=.1?"#d32ce6":p>=.05?"#eb4b4b":"#ffd700";
 const pk=()=>{let r=Math.random(),i=0;while(i<it.length-1&&r>it[i].p){r-=it[i].p;i++}return it[i]};
 const tl=[];for(let i=0;i<N;i++)tl.push(i==L?it[wi]:pk());
-$.innerHTML=`<div class="card" style="text-align:center"><h2>🎲 Åbner kassen…</h2><div class="cs" id="cs"><div class="mk"></div><div class="st" id="st">${tl.map(x=>`<div class="tl" style="--rc:${x.c||rc(x.p)}"><b>${esc(x.t)}</b><small>${Math.round(x.p*100)}%</small></div>`).join("")}</div></div></div>`;
+$.innerHTML=`<div class="card" style="text-align:center"><h2>Åbner kassen…</h2><div class="cs" id="cs"><div class="mk"></div><div class="st" id="st">${tl.map(x=>`<div class="tl" style="--rc:${x.c||rc(x.p)}"><b>${esc(x.t)}</b><small>${Math.round(x.p*100)}%</small></div>`).join("")}</div></div></div>`;
 const cs=document.getElementById("cs"),st=document.getElementById("st"),cw=cs.clientWidth,tx=-(L*TW+TW/2-cw/2+(Math.random()-.5)*TW*.7);
 let ac=null;try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}
 const beep=(f,d,g)=>{if(!ac)return;const o=ac.createOscillator(),v=ac.createGain(),t=ac.currentTime;o.type="square";o.frequency.value=f;v.gain.setValueAtTime(g,t);v.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(v);v.connect(ac.destination);o.start();o.stop(t+d)};
@@ -246,11 +246,11 @@ function ask() {
   $.innerHTML = topbar("") +
     '<section class="stage">' +
       '<div class="col">' +
-        roundLine() +
-        '<h1 class="prompt">' + esc(S.prompt) + "</h1>" +
-        '<div class="panel">' +
+        '<div class="panel qpanel">' +
+          roundLine() +
+          '<h1 class="prompt">' + esc(S.prompt) + "</h1>" +
+          '<div class="timer" id="tm"><i id="tb"></i><b id="ts">' + Math.ceil(total) + "</b><span>sekunder tilbage</span></div>" +
           '<div class="turn"><span class="turn-name">' + esc(now) + "</span> svarer nu</div>" +
-          '<div class="timer" id="tm"><i id="tb"></i><b id="ts">' + Math.ceil(total) + "</b><span>sekunder</span></div>" +
           '<input id="a" class="answer-input" autocomplete="off" placeholder="Dit svar" aria-label="Dit svar" ' +
           'onkeydown="if(event.key===\'Enter\')submit()">' +
           '<div class="row"><button class="primary" onclick="submit()">Lås svar</button>' +
@@ -310,7 +310,7 @@ function questionCard(entry) {
           '<div class="answer-head"><span class="answer-text">' + esc(group.t) + "</span>" +
           '<span class="tier">' + tier(group.m.length) + "</span></div>" +
           '<div class="answer-who">' + group.m.map(esc).join(", ") + "</div>" +
-          '<div class="bar"><i style="width:' + (top ? group.m.length / top * 100 : 0) + '%"></i></div>' +
+          '<div class="bar"><i style="width:' + Math.round(group.m.length / S.players.length * 100) + '%"></i></div>' +
         "</div>" +
         '<div class="answer-pts">+' + (group.m.length - 1) + "</div>" +
       "</div>";
@@ -435,8 +435,8 @@ function gAsk() {
           "</div>" +
           '<p class="hint">Alt der satses, går i én pulje. Én gambler trækkes som vinder og tager hele puljen, og din chance følger din indsats. Gambler du alene, er det dobbelt eller intet.</p>' +
           '<div class="row row--wrap">' +
-            (round < total ? '<button onclick="gPick(1)">Rundens ' + round + "</button>" : "") +
-            '<button onclick="gPick(2)">Alle ' + total + "</button>" +
+            (round < total ? '<button onclick="gPick(1)">Sats ' + round + " (rundens)</button>" : "") +
+            '<button onclick="gPick(2)">Sats alt: ' + total + "</button>" +
             '<button class="ghost" onclick="gPick(0)">Behold point</button>' +
           "</div>" +
         "</div>" +
@@ -516,7 +516,7 @@ function finish() {
       '<div class="col">' +
         '<div class="panel winner">' +
           '<span class="winner-icon">' + IC.trophy + "</span>" +
-          '<p class="roundline">' + S.rounds + " runder senere</p>" +
+          '<p class="roundline">' + S.rounds + (S.rounds === 1 ? " runde" : " runder") + " senere</p>" +
           '<h1 class="winner-name">' + winners.map(esc).join(" & ") + "</h1>" +
           '<p class="lead">' + (winners.length > 1
             ? "deler sejren. I tænker lige ens."
@@ -546,10 +546,11 @@ function startT() {
   if (!bar) return;
   const total = timerSeconds();
   const started = Date.now();
+  bar.style.transition = "none";
+  bar.style.width = "100%";
+  void bar.offsetWidth;
   bar.style.transition = "width " + total + "s linear";
-  requestAnimationFrame(function () {
-    requestAnimationFrame(function () { bar.style.width = "0%"; });
-  });
+  bar.style.width = "0%";
   T = setInterval(function () {
     const left = Math.max(0, total - (Date.now() - started) / 1000);
     if (label) label.textContent = String(Math.ceil(left));
@@ -567,7 +568,7 @@ function tier(count) {
   const share = count / S.players.length;
   if (share >= 1) return "hele flokken";
   if (share >= 0.6) return "stor flok";
-  if (share >= 0.4) return "flok";
+  if (share >= 0.4 && count > 1) return "flok";
   return count > 1 ? "par" : "enlig";
 }
 

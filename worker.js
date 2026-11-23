@@ -253,6 +253,213 @@ export class Room {
   }
 }
 
+// ---------- PolyTrack multiplayer ----------
+// The race itself is peer-to-peer over WebRTC; the server only carries the few
+// messages the two sides need to find each other. The game asks its own origin
+// for that, at the same /api/v6 prefix as its board:
+//
+//   wss://<site>/api/v6/multiplayer/host   the host opens a room and is handed
+//                                          an invite code to share
+//   wss://<site>/api/v6/multiplayer/join   a joiner posts its WebRTC offer
+//   GET  /api/v6/iceServers                what to gather addresses with
+//
+// PolyTrack normally uses Kodub's server for this, which only answers the
+// desktop app, so the same small protocol is served here instead: rooms live in
+// the Signal Durable Object and every step stays on this domain.
+
+// No TURN relay is configured: the free public ones have shut down, and STUN
+// covers most home networks. A TURN server can be added to this list if players
+// behind strict NATs ever need one.
+const ICE_SERVERS = [{ urls: ['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302'] }];
+
+// Invite codes read over the phone, so the alphabet skips I, O, 0 and 1.
+const INVITE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+function makeInviteCode(isTaken) {
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const bytes = crypto.getRandomValues(new Uint8Array(6));
+    let code = '';
+    for (const byte of bytes) code += INVITE_ALPHABET[byte % INVITE_ALPHABET.length];
+    if (!isTaken(code)) return code;
+  }
+  return '';
+}
+
+function messageOf(event) {
+  try {
+    const text = typeof event.data === 'string' ? event.data : new TextDecoder().decode(event.data);
+    const message = JSON.parse(text);
+    return message && typeof message === 'object' ? message : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function joinInvite(room, session, offer, message) {
+  return {
+    type: 'joinInvite',
+    session: session,
+    offer: offer,
+    version: typeof message.version === 'string' ? message.version : '0.6.3',
+    mods: Array.isArray(message.mods) ? message.mods : [],
+    isModsVanillaCompatible: message.isModsVanillaCompatible !== false,
+    nickname: typeof message.nickname === 'string' ? message.nickname.slice(0, 32) : 'player',
+    countryCode: typeof message.countryCode === 'string' ? message.countryCode.slice(0, 2).toUpperCase() : null,
+    carStyle: typeof message.carStyle === 'string' ? message.carStyle : '',
+    iceServers: ICE_SERVERS
+  };
+}
+
+// One relay for every invite. A host socket owns a room and its invite code;
+// joiners park their offers in it, and the two sides trade answers and ICE
+// candidates until their data channels open. Rooms are in memory only: an
+// invite that outlives the game is worthless anyway.
+export class Signal {
+  constructor(state) {
+    this.state = state;
+    this.rooms = new Map();
+    this.hostRooms = new Map();
+    this.joiners = new Map();
+  }
+
+  send(socket, message) {
+    try { socket.send(JSON.stringify(message)); return true; } catch (error) { return false; }
+  }
+
+  async fetch(request) {
+    const url = new URL(request.url);
+    if ((request.headers.get('Upgrade') || '').toLowerCase() !== 'websocket') {
+      return new Response('Expected a WebSocket', { status: 426 });
+    }
+    const pair = new WebSocketPair();
+    const client = pair[0];
+    const server = pair[1];
+    server.accept();
+    if (url.pathname.endsWith('/join')) this.acceptJoiner(server);
+    else this.acceptHost(server);
+    return new Response(null, { status: 101, webSocket: client });
+  }
+
+  acceptHost(socket) {
+    socket.addEventListener('message', (event) => {
+      const message = messageOf(event);
+      if (!message || typeof message.type !== 'string') return;
+      if (message.type === 'ping') {
+        this.send(socket, { type: 'pong' });
+        return;
+      }
+      if (message.type === 'createInvite') {
+        this.createInvite(socket, message);
+        return;
+      }
+      const room = this.hostRooms.get(socket);
+      if (!room) return;
+      const joiner = typeof message.session === 'string' ? room.sessions.get(message.session) : null;
+      if (!joiner) return;
+
+      if (message.type === 'acceptJoin') {
+        this.send(joiner, {
+          type: 'acceptJoin',
+          answer: message.answer,
+          version: typeof message.version === 'string' ? message.version : '0.6.3',
+          mods: Array.isArray(message.mods) ? message.mods : [],
+          isModsVanillaCompatible: message.isModsVanillaCompatible !== false,
+          clientId: Number.isSafeInteger(message.clientId) && message.clientId > 0 ? message.clientId : 1
+        });
+      } else if (message.type === 'declineJoin') {
+        this.send(joiner, { type: 'declineJoin', reason: typeof message.reason === 'string' ? message.reason : 'Declined' });
+        this.forgetJoiner(joiner);
+        try { joiner.close(1000, 'declined'); } catch (error) { /* gone already */ }
+      } else if (message.type === 'iceCandidate') {
+        this.send(joiner, { type: 'iceCandidate', candidate: message.candidate == null ? null : message.candidate });
+      }
+    });
+
+    const gone = () => this.dropHost(socket);
+    socket.addEventListener('close', gone);
+    socket.addEventListener('error', gone);
+  }
+
+  createInvite(socket, message) {
+    let room = this.hostRooms.get(socket);
+    if (!room) {
+      const code = makeInviteCode((candidate) => this.rooms.has(candidate));
+      if (!code) {
+        this.send(socket, { type: 'error', error: 'TotalHostLimit' });
+        return;
+      }
+      room = { code: code, key: crypto.randomUUID(), host: socket, sessions: new Map() };
+      this.rooms.set(code, room);
+      this.hostRooms.set(socket, room);
+    }
+    this.send(socket, {
+      type: 'createInvite',
+      inviteCode: room.code,
+      key: room.key,
+      timeoutMilliseconds: null,
+      censoredNickname: typeof message.nickname === 'string' ? message.nickname.slice(0, 32) : null
+    });
+  }
+
+  dropHost(socket) {
+    const room = this.hostRooms.get(socket);
+    this.hostRooms.delete(socket);
+    if (!room) return;
+    this.rooms.delete(room.code);
+    for (const joiner of room.sessions.values()) {
+      this.send(joiner, { type: 'error', error: 'ExpiredInvite' });
+      this.joiners.delete(joiner);
+      try { joiner.close(1000, 'host left'); } catch (error) { /* gone already */ }
+    }
+    room.sessions.clear();
+  }
+
+  acceptJoiner(socket) {
+    socket.addEventListener('message', (event) => {
+      const message = messageOf(event);
+      if (!message) return;
+      const known = this.joiners.get(socket);
+
+      // After the offer, a joiner only ever sends its own ICE candidates.
+      if (known) {
+        if ('candidate' in message) {
+          this.send(known.room.host, {
+            type: 'iceCandidate',
+            session: known.session,
+            candidate: message.candidate == null ? null : message.candidate
+          });
+        }
+        return;
+      }
+
+      if (typeof message.inviteCode !== 'string' || typeof message.offer !== 'string') return;
+      const room = this.rooms.get(message.inviteCode.trim().toUpperCase());
+      if (!room) {
+        this.send(socket, { type: 'error', error: 'ExpiredInvite' });
+        try { socket.close(1000, 'expired'); } catch (error) { /* gone already */ }
+        return;
+      }
+
+      const session = crypto.randomUUID();
+      this.joiners.set(socket, { room: room, session: session });
+      room.sessions.set(session, socket);
+      this.send(room.host, joinInvite(room, session, message.offer, message));
+    });
+
+    const gone = () => this.forgetJoiner(socket);
+    socket.addEventListener('close', gone);
+    socket.addEventListener('error', gone);
+  }
+
+  forgetJoiner(socket) {
+    const known = this.joiners.get(socket);
+    if (!known) return;
+    this.joiners.delete(socket);
+    known.room.sessions.delete(known.session);
+    this.send(known.room.host, { type: 'joinDisconnect', session: known.session });
+  }
+}
+
 // Google's crawler checks this exact path, so serve it from here instead of
 // letting a stale asset or an old cached 404 answer for it.
 const ADS_TXT = 'google.com, pub-6851662024546666, DIRECT, f08c47fec0942fa0\n';
@@ -279,6 +486,16 @@ export default {
         return new Response('Method not allowed', { status: 405, headers: { allow: 'GET' } });
       }
       return polytrackLeaderboard(request, env);
+    }
+    if (url.pathname === '/api/v6/iceServers' || url.pathname === '/api/v6/iceServers/') {
+      return reply(JSON.stringify(ICE_SERVERS), 0);
+    }
+    if (/^\/api\/v6\/multiplayer\/(host|join)$/.test(url.pathname)) {
+      if ((request.headers.get('Upgrade') || '').toLowerCase() !== 'websocket') {
+        return new Response('Expected a WebSocket', { status: 426, headers: { upgrade: 'websocket' } });
+      }
+      if (!env.SIGNALS) return new Response('Multiplayer is not set up', { status: 503 });
+      return env.SIGNALS.get(env.SIGNALS.idFromName('polytrack')).fetch(request);
     }
     const room = url.pathname.match(/^\/api\/room\/([A-Z0-9]{3,8})$/);
     if (room && (request.headers.get('Upgrade') || '').toLowerCase() === 'websocket') {

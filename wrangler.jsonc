@@ -16,9 +16,14 @@
   // Online games meet in a Room instead of a WebRTC peer connection, so they
   // keep working on networks that block direct player-to-player traffic.
   "durable_objects": {
-    "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+    "bindings": [
+      { "name": "ROOMS", "class_name": "Room" },
+      // PolyTrack's invites: hosts and joiners meet here to swap WebRTC offers.
+      { "name": "SIGNALS", "class_name": "Signal" }
+    ]
   },
   "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["Room"] }
+    { "tag": "v1", "new_sqlite_classes": ["Room"] },
+    { "tag": "v2", "new_sqlite_classes": ["Signal"] }
   ]
 }

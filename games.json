@@ -215,6 +215,6 @@
     "description": "The most common answer wins. Everyone answers the same question in secret and scores a point for each player who wrote something like them — then the round's winners can gamble their points on a spinning crate. Play together on one phone, or let everyone join from their own with a room code.",
     "file": "games/flertal/index.html",
     "category": "Guessing",
-    "image": "img/flertal.jpg"
+    "image": "img/flertal.png"
   }
 ]

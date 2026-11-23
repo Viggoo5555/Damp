@@ -109,7 +109,6 @@ input[type=password]:focus{border-color:var(--brass)}
  .screen.mid{align-items:center}
  #top .chip{padding:5px 8px;font-size:13px;white-space:nowrap}
  #views{gap:4px}
- #bMenu span{display:none}
  #turn{top:54px;min-width:150px;max-width:94vw;padding:4px 14px 6px}
  #turn b{font-size:20px}#turn span{display:none}
  #fleets{top:auto;bottom:calc(88px + env(safe-area-inset-bottom,0));left:10px;right:10px;flex-direction:row;justify-content:center;gap:8px}
@@ -130,7 +129,6 @@ input[type=password]:focus{border-color:var(--brass)}
 
  <div id="hud" class="hide">
   <div id="top">
-   <button class="chip" id="bMenu">&larr; <span data-t="menu">Menu</span></button>
    <div class="sp"></div>
    <button class="chip hide" id="bResult" data-t="result">Result</button>
    <div id="views" class="hide">
@@ -1039,7 +1037,7 @@ function startPlacement() {
   $('hint').textContent = ''; $('log').textContent = '';
   ships.forEach(s => { s.x = s.tx = s.home[0] + rnd(-.3, .3); s.z = s.tz = s.home[1] + 6; s.dropFx = true; sendHome(s); });
   focusCam('place', false); G.sel = null; refreshHud(); $('bReady').textContent = t('ready'); $('bReady').disabled = true;
-  if (G.mode === 'online') $('bMenu').dataset.online = '1';
+
 }
 async function readyUp() {
   if (G.phase !== 'place' || !ships.every(s => s.placed)) return;
@@ -1626,7 +1624,6 @@ $('bFire').onclick = () => { if (G.aim) fireAt(G.aim[0], G.aim[1]); };
 $('vMine').onclick = () => { SND.click(); setView('mine'); };
 $('vEnemy').onclick = () => { SND.click(); setView('enemy'); };
 $('bSnd').onclick = () => { SND.init(); SND.setMute(!SND.muted); refreshHud(); };
-$('bMenu').onclick = () => { SND.click(); showMenu(); };
 $('bEndMenu').onclick = () => { SND.click(); showMenu(); };
 $('bBoard').onclick = () => { $('end').classList.add('hide'); const b = document.createElement('button'); b.className = 'btn sm'; b.id = 'bBack'; b.textContent = '↺'; b.style.cssText = 'position:absolute;right:12px;bottom:calc(14px + env(safe-area-inset-bottom,0));z-index:7'; b.onclick = () => { b.remove(); $('end').classList.remove('hide'); }; $('app').appendChild(b); };
 $('bAgain').onclick = () => {

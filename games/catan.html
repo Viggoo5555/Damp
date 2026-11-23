@@ -157,7 +157,6 @@ select{font:inherit;color:var(--fg);background:#0d2434;border:2px solid var(--li
 #modalCard .rules p{margin:4px 0}
 @media(max-width:560px){
  #top{gap:5px}
- #bMenu{padding:6px 8px;font-size:13px}
  #bHelp{width:30px;height:30px;justify-content:center;padding:0}
  #turnBox{min-width:0;padding:2px 9px 4px}
  #turnName{font-size:15px}#turnHint{display:block;font-size:10px;margin-top:0}
@@ -184,7 +183,6 @@ select{font:inherit;color:var(--fg);background:#0d2434;border:2px solid var(--li
 
 <div id="hud" class="hide">
   <div id="top">
-    <button id="bMenu" class="btn ghost sm">← Menu</button>
     <button id="bHelp" class="chip" title="How to play">?</button>
     <div id="turnBox"><b id="turnName">Catan</b><span id="turnHint">Settling the island</span></div>
     <div id="right">
@@ -2276,7 +2274,7 @@ canvas.addEventListener('wheel',e=>{e.preventDefault();cam.zoom=clamp(cam.zoom+e
 /* ---------- ui wiring ---------- */
 $('bPlay').onclick=()=>{startGame();};
 $('bAgain').onclick=()=>{location.reload()};
-$('bMenu').onclick=()=>{location.href='../index.html'};
+
 $('bRoll').onclick=()=>{if(G.turn===ME&&!G.rolled&&!G.rolling&&G.phase==='play'&&!G.over)act({a:'roll'})};
 $('cRotL').onclick=()=>{cam.az+=Math.PI/2};
 $('cRotR').onclick=()=>{cam.az-=Math.PI/2};

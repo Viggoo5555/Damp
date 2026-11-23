@@ -149,7 +149,6 @@ input[type=text]:focus,input[type=password]:focus{border-color:var(--brass)}
 
  <div id="hud" class="hide">
   <div id="top">
-   <a class="chip" id="bHome" href="../index.html">&larr; Menu</a>
    <div class="sp"></div>
    <span class="chip" id="sideChip">You: Red</span>
    <button class="chip" id="bRotL" title="Turn the board left" aria-label="Turn the board left">&#10226;</button>
@@ -1378,7 +1377,6 @@ $('onJoin').onclick=()=>joinRoom($('onCodeIn').value);
 $('onBack').onclick=()=>{stopPeople();netClose();$('online').classList.add('hide');$('menu').classList.remove('hide')};
 addEventListener('load',()=>{const room=new URLSearchParams(location.search).get('room');if(room&&/^[A-Za-z]{4}$/.test(room))openLobby(room.toUpperCase())});
 $('bBack').onclick=()=>{netClose();G.mode='menu';G.over=true;$('hud').classList.add('hide');$('end').classList.add('hide');$('setup').classList.add('hide');$('menu').classList.remove('hide');G.over=false};
-$('bHome').onclick=e=>{if(NET.on||G.mode==='play'){e.preventDefault();$('bBack').onclick()}};
 $('bShuffle').onclick=()=>{if(G.mode!=='setup'||(NET.role==='guest'&&NET.ready))return;G.board=deploy(G.side);G.sel=-1;G.legal=[];syncPieces();drawMarks();snd(360,.08);toast('Army shuffled.')};
 $('bStart').onclick=()=>{
   if(G.mode!=='setup')return;

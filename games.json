@@ -209,12 +209,5 @@
     "file": "games/skals-track/index.html",
     "category": "Racing",
     "image": "img/skalstrack.png"
-  },
-  {
-    "title": "Just Ski",
-    "description": "A difficult, minimalist, one-more-try, physics powered game to frustrate and reward you. It runs on itch.io, so it opens in its own tab.",
-    "url": "https://jeffweber.itch.io/justski",
-    "category": "Arcade",
-    "image": "img/just-ski.jpg"
   }
 ]

@@ -2571,23 +2571,6 @@ dialog {
   text-transform: uppercase;
 }
 
-/* Games that open on another site are marked on the tile */
-.tag-out {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  padding: 3px 9px 4px;
-  border-radius: 999px;
-  background: rgba(7, 17, 22, 0.86);
-  color: var(--mist);
-  font-family: var(--text);
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  line-height: 1.4;
-  text-transform: uppercase;
-}
-
 /* The editor's Hide switch: a checkbox, not a 44px text field */
 .manage-hide {
   display: flex;

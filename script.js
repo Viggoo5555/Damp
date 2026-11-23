@@ -88,12 +88,7 @@ function categories(list) {
 function makeCard(game) {
   const item = el("div", "item");
   const card = el("a", "game");
-  // A game that lives on someone else's site opens there, in its own tab.
-  card.href = game.url || "#play=" + slug(game);
-  if (game.url) {
-    card.target = "_blank";
-    card.rel = "noopener";
-  }
+  card.href = "#play=" + slug(game);
   card.title = game.description || "";
   ["pointerenter", "focus", "touchstart"].forEach(function (name) {
     card.addEventListener(name, function () { warm(game); }, { passive: true });
@@ -125,9 +120,6 @@ function makeCard(game) {
     item.classList.add("is-hidden");
     tile.appendChild(el("span", "tag-hidden", "Hidden"));
   }
-
-  // Says outright that clicking leaves the site
-  if (game.url) tile.appendChild(el("span", "tag-out", "itch.io"));
 
   card.append(tile, el("h3", null, game.title), el("p", "d", game.description || ""), el("p", "cat", game.category || "Game"));
   item.appendChild(card);
@@ -371,7 +363,6 @@ frame.addEventListener("load", function () {
 // Starts fetching a game's file as soon as someone points at its tile
 const warmed = new Set();
 function warm(game) {
-  if (!game.file) return;
   if (warmed.has(game.file)) return;
   warmed.add(game.file);
   const link = document.createElement("link");
@@ -494,12 +485,6 @@ function route() {
     const id = decodeURIComponent(hash.slice(5));
     const game = games.find(function (g) { return slug(g) === id; });
     if (game) {
-      // Nothing to show in the frame: this one lives on another site.
-      if (!game.file && game.url) {
-        window.open(game.url, "_blank", "noopener");
-        location.hash = "";
-        return;
-      }
       openPlayer(game);
       return;
     }

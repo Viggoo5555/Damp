@@ -554,7 +554,7 @@
     if (!room || room.phase !== "ask") return;
     if ((room.answers || {})[net.uid]) return;
     const field = document.getElementById("a");
-    const text = String(value !== undefined ? value : (field ? field.value : "")).trim().slice(0, 60);
+    const text = tidy(String(value !== undefined ? value : (field ? field.value : ""))).slice(0, 60);
     if (!text) { if (field) field.classList.add("shake"); return; }
     clearTimer();
     try {
@@ -569,16 +569,17 @@
     if (!room || room.host !== net.uid || room.phase !== "ask") return;
     if (!Object.keys(room.answers || {}).length) return;
     const speed = (room.plan || [])[room.round - 1] === "s";
-    const groups = {};
-    Object.keys(room.answers || {}).forEach(function (uid) {
+    const list = groupAnswers(Object.keys(room.answers || {}).map(function (uid) {
       const a = room.answers[uid];
-      const key = a.k || norm(a.text || "");
-      if (!groups[key]) groups[key] = { t: a.text, m: [], u: [] };
-      groups[key].m.push(nameOf(room, uid));
-      groups[key].u.push(uid);
+      return { key: a.k || norm(a.text || ""), text: a.text, u: uid, m: nameOf(room, uid) };
+    })).map(function (g) {
+      return {
+        t: g.t,
+        m: g.list.map(function (e) { return e.m; }),
+        u: g.list.map(function (e) { return e.u; }),
+        v: g.v
+      };
     });
-    const list = Object.keys(groups).map(function (k) { return groups[k]; })
-      .sort(function (a, b) { return b.m.length - a.m.length; });
     const top = list.length ? list[0].m.length : 0;
     const scores = Object.assign({}, room.scores || {});
     const points = {};
@@ -596,7 +597,7 @@
       : [];
     const entry = {
       q: (room.prompts || [])[room.qi] || "",
-      list: list.map(function (g) { return { t: g.t, m: g.m }; }),
+      list: list.map(function (g) { return { t: g.t, m: g.m, v: g.v }; }),
       points: points,
       winners: winners,
       sp: speed

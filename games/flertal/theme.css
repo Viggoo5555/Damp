@@ -492,6 +492,7 @@ input:focus { outline: 0; border-color: #fff; box-shadow: 0 0 0 3px var(--pink);
 .answer-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .answer-text { font-size: 27px; line-height: 1.1; color: #fff; }
 .answer-who { margin: 0 0 7px; font-size: 18px; color: var(--mute); }
+.answer-alt { color: var(--faint); }
 .answer-pts { font-family: var(--display); font-size: 15px; color: var(--gold); align-self: center; }
 
 .tier {

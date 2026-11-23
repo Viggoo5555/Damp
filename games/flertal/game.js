@@ -151,6 +151,7 @@ function setup() {
         "</div>" +
         '<div class="panel panel--quiet" id="hw" hidden>' +
           "<p>Hvert svar giver et point for hver anden spiller, der skrev det samme. Gruppen med flest stemmer får point til alle sine medlemmer.</p>" +
+          "<p>Stavefejl tæller med: «pizzza» og «pizza» går i samme gruppe, og svaret vises med den stavemåde, flest brugte.</p>" +
           "<p>Vinderne af en runde må gamble: rundens point eller hele deres saldo går i en fælles pulje, og én trækkes som vinder.</p>" +
         "</div>" +
       "</aside>" +
@@ -161,7 +162,7 @@ function setup() {
 function stepsBlock() {
   const steps = [
     ["Alle svarer", "Samme spørgsmål, hver for sig, inden tiden løber ud."],
-    ["Point for fællesskab", "Et point for hver anden spiller, der skrev det samme som dig."],
+    ["Point for fællesskab", "Et point for hver anden spiller, der skrev det samme — også når I staver lidt forskelligt."],
     ["Vinderne gambler", "Rundens point eller hele saldoen i én pulje. Én trækkes som vinder."]
   ];
   return '<ol class="steps">' + steps.map(function (step, i) {
@@ -254,7 +255,7 @@ function ask() {
           '<input id="a" class="answer-input" autocomplete="off" placeholder="Dit svar" aria-label="Dit svar" ' +
           'onkeydown="if(event.key===\'Enter\')submit()">' +
           '<div class="row"><button class="primary" onclick="submit()">Lås svar</button>' +
-          '<span class="hint">Svar som flokken, ikke som dig.</span></div>' +
+          '<span class="hint">Svar som flokken — stavefejl tæller med.</span></div>' +
         "</div>" +
       "</div>" +
       '<aside class="col col--side">' +
@@ -271,7 +272,7 @@ function ask() {
 
 function submit() {
   const field = document.getElementById("a");
-  const value = field.value.trim();
+  const value = tidy(field.value);
   if (!value || !norm(value)) {
     field.classList.remove("shake");
     void field.offsetWidth;
@@ -309,7 +310,8 @@ function questionCard(entry) {
         '<div class="answer-body">' +
           '<div class="answer-head"><span class="answer-text">' + esc(group.t) + "</span>" +
           '<span class="tier">' + tier(group.m.length) + "</span></div>" +
-          '<div class="answer-who">' + group.m.map(esc).join(", ") + "</div>" +
+          '<div class="answer-who">' + group.m.map(esc).join(", ") +
+            (group.v && group.v.length ? ' <span class="answer-alt">· også «' + group.v.map(esc).join("», «") + '»</span>' : "") + "</div>" +
           '<div class="bar"><i style="width:' + Math.round(group.m.length / S.players.length * 100) + '%"></i></div>' +
         "</div>" +
         '<div class="answer-pts">+' + (group.m.length - 1) + "</div>" +
@@ -331,12 +333,8 @@ function nextButton() {
 
 function reveal() {
   S.phase = "reveal";
-  const groups = {};
-  S.ans.forEach(function (a) {
-    const g = groups[a.k] || (groups[a.k] = { t: a.t, m: [] });
-    g.m.push(a.n);
-  });
-  const list = Object.values(groups).sort(function (a, b) { return b.m.length - a.m.length; });
+  const list = groupAnswers(S.ans.map(function (a) { return { key: a.k, text: a.t, who: a.n }; }))
+    .map(function (g) { return { t: g.t, m: g.list.map(function (e) { return e.who; }), v: g.v }; });
   const top = list[0].m.length;
   S.rp = {};
   list.forEach(function (group) {
@@ -364,12 +362,8 @@ function reveal() {
 
 function spNext() {
   if (!S.sp) return reveal();
-  const groups = {};
-  S.ans.forEach(function (a) {
-    const g = groups[a.k] || (groups[a.k] = { t: a.t, m: [] });
-    g.m.push(a.n);
-  });
-  const list = Object.values(groups).sort(function (a, b) { return b.m.length - a.m.length; });
+  const list = groupAnswers(S.ans.map(function (a) { return { key: a.k, text: a.t, who: a.n }; }))
+    .map(function (g) { return { t: g.t, m: g.list.map(function (e) { return e.who; }), v: g.v }; });
   list.forEach(function (group) {
     const plus = group.m.length - 1;
     group.m.forEach(function (name) {
@@ -574,6 +568,61 @@ function tier(count) {
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const norm = s => s.toLowerCase().normalize("NFC").replace(/[^a-zæøå0-9]/g, "");
+const tidy = s => String(s).replace(/\s+/g, " ").trim();
+
+/* ---------------------------------------------------------- autocorrect */
+// Svar der kun adskiller sig med en tastefejl eller to, tæller som det samme.
+function editDist(a, b, max) {
+  const la = a.length, lb = b.length, INF = max + 1;
+  let row0 = new Array(lb + 1), row1 = new Array(lb + 1);
+  for (let j = 0; j <= lb; j++) { row0[j] = INF; row1[j] = j; }
+  for (let i = 1; i <= la; i++) {
+    const cur = [i];
+    let best = i;
+    for (let j = 1; j <= lb; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      let v = Math.min(row1[j] + 1, cur[j - 1] + 1, row1[j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) v = Math.min(v, row0[j - 2] + 1);
+      cur[j] = v;
+      if (v < best) best = v;
+    }
+    if (best > max) return INF;
+    row0 = row1;
+    row1 = cur;
+  }
+  return row1[lb];
+}
+
+function isTypo(a, b) {
+  if (a === b) return true;
+  if (!a || !b || a[0] !== b[0]) return false;
+  const longest = Math.max(a.length, b.length);
+  if (longest < 5) return false;
+  const allowance = longest >= 9 ? 2 : 1;
+  if (Math.abs(a.length - b.length) > allowance) return false;
+  return editDist(a, b, allowance) <= allowance;
+}
+
+// [{ key, text, ... }] -> [{ t, list, size }], med den mest brugte stavemåde som overskrift
+function groupAnswers(entries) {
+  const groups = [];
+  entries.forEach(function (entry) {
+    let group = null;
+    for (let i = 0; i < groups.length; i++) {
+      if (groups[i].list.some(function (other) { return isTypo(other.key, entry.key); })) { group = groups[i]; break; }
+    }
+    if (!group) { group = { list: [] }; groups.push(group); }
+    group.list.push(entry);
+  });
+  return groups.map(function (group) {
+    const texts = {};
+    group.list.forEach(function (e) { texts[e.text] = (texts[e.text] || 0) + 1; });
+    const t = Object.keys(texts).sort(function (x, y) { return texts[y] - texts[x] || x.length - y.length; })[0];
+    const v = Object.keys(texts).filter(function (k) { return k !== t; })
+      .sort(function (x, y) { return texts[y] - texts[x]; });
+    return { t: t, list: group.list, size: group.list.length, v: v };
+  }).sort(function (a, b) { return b.size - a.size; });
+}
 
 function pick() {
   let pool = PROMPTS.filter(function (_, i) { return !S.used.includes(i); });

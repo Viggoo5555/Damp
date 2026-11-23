@@ -98,6 +98,19 @@ async function leaderboard(request, env, waitUntil) {
 // games/skals-track/damp.js writes the rows for the signed-in account.
 const POLYTRACK_CAR = 'AAQAAAAAAI4AU44AUwAAAA';
 
+// A row should wear the car its player raced, so damp.js sends the paint the
+// game keeps in the player's own profile. A car style is 16 unpadded base64
+// bytes; anything else would make the game's thumbnail renderer throw, so
+// doubtful values fall back to the plain car above.
+function polytrackCarStyle(value) {
+  if (typeof value !== 'string' || !/^[A-Za-z0-9+/]{20,26}={0,2}$/.test(value)) return null;
+  try {
+    return atob(value).length === 16 ? value : null;
+  } catch (error) {
+    return null;
+  }
+}
+
 function polytrackRow(doc, rank) {
   const fields = doc.fields || {};
   return {
@@ -105,7 +118,7 @@ function polytrackRow(doc, rank) {
     userId: doc.name.slice(doc.name.lastIndexOf('/') + 1),
     nickname: (fields.name && fields.name.stringValue) || 'player',
     countryCode: null,
-    carStyle: POLYTRACK_CAR,
+    carStyle: polytrackCarStyle(fields.carStyle && fields.carStyle.stringValue) || POLYTRACK_CAR,
     frames: fields.frames && fields.frames.integerValue != null ? Number(fields.frames.integerValue) : 0,
     time: (fields.at && fields.at.timestampValue) || new Date().toISOString(),
     verifiedState: 1

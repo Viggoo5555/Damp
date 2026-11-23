@@ -101,39 +101,85 @@
   // Times already handed to the board, so the poll does not read Firestore again
   // for a track that has not improved. { uid, times: { trackId: frames } }
   var SYNC_KEY = "damp-polytrack-synced";
-  var synced = { uid: "", times: {} };
+  var synced = { uid: "", times: {}, styles: {} };
   function loadSynced() {
     try {
       var raw = JSON.parse(localStorage.getItem(SYNC_KEY) || "null");
-      if (raw && typeof raw === "object") synced = { uid: String(raw.uid || ""), times: raw.times || {} };
+      if (raw && typeof raw === "object") synced = { uid: String(raw.uid || ""), times: raw.times || {}, styles: raw.styles || {} };
     } catch (error) { /* start fresh */ }
   }
   function saveSynced() {
     try { localStorage.setItem(SYNC_KEY, JSON.stringify(synced)); } catch (error) { /* private mode */ }
   }
 
+  // The car the player races, as the game keeps it in its own profile. The
+  // board draws this thumbnail, so it should be the paint they won with.
+  var PROFILE_KEY = "polytrack_v5_prod_user_";
+  function carStyle() {
+    try {
+      var slot = parseInt(localStorage.getItem("polytrack_v5_prod_user_slot") || "0", 10);
+      if (!Number.isSafeInteger(slot) || slot < 0) slot = 0;
+      var raw = localStorage.getItem(PROFILE_KEY + slot);
+      if (!raw) return "";
+      var profile = JSON.parse(raw);
+      var style = profile && profile.carStyle;
+      return typeof style === "string" && /^[A-Za-z0-9+/]{20,26}={0,2}$/.test(style) ? style : "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  // Firestore only accepts carStyle once the updated rules are published, so
+  // a rejected paint still stores the time instead of losing it.
+  async function writeRow(ref, row) {
+    try {
+      await F.setDoc(ref, row, { merge: true });
+      return true;
+    } catch (error) {
+      if (!row.carStyle) throw error;
+      await F.setDoc(ref, { name: row.name, frames: row.frames, at: row.at }, { merge: true });
+      return false;
+    }
+  }
+
   async function push() {
     if (!user || !db || !F || busy) return;
     busy = true;
     try {
-      if (synced.uid !== user.uid) { synced = { uid: user.uid, times: {} }; saveSynced(); }
+      if (synced.uid !== user.uid) { synced = { uid: user.uid, times: {}, styles: {} }; saveSynced(); }
       var best = readRecords();
+      var style = carStyle();
       for (var trackId in best) {
         if (!Object.prototype.hasOwnProperty.call(best, trackId)) continue;
         var frames = best[trackId];
         var known = Number(synced.times[trackId]) || 0;
-        if (known && frames >= known) continue;
+        var repaint = !!style && synced.styles[trackId] !== style;
+        if (known && frames >= known && !repaint) continue;
         try {
           var ref = F.doc(db, COLLECTION, trackId, "scores", user.uid);
+          if (known && frames >= known) {
+            // The time stands, only the car changed: send the paint alone.
+            await F.setDoc(ref, { carStyle: style }, { merge: true });
+            synced.styles[trackId] = style;
+            saveSynced();
+            continue;
+          }
           var existing = await F.getDoc(ref);
           var stored = existing.exists() ? Number(existing.data().frames) || 0 : 0;
           if (stored && frames >= stored) {
             synced.times[trackId] = stored;
+            if (repaint) {
+              await F.setDoc(ref, { carStyle: style }, { merge: true });
+              synced.styles[trackId] = style;
+            }
             saveSynced();
             continue;
           }
-          await F.setDoc(ref, { name: playerName, frames: frames, at: F.serverTimestamp() }, { merge: true });
+          var row = { name: playerName, frames: frames, at: F.serverTimestamp() };
+          if (style) row.carStyle = style;
+          var painted = await writeRow(ref, row);
           synced.times[trackId] = frames;
+          if (painted && style) synced.styles[trackId] = style;
           saveSynced();
           say("Damp board: " + formatTime(frames) + " on " + TRACKS[trackId]);
         } catch (error) {

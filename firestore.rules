@@ -35,7 +35,10 @@ service cloud.firestore {
     match /skalstrack_tracks/{trackId}/scores/{uid} {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['name', 'frames', 'at'])
+        && request.resource.data.keys().hasOnly(['name', 'frames', 'at', 'carStyle'])
+        && (!('carStyle' in request.resource.data)
+          || (request.resource.data.carStyle is string
+            && request.resource.data.carStyle.size() <= 32))
         && request.resource.data.frames is int
         && request.resource.data.frames > 5000
         && request.resource.data.frames < 3600000

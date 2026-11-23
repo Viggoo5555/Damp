@@ -27,7 +27,8 @@
     "description": "3D boxing with combos, parry, super and online 1v1 with friends.",
     "file": "games/knockout-night.html",
     "category": "Fighting",
-    "image": "img/knockout-night.png"
+    "image": "img/knockout-night.png",
+    "hidden": true
   },
   {
     "title": "Battleship",

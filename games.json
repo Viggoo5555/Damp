@@ -12,7 +12,8 @@
     "description": "A 3D physics sandbox in a living city. Walk it, drive it, blow it up: spawn anything, weld your own structures and topple skyscrapers floor by floor with real debris.",
     "file": "games/city-chaos.html",
     "category": "Sandbox",
-    "image": "img/city-chaos.png"
+    "image": "img/city-chaos.png",
+    "hidden": true
   },
   {
     "title": "Flappy Bird",

@@ -2763,3 +2763,46 @@ dialog {
 @media (max-width: 640px) {
   .ad { margin: 38px auto 4px; min-height: 0; }
 }
+
+/* ---------- The game bar: an X at the top that stays out of the way ---------- */
+
+/* One round X instead of the wide "Back to games" pill. */
+.player-bar #player-close {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  border-radius: 999px;
+}
+
+.player-bar #player-close .player-icon { width: 20px; height: 20px; }
+
+/* With a mouse the bar slides off the top edge and comes back when the pointer
+   gets there. Touch screens have no pointer to move, so they keep it visible. */
+@media (hover: hover) and (pointer: fine) {
+  .player-bar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 3;
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.22s ease, opacity 0.22s ease;
+  }
+
+  .player.bar-open .player-bar,
+  .player-bar:focus-within {
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* The slim exit button on phones without the Fullscreen API stays put. */
+  .player.pseudo-fullscreen .player-bar {
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

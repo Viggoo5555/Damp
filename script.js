@@ -392,6 +392,7 @@ function openPlayer(game) {
   $("player-newtab").href = encodeURI(game.file);
   // Lets the account side put the open game in your entry for the people list
   document.dispatchEvent(new CustomEvent("damp-playing", { detail: game.title }));
+  player.classList.remove("bar-open");
   player.hidden = false;
   document.body.classList.add("locked");
   syncLanguageControls();
@@ -401,6 +402,7 @@ function closePlayer() {
   if (player.hidden) return;
   if (document.fullscreenElement) document.exitFullscreen();
   player.classList.remove("pseudo-fullscreen");
+  player.classList.remove("bar-open");
   syncFullscreenButton();
   if (window.dampSaves) dampSaves.stop();
   frame.src = "about:blank";
@@ -416,6 +418,45 @@ function closePlayer() {
 }
 
 $("player-close").addEventListener("click", function () { location.hash = ""; });
+
+// The game bar waits out of the way until the pointer reaches the top edge.
+(function () {
+  const TOP_ZONE = 96;
+  const LINGER = 500;
+  let hideTimer = 0;
+
+  function showBar() {
+    clearTimeout(hideTimer);
+    player.classList.add("bar-open");
+  }
+
+  function hideBar() {
+    if (!player.classList.contains("bar-open")) return;
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(function () { player.classList.remove("bar-open"); }, LINGER);
+  }
+
+  function watch(event) {
+    if (player.hidden || event.pointerType === "touch") return;
+    const overBar = event.target && event.target.closest && event.target.closest(".player-bar");
+    if (event.clientY <= TOP_ZONE || overBar) showBar();
+    else hideBar();
+  }
+
+  // The games are same-origin, so moves inside the frame reveal the bar too.
+  function watchFrame() {
+    try {
+      const doc = frame.contentDocument;
+      if (!doc || doc.dampBarWatch) return;
+      doc.dampBarWatch = true;
+      doc.addEventListener("pointermove", watch, { passive: true });
+    } catch (error) { /* other origin: the bar still opens above the game */ }
+  }
+
+  document.addEventListener("pointermove", watch, { passive: true });
+  frame.addEventListener("load", watchFrame);
+  watchFrame();
+})();
 
 $("player-share").addEventListener("click", function () {
   const button = $("player-share");

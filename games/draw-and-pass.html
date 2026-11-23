@@ -169,6 +169,7 @@ code{background:#f1ecff;padding:2px 6px;border-radius:6px;font-size:.9em}
 <div id="app"></div>
 <noscript>Draw &amp; Pass needs JavaScript.</noscript>
 
+<script src="../js/damp-invite.js"></script>
 <script type="module">
 
 /* ====================================================================
@@ -711,6 +712,16 @@ function buildLobby() {
   const copy = el("button", { class: "btn blue", onclick: async () => {
     const url = location.origin + location.pathname + "?room=" + S.code;
     try { await navigator.clipboard.writeText(url); toast("Invite link copied!"); } catch (e) { prompt("Copy this invite link:", url); } } }, "📋 Copy invite link");
+  const invite = el("button", { class: "btn pink", onclick: () => {
+    const url = location.origin + location.pathname + "?room=" + S.code;
+    if (!window.DampInvite) { toast("Invites are not available right now — copy the link instead."); return; }
+    window.DampInvite.open({
+      game: "Draw & Pass", code: S.code, link: url,
+      accent: "#7c4dff", accentText: "#fff",
+      font: "'Fredoka', ui-rounded, system-ui, sans-serif",
+      ink: "#1d1340", surface: "#fff", radius: "24px"
+    });
+  } }, "✉️ Invite a friend");
   const list = el("div", { class: "players" });
   const mkSel = (label, key, opts, fmt) => {
     const s = el("select", { class: "sel", onchange: () => { if (!isHost()) return; setRoom({ [key]: +s.value }); } }, opts.map(o => el("option", { value: o }, fmt(o))));
@@ -726,7 +737,8 @@ function buildLobby() {
   app.append(
     el("div", { class: "row", style: { justifyContent: "space-between", marginBottom: "8px" } }, el("div", { style: { transform: "scale(.5)", transformOrigin: "left center", height: "44px", whiteSpace: "nowrap" } }, logo()), leave),
     el("div", { class: "lobby-grid" },
-      el("div", {}, el("div", { class: "card center" }, el("div", { class: "dim" }, "Room code"), codeEl, copy),
+      el("div", {}, el("div", { class: "card center" }, el("div", { class: "dim" }, "Room code"), codeEl,
+          el("div", { class: "row center", style: { justifyContent: "center", marginTop: "10px" } }, invite, copy)),
         el("div", { class: "card" }, el("h2", {}, "Players"), list)),
       el("div", {}, el("div", { class: "card" }, el("h2", {}, "Game settings"), ...sels.map(x => x.node), cbRow, info),
         el("div", { class: "card center" }, startBtn))));

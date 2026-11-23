@@ -1431,6 +1431,7 @@ function pick() {
   return prompt;
 }
 </script>
+<script src="../../js/damp-invite.js"></script>
 <script>
 /* ======================================================================
    online.js — "Hver sin telefon": the same Flertal, played over Firebase.
@@ -1667,6 +1668,7 @@ function pick() {
           '<div class="panel"><div class="panel-head"><h2>Rumkode</h2></div>' +
             '<p class="roomcode">' + esc(room.code) + "</p>" +
             '<button class="ghost" onclick="flt.copy()">Kopiér invitationslink</button>' +
+            '<button class="ghost" onclick="flt.inviteFriend()">Inviter en ven</button>' +
             '<p class="hint" id="copynote">De andre åbner linket eller skriver koden.</p>' +
           "</div>" +
           (host
@@ -2184,6 +2186,36 @@ function pick() {
     }
   }
 
+  function inviteFriend() {
+    const code = net.code;
+    if (!code) return;
+    const note = document.getElementById("copynote");
+    if (!window.DampInvite) {
+      if (note) note.textContent = "Invitationer kan ikke sendes lige nu — kopiér linket i stedet.";
+      return;
+    }
+    window.DampInvite.open({
+      game: "Flertal", code: code,
+      link: location.origin + "/games/flertal/?room=" + code,
+      accent: "#ffd23f", accentText: "#120a2e",
+      font: "'VT323', ui-monospace, monospace",
+      ink: "#ffffff", surface: "#100c34", soft: "rgba(255,255,255,.09)", radius: "16px",
+      labels: {
+        title: "Inviter en ven",
+        pick: "Vælg en ven — de får en besked med en knap, der melder dem ind.",
+        online: "Online", invited: "Inviteret", sending: "Sender…",
+        sent: "Invitation sendt til ",
+        nobody: "Fandt ingen andre Damp-spillere. Del koden i stedet.",
+        signIn: "Log ind på Damp først, og kom så tilbage.",
+        openDamp: "Åbn Damp",
+        copy: "Kopiér link", copied: "Linket er kopieret",
+        codeHint: "Rumkode", close: "Luk",
+        failed: "Kunne ikke sende invitationen", loading: "Leder efter spillere…",
+        of: " inviterer dig til et spil. "
+      }
+    });
+  }
+
   async function recheck() {
     if (!net.fb) { onlineSetup(); return; }
     const authMod = net.fb.authMod;
@@ -2196,7 +2228,7 @@ function pick() {
   window.flt = {
     setup: onlineSetup, create: create, join: join, start: start, answer: answer, reveal: reveal,
     gambleStart: gambleStart, gamblePick: gamblePick, gambleRoll: gambleRoll, next: next,
-    again: again, leave: leave, copy: copy, recheck: recheck
+    again: again, leave: leave, copy: copy, inviteFriend: inviteFriend, recheck: recheck
   };
 
   // The page opens on one phone, exactly as before.

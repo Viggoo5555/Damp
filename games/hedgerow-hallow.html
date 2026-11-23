@@ -704,6 +704,7 @@
       <div class="mpstatus"><span><i class="dot" id="mpDot"></i><span id="mpStatus">Connecting…</span></span><button class="btn" id="mpLeave" type="button">Leave</button></div>
       <div class="mpcode" id="mpCodeShow"></div>
       <p class="mpwait" id="mpWait">Waiting for a friend…</p>
+      <p class="tabnote"><button class="btn primary" id="mpInvite" type="button">Invite a friend</button></p>
       <p class="tabnote" id="mpPeer"></p>
     </div>
     <div class="acts"><button class="btn" id="mpClose" type="button">Close</button></div>
@@ -771,6 +772,7 @@
   </div>
 </div>
 
+<script src="../js/damp-invite.js"></script>
 <script>
 (() => {
 'use strict';
@@ -3961,6 +3963,19 @@ $('mpClose').addEventListener('click', () => { Sound.play('click'); closeMultipl
 $('mpHost').addEventListener('click', () => { Sound.play('click'); mpConnect('host'); });
 $('mpJoin').addEventListener('click', () => { Sound.play('click'); mpConnect('guest'); });
 $('mpLeave').addEventListener('click', () => { Sound.play('click'); mpLeave(false); });
+$('mpInvite').addEventListener('click', () => {
+  Sound.play('click');
+  if (!mp.code) { $('mpMsg').textContent = 'Start a garden first, then invite someone.'; return; }
+  if (!window.DampInvite) { $('mpMsg').textContent = 'Invites are not available right now — share the code instead.'; return; }
+  window.DampInvite.open({
+    game: 'Hedgerow Hallow',
+    code: mp.code,
+    link: location.origin + '/games/hedgerow-hallow?room=' + mp.code,
+    accent: '#efb23a', accentText: '#3a2408',
+    font: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+    ink: '#2a1d08', surface: '#fffdf6', soft: 'rgba(58,36,8,.07)', radius: '22px'
+  });
+});
 $('mpCode').addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); mpConnect('guest'); } });
 $('mpModal').addEventListener('click', (event) => { if (event.target === $('mpModal')) closeMultiplayer(); });
 window.addEventListener('keydown', (event) => {
@@ -4289,6 +4304,17 @@ window.addEventListener('keydown', () => Sound.init(), { once: true });
 if (window.ResizeObserver) { const ro = new ResizeObserver(() => { fit(); }); ro.observe(stage); ro.observe($('dock')); ro.observe(document.querySelector('.main')); }
 window.addEventListener('resize', fit);
 requestAnimationFrame(t => { lastT = t; frame_(t); });
+
+/* A chat invite carries the room code, so open the lobby with it filled in. */
+(() => {
+  const invited = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);
+  if (invited.length !== 5) return;
+  openMultiplayer();
+  const input = $('mpCode');
+  if (input) input.value = invited;
+  const msg = $('mpMsg');
+  if (msg) msg.textContent = 'You were invited — press Join together.';
+})();
 })();
 </script>
 

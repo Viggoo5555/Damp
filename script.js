@@ -419,10 +419,12 @@ function closePlayer() {
 
 $("player-close").addEventListener("click", function () { location.hash = ""; });
 
-// The game bar waits out of the way until the pointer reaches the top edge.
+// The game bar stays out of the way: it slides down only when the pointer
+// touches the very top edge, and leaves again as soon as the pointer moves off
+// it, so the top corners of the game keep their own buttons.
 (function () {
-  const TOP_ZONE = 96;
-  const LINGER = 500;
+  const EDGE = 6;
+  const LINGER = 260;
   let hideTimer = 0;
 
   function showBar() {
@@ -431,19 +433,29 @@ $("player-close").addEventListener("click", function () { location.hash = ""; })
   }
 
   function hideBar() {
-    if (!player.classList.contains("bar-open")) return;
     clearTimeout(hideTimer);
+    if (!player.classList.contains("bar-open")) return;
     hideTimer = setTimeout(function () { player.classList.remove("bar-open"); }, LINGER);
+  }
+
+  function hideNow() {
+    clearTimeout(hideTimer);
+    player.classList.remove("bar-open");
+  }
+
+  // Clicks and hovers reach the game through the bar, so only its controls count.
+  function onControl(event) {
+    const target = event.target;
+    return Boolean(target && target.closest && target.closest(".player-bar button, .player-bar a"));
   }
 
   function watch(event) {
     if (player.hidden || event.pointerType === "touch") return;
-    const overBar = event.target && event.target.closest && event.target.closest(".player-bar");
-    if (event.clientY <= TOP_ZONE || overBar) showBar();
+    if (event.clientY <= EDGE || onControl(event)) showBar();
     else hideBar();
   }
 
-  // The games are same-origin, so moves inside the frame reveal the bar too.
+  // The games are same-origin, so moves inside the frame move the bar too.
   function watchFrame() {
     try {
       const doc = frame.contentDocument;
@@ -454,6 +466,7 @@ $("player-close").addEventListener("click", function () { location.hash = ""; })
   }
 
   document.addEventListener("pointermove", watch, { passive: true });
+  document.addEventListener("pointerleave", hideNow);
   frame.addEventListener("load", watchFrame);
   watchFrame();
 })();

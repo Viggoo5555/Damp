@@ -2778,7 +2778,8 @@ dialog {
 .player-bar #player-close .player-icon { width: 20px; height: 20px; }
 
 /* With a mouse the bar slides off the top edge and comes back when the pointer
-   gets there. Touch screens have no pointer to move, so they keep it visible. */
+   touches the very top. Touch screens have no pointer to move, so they keep it
+   visible. */
 @media (hover: hover) and (pointer: fine) {
   .player-bar {
     position: absolute;
@@ -2792,17 +2793,20 @@ dialog {
     transition: transform 0.22s ease, opacity 0.22s ease;
   }
 
+  /* Only the controls take the pointer. The strip itself lets clicks and hovers
+     through, so a game's own buttons in the top corners stay usable. */
+  .player-bar button,
+  .player-bar a { pointer-events: auto; }
+
   .player.bar-open .player-bar,
   .player-bar:focus-within {
     transform: none;
     opacity: 1;
-    pointer-events: auto;
   }
 
   /* The slim exit button on phones without the Fullscreen API stays put. */
   .player.pseudo-fullscreen .player-bar {
     transform: none;
     opacity: 1;
-    pointer-events: auto;
   }
 }

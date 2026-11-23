@@ -94,7 +94,8 @@
     "title": "Slope",
     "file": "games/slope.html",
     "category": "Racing",
-    "image": "img/slope.jpg"
+    "image": "img/slope.jpg",
+    "hidden": true
   },
   {
     "title": "Guessing Game",

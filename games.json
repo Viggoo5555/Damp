@@ -73,7 +73,8 @@
     "description": "Click On Verity",
     "file": "games/verity-clicker.html",
     "category": "Clicker",
-    "image": "img/verity-clicker.png"
+    "image": "img/verity-clicker.png",
+    "hidden": true
   },
   {
     "title": "10-Minute Dungeon",

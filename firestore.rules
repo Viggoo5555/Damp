@@ -30,6 +30,19 @@ service cloud.firestore {
         && request.resource.data.name.size() <= 24;
     }
 
+    // PolyTrack: the racing game's own board, one row per account per track.
+    // Times are milliseconds; lower is better, so the board is read ascending.
+    match /polytrack_tracks/{trackId}/scores/{uid} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'frames', 'at'])
+        && request.resource.data.frames is int
+        && request.resource.data.frames > 5000
+        && request.resource.data.frames < 3600000
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 24;
+    }
+
     // People list: signed-in players see names, you only write your own entry.
     match /people/{uid} {
       allow read: if request.auth != null;

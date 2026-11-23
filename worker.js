@@ -91,6 +91,92 @@ async function leaderboard(request, env, waitUntil) {
   return reply(body, 15);
 }
 
+// ---------- PolyTrack ----------
+// The racing game asks for its board at /api/v6/leaderboard and expects the
+// shape Kodub's own server returns: { total, entries, userEntry }. Times live
+// in Firestore as milliseconds, so lower is better and rows go `frames asc`.
+// games/polytrack/damp.js writes the rows for the signed-in account.
+const POLYTRACK_CAR = 'AAQAAAAAAI4AU44AUwAAAA';
+
+function polytrackRow(doc, rank) {
+  const fields = doc.fields || {};
+  return {
+    id: rank,
+    userId: doc.name.slice(doc.name.lastIndexOf('/') + 1),
+    nickname: (fields.name && fields.name.stringValue) || 'player',
+    countryCode: null,
+    carStyle: POLYTRACK_CAR,
+    frames: fields.frames && fields.frames.integerValue != null ? Number(fields.frames.integerValue) : 0,
+    time: (fields.at && fields.at.timestampValue) || new Date().toISOString(),
+    verifiedState: 1
+  };
+}
+
+async function polytrackCount(parent, key) {
+  const url = 'https://firestore.googleapis.com/v1/projects/' + PROJECT +
+    '/databases/(default)/documents:runAggregationQuery?key=' + key;
+  const body = JSON.stringify({
+    structuredAggregationQuery: {
+      structuredQuery: {
+        from: [{ collectionId: 'scores' }],
+        parent: parent,
+        aggregates: [{ alias: 'total', count: {} }]
+      }
+    }
+  });
+  try {
+    const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: body });
+    if (!res.ok) return 0;
+    const data = await res.json();
+    const first = Array.isArray(data) ? data[0] : data;
+    const value = first && first.result && first.result.aggregateFields && first.result.aggregateFields.total;
+    return value && value.integerValue ? Number(value.integerValue) : 0;
+  } catch (error) {
+    return 0;
+  }
+}
+
+async function polytrackLeaderboard(request, env) {
+  const params = new URL(request.url).searchParams;
+  const trackId = (params.get('trackId') || '').replace(/[^A-Za-z0-9_-]/g, '');
+  if (!trackId) return reply(JSON.stringify({ error: 'trackId' }), 0, 400);
+
+  const amount = Math.min(Math.max(Number(params.get('amount')) || 20, 1), 50);
+  const skip = Math.min(Math.max(Number(params.get('skip')) || 0, 0), 200);
+  const key = env.FIREBASE_API_KEY || DEFAULT_KEY;
+  const parent = 'polytrack_tracks/' + trackId;
+  const docsUrl = 'https://firestore.googleapis.com/v1/projects/' + PROJECT +
+    '/databases/(default)/documents/' + parent + '/scores?pageSize=' + Math.min(skip + amount, 250) +
+    '&orderBy=' + encodeURIComponent('frames asc') + '&key=' + key;
+
+  let res, total;
+  try {
+    const pair = await Promise.all([
+      fetch(docsUrl),
+      polytrackCount('projects/' + PROJECT + '/databases/(default)/documents/' + parent, key)
+    ]);
+    res = pair[0];
+    total = pair[1];
+  } catch (error) {
+    return reply(JSON.stringify({ error: 'network' }), 0, 502);
+  }
+
+  if (!res.ok) return reply(JSON.stringify({ error: 'upstream', status: res.status }), 0, 502);
+
+  let data;
+  try {
+    data = await res.json();
+  } catch (error) {
+    return reply(JSON.stringify({ error: 'bad json' }), 0, 502);
+  }
+
+  const entries = (data.documents || [])
+    .slice(skip)
+    .map(function (doc, index) { return polytrackRow(doc, skip + index + 1); });
+
+  return reply(JSON.stringify({ total: total, entries: entries, userEntry: null }), 15);
+}
+
 // One WebSocket room. Two players meet here instead of over WebRTC, so the
 // game works on school and office networks that block peer-to-peer traffic:
 // everything travels over ordinary HTTPS to this same domain.
@@ -174,6 +260,12 @@ export default {
         return new Response('Method not allowed', { status: 405, headers: { allow: 'GET' } });
       }
       return leaderboard(request, env, ctx.waitUntil.bind(ctx));
+    }
+    if (url.pathname === '/api/v6/leaderboard' || url.pathname === '/api/v6/leaderboard/') {
+      if (request.method !== 'GET' && request.method !== 'HEAD') {
+        return new Response('Method not allowed', { status: 405, headers: { allow: 'GET' } });
+      }
+      return polytrackLeaderboard(request, env);
     }
     const room = url.pathname.match(/^\/api\/room\/([A-Z0-9]{3,8})$/);
     if (room && (request.headers.get('Upgrade') || '').toLowerCase() === 'websocket') {

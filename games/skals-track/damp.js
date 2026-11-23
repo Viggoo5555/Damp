@@ -123,7 +123,8 @@
       if (!raw) return "";
       var profile = JSON.parse(raw);
       var style = profile && profile.carStyle;
-      return typeof style === "string" && /^[A-Za-z0-9+/]{20,26}={0,2}$/.test(style) ? style : "";
+      // The game writes unpadded base64url, so "_" and "-" are part of a real car.
+      return typeof style === "string" && /^[A-Za-z0-9_-]{20,26}={0,2}$/.test(style) ? style : "";
     } catch (error) {
       return "";
     }

@@ -99,13 +99,13 @@ async function leaderboard(request, env, waitUntil) {
 const POLYTRACK_CAR = 'AAQAAAAAAI4AU44AUwAAAA';
 
 // A row should wear the car its player raced, so damp.js sends the paint the
-// game keeps in the player's own profile. A car style is 16 unpadded base64
-// bytes; anything else would make the game's thumbnail renderer throw, so
-// doubtful values fall back to the plain car above.
+// game keeps in the player's own profile. A car style is 16 bytes written as
+// unpadded base64url; anything else would make the game's thumbnail renderer
+// throw, so doubtful values fall back to the plain car above.
 function polytrackCarStyle(value) {
-  if (typeof value !== 'string' || !/^[A-Za-z0-9+/]{20,26}={0,2}$/.test(value)) return null;
+  if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{20,26}={0,2}$/.test(value)) return null;
   try {
-    return atob(value).length === 16 ? value : null;
+    return atob(value.replace(/-/g, '+').replace(/_/g, '/')).length === 16 ? value : null;
   } catch (error) {
     return null;
   }

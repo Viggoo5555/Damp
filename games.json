@@ -204,6 +204,6 @@
     "description": "Low-poly time-trial racing. Pick a track, learn the racing line and shave tenths off your best run — every official track keeps its own leaderboard, with your time posted to the Damp board.",
     "file": "games/skals-track/index.html",
     "category": "Racing",
-    "image": "img/skals-track.png"
+    "image": "img/skalstrack.png"
   }
 ]

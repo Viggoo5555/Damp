@@ -22,5 +22,31 @@
     script.async = false;
     document.body.appendChild(script);
   });
+
+  // Damp already has a fullscreen button and a privacy page, so the menu bar
+  // keeps only the music toggle, sitting at the far left.
+  (function () {
+    function tidy() {
+      var bar = document.querySelector("#ui .menu-ui .button-bar");
+      if (!bar) return;
+      Array.prototype.slice.call(bar.children).forEach(function (button) {
+        if (button.tagName === "BUTTON" && !/music/i.test(button.textContent)) button.remove();
+      });
+    }
+    tidy();
+    new MutationObserver(function (list) {
+      for (var i = 0; i < list.length; i++) {
+        for (var j = 0; j < list[i].addedNodes.length; j++) {
+          var node = list[i].addedNodes[j];
+          if (node.nodeType !== 1) continue;
+          if ((node.classList && node.classList.contains("button-bar")) ||
+              (node.querySelector && node.querySelector(".button-bar"))) {
+            tidy();
+            return;
+          }
+        }
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+  })();
 })();
 </script></body></html>

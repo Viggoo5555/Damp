@@ -490,6 +490,16 @@ export default {
     if (url.pathname === '/api/v6/iceServers' || url.pathname === '/api/v6/iceServers/') {
       return reply(JSON.stringify(ICE_SERVERS), 0);
     }
+    // Picking an opponent makes the game fetch their recorded ghost before the
+    // race starts. This site keeps the boards in Firestore but has no replay
+    // store, so it answers with an empty list: the race starts as a time trial
+    // instead of stopping on a "Failed to load recordings" box.
+    if (url.pathname === '/api/v6/recordings' || url.pathname === '/api/v6/recordings/') {
+      if (request.method !== 'GET' && request.method !== 'HEAD') {
+        return new Response('Method not allowed', { status: 405, headers: { allow: 'GET' } });
+      }
+      return reply('[]', 0);
+    }
     if (/^\/api\/v6\/multiplayer\/(host|join)$/.test(url.pathname)) {
       if ((request.headers.get('Upgrade') || '').toLowerCase() !== 'websocket') {
         return new Response('Expected a WebSocket', { status: 426, headers: { upgrade: 'websocket' } });

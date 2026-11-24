@@ -557,10 +557,14 @@ $("player-close").addEventListener("click", function () { location.hash = ""; })
     return playing;
   }
 
+  // A game with no way back to its own menu keeps the X: Secret Room is one room
+  // you walk around in, so stepping out has to stay possible.
+  const CLOSE_ALWAYS = { "secret-room": true };
+
   function watch(event) {
     if (player.hidden || event.pointerType === "touch") return;
     const nearTop = event.clientY <= EDGE;
-    if (nearTop) player.classList.toggle("no-close", inPlay());
+    if (nearTop) player.classList.toggle("no-close", inPlay() && !CLOSE_ALWAYS[playing]);
     player.classList.toggle("bar-open", nearTop);
   }
 

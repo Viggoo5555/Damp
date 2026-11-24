@@ -19,6 +19,7 @@
     "/databases/(default)/documents/feedback?key=" + encodeURIComponent(API_KEY);
   var COOLDOWN_MS = 30000;
   var SENT_KEY = "damp-feedback-sent";
+  var QUEUE_KEY = "damp-feedback-queue";
   var KINDS = ["Something's broken", "An idea", "Something else"];
 
   var dialog, whereSelect, textBox, status, sendButton, meta, pill;
@@ -119,6 +120,7 @@
       new MutationObserver(syncPill).observe(playerEl, { attributes: true, attributeFilter: ["hidden"] });
     }
     syncPill();
+    setTimeout(flush, 2500);
   }
 
   // While a game is open the bar carries the button, so the corner stays clear
@@ -174,6 +176,41 @@
     return picked ? picked.value : KINDS[0];
   }
 
+  // Reports typed before the feedback inbox is open for writes would be lost,
+  // so a failed send is kept in this browser and retried on the next visit.
+  function queue() {
+    try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]") || []; } catch (error) { return []; }
+  }
+
+  function keep(report) {
+    try {
+      var next = queue();
+      next.push(report);
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(next.slice(-5)));
+    } catch (error) { /* private mode: nothing to keep it in */ }
+  }
+
+  function flush() {
+    var pending = queue();
+    if (!pending.length) return;
+    pending.reduce(function (chain, report) {
+      return chain.then(function () {
+        return fetch(ENDPOINT, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(report)
+        }).then(function (response) {
+          if (!response.ok) throw new Error("HTTP " + response.status);
+          try {
+            var rest = queue();
+            rest.shift();
+            localStorage.setItem(QUEUE_KEY, JSON.stringify(rest));
+          } catch (error) { /* ignore */ }
+        });
+      }).catch(function () { /* still closed; keep it for later */ });
+    }, Promise.resolve());
+  }
+
   // Nothing is lost when the send fails: the text stays in the box.
   function submit(event) {
     if (event) event.preventDefault();
@@ -204,10 +241,12 @@
     sendButton.disabled = true;
     status.textContent = "Sending…";
 
+    var report = { fields: fields };
+
     fetch(ENDPOINT, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ fields: fields })
+      body: JSON.stringify(report)
     }).then(function (response) {
       if (!response.ok) throw new Error("HTTP " + response.status);
       try { localStorage.setItem(SENT_KEY, String(Date.now())); } catch (error) { /* private mode */ }
@@ -215,8 +254,9 @@
       status.textContent = "Thanks — that is in.";
       setTimeout(closeDialog, 900);
     }).catch(function (error) {
+      keep(report);
       sendButton.disabled = false;
-      status.textContent = "Could not send that. Try again in a moment.";
+      status.textContent = "Kept this one — it will send on your next visit.";
       if (window.console && console.warn) console.warn("Feedback:", error);
     });
   }

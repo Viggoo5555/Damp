@@ -1,5 +1,12 @@
 [
   {
+    "title": "Velvet Casino",
+    "description": "A 3D casino floor. Walk the hall, sit down at blackjack, roulette, dice or the slots — the camera glides over to whichever table you pick — and gamble one pile of coins across all of them, against the dealer or against a friend.",
+    "file": "games/casino.html",
+    "category": "Casino",
+    "image": "img/casino.png"
+  },
+  {
     "title": "Bad Hair Day",
     "description": "A glam salon for terrible hair and bare faces. Style the hair first — brush out the tangles, snip, blow in volume, curl, dye and clip — then move to the mirror for eyeshadow, lashes, blush, lipstick and glow, and finish with a score.",
     "file": "games/bad-hair-day.html",

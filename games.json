@@ -1,13 +1,5 @@
 [
   {
-    "title": "Bad Hair Day",
-    "description": "A glam salon for terrible hair and bare faces. Style the hair first — brush out the tangles, snip, blow in volume, curl, dye and clip — then move to the mirror for eyeshadow, lashes, blush, lipstick and glow, and finish with a score.",
-    "file": "games/bad-hair-day.html",
-    "category": "Makeover",
-    "image": "img/bad-hair-day.png",
-    "hidden": true
-  },
-  {
     "title": "City Chaos",
     "description": "A 3D physics sandbox in a living city. Walk it, drive it, blow it up: spawn anything, weld your own structures and topple skyscrapers floor by floor with real debris.",
     "file": "games/city-chaos.html",

@@ -154,19 +154,73 @@ function showHero() {
   feature.hidden = false;
 }
 
+// Search is forgiving: "hegerow hallow" still finds Hedgerow Hallow, "draw and
+// pass" finds Draw & Pass, and a word or two of a title is enough.
+function searchWords(text) {
+  return String(text)
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/&/g, " and ")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9æøå]+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean);
+}
+
+// Single-letter edits between two words, giving up once they are clearly
+// different words.
+function editDistance(a, b, max) {
+  const limit = max + 1;
+  let prev = new Array(b.length + 1);
+  for (let j = 0; j <= b.length; j++) prev[j] = Math.min(j, limit);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = new Array(b.length + 1);
+    cur[0] = Math.min(i, limit);
+    let best = cur[0];
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost, limit);
+      if (cur[j] < best) best = cur[j];
+    }
+    if (best > max) return limit;
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+function closeEnough(word, target) {
+  if (word === target) return true;
+  if (word.length >= 2 && target.startsWith(word)) return true;
+  const longest = Math.max(word.length, target.length);
+  if (longest < 5) return false;
+  const allowance = longest >= 9 ? 2 : 1;
+  if (Math.abs(word.length - target.length) > allowance) return false;
+  return editDistance(word, target, allowance) <= allowance;
+}
+
 function matchesQuery(game, query) {
-  const words = (game.title + " " + (game.description || "") + " " + (game.category || "")).toLowerCase();
-  return query.split(/\s+/).every(function (part) { return words.includes(part); });
+  const need = searchWords(query);
+  if (!need.length) return true;
+  const have = searchWords(game.title + " " + (game.description || "") + " " + (game.category || ""));
+  return need.every(function (word) {
+    return have.some(function (target) { return closeEnough(word, target); });
+  });
 }
 
 // The game you typed comes first: an exact title, then a title that starts with
 // it, then one that only mentions it somewhere.
 function matchRank(game, query) {
-  const title = game.title.toLowerCase();
-  if (title === query) return 0;
-  const parts = query.split(/\s+/);
-  if (title.startsWith(query) || title.startsWith(parts[0])) return 1;
-  return parts.every(function (part) { return title.includes(part); }) ? 2 : 3;
+  const need = searchWords(query);
+  const title = searchWords(game.title);
+  if (!need.length || !title.length) return 0;
+  if (title.join(" ") === need.join(" ")) return 0;
+  const inTitle = need.every(function (word) {
+    return title.some(function (target) { return closeEnough(word, target); });
+  });
+  if (!inTitle) return 3;
+  return title.some(function (target) { return target.startsWith(need[0]); }) ? 1 : 2;
 }
 
 function sortedForView(list, searching, query) {

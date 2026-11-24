@@ -228,7 +228,10 @@
           self._ready();
         } else if (kind === "empty" || kind === "full") {
           // A joiner can reach the room a moment before the host's socket is
-          // registered, so try again briefly instead of failing the race.
+          // registered, so try again briefly instead of failing the race. The
+          // retry must stay invisible: closing this socket would otherwise look
+          // like a dropped connection to the game and end the join.
+          socket._dampRetry = true;
           try { socket.close(); } catch (error) { /* ignore */ }
           self._socket = null;
           if (kind === "empty" && self._attempts < 25 && !self._closed) {
@@ -245,7 +248,7 @@
 
     socket.addEventListener("close", function () {
       if (self._socket === socket) self._socket = null;
-      if (self._closed) return;
+      if (self._closed || socket._dampRetry) return;
       self._open = false;
       for (var i = 0; i < self._channels.length; i++) self._channels[i]._shut();
       self._setState("disconnected");

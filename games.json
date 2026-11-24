@@ -4,7 +4,8 @@
     "description": "A 3D casino floor. Walk the hall, sit down at blackjack, roulette, dice or the slots — the camera glides over to whichever table you pick — and gamble one pile of coins across all of them, against the dealer or against a friend.",
     "file": "games/casino.html",
     "category": "Casino",
-    "image": "img/casino.png"
+    "image": "img/casino.png",
+    "hidden": true
   },
   {
     "title": "Bad Hair Day",

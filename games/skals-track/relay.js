@@ -263,10 +263,17 @@
     // The host starts sending the moment it sees the pair, which can be a tick
     // before this side's channels are open. Real data channels never deliver
     // anything before "open", so hold those frames back until the game's own
-    // listeners have run.
-    var waiting = this._pending;
-    this._pending = [];
-    for (var j = 0; j < waiting.length; j++) this._dispatch(waiting[j]);
+    // listeners have run. The wait is a task rather than a microtask on
+    // purpose: the joiner registers its session handler right after the join
+    // promise resolves, and the host's first session frame must not overtake
+    // that registration.
+    var self = this;
+    setTimeout(function () {
+      if (self._closed) return;
+      var waiting = self._pending;
+      self._pending = [];
+      for (var j = 0; j < waiting.length; j++) self._dispatch(waiting[j]);
+    }, 50);
   };
 
   RelayPeerConnection.prototype._receive = function (data) {

@@ -11,14 +11,14 @@
     "title": "Flappy Bird",
     "description": "Classic arcade bird game with custom skins and worlds shop.",
     "file": "games/Flappy Bird.html",
-    "category": "Arcade",
+    "category": "Action",
     "image": "img/flappy-bird.png"
   },
   {
     "title": "Knockout Night",
     "description": "3D boxing with combos, parry, super and online 1v1 with friends.",
     "file": "games/knockout-night.html",
-    "category": "Fighting",
+    "category": "Action",
     "image": "img/knockout-night.png",
     "hidden": true
   },
@@ -73,47 +73,47 @@
   {
     "title": "10-Minute Dungeon",
     "file": "games/10-minute-dungeon.html",
-    "category": "Dungeon",
+    "category": "Action",
     "image": "img/10-minute-dungeon.png",
     "hidden": true
   },
   {
     "title": "Guess the Color!",
     "file": "games/guess-the-color.html",
-    "category": "Guessing",
+    "category": "Puzzle & words",
     "image": "img/guess-the-color.png"
   },
   {
     "title": "Slope",
     "file": "games/slope.html",
-    "category": "Racing",
+    "category": "Action",
     "image": "img/slope.jpg",
     "hidden": true
   },
   {
     "title": "Guessing Game",
     "file": "games/guessing-game.html",
-    "category": "Guessing",
+    "category": "Puzzle & words",
     "image": "img/guessing-game.png"
   },
   {
     "title": "Hedgerow Hallow",
     "description": "Guard the veggie patch from snails, beetles and one very rude badger.",
     "file": "games/hedgerow-hallow.html",
-    "category": "Tower Defense",
+    "category": "Strategy",
     "image": "img/hedgerow-hallow-thumb.jpg",
     "featured": true
   },
   {
     "title": "Ordle",
     "file": "games/ordle.html",
-    "category": "Guessing",
+    "category": "Puzzle & words",
     "image": "img/ordle.jpg"
   },
   {
     "title": "Krillion",
     "file": "games/krillion.html",
-    "category": "Guessing",
+    "category": "Puzzle & words",
     "image": "img/krillion.png"
   },
   {
@@ -143,7 +143,7 @@
     "title": "Outfit Battle",
     "description": "A live runway fashion game. Style a look from eighty-plus pieces in two minutes, walk the runway against up to seven stylists, vote for the room and climb the global board.",
     "file": "games/outfit-battle.html",
-    "category": "Fashion",
+    "category": "Party",
     "image": "img/outfit-battle.png",
     "party": true,
     "hidden": true
@@ -160,7 +160,7 @@
     "title": "Last Stand",
     "description": "An eighteen-round neon battle royale of microgames. Everyone plays the same reflex, timing, memory and aim challenges at once, the worst performances drop out, and the last player standing takes the crown. Accounts, ranks, daily quests and cosmetics included.",
     "file": "games/last-stand/index.html",
-    "category": "Battle Royale",
+    "category": "Party",
     "image": "img/last-stand.png",
     "party": true,
     "hidden": true
@@ -169,7 +169,7 @@
     "title": "Bake Off!",
     "description": "A live 3D baking competition for two to eight players. Get a mystery theme, weigh and mix for real, time your bake, then frost, pipe, top and write on a cake everyone can see — and vote on. Coins, levels, a shop, daily challenges and a global board included.",
     "file": "games/bake-off/index.html",
-    "category": "Cooking",
+    "category": "Party",
     "image": "img/bake-off.png",
     "party": true,
     "hidden": true
@@ -209,7 +209,7 @@
     "title": "Flertal",
     "description": "The most common answer wins. Everyone answers the same question in secret and scores a point for each player who wrote something like them — then the round's winners can gamble their points on a spinning crate. Play together on one phone, or let everyone join from their own with a room code.",
     "file": "games/flertal/index.html",
-    "category": "Guessing",
+    "category": "Party",
     "image": "img/flertal.png",
     "party": true
   },

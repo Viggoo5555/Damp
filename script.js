@@ -306,7 +306,11 @@ function showGames() {
 function showChips() {
   chips.replaceChildren();
   const all = liveGames();
-  const names = ["All"].concat(categories(all));
+  // The busiest category comes first, so the shelf reads from the top down.
+  const names = ["All"].concat(categories(all).sort(function (a, b) {
+    const count = function (name) { return all.filter(function (g) { return g.category === name; }).length; };
+    return count(b) - count(a) || a.localeCompare(b);
+  }));
   if (!names.includes(category)) category = "All";
   chips.hidden = all.length === 0 || search.value.trim() !== "";
   const showCats = names.length > 2;

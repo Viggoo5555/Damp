@@ -215,6 +215,7 @@
     socket.binaryType = "arraybuffer";
 
     socket.addEventListener("open", function () {
+      socket.binaryType = "arraybuffer";
       if (self._closed) { try { socket.close(); } catch (error) { /* ignore */ } }
     });
 
@@ -277,6 +278,13 @@
   };
 
   RelayPeerConnection.prototype._receive = function (data) {
+    // Chrome can still hand a binary frame over as a Blob even with binaryType
+    // set before the socket opened, so read it as bytes and carry on.
+    if (typeof Blob !== "undefined" && data instanceof Blob) {
+      var self = this;
+      data.arrayBuffer().then(function (buffer) { self._receive(buffer); });
+      return;
+    }
     if (!this._open) {
       if (this._pending.length < 512) this._pending.push(data);
       return;

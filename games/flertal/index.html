@@ -1480,15 +1480,15 @@ function pick() {
     return out;
   }
 
-  function storedName() {
-    try { return (localStorage.getItem("flertal_name") || "").trim(); } catch (e) { return ""; }
-  }
-
-  function nick() {
-    const input = document.getElementById("nick");
-    const typed = input ? String(input.value || "").trim().slice(0, 14) : "";
-    if (typed) { try { localStorage.setItem("flertal_name", typed); } catch (e) { /* storage off */ } return typed; }
-    return storedName();
+  // Your name in the game is your Damp username, so there is nothing to type.
+  // Accounts are usernames turned into a made-up address (see accounts.js).
+  function accountName() {
+    const who = (net.auth && net.auth.currentUser) || null;
+    if (!who) return "";
+    const mail = String(who.email || "");
+    const at = mail.indexOf("@damp.example");
+    const own = at > 0 ? mail.slice(0, at) : "";
+    return String(own || who.displayName || "").trim().slice(0, 20);
   }
 
   function modeSwitch() {
@@ -1625,9 +1625,8 @@ function pick() {
         '<div class="row"><a class="button-link" href="/" target="_top">Åbn Damp og log ind</a>' +
         '<button class="ghost" onclick="flt.recheck()">Jeg er logget ind nu</button></div></div>';
     } else {
-      side = '<div class="panel"><div class="panel-head"><h2>Dit navn</h2></div>' +
-        '<label class="field"><span>Vises til de andre</span>' +
-        '<input id="nick" maxlength="14" autocomplete="nickname" placeholder="Navn" value="' + esc(storedName()) + '"></label>' +
+      side = '<div class="panel"><div class="panel-head"><h2>Spil som dig</h2></div>' +
+        '<p class="lead">Du er med som <span class="accent">' + esc(accountName()) + '</span> — navnet kommer fra din Damp-konto.</p>' +
         '<div class="row"><button class="primary" onclick="flt.create()">Opret kamp</button></div></div>' +
         '<div class="panel"><div class="panel-head"><h2>Har du en kode?</h2></div>' +
         '<label class="field"><span>Fire tegn fra værten</span>' +
@@ -1866,15 +1865,21 @@ function pick() {
       net.err = "Firebase kunne ikke indlæses: " + errText(e);
     }
     drawStart();
+    // Arrived from a chat invite: walk straight into that room.
+    if (net.pendingCode && net.uid && !net.code) {
+      const code = net.pendingCode;
+      net.pendingCode = "";
+      joinTo(code);
+    }
   }
 
   async function create() {
-    const name = nick();
-    if (!name) { net.err = "Skriv et navn først."; drawStart(); return; }
     net.err = "";
     try {
       await init();
       if (!net.uid) { drawStart(); return; }
+      const name = accountName();
+      if (!name) { net.err = "Din konto har intet brugernavn."; drawStart(); return; }
       const dbMod = net.fb.dbMod;
       let code = code4();
       let ref = dbMod.doc(net.db, COL, code);
@@ -1915,16 +1920,22 @@ function pick() {
     }
   }
 
-  async function join() {
+  function join() {
     const field = document.getElementById("joincode");
-    const code = String(field ? field.value : "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
+    return joinTo(field ? field.value : "");
+  }
+
+  // An invite link already carries the code, so joinTo runs on load: pressing
+  // Join in Damp lands you in the room without typing or pressing anything.
+  async function joinTo(wanted) {
+    const code = String(wanted || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
     if (code.length < 4) { net.err = "Koden er fire tegn."; drawStart(); return; }
-    const name = nick();
-    if (!name) { net.err = "Skriv et navn først."; drawStart(); return; }
     net.err = "";
     try {
       await init();
-      if (!net.uid) { drawStart(); return; }
+      if (!net.uid) { net.pendingCode = code; drawStart(); return; }
+      const name = accountName();
+      if (!name) { net.err = "Din konto har intet brugernavn."; drawStart(); return; }
       const dbMod = net.fb.dbMod;
       const ref = dbMod.doc(net.db, COL, code);
       const snap = await dbMod.getDoc(ref);
@@ -2223,6 +2234,11 @@ function pick() {
     net.uid = user ? user.uid : null;
     net.err = net.uid ? "" : "Du er ikke logget ind endnu.";
     drawStart();
+    if (net.uid && net.pendingCode && !net.code) {
+      const code = net.pendingCode;
+      net.pendingCode = "";
+      joinTo(code);
+    }
   }
 
   window.flt = {

@@ -4313,7 +4313,9 @@ requestAnimationFrame(t => { lastT = t; frame_(t); });
   const input = $('mpCode');
   if (input) input.value = invited;
   const msg = $('mpMsg');
-  if (msg) msg.textContent = 'You were invited — press Join together.';
+  if (msg) msg.textContent = 'Joining room ' + invited + '…';
+  /* An invite is meant to be one tap: connect as soon as the lobby is up. */
+  setTimeout(() => { if (input) input.value = invited; mpConnect('guest'); }, 450);
 })();
 })();
 </script>

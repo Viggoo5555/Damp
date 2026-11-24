@@ -112,6 +112,112 @@
     try { localStorage.setItem(SYNC_KEY, JSON.stringify(synced)); } catch (error) { /* private mode */ }
   }
 
+  // Progress: the game keeps unlocked cars, every record and the paints in
+  // localStorage, which a borrowed school computer or a cleared browser throws
+  // away. The save is copied to the account (users/<uid>, the same document
+  // the other games use) and put back on a machine that has none yet.
+  var SAVE_GAME = "skalstrack";
+  var RESTORED = "damp-skalstrack-restored";
+  var SAVE_KEEP = /^polytrack_v5_prod_(record_\d+_(default|undeterministic)_[0-9a-f]{64}|user_\d+|user_slot|unlocked_car_styles|selected_track_tab)$/;
+
+  function readProgress() {
+    var out = {};
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        if (!key || !SAVE_KEEP.test(key)) continue;
+        var value = localStorage.getItem(key);
+        if (typeof value !== "string" || !value.length || value.length > 60000) continue;
+        out[key] = value;
+      }
+    } catch (error) { /* storage off */ }
+    return out;
+  }
+
+  // The last save handed to the account, so the five-second poll only writes
+  // when the player actually improved something.
+  var lastProgress = "";
+  var saving = false;
+
+  // Two machines can both have played: keep whichever record is quicker and
+  // take the cars either of them unlocked, so neither side loses ground.
+  function mergeProgress(local, cloud) {
+    var out = {};
+    var key;
+    for (key in local) if (Object.prototype.hasOwnProperty.call(local, key)) out[key] = local[key];
+    for (key in cloud) {
+      if (!Object.prototype.hasOwnProperty.call(cloud, key)) continue;
+      if (typeof cloud[key] !== "string") continue;
+      if (!Object.prototype.hasOwnProperty.call(out, key)) { out[key] = cloud[key]; continue; }
+      if (out[key] === cloud[key]) continue;
+      try {
+        if (key.indexOf("polytrack_v5_prod_record_") === 0) {
+          var mine = JSON.parse(out[key]), theirs = JSON.parse(cloud[key]);
+          var a = Number(mine && mine.frames), b = Number(theirs && theirs.frames);
+          if (Number.isFinite(a) && Number.isFinite(b) && b < a) out[key] = cloud[key];
+        } else if (key.indexOf("polytrack_v5_prod_unlocked_car_styles") === 0) {
+          var one = JSON.parse(out[key]) || {}, two = JSON.parse(cloud[key]) || {};
+          ["patterns", "rims", "exhausts"].forEach(function (part) {
+            one[part] = Array.from(new Set([].concat(one[part] || [], two[part] || [])));
+          });
+          out[key] = JSON.stringify(one);
+        }
+      } catch (error) { /* a value we cannot read is left as it is */ }
+    }
+    return out;
+  }
+
+  async function pullProgress() {
+    if (!user || !db || !F) return;
+    try {
+      var snap = await F.getDoc(F.doc(db, "users", user.uid));
+      var games = snap.exists() ? snap.data().games : null;
+      var entry = games ? games[SAVE_GAME] : null;
+      var local = readProgress();
+      if (!entry || !entry.data) { lastProgress = JSON.stringify(local); return; }
+      var saved;
+      try { saved = JSON.parse(entry.data) || {}; } catch (error) { lastProgress = String(entry.data); return; }
+      var fresh = !Object.keys(local).length;
+      var merged = fresh ? saved : mergeProgress(local, saved);
+      var wrote = 0;
+      for (var key in merged) {
+        if (!Object.prototype.hasOwnProperty.call(merged, key)) continue;
+        if (!SAVE_KEEP.test(key) || typeof merged[key] !== "string") continue;
+        if (local[key] === merged[key]) continue;
+        try { localStorage.setItem(key, merged[key]); wrote++; } catch (error) { /* full */ }
+      }
+      // Hand the merged save back on the next tick, so a record set on the
+      // other machine shows up here and this machine's best goes there too.
+      lastProgress = "";
+      // Only a machine that had no save at all reloads: the game has already
+      // read localStorage by now, and anything else would cut a race short.
+      if (!fresh || !wrote) return;
+      if (sessionStorage.getItem(RESTORED)) return;
+      try { sessionStorage.setItem(RESTORED, "1"); } catch (error) { /* storage off */ }
+      say("Damp: your cars and records are back — loading them now");
+      setTimeout(function () { location.reload(); }, 1400);
+    } catch (error) {
+      console.debug("Damp save:", error && error.message ? error.message : error);
+    }
+  }
+
+  async function pushProgress() {
+    if (!user || !db || !F || saving) return;
+    var local = readProgress();
+    var text = JSON.stringify(local);
+    if (text === "{}" || text === lastProgress) return;
+    saving = true;
+    try {
+      await F.setDoc(F.doc(db, "users", user.uid),
+        { games: { skalstrack: { data: text, updated: Date.now() } } }, { merge: true });
+      lastProgress = text;
+    } catch (error) {
+      console.debug("Damp save:", error && error.message ? error.message : error);
+    } finally {
+      saving = false;
+    }
+  }
+
   // The car the player races, as the game keeps it in its own profile. The
   // board draws this thumbnail, so it should be the paint they won with.
   var PROFILE_KEY = "polytrack_v5_prod_user_";
@@ -220,10 +326,11 @@
         }
         if (!playerName) playerName = (who.email || "").split("@")[0].slice(0, 24) || "player";
         push();
+        pullProgress().then(pushProgress);
       });
 
-      setInterval(push, 5000);
-      document.addEventListener("visibilitychange", function () { if (!document.hidden) push(); });
+      setInterval(function () { push(); pushProgress(); }, 5000);
+      document.addEventListener("visibilitychange", function () { if (!document.hidden) { push(); pushProgress(); } });
     } catch (error) {
       console.debug("Damp board unavailable:", error && error.message ? error.message : error);
     }

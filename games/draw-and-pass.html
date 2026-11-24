@@ -999,7 +999,9 @@ function boot() {
       S.uid = "u" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
       localStorage.setItem("dp_uid", S.uid);
     }
-    S.name = localStorage.getItem("dp_name") || "";
+    /* An invite arrives from a signed-in Damp player, so the account name is
+       already on this browser: the room opens without a name prompt. */
+    S.name = localStorage.getItem("dp_name") || localStorage.getItem("damp-name") || "";
     const c = parseInt(localStorage.getItem("dp_color"), 10);
     S.color = Number.isFinite(c) ? clamp(c, 0, 15) : rnd(16);
   } catch (e) {

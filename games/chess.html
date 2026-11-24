@@ -741,18 +741,22 @@ function bestMove(bd, st, level) {
   return pick;
 }
 
+// FIDE 5.2.2: a position is dead when no legal sequence of moves can ever lead
+// to mate. Bare kings, king against king and one minor, and one bishop each on
+// the same colour of square are dead. Everything else can still be mated.
 function insufficient(bd) {
-  const pieces = [];
-  for (const p of bd) if (p) pieces.push(p);
-  if (pieces.length > 4) return false;
-  const rest = pieces.filter(p => p[1] !== 'k');
-  if (!rest.length) return true;                       // bare kings
-  if (rest.length === 1 && (rest[0][1] === 'b' || rest[0][1] === 'n')) return true;
-  if (rest.length === 2 && rest.every(p => p[1] === 'b' && p[0] !== rest[0][0])) {
-    // opposite coloured kings with one bishop each: almost always a draw in practice
-    return true;
+  const rest = [];
+  const bishops = [];
+  for (let i = 0; i < 64; i++) {
+    const p = bd[i];
+    if (!p || p[1] === 'k') continue;
+    rest.push(p);
+    if (p[1] === 'b') bishops.push(((i % 8) + ((i / 8) | 0)) % 2);
   }
-  return false;
+  if (!rest.length) return true;                       // king against king
+  if (rest.length === 1) return rest[0][1] === 'b' || rest[0][1] === 'n';
+  return rest.length === 2 && bishops.length === 2 &&
+    rest[0][0] !== rest[1][0] && bishops[0] === bishops[1];
 }
 
 /* =====================================================================
@@ -2082,10 +2086,37 @@ function maybeAI() {
 }
 
 /* ---------- checking and finishing ---------- */
+// A position is the same when the pieces, the side to move, both castling
+// rights and a real en passant chance all match (FIDE 9.2.2).
+function posKey(bd, st) {
+  let key = '';
+  for (let i = 0; i < 64; i++) key += bd[i] || '..';
+  key += '|' + st.turn +
+    '|' + (st.cast.wK ? 'K' : '') + (st.cast.wQ ? 'Q' : '') +
+    (st.cast.bK ? 'k' : '') + (st.cast.bQ ? 'q' : '');
+  if (st.ep >= 0) {
+    const f = st.ep % 8, r = (st.ep / 8) | 0;
+    const from = ((st.turn === 'w' ? r - 1 : r + 1) * 8) + f;
+    const pawn = st.turn + 'p';
+    if ((f > 0 && bd[from - 1] === pawn) || (f < 7 && bd[from + 1] === pawn)) key += '|' + st.ep;
+  }
+  return key;
+}
+
+function repeatedPosition() {
+  const key = posKey(G.bd, G.st);
+  let seen = 1;
+  for (let i = 0; i < G.history.length; i++) {
+    if (posKey(G.history[i].bd, G.history[i].st) === key) seen++;
+  }
+  return seen >= 3;
+}
+
 function finishIfOver() {
   const moves = G.allLegal;
   const chk = inCheck(G.bd, G.st.turn);
   if (!moves.length) { endGame(chk ? 'mate' : 'stale'); return true; }
+  if (G.st.half >= 8 && repeatedPosition()) { endGame('repeat'); return true; }
   if (G.st.half >= 100) { endGame('fifty'); return true; }
   if (insufficient(G.bd)) { endGame('material'); return true; }
   if (chk) {
@@ -2124,6 +2155,7 @@ function endGame(kind) {
 
   if (kind === 'mate') $('endS').textContent = playerWon ? 'Checkmate. The board is yours.' : 'Checkmate. Your king has nowhere left to go.';
   else if (kind === 'stale') $('endS').textContent = 'Stalemate. No legal moves left, but no check either.';
+  else if (kind === 'repeat') $('endS').textContent = 'Draw by threefold repetition. The same position came up three times.';
   else if (kind === 'fifty') $('endS').textContent = 'Draw by the fifty move rule.';
   else $('endS').textContent = 'Draw. Neither side has enough material to win.';
 
@@ -2927,7 +2959,7 @@ requestAnimationFrame(() => {
 
 // A tiny handle for automated checks; the page itself never uses it.
 if (location.hash === '#dev') {
-  window.__chess = { G, legalMoves, makeMove, bestMove, START, NEW_STATE, doMove, newGame, inCheck, sanOf, camera, view, scene, renderer, rebuild, drawOverlays, updateTurnUI, net: NET, templates: TEMPLATES, updateTweens, tweens, piecesRoot };
+  window.__chess = { G, legalMoves, makeMove, bestMove, START, NEW_STATE, doMove, newGame, inCheck, sanOf, finishIfOver, insufficient, posKey, repeatedPosition, camera, view, scene, renderer, rebuild, drawOverlays, updateTurnUI, net: NET, templates: TEMPLATES, updateTweens, tweens, piecesRoot };
 }
 </script>
 </body></html>

@@ -121,6 +121,7 @@
     this._attempts = 0;
     this._open = false;
     this._closed = false;
+    this._pending = [];
     this.localDescription = null;
     this.remoteDescription = null;
     this.onicecandidate = null;
@@ -256,9 +257,24 @@
     this._open = true;
     this._setState("connected");
     for (var i = 0; i < this._channels.length; i++) this._channels[i]._open();
+    // The host starts sending the moment it sees the pair, which can be a tick
+    // before this side's channels are open. Real data channels never deliver
+    // anything before "open", so hold those frames back until the game's own
+    // listeners have run.
+    var waiting = this._pending;
+    this._pending = [];
+    for (var j = 0; j < waiting.length; j++) this._dispatch(waiting[j]);
   };
 
   RelayPeerConnection.prototype._receive = function (data) {
+    if (!this._open) {
+      if (this._pending.length < 512) this._pending.push(data);
+      return;
+    }
+    this._dispatch(data);
+  };
+
+  RelayPeerConnection.prototype._dispatch = function (data) {
     if (!(data instanceof ArrayBuffer) || data.byteLength < 1) return;
     var bytes = new Uint8Array(data);
     var channelId = bytes[0];

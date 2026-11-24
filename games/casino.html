@@ -51,18 +51,46 @@
     background:rgba(16,8,22,.86);color:var(--ink);font-size:13.5px;text-align:center;
     backdrop-filter:blur(6px);transition:opacity .25s,transform .25s;pointer-events:none;max-width:94vw}
   #hint b{color:var(--gold);font-weight:600}
-  #toast{position:fixed;left:50%;top:70px;transform:translate(-50%,-12px);z-index:40;
+  #toast{position:fixed;left:50%;bottom:76px;transform:translate(-50%,12px);z-index:40;
     padding:10px 18px;border-radius:12px;background:rgba(226,183,94,.95);color:#1b0f04;
     font-weight:600;font-size:14px;opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;
     box-shadow:0 10px 30px rgba(0,0,0,.4);max-width:90vw;text-align:center}
   #toast.on{opacity:1;transform:translate(-50%,0)}
+
+  /* the verdict of the round you just played */
+  #result{position:fixed;left:50%;top:64px;transform:translate(-50%,-10px) scale(.94);z-index:45;
+    min-width:216px;padding:10px 24px 12px;border-radius:16px;text-align:center;
+    background:rgba(14,7,20,.92);border:1px solid var(--line);
+    opacity:0;pointer-events:none;transition:opacity .18s,transform .2s;
+    box-shadow:0 18px 46px rgba(0,0,0,.55)}
+  #result.on{opacity:1;transform:translate(-50%,0) scale(1)}
+  #result b{display:block;font-family:"Cormorant Garamond",Georgia,serif;font-weight:600;
+    font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
+  #result strong{display:block;font-size:32px;line-height:1.12;font-variant-numeric:tabular-nums;margin:1px 0 2px}
+  #result em{display:block;font-style:normal;font-size:12px;color:var(--muted)}
+  #result.win{border-color:rgba(120,226,150,.55);background:rgba(9,36,22,.94)}
+  #result.win strong{color:#7ff0a4;text-shadow:0 0 28px rgba(127,240,164,.55)}
+  #result.lose{border-color:rgba(226,90,110,.5);background:rgba(38,7,17,.94)}
+  #result.lose strong{color:#ff8095}
+  #result.push strong{color:var(--ink)}
+  .stack.bump{animation:bump .5s ease-out}
+  @keyframes bump{0%{transform:scale(1)}30%{transform:scale(1.16);border-color:var(--gold)}100%{transform:scale(1)}}
+
   @media (max-width:520px){
-    #hud{padding:9px 10px;gap:8px}
-    .brand{font-size:11.5px;letter-spacing:.13em}
+    #hud{display:grid;grid-template-columns:auto 1fr auto;
+      grid-template-areas:"brand stacks leave" "modes modes modes";
+      align-items:center;padding:8px 10px;gap:7px}
+    .brand{grid-area:brand;font-size:11.5px;letter-spacing:.13em}
+    #stacks{grid-area:stacks;margin-left:0;justify-content:flex-end}
+    #modes{grid-area:modes;justify-self:start}
+    #leave{grid-area:leave;padding:8px 12px;font-size:12px}
     .stack{padding:6px 9px;font-size:12.5px;gap:5px}
     .stack small{display:none}
-    #leave{display:none}
     #hint{font-size:12.5px;padding:8px 14px;bottom:14px}
+    #toast{bottom:64px;font-size:12.5px;padding:8px 14px}
+    #result{top:92px;min-width:172px;padding:8px 16px 10px;border-radius:14px}
+    #result strong{font-size:26px}
+    #result b{font-size:10.5px;letter-spacing:.2em}
   }
 </style>
 </head>
@@ -81,6 +109,7 @@
 
 <div id="hint">Click a <b>table</b> to walk over and play</div>
 <div id="toast"></div>
+<div id="result"></div>
 
 <script type="module">
 import * as THREE from "three";
@@ -104,6 +133,40 @@ function toast(text) {
   toastTimer = setTimeout(() => box.classList.remove("on"), 2000);
 }
 function hint(html) { $("#hint").innerHTML = html; }
+
+/* ---------- verdict: did that round pay, and how much ---------- */
+let resultTimer = 0;
+function verdict(kind, amount, detail) {
+  const box = $("#result");
+  const label = kind === "win" ? "You win" : kind === "lose" ? "House takes it" : "Push";
+  const cash = amount === 0 ? "±0" : (amount > 0 ? "+" : "−") + fmt(Math.abs(amount));
+  box.className = kind + " on";
+  box.innerHTML = "<b>" + label + "</b><strong>" + cash + "</strong>" + (detail ? "<em>" + detail + "</em>" : "");
+  clearTimeout(resultTimer);
+  resultTimer = setTimeout(() => box.classList.remove("on"), 3000);
+  bumpStack();
+  flashTable(kind);
+}
+function hideVerdict() {
+  clearTimeout(resultTimer);
+  $("#result").classList.remove("on");
+}
+function bumpStack() {
+  const stacks = $("#stacks").querySelectorAll(".stack");
+  const live = mode === "friend" && turn === "friend" ? 1 : 0;
+  const el = stacks[live] || stacks[0];
+  if (!el) return;
+  el.classList.remove("bump");
+  void el.offsetWidth;
+  el.classList.add("bump");
+}
+function flashTable(kind) {
+  if (!current) return;
+  const g = tablesById[current.id];
+  if (!g || !g.userData.glow) return;
+  g.userData.flash = kind === "win" ? 0x63e08b : kind === "lose" ? 0xe0506a : 0xe2b75e;
+  g.userData.flashT = 1;
+}
 
 /* =====================================================================
    wallet
@@ -371,6 +434,39 @@ function labelTexture(text, opts) {
   });
 }
 
+// a label in the scene that always faces you and can be rewritten (totals, results)
+function textSprite(opts) {
+  const o = opts || {};
+  const cv = document.createElement("canvas");
+  cv.width = o.cw || 512; cv.height = o.ch || 160;
+  const g = cv.getContext("2d");
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: tex, transparent: true, depthWrite: false, depthTest: false
+  }));
+  sprite.scale.set(o.w || 1.5, o.h || 0.47, 1);
+  sprite.visible = false;
+  sprite.userData.last = null;
+  sprite.userData.set = (text, color) => {
+    const key = (text || "") + "|" + (color || "");
+    if (key === sprite.userData.last) return;
+    sprite.userData.last = key;
+    g.clearRect(0, 0, cv.width, cv.height);
+    if (text) {
+      g.font = "700 " + (o.size || 60) + "px Inter, system-ui, sans-serif";
+      g.textAlign = "center"; g.textBaseline = "middle";
+      g.shadowColor = "rgba(0,0,0,.85)"; g.shadowBlur = 16;
+      g.fillStyle = color || "#ffe6ac";
+      g.fillText(text, cv.width / 2, cv.height / 2 + 3);
+      tex.needsUpdate = true;
+    }
+    sprite.visible = !!text;
+  };
+  return sprite;
+}
+
 // a glowing label plate you can press
 function makePlate(text, w, d, opts) {
   const o = opts || {};
@@ -541,6 +637,9 @@ function finishTable(g, def, ringRadius, signAt) {
   const glow = new THREE.PointLight(0xffd7a0, 22, 9, 2);
   glow.position.set(0, 2.9, 0.4);
   g.add(glow);
+  g.userData.glow = glow;   // flashed green / red when a round settles
+  g.userData.flashT = 0;
+  g.userData.flash = 0xffd7a0;
 }
 
 function layoutRoom() {
@@ -556,11 +655,12 @@ function layoutRoom() {
   });
 }
 
-/* helper: register a clickable inside a table group */
+/* helper: register a clickable inside a table group.
+   only the object itself is tagged, so hovering a child still resolves back to it
+   and the plate can light up and show its label. */
 function clickable(obj, act, text) {
   obj.userData.act = act;
   if (text) obj.userData.hoverText = text;
-  obj.traverse((o) => { if (!o.userData.act) o.userData.act = act; });
   clickables.push(obj);
   return obj;
 }
@@ -596,8 +696,9 @@ function clickable(obj, act, text) {
   // chip buttons
   const chipButtons = [25, 100, 500].map((v, i) => {
     const c = makeChip(v, i);
-    c.position.set(-0.85 + i * 0.32, 1.1, 1.02);
+    c.position.set(-1.05 + i * 0.36, 1.1, 1.02);
     c.rotation.y = rand(6);
+    c.scale.setScalar(0.78);
     g.add(c);
     return c;
   });
@@ -621,6 +722,18 @@ function clickable(obj, act, text) {
   const cardLayer = new THREE.Group();
   cardLayer.position.y = 1.075;
   g.add(cardLayer);
+
+  // hand values, written on the felt beside each hand so you never have to guess
+  const dealerLabel = textSprite({ w: 1.16, h: 0.36, size: 54, cw: 384, ch: 120 });
+  dealerLabel.position.set(-1.55, 1.3, -0.78);
+  const playerLabel = textSprite({ w: 1.16, h: 0.36, size: 54, cw: 384, ch: 120 });
+  playerLabel.position.set(-1.55, 1.3, 0.12);
+  g.add(dealerLabel, playerLabel);
+
+  // every pending timeout, so leaving or switching mode can't settle a hand you walked away from
+  const timers = [];
+  const later = (fn, ms) => { timers.push(setTimeout(fn, ms)); };
+  function clearTimers() { while (timers.length) clearTimeout(timers.pop()); }
 
   const props = [circle, dealPlate, hitPlate, standPlate, doublePlate, betStack, cardLayer].concat(chipButtons);
   const show = (on) => props.forEach((p) => { p.visible = on; });
@@ -671,12 +784,19 @@ function clickable(obj, act, text) {
       betStack.add(c);
     }
   }
+  function syncTotals() {
+    playerLabel.userData.set(S.player.length ? "YOU " + soft(S.player) : "", "#ffe6ac");
+    dealerLabel.userData.set(S.dealer.length
+      ? (S.hole ? "DEALER " + total(S.dealer.slice(0, 1)) + "+?" : "DEALER " + soft(S.dealer))
+      : "", "#ffd2c8");
+  }
   function state() {
     if (current && current.id !== "blackjack") return;  // don't talk over another table
-    if (S.phase === "bet") hint("Pick a <b>chip</b> to bet, then press <b>DEAL</b>");
+    syncTotals();
+    if (S.phase === "bet") hint((S.stake ? "Bet <b>" + fmt(S.stake) + "</b> · " : "") + "tap a <b>chip</b>, then press <b>DEAL</b>");
     else if (S.phase === "player") hint("You " + soft(S.player) + " · Dealer " + total(S.dealer.slice(0, 1)) + " — <b>HIT</b>, <b>STAND</b> or <b>DOUBLE</b>");
     else if (S.phase === "dealer") hint("Dealer draws…");
-    else hint(S.msg + " · press <b>DEAL</b> for another hand");
+    else hint(S.msg + " · place a bet and press <b>DEAL</b>");
   }
 
   function dealOne(face, faceDown, toDealer, index) {
@@ -684,7 +804,7 @@ function clickable(obj, act, text) {
     const cards = toDealer ? S.dealer : S.player;
     card.position.set(1.9, 0.03, -0.86);
     card.rotation.y = 0.6;
-    const x = -((cards.length - 1) * 0.3) / 2 + (index - (cards.length - 1) / 2) * 0.3;
+    const x = (index - (cards.length - 1) / 2) * 0.3;
     const target = new THREE.Vector3(x, 0.01 + cardLayer.children.length * 0.002, toDealer ? -0.78 : 0.12);
     cardLayer.add(card);
     const from = card.position.clone();
@@ -714,23 +834,32 @@ function clickable(obj, act, text) {
   }
 
   function settle(fromDeal) {
+    clearTimers();
+    if (!S.player.length || !S.dealer.length) return;
     const p = total(S.player), d = total(S.dealer);
     const pBJ = fromDeal && S.player.length === 2 && p === 21;
     const dBJ = fromDeal && S.dealer.length === 2 && d === 21;
-    let delta = 0, msg = "";
-    if (pBJ && dBJ) msg = "Two blackjacks — push";
-    else if (pBJ) { delta = Math.round(S.stake * 1.5); msg = "Blackjack! +" + fmt(delta); }
-    else if (dBJ) { delta = -S.stake; msg = "Dealer blackjack −" + fmt(S.stake); }
-    else if (p > 21) { delta = -S.stake; msg = "Bust at " + p + " −" + fmt(S.stake); }
-    else if (d > 21) { delta = S.stake; msg = "Dealer busts +" + fmt(S.stake); }
-    else if (p > d) { delta = S.stake; msg = p + " beats " + d + " +" + fmt(S.stake); }
-    else if (p === d) msg = "Push at " + p;
-    else { delta = -S.stake; msg = d + " beats " + p + " −" + fmt(S.stake); }
+    const stake = S.stake;
+    let delta = 0, msg = "", detail = "", kind = "push";
+    if (pBJ && dBJ) { msg = "Two blackjacks — push"; detail = "Both hands 21"; }
+    else if (pBJ) { delta = Math.round(stake * 1.5); msg = "Blackjack! +" + fmt(delta); detail = "21 on the deal, pays 3:2"; kind = "win"; }
+    else if (dBJ) { delta = -stake; msg = "Dealer blackjack −" + fmt(stake); detail = "Dealer was dealt 21"; kind = "lose"; }
+    else if (p > 21) { delta = -stake; msg = "Bust at " + p + " −" + fmt(stake); detail = "You went over 21"; kind = "lose"; }
+    else if (d > 21) { delta = stake; msg = "Dealer busts +" + fmt(stake); detail = "Dealer " + d + " · you " + p; kind = "win"; }
+    else if (p > d) { delta = stake; msg = p + " beats " + d + " +" + fmt(stake); detail = "Your " + p + " against " + d; kind = "win"; }
+    else if (p === d) { msg = "Push at " + p; detail = "Your bet comes back"; }
+    else { delta = -stake; msg = d + " beats " + p + " −" + fmt(stake); detail = "Dealer " + d + " against your " + p; kind = "lose"; }
     S.msg = msg;
+    S.hole = false;
+    rebuildCards();      // show the hole card with the rest of the dealer's hand
     S.phase = "bet";
+    S.busy = false;
     credit(delta);
+    S.stake = 0;
+    renderBetStack();
     state();
-    if (mode === "friend") setTimeout(nextTurn, 900);
+    verdict(kind, delta, detail);
+    if (mode === "friend") later(nextTurn, 1200);
   }
 
   function dealerStep() {
@@ -738,7 +867,8 @@ function clickable(obj, act, text) {
     if (total(S.dealer) < 17) {
       S.dealer.push(draw());
       dealOne(S.dealer[S.dealer.length - 1], false, true, S.dealer.length - 1);
-      setTimeout(dealerStep, 620);
+      syncTotals();
+      later(dealerStep, 620);
     } else {
       settle(false);
     }
@@ -756,57 +886,58 @@ function clickable(obj, act, text) {
     clearCards();
     dealOne(S.player[0], false, false, 0);
     dealOne(S.dealer[0], false, true, 0);
-    setTimeout(() => { dealOne(S.player[1], false, false, 1); }, 200);
-    setTimeout(() => {
+    later(() => { dealOne(S.player[1], false, false, 1); syncTotals(); }, 200);
+    later(() => {
       dealOne(S.dealer[1], true, true, 1);
       S.busy = false;
       state();
       const p = total(S.player), d = total(S.dealer);
       if (p === 21 || d === 21) {
         S.hole = false;
-        setTimeout(() => { rebuildCards(); settle(true); }, 500);
+        later(() => { rebuildCards(); settle(true); }, 500);
       }
     }, 420);
   }
 
   function hit() {
-    if (S.phase !== "player") return;
+    if (S.phase !== "player" || S.busy) return;
     S.player.push(draw());
     dealOne(S.player[S.player.length - 1], false, false, S.player.length - 1);
-    setTimeout(() => {
-      if (total(S.player) > 21) {
-        S.hole = false;
-        rebuildCards();
-        settle(false);
-      } else state();
+    syncTotals();
+    later(() => {
+      if (total(S.player) > 21) settle(false);
+      else state();
     }, 380);
   }
   function stand() {
-    if (S.phase !== "player") return;
+    if (S.phase !== "player" || S.busy) return;
     S.hole = false;
     rebuildCards();
     S.phase = "dealer";
     state();
-    setTimeout(dealerStep, 560);
+    later(dealerStep, 560);
   }
   function double() {
-    if (S.phase !== "player" || S.player.length !== 2) return;
-    if (stack() < S.stake) { toast("Not enough coins to double"); return; }
+    if (S.phase !== "player" || S.busy || S.player.length !== 2) return;
+    if (stack() < S.stake * 2) { toast("Not enough coins to double"); return; }
     S.stake *= 2;
     renderBetStack();
     S.player.push(draw());
     dealOne(S.player[S.player.length - 1], false, false, S.player.length - 1);
-    setTimeout(() => {
-      if (total(S.player) > 21) { S.hole = false; rebuildCards(); settle(false); }
+    syncTotals();
+    later(() => {
+      if (total(S.player) > 21) settle(false);
       else stand();
     }, 420);
   }
 
   function setBetPhase() {
+    clearTimers();
     S.phase = "bet";
-    S.player = []; S.dealer = []; S.stake = 0;
+    S.player = []; S.dealer = []; S.stake = 0; S.busy = false; S.hole = true;
     clearCards();
     renderBetStack();
+    syncTotals();
   }
 
   chipButtons.forEach((c, i) => clickable(c, () => {
@@ -827,11 +958,19 @@ function clickable(obj, act, text) {
     enter() {
       show(true);
       setBetPhase();
-      S.busy = false;
       if (!shoe.length) shuffleShoe();
       state();
     },
-    leave() { show(false); clearCards(); },
+    leave() {
+      clearTimers();
+      show(false);
+      clearCards();
+      S.phase = "bet";
+      S.player = []; S.dealer = []; S.stake = 0; S.busy = false; S.hole = true; S.msg = "";
+      renderBetStack();
+      playerLabel.userData.set("");
+      dealerLabel.userData.set("");
+    },
     idleHint: state,
     update() {
       // the plates you can press follow the phase of the hand
@@ -938,10 +1077,33 @@ function clickable(obj, act, text) {
   betChips.position.set(0, 1.07, 0.4);
   g.add(betChips);
 
+  // frame around the pocket the ball actually landed in
+  const winMarker = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({
+      map: texFromCanvas(128, 128, (gc, s) => {
+        gc.fillStyle = "rgba(255,236,190,.62)";
+        gc.fillRect(7, 7, s - 14, s - 14);
+        gc.strokeStyle = "#fff3d0"; gc.lineWidth = 16;
+        gc.strokeRect(7, 7, s - 14, s - 14);
+      }),
+      transparent: true, depthWrite: false
+    })
+  );
+  winMarker.rotation.x = -Math.PI / 2;
+  winMarker.visible = false;
+  g.add(winMarker);
+
+  // the number that just came up, floating over the wheel
+  const wheelLabel = textSprite({ w: 1.3, h: 0.42, size: 62, cw: 384, ch: 124 });
+  wheelLabel.position.set(0, 1.66, -0.98);
+  g.add(wheelLabel);
+
   // chip buttons + spin / clear plates
   const chipButtons = [25, 100, 500].map((v, i) => {
     const c = makeChip(v, i);
-    c.position.set(-0.9 + i * 0.31, 1.1, 1.24);
+    c.position.set(-1.12 + i * 0.36, 1.1, 1.24);
+    c.scale.setScalar(0.78);
     g.add(c);
     return c;
   });
@@ -956,7 +1118,8 @@ function clickable(obj, act, text) {
   const show = (on) => props.forEach((p) => { p.visible = on; });
   show(false);  // the table only shows its game once you sit down
 
-  const S = { bets: {}, chip: 25, spinning: false, result: null, payout: 0, rot: 0.3, ballAngle: 0 };
+  const REST = Math.PI / 2;   // where the ball comes to rest, on the player's side of the wheel
+  const S = { bets: {}, chip: 25, spinning: false, result: null, payout: 0, lastBet: 0, lastNet: 0, rot: 0.3, ballAngle: REST };
 
   function boardPos(cell) {
     const cx = ((cell.x0 + cell.x1) / 2 - 0.5) * BOARD_W;
@@ -985,10 +1148,13 @@ function clickable(obj, act, text) {
   function state() {
     if (current && current.id !== "roulette") return;
     if (S.spinning) hint("The wheel is spinning…");
-    else if (totalBet()) hint("Bet <b>" + totalBet() + "</b> — press <b>SPIN</b>" + (S.result !== null ? " · last " + S.result : ""));
+    else if (totalBet()) hint("Bet <b>" + fmt(totalBet()) + "</b> — press <b>SPIN</b>");
     else if (S.result === null) hint("Tap the <b>board</b> to put chips down, then press <b>SPIN</b>");
-    else hint("Last spin <b>" + S.result + "</b> " + (S.result === 0 ? "(green)" : isRed(S.result) ? "(red)" : "(black)") +
-      (S.payout ? " · " + (S.payout >= totalBet() ? "+" : "") + fmt(S.payout) : ""));
+    else {
+      const colour = S.result === 0 ? "green" : isRed(S.result) ? "red" : "black";
+      const last = S.lastNet > 0 ? "you won " + fmt(S.lastNet) : S.lastNet === 0 ? "bet returned" : "you lost " + fmt(-S.lastNet);
+      hint("Last spin <b>" + S.result + "</b> " + colour + " — " + last);
+    }
   }
 
   function payoutFor(n) {
@@ -1032,38 +1198,58 @@ function clickable(obj, act, text) {
     S.spinning = true;
     S.result = null;
     S.payout = 0;
+    S.lastBet = total;
+    winMarker.visible = false;
+    wheelLabel.userData.set("");
     state();
     const winner = rand(37);
     const idx = WHEEL_ORDER.indexOf(winner);
     const seg = (Math.PI * 2) / 37;
-    let target = -idx * seg + rand(3);
+    // turn the rotor so the winning pocket stops under the ball
+    let target = idx * seg - REST;
     while (target < S.rot + Math.PI * 2 * 3) target += Math.PI * 2;
     const startRot = S.rot;
     const ballStart = S.ballAngle;
+    const ballTarget = REST - Math.PI * 2 * 4;
     animate(3.4, (k) => {
       const e = easeOut(k);
       S.rot = startRot + (target - startRot) * e;
       rotor.rotation.y = S.rot;
-      S.ballAngle = ballStart - (1 - e) * Math.PI * 10 - e * Math.PI * 2;
-      const r = 0.62 - 0.14 * e;
+      S.ballAngle = ballStart + (ballTarget - ballStart) * e;
+      const r = 0.78 - 0.06 * e;
       ball.position.set(Math.cos(S.ballAngle) * r, 0.14, Math.sin(S.ballAngle) * r);
     }, () => {
       S.spinning = false;
+      S.ballAngle = ballTarget;
+      ball.position.set(Math.cos(REST) * 0.72, 0.14, Math.sin(REST) * 0.72);
       S.result = winner;
       const payout = payoutFor(winner);
       S.payout = payout;
+      S.lastNet = payout - S.lastBet;
       credit(payout);
+      const cell = cells.find((c) => c.key === (winner === 0 ? "n0" : "n" + winner));
+      if (cell) {
+        const p = boardPos(cell);
+        winMarker.scale.set((cell.x1 - cell.x0) * BOARD_W, (cell.y1 - cell.y0) * BOARD_D, 1);
+        winMarker.position.set(p.x, 1.075, 0.4 + p.z);
+        winMarker.visible = true;
+      }
+      const colour = winner === 0 ? "green" : isRed(winner) ? "red" : "black";
+      wheelLabel.userData.set(winner + " " + colour.toUpperCase(),
+        winner === 0 ? "#9df0c4" : isRed(winner) ? "#ffb8c2" : "#f7edda");
       S.bets = {};
       paintChips();
       state();
-      if (mode === "friend") setTimeout(nextTurn, 900);
+      verdict(S.lastNet > 0 ? "win" : S.lastNet < 0 ? "lose" : "push", S.lastNet,
+        winner + " " + colour + " · bet " + fmt(S.lastBet));
+      if (mode === "friend") setTimeout(nextTurn, 1200);
     });
   }
 
   function syncChips() {
     chipButtons.forEach((c, i) => {
       const on = [25, 100, 500][i] === S.chip;
-      c.scale.setScalar(on ? 1.22 : 1);
+      c.scale.setScalar(on ? 0.96 : 0.78);
       c.position.y = on ? 1.115 : 1.1;
     });
   }
@@ -1079,14 +1265,18 @@ function clickable(obj, act, text) {
     enter() {
       show(true);
       S.bets = {}; S.chip = 25; S.result = null; S.payout = 0; S.spinning = false;
+      S.lastNet = 0; S.lastBet = 0;
       S.rot = 0.3;
       rotor.rotation.y = S.rot;
-      ball.position.set(0.62, 0.14, 0);
+      S.ballAngle = REST;
+      ball.position.set(Math.cos(REST) * 0.78, 0.14, Math.sin(REST) * 0.78);
+      winMarker.visible = false;
+      wheelLabel.userData.set("");
       syncChips();
       paintChips();
       state();
     },
-    leave() { show(false); },
+    leave() { show(false); winMarker.visible = false; wheelLabel.userData.set(""); },
     idleHint: state,
     update() {},
     betOn(cell) {
@@ -1152,7 +1342,8 @@ function clickable(obj, act, text) {
 
   const chipButtons = [25, 100, 500].map((v, i) => {
     const c = makeChip(v, i + 2);
-    c.position.set(-0.9 + i * 0.3, 1.1, 0.94);
+    c.position.set(-1.1 + i * 0.36, 1.1, 0.94);
+    c.scale.setScalar(0.78);
     g.add(c);
     return c;
   });
@@ -1161,12 +1352,25 @@ function clickable(obj, act, text) {
   const show = (on) => props.forEach((p) => { p.visible = on; });
   show(false);  // the table only shows its game once you sit down
 
+  // what the dice came to, floating above them
+  const sumLabel = textSprite({ w: 1.15, h: 0.37, size: 58, cw: 320, ch: 104 });
+  sumLabel.position.set(0, 1.74, -0.2);
+  g.add(sumLabel);
+
   const S = { stake: 25, pick: null, rolling: false, msg: "" };
+
+  function syncStake() {
+    chipButtons.forEach((c, i) => {
+      const on = [25, 100, 500][i] === S.stake;
+      c.scale.setScalar(on ? 0.96 : 0.78);
+      c.position.y = on ? 1.115 : 1.1;
+    });
+  }
 
   function state() {
     if (current && current.id !== "dice") return;
     if (S.rolling) hint("Rolling…");
-    else if (!S.pick) hint("Tap <b>UNDER 7</b>, <b>EXACTLY 7</b> or <b>OVER 7</b>, then <b>ROLL</b>");
+    else if (!S.pick) hint("Tap <b>UNDER 7</b>, <b>EXACTLY 7</b> or <b>OVER 7</b>, then <b>ROLL</b> · bet " + fmt(S.stake));
     else hint((S.msg ? S.msg + " · " : "") + "Bet " + fmt(S.stake) + " on " + (S.pick === "under" ? "under 7" : S.pick === "seven" ? "exactly 7" : "over 7"));
   }
   function syncPicks() {
@@ -1193,6 +1397,7 @@ function clickable(obj, act, text) {
     if (!spend(S.stake)) return;
     S.rolling = true;
     S.msg = "";
+    sumLabel.userData.set("");
     state();
     const a = 1 + rand(6), b = 1 + rand(6);
     const startA = dieA.position.clone(), startB = dieB.position.clone();
@@ -1213,14 +1418,17 @@ function clickable(obj, act, text) {
       const sum = a + b;
       const won = (S.pick === "under" && sum < 7) || (S.pick === "seven" && sum === 7) || (S.pick === "over" && sum > 7);
       const mult = S.pick === "seven" ? 5 : 2;
+      const net = won ? S.stake * (mult - 1) : -S.stake;
+      sumLabel.userData.set(a + " + " + b + " = " + sum, won ? "#8ff0b0" : "#ffb0bc");
       if (won) {
         credit(S.stake * mult);
-        S.msg = a + " + " + b + " = " + sum + ", you win " + fmt(S.stake * (mult - 1));
+        S.msg = a + " + " + b + " = " + sum + ", you win " + fmt(net);
       } else {
         S.msg = a + " + " + b + " = " + sum + ", house takes " + fmt(S.stake);
       }
       state();
-      if (mode === "friend") setTimeout(nextTurn, 900);
+      verdict(won ? "win" : "lose", net, a + " + " + b + " = " + sum + (won ? " · bet " + fmt(S.stake) : ""));
+      if (mode === "friend") setTimeout(nextTurn, 1200);
     });
   }
 
@@ -1236,6 +1444,7 @@ function clickable(obj, act, text) {
     const v = [25, 100, 500][i];
     if (stack() < v) { toast("Not enough coins"); return; }
     S.stake = v;
+    syncStake();
     state();
   }, "Bet " + [25, 100, 500][i] + " a roll"));
 
@@ -1243,10 +1452,12 @@ function clickable(obj, act, text) {
     enter() {
       show(true);
       S.pick = null; S.stake = 25; S.msg = ""; S.rolling = false;
+      sumLabel.userData.set("");
       syncPicks();
+      syncStake();
       state();
     },
-    leave() { show(false); },
+    leave() { show(false); sumLabel.userData.set(""); },
     idleHint: state,
     update() {}
   };
@@ -1323,7 +1534,8 @@ function clickable(obj, act, text) {
   g.add(mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.5, 8), goldMat, 1.02, 1.55, 0.2));
   const chipButtons = [25, 100, 500].map((v, i) => {
     const c = makeChip(v, i + 1);
-    c.position.set(-0.85 + i * 0.3, 1.1, 1.0);
+    c.position.set(-0.96 + i * 0.36, 1.1, 1.0);
+    c.scale.setScalar(0.78);
     g.add(c);
     return c;
   });
@@ -1332,7 +1544,19 @@ function clickable(obj, act, text) {
   const show = (on) => props.forEach((p) => { p.visible = on; });
   show(false);  // the table only shows its game once you sit down
 
+  // what the reels just paid, in front of the cabinet
+  const lineLabel = textSprite({ w: 1.34, h: 0.42, size: 60, cw: 384, ch: 120 });
+  lineLabel.position.set(0, 2.03, 0.72);
+  g.add(lineLabel);
+
   const S = { stake: 25, spinning: false, msg: "" };
+  function syncStake() {
+    chipButtons.forEach((c, i) => {
+      const on = [25, 100, 500][i] === S.stake;
+      c.scale.setScalar(on ? 0.96 : 0.78);
+      c.position.y = on ? 1.115 : 1.1;
+    });
+  }
   function state() {
     if (current && current.id !== "slots") return;
     if (S.spinning) hint("Spinning…");
@@ -1342,18 +1566,22 @@ function clickable(obj, act, text) {
   function finish(values) {
     S.spinning = false;
     const [a, b, c] = values;
-    let mult = 0;
-    if (a === b && b === c) mult = 4 + a * 6;
-    else if ((a === 5 && b === 5) || (b === 5 && c === 5) || (a === 5 && c === 5)) mult = 2;
-    else if (a === b || b === c || a === c) mult = 1;
-    if (mult > 0) {
-      credit(S.stake * mult);
-      S.msg = "Three " + SYMBOLS[a] + " — +" + fmt(S.stake * (mult - 1));
-    } else {
-      S.msg = "No line — house takes " + fmt(S.stake);
-    }
+    const three = a === b && b === c;
+    const twoSevens = !three && ((a === 5 && b === 5) || (b === 5 && c === 5) || (a === 5 && c === 5));
+    const pair = !three && !twoSevens && (a === b || b === c || a === c);
+    const mult = three ? 4 + a * 6 : twoSevens ? 2 : pair ? 1 : 0;
+    const net = S.stake * (mult - 1);
+    if (mult > 0) credit(S.stake * mult);
+    if (three) S.msg = "Three " + SYMBOLS[a] + " — paid " + fmt(S.stake * mult);
+    else if (twoSevens) S.msg = "Two 7s — win " + fmt(net);
+    else if (pair) S.msg = "Pair — your " + fmt(S.stake) + " back";
+    else S.msg = "No line — house takes " + fmt(S.stake);
+    lineLabel.userData.set(
+      three ? "JACKPOT ×" + mult : twoSevens ? "+" + fmt(net) : pair ? "PAIR" : "NO LINE",
+      three || twoSevens ? "#ffe6ac" : pair ? "#cfe4ff" : "#ffb0bc");
     state();
-    if (mode === "friend") setTimeout(nextTurn, 900);
+    verdict(mult > 1 ? "win" : mult === 1 ? "push" : "lose", net, "bet " + fmt(S.stake));
+    if (mode === "friend") setTimeout(nextTurn, 1200);
   }
 
   function spin() {
@@ -1361,6 +1589,7 @@ function clickable(obj, act, text) {
     if (!spend(S.stake)) return;
     S.spinning = true;
     S.msg = "";
+    lineLabel.userData.set("");
     state();
     const finals = [rand(6), rand(6), rand(6)];
     let done = 0;
@@ -1388,6 +1617,7 @@ function clickable(obj, act, text) {
     const v = [25, 100, 500][i];
     if (stack() < v) { toast("Not enough coins"); return; }
     S.stake = v;
+    syncStake();
     state();
   }, "Bet " + [25, 100, 500][i]));
 
@@ -1397,9 +1627,11 @@ function clickable(obj, act, text) {
       S.spinning = false;
       S.msg = "";
       S.stake = 25;
+      syncStake();
+      lineLabel.userData.set("");
       state();
     },
-    leave() { show(false); },
+    leave() { show(false); lineLabel.userData.set(""); },
     idleHint: state,
     update() {}
   };
@@ -1419,34 +1651,41 @@ function overviewPos(t) {
   return new THREE.Vector3(Math.sin(t * 0.12) * 1.0, 7.6, 13.6);
 }
 
+// how far back the camera has to sit for a table `halfWidth` wide to fit the portrait frame
+function fitDist(halfWidth, nearEdge) {
+  const vfov = (camera.fov * Math.PI) / 180;
+  const hfov = 2 * Math.atan(Math.tan(vfov / 2) * camera.aspect);
+  return halfWidth / Math.tan(hfov / 2) + nearEdge;
+}
+
 function seatView(def) {
   const tall = isTall();
   const spin = { x: Math.sin(def.rot), z: Math.cos(def.rot) };
   if (def.id === "slots") {
-    const dist = tall ? 5.0 : 4.7;
+    const dist = tall ? fitDist(1.15, 1.0) : 4.7;
     return {
-      pos: def.pos.clone().add(new THREE.Vector3(spin.x * dist, tall ? 2.5 : 2.45, spin.z * dist)),
-      target: def.pos.clone().add(new THREE.Vector3(0, tall ? 1.7 : 1.45, 0))
+      pos: def.pos.clone().add(new THREE.Vector3(spin.x * dist, tall ? 2.35 : 2.45, spin.z * dist)),
+      target: def.pos.clone().add(new THREE.Vector3(0, tall ? 1.5 : 1.45, 0))
     };
   }
   if (def.id === "roulette") {
-    const dist = tall ? 4.4 : 3.2;
+    const dist = tall ? fitDist(1.35, 1.25) : 3.2;
     return {
-      pos: def.pos.clone().add(new THREE.Vector3(spin.x * dist, tall ? 4.6 : 2.6, spin.z * dist)),
-      target: def.pos.clone().add(new THREE.Vector3(0, 1.0, tall ? 0.35 : 0.15))
+      pos: def.pos.clone().add(new THREE.Vector3(spin.x * dist, tall ? dist * 0.68 : 2.6, spin.z * dist)),
+      target: def.pos.clone().add(new THREE.Vector3(0, 1.0, 0.15))
     };
   }
   if (def.id === "dice") {
-    const dist = tall ? 3.9 : 3.5;
+    const dist = tall ? fitDist(1.35, 1.0) : 3.5;
     return {
-      pos: def.pos.clone().add(new THREE.Vector3(spin.x * dist, tall ? 4.4 : 2.5, spin.z * dist)),
-      target: def.pos.clone().add(new THREE.Vector3(0, 1.05, tall ? 0.1 : 0.15))
+      pos: def.pos.clone().add(new THREE.Vector3(spin.x * dist, tall ? dist * 0.66 : 2.5, spin.z * dist)),
+      target: def.pos.clone().add(new THREE.Vector3(0, 1.05, 0.12))
     };
   }
-  const dist = tall ? 4.2 : 4.2;
+  const dist = tall ? fitDist(1.35, 1.02) : 4.2;
   return {
-    pos: def.pos.clone().add(new THREE.Vector3(spin.x * dist, tall ? 4.5 : 3.1, spin.z * dist)),
-    target: def.pos.clone().add(new THREE.Vector3(0, 1.05, tall ? 0.15 : -0.05))
+    pos: def.pos.clone().add(new THREE.Vector3(spin.x * dist, tall ? dist * 0.68 : 3.1, spin.z * dist)),
+    target: def.pos.clone().add(new THREE.Vector3(0, 1.05, 0.05))
   };
 }
 
@@ -1588,13 +1827,25 @@ canvas.addEventListener("pointerup", (e) => {
 });
 
 /* ---------- sitting / leaving ---------- */
+/* a portrait seat has to pull the camera back into the next table's spot,
+   so on a phone the other tables step out of the way while you play */
+function setRoomFocus(activeId) {
+  const solo = !!activeId && isTall();
+  for (const def of TABLES) {
+    const g = tablesById[def.id];
+    if (!g) continue;
+    g.visible = !(solo && def.id !== activeId);
+    if (g.userData.sign) g.userData.sign.visible = !activeId;
+  }
+}
+
 function sit(id) {
   const def = TABLES.find((t) => t.id === id);
   if (!def || current) return;
   current = def;
   turn = "you";
   setTableHover(null);
-  tablesById[id].userData.sign.visible = false;
+  setRoomFocus(id);
   $("#leave").hidden = false;
   $("#modes").classList.add("on");
   renderHud();
@@ -1604,8 +1855,9 @@ function leave() {
   if (!current) return;
   const id = current.id;
   games[id].leave();
-  tablesById[id].userData.sign.visible = true;
+  hideVerdict();
   current = null;
+  setRoomFocus(null);
   $("#leave").hidden = true;
   $("#modes").classList.remove("on");
   setHovered(null);
@@ -1619,6 +1871,7 @@ function setMode(next) {
   mode = next;
   turn = "you";
   $("#modes").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.mode === mode));
+  hideVerdict();
   renderHud();
   if (current) games[current.id].enter();
   toast(mode === "friend" ? "Pass-and-play: you and a friend take turns" : "Playing against the dealer");
@@ -1652,6 +1905,7 @@ function fitCamera() {
 window.addEventListener("resize", () => {
   fitCamera();
   layoutRoom();
+  setRoomFocus(current ? current.id : null);
 });
 
 const clock = new THREE.Clock();
@@ -1675,6 +1929,19 @@ function frame() {
   }
   for (const key of Object.keys(hoverRingOf)) {
     if (key === hoveredTable) hoverRingOf[key].material.opacity = 0.4 + Math.sin(t * 4) * 0.14;
+  }
+  // the table light blinks green on a win, red on a loss
+  for (const id of Object.keys(tablesById)) {
+    const ud = tablesById[id].userData;
+    if (!ud.glow) continue;
+    if (ud.flashT > 0) {
+      ud.flashT = Math.max(0, ud.flashT - dt * 0.6);
+      ud.glow.color.setHex(ud.flash);
+      ud.glow.intensity = 22 + 70 * ud.flashT;
+    } else if (ud.glow.color.getHex() !== 0xffd7a0) {
+      ud.glow.color.setHex(0xffd7a0);
+      ud.glow.intensity = 22;
+    }
   }
 
   renderer.render(scene, camera);

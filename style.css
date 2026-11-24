@@ -1558,6 +1558,7 @@ body::before {
 main.wrap {
   grid-template-columns: 208px minmax(0, 1fr);
   column-gap: clamp(30px, 4.5vw, 58px);
+  align-content: start;
   padding-top: 18px;
   padding-bottom: 84px;
 }

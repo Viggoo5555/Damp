@@ -145,6 +145,7 @@
     "file": "games/outfit-battle.html",
     "category": "Fashion",
     "image": "img/outfit-battle.png",
+    "party": true,
     "hidden": true
   },
   {
@@ -161,6 +162,7 @@
     "file": "games/last-stand/index.html",
     "category": "Battle Royale",
     "image": "img/last-stand.png",
+    "party": true,
     "hidden": true
   },
   {
@@ -169,6 +171,7 @@
     "file": "games/bake-off/index.html",
     "category": "Cooking",
     "image": "img/bake-off.png",
+    "party": true,
     "hidden": true
   },
   {
@@ -207,13 +210,15 @@
     "description": "The most common answer wins. Everyone answers the same question in secret and scores a point for each player who wrote something like them — then the round's winners can gamble their points on a spinning crate. Play together on one phone, or let everyone join from their own with a room code.",
     "file": "games/flertal/index.html",
     "category": "Guessing",
-    "image": "img/flertal.png"
+    "image": "img/flertal.png",
+    "party": true
   },
   {
     "title": "Draw & Pass",
     "description": "The drawing-telephone party game: write a sentence, draw somebody else's, guess that drawing, and watch the whole mess come back around in the big reveal. 3-16 players, live rooms, no download.",
     "file": "games/draw-and-pass.html",
     "category": "Party",
-    "image": "img/draw-pass.jpg"
+    "image": "img/draw-pass.jpg",
+    "party": true
   }
 ]

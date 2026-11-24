@@ -1051,7 +1051,7 @@ function ask() {
           '<div class="timer" id="tm"><i id="tb"></i><b id="ts">' + Math.ceil(total) + "</b><span>sekunder tilbage</span></div>" +
           '<div class="turn"><span class="turn-name">' + esc(now) + "</span> svarer nu</div>" +
           '<input id="a" class="answer-input" autocomplete="off" placeholder="Dit svar" aria-label="Dit svar" ' +
-          'onkeydown="if(event.key===\'Enter\')submit()">' +
+          'onkeydown="if(event.key===\'Enter\'){event.preventDefault();submit()}">' +
           '<div class="row"><button class="primary" onclick="submit()">Lås svar</button>' +
           '<span class="hint">Svar som flokken — stavefejl tæller med.</span></div>' +
         "</div>" +
@@ -1368,6 +1368,21 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 const norm = s => s.toLowerCase().normalize("NFC").replace(/[^a-zæøå0-9]/g, "");
 const tidy = s => String(s).replace(/\s+/g, " ").trim();
 
+// A looser spelling used only when looking for typos: kaffe/kafe, c/k, ph/f,
+// one or two of the same letter, and the Danish letters without their dots all
+// count as the same answer.
+const sound = s => norm(s)
+  .replace(/aa/g, "å")
+  .replace(/ph/g, "f")
+  .replace(/c/g, "k")
+  .replace(/z/g, "s")
+  .replace(/w/g, "v")
+  .replace(/x/g, "ks")
+  .replace(/å/g, "a")
+  .replace(/æ/g, "e")
+  .replace(/ø/g, "o")
+  .replace(/(.)\1+/g, "$1");
+
 /* ---------------------------------------------------------- autocorrect */
 // Svar der kun adskiller sig med en tastefejl eller to, tæller som det samme.
 function editDist(a, b, max) {
@@ -1391,14 +1406,20 @@ function editDist(a, b, max) {
   return row1[lb];
 }
 
+// Two answers are the same when they are spelled the same, or when they differ
+// by about one letter in five. The first letter may differ too, so "koffe" and
+// "coffe" still land together, while short words stay apart ("hund" vs "bund").
 function isTypo(a, b) {
   if (a === b) return true;
-  if (!a || !b || a[0] !== b[0]) return false;
-  const longest = Math.max(a.length, b.length);
+  if (!a || !b) return false;
+  const sa = sound(a), sb = sound(b);
+  if (sa === sb) return true;
+  const longest = Math.max(sa.length, sb.length);
   if (longest < 5) return false;
-  const allowance = longest >= 9 ? 2 : 1;
-  if (Math.abs(a.length - b.length) > allowance) return false;
-  return editDist(a, b, allowance) <= allowance;
+  const allowance = longest >= 12 ? 3 : longest >= 8 ? 2 : 1;
+  if (Math.abs(sa.length - sb.length) > allowance) return false;
+  const distance = editDist(sa, sb, allowance);
+  return distance <= allowance && distance / longest <= 0.3;
 }
 
 // [{ key, text, ... }] -> [{ t, list, size }], med den mest brugte stavemåde som overskrift
@@ -1461,6 +1482,7 @@ function pick() {
     fb: null, auth: null, db: null, uid: null,
     code: null, room: null, unsub: null,
     timer: null, frozen: false, autoKey: null,
+    draft: "", draftKey: null, sending: false,
     err: "", loading: false
   };
 
@@ -1688,6 +1710,9 @@ function pick() {
   }
 
   function drawAsk(room) {
+    // A new question starts with an empty draft.
+    const draftKey = room.round + "-" + room.qi;
+    if (net.draftKey !== draftKey) { net.draftKey = draftKey; net.draft = ""; }
     const speed = (room.plan || [])[room.round - 1] === "s";
     const seconds = speed ? 12.5 : 25;
     const prompt = (room.prompts || [])[room.qi] || "";
@@ -1709,7 +1734,8 @@ function pick() {
       : '<div class="panel">' +
           '<div class="timer" id="tm"><i id="tb"></i><b id="ts">' + Math.ceil(seconds) + "</b><span>sekunder</span></div>" +
           '<input id="a" class="answer-input" autocomplete="off" placeholder="Dit svar" aria-label="Dit svar" ' +
-          'onkeydown="if(event.key===\'Enter\')flt.answer()">' +
+          'value="' + esc(net.draft || "") + '" oninput="flt.draft(this.value)" ' +
+          'onkeydown="if(event.key===\'Enter\'){event.preventDefault();flt.answer()}">' +
           '<div class="row"><button class="primary" onclick="flt.answer()">Lås svar</button>' +
           '<span class="hint">Svar som flokken, ikke som dig.</span></div>' +
         "</div>";
@@ -1996,19 +2022,41 @@ function pick() {
     } catch (e) { net.err = "Kunne ikke starte: " + errText(e); draw(); }
   }
 
+  // The answer is kept in net.draft while it is on its way, so a redraw (another
+  // player answering, or a save that fails) never throws away what was typed.
+  function keepDraft(text) {
+    net.draft = String(text || "").slice(0, 60);
+    return net.draft;
+  }
+
   async function answer(value) {
     const room = net.room;
-    if (!room || room.phase !== "ask") return;
+    if (!room || room.phase !== "ask" || net.sending) return;
     if ((room.answers || {})[net.uid]) return;
     const field = document.getElementById("a");
-    const text = tidy(String(value !== undefined ? value : (field ? field.value : ""))).slice(0, 60);
-    if (!text) { if (field) field.classList.add("shake"); return; }
+    const typed = value !== undefined ? value : (field ? field.value : net.draft);
+    const text = tidy(keepDraft(typed)).slice(0, 60);
+    if (!text) {
+      if (field) {
+        field.classList.remove("shake");
+        void field.offsetWidth;
+        field.classList.add("shake");
+        field.focus();
+      }
+      return;
+    }
+    net.sending = true;
     clearTimer();
     try {
       const patchDoc = {};
       patchDoc["answers." + net.uid] = { name: nameOf(room, net.uid), text: text, k: norm(text), at: Date.now() };
       await patch(patchDoc);
-    } catch (e) { net.err = "Svaret blev ikke gemt: " + errText(e); draw(); }
+      net.draft = "";
+    } catch (e) {
+      net.err = "Svaret blev ikke gemt: " + errText(e);
+      draw();
+    }
+    net.sending = false;
   }
 
   async function reveal() {
@@ -2242,7 +2290,7 @@ function pick() {
   }
 
   window.flt = {
-    setup: onlineSetup, create: create, join: join, start: start, answer: answer, reveal: reveal,
+    setup: onlineSetup, create: create, join: join, start: start, answer: answer, draft: keepDraft, reveal: reveal,
     gambleStart: gambleStart, gamblePick: gamblePick, gambleRoll: gambleRoll, next: next,
     again: again, leave: leave, copy: copy, inviteFriend: inviteFriend, recheck: recheck
   };

@@ -2816,3 +2816,44 @@ dialog {
     opacity: 1;
   }
 }
+
+/* ---------- One shelf, three groups: video, party, board ---------- */
+
+.groups { grid-column: 2; }
+
+.group-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 20px;
+}
+
+.group-title {
+  margin: 0;
+  color: var(--mist);
+  font-family: var(--display);
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.015em;
+  white-space: nowrap;
+}
+
+.group-rule { flex: 1 1 auto; height: 1px; background: var(--line); }
+
+.divider {
+  height: 0;
+  margin: 46px 0 40px;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+/* Searching leaves just the matching games on the page. */
+body.searching #hero,
+body.searching #chips { display: none; }
+
+@media (max-width: 760px) {
+  .group-head { gap: 12px; margin-bottom: 15px; }
+  .group-title { font-size: 1.1rem; }
+  .divider { margin: 30px 0 26px; }
+}

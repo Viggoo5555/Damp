@@ -17,7 +17,6 @@ const ADMIN_CODE = "1203";
 // ---------------------------------------------------------------
 const $ = function (id) { return document.getElementById(id); };
 
-const grid = $("games-grid");
 const search = $("search");
 const chips = $("chips");
 const player = $("player");
@@ -31,12 +30,6 @@ const fullscreenLabel = fullscreenButton.querySelector(".player-action-label");
 let games = [];
 let loadFailed = false;
 let category = "All";
-// "" shows everything, "board" only the board games, "video" the rest
-let group = "";
-try {
-  const savedGroup = localStorage.getItem("damp-group");
-  if (savedGroup === "board" || savedGroup === "video") group = savedGroup;
-} catch (error) { /* storage off */ }
 let admin = sessionStorage.getItem("damp-admin") === "1";
 let editing = null;
 let playing = "";
@@ -70,10 +63,14 @@ function liveGames() {
   return games.filter(function (game) { return !game.hidden; });
 }
 
-// Board games and video games are two halves of the same shelf
-function inGroup(game) {
-  if (!group) return true;
-  return group === "board" ? !!game.board : !game.board;
+// The page is one shelf in three groups: video games first, then the party
+// games, then the board games.
+const SECTION_TITLES = { video: "Video games", party: "Party games", board: "Board games" };
+
+function sectionOf(game) {
+  if (game.board) return "board";
+  if (game.party) return "party";
+  return "video";
 }
 
 function categories(list) {
@@ -157,30 +154,89 @@ function showHero() {
   feature.hidden = false;
 }
 
+function matchesQuery(game, query) {
+  const words = (game.title + " " + (game.description || "") + " " + (game.category || "")).toLowerCase();
+  return query.split(/\s+/).every(function (part) { return words.includes(part); });
+}
+
+// The game you typed comes first: an exact title, then a title that starts with
+// it, then one that only mentions it somewhere.
+function matchRank(game, query) {
+  const title = game.title.toLowerCase();
+  if (title === query) return 0;
+  const parts = query.split(/\s+/);
+  if (title.startsWith(query) || title.startsWith(parts[0])) return 1;
+  return parts.every(function (part) { return title.includes(part); }) ? 2 : 3;
+}
+
+function sortedForView(list, searching, query) {
+  if (searching) {
+    return list.slice().sort(function (a, b) {
+      return matchRank(a, query) - matchRank(b, query) || a.title.localeCompare(b.title);
+    });
+  }
+  const mode = $("sort").value;
+  if (mode === "newest") return list.slice().reverse();
+  if (mode === "az") return list.slice().sort(function (a, b) { return a.title.localeCompare(b.title); });
+  return forYouOrder(list);
+}
+
+// One heading, a rule to the edge and the cards underneath.
+function groupBlock(key, list) {
+  const block = document.createElement("section");
+  block.className = "game-group";
+  const title = el("h2", "group-title", SECTION_TITLES[key]);
+  title.id = "group-" + key;
+  block.setAttribute("aria-labelledby", title.id);
+  const head = el("div", "group-head");
+  head.append(title, el("span", "group-rule"));
+  const cards = el("div", "grid");
+  cards.append.apply(cards, list.map(makeCard));
+  block.append(head, cards);
+  return block;
+}
+
 function showGames() {
   const query = search.value.trim().toLowerCase();
-  const source = (admin ? games : liveGames()).filter(inGroup);
+  const searching = query !== "";
+  const source = admin ? games : liveGames();
 
-  const list = source.filter(function (game) {
-    const inCategory = category === "All" || game.category === category;
-    const words = (game.title + " " + (game.description || "") + " " + (game.category || "")).toLowerCase();
-    return inCategory && words.includes(query);
-  });
+  // While you type, the page is only the games that match, best match on top.
+  document.body.classList.toggle("searching", searching);
+  chips.hidden = searching || source.length === 0;
 
-  if ($("sort").value === "newest") {
-    list.reverse();
-  } else if ($("sort").value === "az") {
-    list.sort(function (a, b) { return a.title.localeCompare(b.title); });
+  const list = sortedForView(
+    searching
+      ? source.filter(function (game) { return matchesQuery(game, query); })
+      : source.filter(function (game) { return category === "All" || game.category === category; }),
+    searching,
+    query
+  );
+
+  const results = $("games-results");
+  const groups = $("games-grid");
+
+  if (searching) {
+    groups.hidden = true;
+    groups.replaceChildren();
+    results.hidden = false;
+    results.replaceChildren.apply(results, list.map(makeCard));
   } else {
-    const ordered = forYouOrder(list);
-    list.length = 0;
-    list.push.apply(list, ordered);
+    results.hidden = true;
+    results.replaceChildren();
+    groups.hidden = false;
+    const buckets = { video: [], party: [], board: [] };
+    list.forEach(function (game) { buckets[sectionOf(game)].push(game); });
+    const parts = [];
+    ["video", "party", "board"].forEach(function (key) {
+      if (!buckets[key].length) return;
+      if (parts.length) parts.push(el("hr", "divider"));
+      parts.push(groupBlock(key, buckets[key]));
+    });
+    groups.replaceChildren.apply(groups, parts);
   }
 
-  grid.replaceChildren(...list.map(makeCard));
-  grid.classList.remove("has-lead");
-  const typeName = group === "board" ? "Board games" : group === "video" ? "Video games" : "All games";
-  $("heading").textContent = category === "All" ? typeName : category;
+  $("heading").textContent = searching ? "Search results" : category === "All" ? "All games" : category;
   $("count").textContent = list.length + (list.length === 1 ? " game" : " games");
 
   if (loadFailed) {
@@ -196,41 +252,15 @@ function showGames() {
 function showChips() {
   chips.replaceChildren();
   const all = liveGames();
-  const list = all.filter(inGroup);
-  const names = ["All"].concat(categories(list));
+  const names = ["All"].concat(categories(all));
   if (!names.includes(category)) category = "All";
-  // The type switch lives in this same sidebar, so it can only go away when
-  // there are no games at all. A shelf with a single category keeps the switch
-  // and just drops the category chips.
-  chips.hidden = all.length === 0;
+  chips.hidden = all.length === 0 || search.value.trim() !== "";
   const showCats = names.length > 2;
-
-  // The type switch sits above the categories: board games on their own, the
-  // rest on theirs, or both together.
-  const types = el("div", "types");
-  types.setAttribute("role", "group");
-  types.setAttribute("aria-label", "Game type");
-  [["", "All games"], ["board", "Board games"], ["video", "Video games"]].forEach(function (pair) {
-    const button = el("button", "type", pair[1]);
-    button.type = "button";
-    button.setAttribute("aria-pressed", group === pair[0] ? "true" : "false");
-    button.addEventListener("click", function () {
-      if (group === pair[0]) return;
-      group = pair[0];
-      category = "All";
-      try { localStorage.setItem("damp-group", group); } catch (error) { /* storage off */ }
-      showChips();
-      showGames();
-    });
-    types.appendChild(button);
-  });
-  chips.appendChild(types);
-
   if (!showCats) return;
 
   names.forEach(function (name) {
     const chip = el("button", "chip");
-    const total = name === "All" ? list.length : list.filter(function (g) { return g.category === name; }).length;
+    const total = name === "All" ? all.length : all.filter(function (g) { return g.category === name; }).length;
     chip.append(el("span", null, name), el("span", "n", String(total)));
     chip.type = "button";
     chip.setAttribute("aria-pressed", name === category);
@@ -248,7 +278,7 @@ function showChips() {
 search.addEventListener("input", showGames);
 
 function playRandom() {
-  const list = liveGames().filter(inGroup);
+  const list = liveGames();
   if (!list.length) return;
   const game = list[Math.floor(Math.random() * list.length)];
   location.hash = "play=" + slug(game);
@@ -312,7 +342,7 @@ function showShelf() {
   const picks = recentGames().slice(0, 12).map(function (id) {
     return games.find(function (g) { return slug(g) === id; });
   });
-  $("shelf").hidden = !(category === "All" && !group && search.value.trim() === "" && picks.length > 0);
+  $("shelf").hidden = !(category === "All" && search.value.trim() === "" && picks.length > 0);
   $("shelf-grid").replaceChildren(...picks.map(makeCard));
 }
 
@@ -644,6 +674,7 @@ function openEditor(game) {
   $("remove").hidden = !game;
   $("f-hidden").checked = !!(game && game.hidden);
   $("f-board").checked = !!(game && game.board);
+  $("f-party").checked = !!(game && game.party);
   $("f-title").value = game ? game.title : "";
   $("f-category").value = game && game.category ? game.category : "";
   $("f-desc").value = game && game.description ? game.description : "";
@@ -844,6 +875,7 @@ $("editor-form").addEventListener("submit", async function (event) {
   if (editing && editing.featured) entry.featured = true;
   if ($("f-hidden").checked) entry.hidden = true;
   if ($("f-board").checked) entry.board = true;
+  if ($("f-party").checked) entry.party = true;
 
   $("save").disabled = true;
   try {

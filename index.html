@@ -84,8 +84,9 @@
       </div>
     </div>
 
-    <div id="games-grid" class="grid"></div>
     <p id="empty" class="empty" hidden>No games match your search.</p>
+    <div id="games-results" class="grid" hidden></div>
+    <div id="games-grid" class="groups"></div>
 
     <div id="ad-slot" class="ad" hidden></div>
   </main>
@@ -173,7 +174,11 @@
       </div>
       <label class="manage-hide">
         <input id="f-board" name="board" type="checkbox">
-        <span>Board game<em>Shows it on the board games side of the shelf instead of with the video games.</em></span>
+        <span>Board game<em>Puts it in the board games group at the bottom of the page.</em></span>
+      </label>
+      <label class="manage-hide">
+        <input id="f-party" name="party" type="checkbox">
+        <span>Party game<em>Puts it in the party games group with Flertal and Draw &amp; Pass.</em></span>
       </label>
       <label class="manage-hide">
         <input id="f-hidden" name="hidden" type="checkbox">

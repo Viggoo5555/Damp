@@ -28,10 +28,15 @@
   function onPage() { return location.protocol === "http:" || location.protocol === "https:"; }
   if (!onPage()) return;
 
+  // Only the games on the shelf: a game marked "hidden" in games.json is not
+  // something a visitor could have played, so it has no business in the list.
   function gameTitles() {
     try {
-      if (typeof games !== "undefined" && Array.isArray(games)) {
-        return games.map(function (game) { return game && game.title; }).filter(Boolean);
+      var list = typeof liveGames === "function" ? liveGames() : games;
+      if (Array.isArray(list)) {
+        return list.filter(function (game) { return game && !game.hidden; })
+          .map(function (game) { return game.title; })
+          .filter(Boolean);
       }
     } catch (error) { /* the shelf has not loaded yet */ }
     return [];
@@ -101,19 +106,6 @@
       }
     });
 
-    var bar = document.querySelector("#player .player-actions");
-    if (bar) {
-      var barButton = document.createElement("button");
-      barButton.type = "button";
-      barButton.id = "player-feedback";
-      barButton.setAttribute("aria-haspopup", "dialog");
-      barButton.innerHTML = '<svg class="player-icon" viewBox="0 0 24 24" aria-hidden="true">' +
-        '<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.6 3.4A.7.7 0 0 1 4.3 18.8V6.5Z"/></svg>' +
-        '<span class="player-action-label">Feedback</span>';
-      barButton.addEventListener("click", openDialog);
-      bar.insertBefore(barButton, bar.querySelector("#player-share") || null);
-    }
-
     playerEl = document.getElementById("player");
     playerTitle = document.getElementById("player-title");
     if (playerEl && typeof MutationObserver === "function") {
@@ -123,8 +115,8 @@
     setTimeout(flush, 2500);
   }
 
-  // While a game is open the bar carries the button, so the corner stays clear
-  // for the game's own speedometer or messages.
+  // While a game is open the corner stays clear for the game's own speedometer
+  // or messages; the Where? list still names every game on the shelf.
   function syncPill() {
     if (!pill) return;
     var playing = false;

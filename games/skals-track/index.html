@@ -16,7 +16,12 @@
     return;
   }
 
-  ["relay.js", "error_screen.bundle.js", "main.bundle.js", "damp.js"].forEach(function (src) {
+  // Multiplayer normally meets over WebRTC, which blocked school networks drop.
+  // With ?relay=1 the game meets over this site's own WebSocket rooms instead;
+  // it is opt-in until the join handshake has had a full two-machine test.
+  var scripts = ["error_screen.bundle.js", "main.bundle.js", "damp.js"];
+  if (/[?&]relay=1(?:&|$)/.test(location.search)) scripts.unshift("relay.js");
+  scripts.forEach(function (src) {
     var script = document.createElement("script");
     script.src = src;
     script.async = false;

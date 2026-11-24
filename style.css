@@ -2858,3 +2858,6 @@ body.searching #chips { display: none; }
   .group-title { font-size: 1.1rem; }
   .divider { margin: 30px 0 26px; }
 }
+
+/* In play the close button steps aside; the rest of the bar stays usable. */
+.player.no-close #player-close { display: none; }

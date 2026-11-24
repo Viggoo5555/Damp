@@ -481,6 +481,7 @@ function openPlayer(game) {
   // Lets the account side put the open game in your entry for the people list
   document.dispatchEvent(new CustomEvent("damp-playing", { detail: game.title }));
   player.classList.remove("bar-open");
+  player.classList.remove("no-close");
   player.hidden = false;
   document.body.classList.add("locked");
   syncLanguageControls();
@@ -491,6 +492,7 @@ function closePlayer() {
   if (document.fullscreenElement) document.exitFullscreen();
   player.classList.remove("pseudo-fullscreen");
   player.classList.remove("bar-open");
+  player.classList.remove("no-close");
   syncFullscreenButton();
   if (window.dampSaves) dampSaves.stop();
   frame.src = "about:blank";
@@ -507,9 +509,9 @@ function closePlayer() {
 
 $("player-close").addEventListener("click", function () { location.hash = ""; });
 
-// The game bar is a menu control: the top of the window brings it down while
-// the game is on its own menu, and a game that is actually being played keeps
-// the bar away, so it never covers a race or a match.
+// The close button is a menu control: the top of the window brings the bar down
+// on a game's own menu, and once the game is actually being played only the
+// close button steps aside. Messages, fullscreen and the link stay available.
 (function () {
   const EDGE = 96;
   let checked = { at: 0, doc: null, playing: false };
@@ -558,10 +560,7 @@ $("player-close").addEventListener("click", function () { location.hash = ""; })
   function watch(event) {
     if (player.hidden || event.pointerType === "touch") return;
     const nearTop = event.clientY <= EDGE;
-    if (nearTop && inPlay()) {
-      player.classList.remove("bar-open");
-      return;
-    }
+    if (nearTop) player.classList.toggle("no-close", inPlay());
     player.classList.toggle("bar-open", nearTop);
   }
 
@@ -575,6 +574,7 @@ $("player-close").addEventListener("click", function () { location.hash = ""; })
       const doc = frame.contentDocument;
       if (!doc || doc.dampBarWatch) return;
       checked = { at: 0, doc: null, playing: false };
+      player.classList.remove("no-close");
       doc.dampBarWatch = true;
       doc.addEventListener("pointermove", watch, { passive: true });
     } catch (error) { /* other origin: the bar still opens above the game */ }

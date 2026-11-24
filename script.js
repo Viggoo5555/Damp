@@ -503,15 +503,62 @@ function closePlayer() {
 
 $("player-close").addEventListener("click", function () { location.hash = ""; });
 
-// The game bar has no strip of its own: the top of the window brings its
-// controls down, anything below that takes them straight out again, and clicks
-// anywhere but the controls fall through to the game.
+// The game bar is a menu control: the top of the window brings it down while
+// the game is on its own menu, and a game that is actually being played keeps
+// the bar away, so it never covers a race or a match.
 (function () {
   const EDGE = 96;
+  let checked = { at: 0, doc: null, playing: false };
+
+  // A menu counts when a big menu-like panel fills most of the frame.
+  function menuInFront(doc) {
+    const view = doc.defaultView;
+    if (!view) return false;
+    const width = view.innerWidth;
+    const height = view.innerHeight;
+    if (!width || !height) return false;
+    const nodes = doc.querySelectorAll(
+      '[class*="menu" i], [id*="menu" i], [class*="overlay" i], [id*="overlay" i], ' +
+      '[class*="start" i], [id*="start" i], [class*="home" i], [id*="home" i], [role="dialog"]'
+    );
+    for (let i = 0; i < nodes.length; i++) {
+      const style = view.getComputedStyle(nodes[i]);
+      if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) < 0.15) continue;
+      const box = nodes[i].getBoundingClientRect();
+      if (box.width >= width * 0.45 && box.height >= height * 0.45) return true;
+    }
+    return false;
+  }
+
+  // A canvas game is in play once its canvas fills the frame and no menu sits
+  // on top of it. Games without a big canvas keep the bar.
+  function inPlay() {
+    if (player.hidden) return false;
+    let doc;
+    try { doc = frame.contentDocument; } catch (error) { return false; }
+    if (!doc || !doc.body) return false;
+    const now = Date.now();
+    if (checked.doc === doc && now - checked.at < 250) return checked.playing;
+    let playing = false;
+    const canvas = doc.querySelector("canvas");
+    const view = doc.defaultView;
+    if (canvas && view) {
+      const box = canvas.getBoundingClientRect();
+      const fills = box.width >= view.innerWidth * 0.6 && box.height >= view.innerHeight * 0.6;
+      playing = fills && !menuInFront(doc);
+    }
+    checked = { at: now, doc: doc, playing: playing };
+    return playing;
+  }
 
   function watch(event) {
     if (player.hidden || event.pointerType === "touch") return;
-    player.classList.toggle("bar-open", event.clientY <= EDGE);
+    const nearTop = event.clientY <= EDGE;
+    if (nearTop && inPlay()) {
+      player.classList.remove("bar-open");
+      return;
+    }
+    player.classList.toggle("bar-open", nearTop);
   }
 
   function hideNow() {
@@ -523,6 +570,7 @@ $("player-close").addEventListener("click", function () { location.hash = ""; })
     try {
       const doc = frame.contentDocument;
       if (!doc || doc.dampBarWatch) return;
+      checked = { at: 0, doc: null, playing: false };
       doc.dampBarWatch = true;
       doc.addEventListener("pointermove", watch, { passive: true });
     } catch (error) { /* other origin: the bar still opens above the game */ }

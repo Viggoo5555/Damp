@@ -1688,8 +1688,10 @@ function pick() {
         '<aside class="col col--side">' +
           '<div class="panel"><div class="panel-head"><h2>Rumkode</h2></div>' +
             '<p class="roomcode">' + esc(room.code) + "</p>" +
-            '<button class="ghost" onclick="flt.copy()">Kopiér invitationslink</button>' +
-            '<button class="ghost" onclick="flt.inviteFriend()">Inviter en ven</button>' +
+            '<div class="row">' +
+              '<button class="ghost" onclick="flt.copy()">Kopiér invitationslink</button>' +
+              '<button class="ghost" onclick="flt.inviteFriend()">Inviter en ven</button>' +
+            "</div>" +
             '<p class="hint" id="copynote">De andre åbner linket eller skriver koden.</p>' +
           "</div>" +
           (host
@@ -1700,7 +1702,7 @@ function pick() {
               "</div>" +
               '<p class="hint">En speedrunde samler tre hurtige spørgsmål med halv tid.</p>' +
               (people.length < 2
-                ? '<p class="hint">I skal være mindst to spillere.</p><button class="primary" disabled>Start spillet</button>'
+                ? '<p class="hint">I skal være mindst to spillere.</p><div class="row"><button class="primary" disabled>Start spillet</button></div>'
                 : '<div class="row"><button class="primary" onclick="flt.start()">Start spillet</button></div>') +
               "</div>"
             : '<div class="panel panel--quiet"><p class="hint">Værten vælger antal runder og starter spillet.</p></div>') +

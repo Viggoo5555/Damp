@@ -1194,6 +1194,28 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Feedback: anyone may drop a report in, nobody may read it back from the
+    // site. The owner reads them in the Firebase console. The fields are
+    // limited so the form cannot be used to store anything else.
+    match /feedback/{reportId} {
+      allow create: if request.resource.data.keys().hasOnly(['kind', 'where', 'text', 'page', 'at', 'ua', 'name'])
+        && request.resource.data.kind is string
+        && request.resource.data.kind.size() <= 40
+        && request.resource.data.where is string
+        && request.resource.data.where.size() <= 60
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 4
+        && request.resource.data.text.size() <= 1000
+        && request.resource.data.page is string
+        && request.resource.data.page.size() <= 200
+        && request.resource.data.at is timestamp
+        && (!('ua' in request.resource.data)
+          || (request.resource.data.ua is string && request.resource.data.ua.size() <= 200))
+        && (!('name' in request.resource.data)
+          || (request.resource.data.name is string && request.resource.data.name.size() <= 40));
+      allow read, update, delete: if false;
+    }
+
     // Everything else stays closed.
     match /{document=**} {
       allow read, write: if false;

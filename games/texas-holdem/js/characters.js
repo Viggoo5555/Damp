@@ -1,364 +1,315 @@
 /* =====================================================================
    TEXAS HOLD'EM — the people at the table
-   Built from primitives with enough detail to read as real people in
-   warm, low light. Each opponent has a distinct face, suit and idle life.
+   Low-poly, faceted, fully skinned characters. Each seat has a complete
+   bone chain with articulated fingers, an AnimationMixer for body mood,
+   and procedural two-bone IK so hands find the real cards and chips.
    ===================================================================== */
 
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from '../../../vendor/three/RoundedBoxGeometry.js';
+import { buildCharacterModel, buildPlayerHandsModel } from './body.js';
+import { accessoryMaterial } from './lowpoly.js';
 
 export const CHARACTER_LOOKS = [
   {
-    skin: '#8d5f43', skinShade: '#70482f', jacket: '#20242b', shirt: '#ded6c6', accent: '#70603f',
-    hair: '#a9a49a', hairStyle: 'silver', tie: '#4e3823', eyes: '#4b3c2e', tieStyle: 'tie', pocket: true
+    name: 'Vincent',
+    skin: '#8d5f43', skinShade: '#70482f', jacket: '#20242b', shirt: '#ded6c6',
+    accent: '#70603f', trousers: '#191b20', boots: '#0e0f12', belt: '#1a1410',
+    hair: '#918d83', hairStyle: 'silver', tie: '#4e3823', eyes: '#4b3c2e',
+    tieStyle: 'tie', pocket: true, pocketSquare: true, cufflink: true, beard: true, beardColour: '#3a2e26', sunglasses: true,
+    hat: true, hatColour: '#27262a', bandColour: '#7d6438'
   },
   {
-    skin: '#b77a58', skinShade: '#97603f', jacket: '#56212b', shirt: '#f1e8da', accent: '#c39d5d',
-    hair: '#241a16', hairStyle: 'bun', tie: '#c39d5d', eyes: '#2c1e18', tieStyle: 'none', earrings: true
+    name: 'Marisol',
+    skin: '#b77a58', skinShade: '#97603f', jacket: '#56212b', shirt: '#f1e8da',
+    accent: '#c39d5d', trousers: '#2c1b1d', boots: '#1b1113', belt: '#241512',
+    hair: '#241a16', hairStyle: 'bun', tie: '#c39d5d', eyes: '#2c1e18',
+    tieStyle: 'none', earrings: true, gold: '#c39d5d'
   },
   {
-    skin: '#cfa17d', skinShade: '#ae8060', jacket: '#3b3b2e', shirt: '#e8e0cf', accent: '#7f2d2b',
-    hair: '#66594a', hairStyle: 'short', tie: '#7f2d2b', eyes: '#3c4b5b', tieStyle: 'bow', glasses: true
+    name: 'Ellis',
+    skin: '#cfa17d', skinShade: '#ae8060', jacket: '#3b3b2e', shirt: '#e8e0cf',
+    accent: '#7f2d2b', trousers: '#2b2b22', boots: '#1c1a16', belt: '#2a2118',
+    hair: '#66594a', hairStyle: 'short', tie: '#7f2d2b', eyes: '#3c4b5b',
+    tieStyle: 'bow', glasses: true
   },
   {
-    skin: '#e2bb98', skinShade: '#c49a77', jacket: '#141a22', shirt: '#f0e9dd', accent: '#a4adb7',
-    hair: '#12100f', hairStyle: 'bob', tie: '#262f3a', eyes: '#191c22', tieStyle: 'none', sunglasses: true
+    name: 'Nadia',
+    skin: '#e2bb98', skinShade: '#c49a77', jacket: '#141a22', shirt: '#f0e9dd',
+    accent: '#a4adb7', trousers: '#10141a', boots: '#0b0d10', belt: '#171a1e',
+    hair: '#12100f', hairStyle: 'bob', tie: '#262f3a', eyes: '#191c22',
+    tieStyle: 'none', sunglasses: true
   },
   {
-    skin: '#c18860', skinShade: '#9f6a45', jacket: '#6d5a3b', shirt: '#f3e6ce', accent: '#892b21',
-    hair: '#2b211a', hairStyle: 'bald', tie: '#892b21', eyes: '#3b2c20', tieStyle: 'tie', beard: true
+    name: 'Big Sal',
+    skin: '#c18860', skinShade: '#9f6a45', jacket: '#5d442c', shirt: '#e3d3ab',
+    accent: '#892b21', trousers: '#3a3126', boots: '#3b2a1c', belt: '#3a2a18',
+    hair: '#2b211a', hairStyle: 'short', tie: '#892b21', eyes: '#3b2c20',
+    tieStyle: 'none', beard: true, hat: true, hatColour: '#b59a6b', bandColour: '#3c2a1a',
+    sleeve: '#d8c79f', vest: true
   },
   {
-    skin: '#d7a07b', skinShade: '#b8805c', jacket: '#213d34', shirt: '#f0e6d4', accent: '#a67c3c',
-    hair: '#6e291a', hairStyle: 'long', tie: '#a67c3c', eyes: '#2c1d17', tieStyle: 'none', earrings: true
+    name: 'June',
+    skin: '#d7a07b', skinShade: '#b8805c', jacket: '#213d34', shirt: '#f0e6d4',
+    accent: '#a67c3c', trousers: '#1a2923', boots: '#141d19', belt: '#231c14',
+    hair: '#6e291a', hairStyle: 'long', tie: '#a67c3c', eyes: '#2c1d17',
+    tieStyle: 'none', earrings: true, gold: '#a67c3c'
   }
 ];
 
-function material(colour, options = {}) {
-  return new THREE.MeshStandardMaterial({
-    color: colour,
-    roughness: options.roughness ?? 0.72,
-    metalness: options.metalness ?? 0,
-    ...options
-  });
+export const PLAYER_LOOK = {
+  skin: '#8f6047', skinShade: '#6b4430', jacket: '#2b313a', shirt: '#a99b86',
+  accent: '#8d744c', trousers: '#151a21', boots: '#0d0f12', belt: '#16110d',
+  hair: '#2a211a', hairStyle: 'short', tieStyle: 'none', eyes: '#2b2019'
+};
+
+const DEALER_LOOK = {
+  skin: '#9a6b4c', skinShade: '#7c5239', jacket: '#1b1e24', shirt: '#efe8da',
+  accent: '#b08b52', trousers: '#141518', boots: '#0a0b0c', belt: '#0f1012',
+  hair: '#2a211a', hairStyle: 'short', tieStyle: 'bow', tie: '#b08b52',
+  eyes: '#33261c', gold: '#b08b52', beard: true, beardColour: '#2b211b'
+};
+
+export const HOLD_LOCAL = new THREE.Vector3(0, 1.03, 0.33);
+
+const REST_L = new THREE.Vector3(-0.16, 0.825, 0.52);
+const REST_R = new THREE.Vector3(0.16, 0.825, 0.52);
+const REST_DIR = new THREE.Vector3(0, -0.45, 1).normalize();
+const UP_DIR = new THREE.Vector3(0, 0.92, 0.25).normalize();
+const CHIN_DIR = new THREE.Vector3(0, 0.7, -0.2).normalize();
+
+const ACTION_DURATIONS = {
+  inspect: 3.1, bet: 2.0, check: 1.25, fold: 2.3, think: 3.2,
+  win: 2.6, lose: 2.8, idle: 0.4, deal: 1.1
+};
+
+function smoothstep(value) {
+  const t = Math.max(0, Math.min(1, value));
+  return t * t * (3 - 2 * t);
 }
 
-function addMesh(parent, geometry, mat, x = 0, y = 0, z = 0, cast = true) {
-  const mesh = new THREE.Mesh(geometry, mat);
-  mesh.position.set(x, y, z);
-  mesh.castShadow = cast;
-  mesh.receiveShadow = true;
-  parent.add(mesh);
-  return mesh;
+function damp(current, target, dt, speed) {
+  return current + (target - current) * (1 - Math.exp(-dt * speed));
 }
 
-function roundedBox(width, height, depth, radius, materialRef, x, y, z, cast = true) {
-  const geometry = new RoundedBoxGeometry(width, height, depth, 3, radius);
-  return addMesh(this, geometry, materialRef, x, y, z, cast);
-}
-
-function makeHand(skinMat, cuffMat, goldMat) {
-  const group = new THREE.Group();
-  const palm = addMesh(group, new RoundedBoxGeometry(0.075, 0.035, 0.1, 3, 0.012), skinMat, 0, 0, 0.04);
-  palm.scale.set(1, 0.8, 1);
-  const cuff = addMesh(group, new THREE.CylinderGeometry(0.055, 0.06, 0.03, 16), cuffMat, 0, 0, -0.025);
-  cuff.rotation.x = Math.PI / 2;
-  addMesh(group, new THREE.SphereGeometry(0.007, 8, 8), goldMat, 0.034, 0.01, -0.025, false);
-  for (let i = 0; i < 4; i++) {
-    const finger = addMesh(group, new THREE.CapsuleGeometry(0.0116, 0.055 - Math.abs(i - 1.5) * 0.008, 3, 8), skinMat, -0.03 + i * 0.021, -0.006, 0.115 - Math.abs(i - 1.5) * 0.008, false);
-    finger.rotation.x = Math.PI / 2.2;
+function quatTrack(name, keys) {
+  const times = [];
+  const values = [];
+  const euler = new THREE.Euler();
+  const quaternion = new THREE.Quaternion();
+  for (const [time, x, y, z] of keys) {
+    times.push(time);
+    euler.set(x, y, z, 'YXZ');
+    quaternion.setFromEuler(euler);
+    values.push(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
   }
-  const thumb = addMesh(group, new THREE.CapsuleGeometry(0.014, 0.045, 3, 8), skinMat, 0.052, -0.004, 0.065, false);
-  thumb.rotation.set(Math.PI / 2.4, 0, -0.65);
-  return group;
+  return new THREE.QuaternionKeyframeTrack(`${name}.quaternion`, times, values);
 }
 
-function makeEye(irisColour) {
-  const group = new THREE.Group();
-  addMesh(group, new THREE.SphereGeometry(0.021, 14, 12), material('#f0e9dd', { roughness: 0.4 }), 0, 0, 0, false);
-  addMesh(group, new THREE.SphereGeometry(0.0105, 12, 10), material(irisColour, { roughness: 0.3 }), 0, 0, 0.0155, false);
-  addMesh(group, new THREE.SphereGeometry(0.0048, 8, 8), material('#0b0908', { roughness: 0.2 }), 0, 0, 0.023, false);
-  return group;
+function makeClip(name, duration, tracks, loop = true) {
+  const clip = new THREE.AnimationClip(name, duration, tracks);
+  clip.userData = { loop };
+  return clip;
 }
 
-function makeGlasses(goldMat, lensMat, style) {
-  const group = new THREE.Group();
-  for (const side of [-1, 1]) {
-    addMesh(group, new THREE.TorusGeometry(0.035, 0.0045, 8, 22), goldMat, side * 0.052, 0, 0, false);
-    const lens = addMesh(group, new THREE.CircleGeometry(0.031, 20), lensMat, side * 0.052, 0, 0.001, false);
-    if (style === 'sunglasses') lens.scale.set(1, 0.78, 1);
-    else lens.material.opacity = 0.18;
-  }
-  addMesh(group, new THREE.BoxGeometry(0.035, 0.006, 0.006), goldMat, 0, 0.006, 0, false);
-  return group;
+const MOOD_CLIPS = {
+  idle: makeClip('idle', 8, [
+    quatTrack('spine', [[0, 0.006, 0.005, 0.002], [2, 0.014, 0.01, 0.004], [4, 0.006, -0.004, 0.001], [6, -0.002, -0.008, -0.003], [8, 0.006, 0.005, 0.002]]),
+    quatTrack('chest', [[0, 0.012, 0.01, -0.004], [2, 0.022, 0.02, -0.008], [4, 0.014, 0.0, -0.001], [6, 0.004, -0.015, 0.006], [8, 0.012, 0.01, -0.004]])
+  ]),
+  think: makeClip('think', 4.4, [
+    quatTrack('spine', [[0, 0.026, 0.015, 0.002], [2.2, 0.038, 0.03, 0.006], [4.4, 0.026, 0.015, 0.002]]),
+    quatTrack('chest', [[0, 0.05, 0.02, 0.003], [2.2, 0.066, 0.04, 0.008], [4.4, 0.05, 0.02, 0.003]])
+  ]),
+  folded: makeClip('folded', 6, [
+    quatTrack('spine', [[0, -0.012, -0.01, -0.006], [3, -0.004, -0.02, -0.01], [6, -0.012, -0.01, -0.006]]),
+    quatTrack('chest', [[0, 0.004, -0.02, -0.008], [3, 0.016, -0.035, -0.015], [6, 0.004, -0.02, -0.008]])
+  ]),
+  win: makeClip('win', 2.6, [
+    quatTrack('spine', [[0, 0.01, 0, 0], [0.7, -0.06, 0.02, 0], [2.6, -0.045, 0.01, 0]]),
+    quatTrack('chest', [[0, 0.012, 0, 0], [0.7, -0.15, 0.03, 0.01], [2.6, -0.11, 0.02, 0.005]])
+  ], false),
+  lose: makeClip('lose', 2.8, [
+    quatTrack('spine', [[0, 0.01, 0, 0], [1.1, 0.1, 0.02, 0.01], [2.8, 0.12, 0.03, 0.015]]),
+    quatTrack('chest', [[0, 0.012, 0, 0], [1.1, 0.16, 0.02, 0.01], [2.8, 0.18, 0.03, 0.015]])
+  ], false)
+};
+
+function setRigMood(rig, mood) {
+  if (!rig.actions || rig.currentMood === mood) return;
+  const next = rig.actions[mood];
+  if (!next) return;
+  const previous = rig.actions[rig.currentMood];
+  next.reset();
+  next.enabled = true;
+  next.setEffectiveTimeScale(1);
+  next.setEffectiveWeight(1);
+  next.play();
+  if (previous && previous !== next) previous.crossFadeTo(next, mood === 'win' || mood === 'lose' ? 0.35 : 0.6, false);
+  rig.currentMood = mood;
 }
 
-function buildHead(look, mats) {
-  const head = new THREE.Group();
-  head.position.set(0, 1.395, 0.015);
-
-  const skull = addMesh(head, new THREE.SphereGeometry(0.13, 28, 22), mats.skin, 0, 0, 0);
-  skull.scale.set(1, 1.17, 1.02);
-  // jaw / chin
-  const jaw = addMesh(head, new THREE.SphereGeometry(0.097, 22, 16), mats.skin, 0, -0.075, 0.014);
-  jaw.scale.set(0.96, 0.8, 0.92);
-  // ears
-  for (const side of [-1, 1]) {
-    const ear = addMesh(head, new THREE.SphereGeometry(0.026, 12, 10), mats.skin, side * 0.124, -0.005, -0.005, false);
-    ear.scale.set(0.55, 1, 0.75);
-    if (look.earrings) addMesh(head, new THREE.SphereGeometry(0.009, 10, 8), mats.gold, side * 0.124, -0.048, 0, false);
-  }
-  // nose
-  const nose = addMesh(head, new THREE.SphereGeometry(0.024, 12, 10), mats.skin, 0, -0.012, 0.123, false);
-  nose.scale.set(0.82, 1.3, 0.9);
-  // brows
-  for (const side of [-1, 1]) {
-    const brow = addMesh(head, new THREE.BoxGeometry(0.055, 0.009, 0.01), mats.brow, side * 0.048, 0.055, 0.117, false);
-    brow.rotation.z = side * -0.09;
-  }
-  // eyes
-  const eyeL = makeEye(look.eyes);
-  eyeL.position.set(-0.049, 0.029, 0.108);
-  const eyeR = makeEye(look.eyes);
-  eyeR.position.set(0.049, 0.029, 0.108);
-  head.add(eyeL, eyeR);
-  // mouth
-  const mouth = addMesh(head, new THREE.BoxGeometry(0.052, 0.009, 0.008), material('#6e3d36', { roughness: 0.5 }), 0, -0.075, 0.117, false);
-  // hair
-  const hairMat = material(look.hair, { roughness: 0.85 });
-  if (look.hairStyle !== 'bald') {
-    const cap = addMesh(head, new THREE.SphereGeometry(0.138, 26, 18), hairMat, 0, 0.038, -0.038);
-    cap.scale.set(1.02, 1.04, 1.03);
-  }
-  if (look.hairStyle === 'bun') {
-    const bun = addMesh(head, new THREE.SphereGeometry(0.055, 14, 12), hairMat, 0, 0.075, -0.145);
-    bun.scale.set(1, 1, 0.85);
-    for (const side of [-1, 1]) {
-      const sideHair = addMesh(head, new THREE.CapsuleGeometry(0.022, 0.1, 3, 8), hairMat, side * 0.128, -0.02, -0.02);
-      sideHair.rotation.z = side * 0.18;
+function attachMixer(rig, offset = 0) {
+  const mixer = new THREE.AnimationMixer(rig.group);
+  rig.mixer = mixer;
+  rig.actions = {};
+  for (const [name, clip] of Object.entries(MOOD_CLIPS)) {
+    const action = mixer.clipAction(clip);
+    if (name === 'win' || name === 'lose') {
+      action.setLoop(THREE.LoopOnce, 1);
+      action.clampWhenFinished = true;
+    } else {
+      action.setLoop(THREE.LoopRepeat, Infinity);
     }
+    rig.actions[name] = action;
   }
-  if (look.hairStyle === 'bob' || look.hairStyle === 'long') {
-    for (const side of [-1, 1]) {
-      const sideHair = addMesh(head, new THREE.CapsuleGeometry(0.033, 0.13, 3, 8), hairMat, side * 0.112, -0.06, -0.018);
-      sideHair.rotation.z = side * 0.18;
-    }
-    if (look.hairStyle === 'long') {
-      addMesh(head, new RoundedBoxGeometry(0.19, 0.26, 0.07, 3, 0.03), hairMat, 0, -0.16, -0.1);
-    }
-  }
-  if (look.hairStyle === 'silver') {
-    const sweep = addMesh(head, new THREE.CapsuleGeometry(0.04, 0.1, 3, 8), hairMat, -0.035, 0.08, 0.075);
-    sweep.rotation.z = 1.15;
-    sweep.rotation.x = 0.4;
-  }
-  // beard / moustache
-  if (look.beard) {
-    const beard = addMesh(head, new THREE.SphereGeometry(0.093, 18, 14, 0, Math.PI * 2, Math.PI * 0.48, Math.PI * 0.45), hairMat, 0, -0.033, 0.018);
-    beard.scale.set(1.08, 1.22, 1.04);
-    addMesh(head, new THREE.BoxGeometry(0.058, 0.012, 0.012), hairMat, 0, -0.055, 0.117, false);
-  }
-  if (look.sunglasses) {
-    const glasses = makeGlasses(mats.darkMetal, material('#0a0b0c', { roughness: 0.12, metalness: 0.4 }), 'sunglasses');
-    glasses.position.set(0, 0.028, 0.118);
-    head.add(glasses);
-  } else if (look.glasses) {
-    const glasses = makeGlasses(mats.gold, material('#dfe7ea', { roughness: 0.1, metalness: 0.1, transparent: true, opacity: 0.18 }), 'glasses');
-    glasses.position.set(0, 0.028, 0.118);
-    head.add(glasses);
-  }
-  return { head, eyeL, eyeR, mouth };
+  rig.currentMood = 'idle';
+  rig.actions.idle.play();
+  mixer.time = offset;
+  return mixer;
 }
 
-export function buildSeatedCharacter(look, index) {
-  const group = new THREE.Group();
-  group.userData.look = look;
-  const mats = {
-    skin: material(look.skin, { roughness: 0.62 }),
-    skinShade: material(look.skinShade, { roughness: 0.68 }),
-    jacket: material(look.jacket, { roughness: 0.62 }),
-    shirt: material(look.shirt, { roughness: 0.7 }),
-    tie: material(look.tie, { roughness: 0.55 }),
-    hair: material(look.hair, { roughness: 0.85 }),
-    brow: material(look.hair, { roughness: 0.9 }),
-    gold: material('#b8935a', { roughness: 0.3, metalness: 0.85 }),
-    darkMetal: material('#22252a', { roughness: 0.3, metalness: 0.7 })
+function makePerformer(rig) {
+  rig.perform = function perform(name, options = {}) {
+    const duration = options.duration || ACTION_DURATIONS[name] || 1.8;
+    this.action = {
+      name,
+      time: 0,
+      duration,
+      world: {
+        chip: options.chip ? options.chip.clone() : null,
+        bet: options.bet ? options.bet.clone() : null,
+        card: options.card ? options.card.clone() : null,
+        muck: options.muck ? options.muck.clone() : null
+      }
+    };
+    return this.action;
   };
-
-  // lower body / lap
-  addMesh(group, new RoundedBoxGeometry(0.4, 0.24, 0.32, 3, 0.06), mats.jacket, 0, 0.63, 0.02);
-
-  // torso
-  const torso = new THREE.Group();
-  torso.position.y = 0.98;
-  group.add(torso);
-  addMesh(torso, new RoundedBoxGeometry(0.46, 0.5, 0.3, 4, 0.07), mats.jacket, 0, 0, 0);
-  // shirt front
-  addMesh(torso, new RoundedBoxGeometry(0.19, 0.36, 0.018, 2, 0.008), mats.shirt, 0, 0.01, 0.148);
-  // lapels
-  for (const side of [-1, 1]) {
-    const lapel = addMesh(torso, new THREE.BoxGeometry(0.075, 0.32, 0.014), mats.jacket, side * 0.115, 0.03, 0.158);
-    lapel.rotation.z = side * 0.24;
-    lapel.rotation.x = -0.05;
-  }
-  if (look.tieStyle === 'tie') {
-    const tie = addMesh(torso, new THREE.BoxGeometry(0.042, 0.23, 0.012), mats.tie, 0, 0.02, 0.165);
-    tie.rotation.x = -0.04;
-    addMesh(torso, new THREE.BoxGeometry(0.055, 0.035, 0.014), mats.tie, 0, 0.145, 0.166);
-  } else if (look.tieStyle === 'bow') {
-    for (const side of [-1, 1]) {
-      const bow = addMesh(torso, new THREE.BoxGeometry(0.055, 0.04, 0.014), mats.tie, side * 0.038, 0.16, 0.166);
-      bow.rotation.z = side * 0.2;
-    }
-    addMesh(torso, new THREE.SphereGeometry(0.014, 10, 8), mats.tie, 0, 0.16, 0.17, false);
-  }
-  if (look.pocket) {
-    addMesh(torso, new THREE.BoxGeometry(0.07, 0.035, 0.01), mats.shirt, 0.12, -0.13, 0.153, false);
-  }
-  // shoulders
-  for (const side of [-1, 1]) {
-    addMesh(torso, new THREE.SphereGeometry(0.092, 16, 12), mats.jacket, side * 0.215, 0.11, 0);
-    addMesh(torso, new THREE.SphereGeometry(0.07, 12, 10), mats.jacket, side * 0.25, 0.02, 0.01);
-  }
-
-  // arms, articulated at the shoulder
-  const arms = [];
-  for (const side of [-1, 1]) {
-    const pivot = new THREE.Group();
-    pivot.position.set(side * 0.235, 1.08, 0.02);
-    group.add(pivot);
-    const upper = addMesh(pivot, new THREE.CapsuleGeometry(0.055, 0.26, 4, 10), mats.jacket, 0, -0.13, 0.015);
-    upper.rotation.z = side * 0.22;
-    const elbow = new THREE.Group();
-    elbow.position.set(side * 0.035, -0.27, 0.03);
-    pivot.add(elbow);
-    addMesh(elbow, new THREE.SphereGeometry(0.056, 12, 10), mats.jacket, 0, 0, 0);
-    const forearm = addMesh(elbow, new THREE.CapsuleGeometry(0.048, 0.25, 4, 10), mats.jacket, 0, -0.1, 0.1);
-    forearm.rotation.x = Math.PI / 2.6;
-    forearm.rotation.z = side * -0.06;
-    addMesh(elbow, new THREE.CylinderGeometry(0.047, 0.051, 0.022, 14), mats.shirt, 0, -0.17, 0.205).rotation.x = Math.PI / 2.6;
-    const hand = makeHand(mats.skin, mats.shirt, mats.gold);
-    hand.position.set(side * 0.005, -0.16, 0.235);
-    hand.rotation.x = -0.38;
-    elbow.add(hand);
-    arms.push({ pivot, elbow, hand, side });
-  }
-
-  // neck
-  addMesh(group, new THREE.CylinderGeometry(0.052, 0.062, 0.09, 16), mats.skin, 0, 1.25, 0.01);
-
-  const { head, eyeL, eyeR, mouth } = buildHead(look, mats);
-  group.add(head);
-
-  const rig = {
-    group,
-    index,
-    look,
-    torso,
-    head,
-    eyeL,
-    eyeR,
-    mouth,
-    arms,
-    headBase: head.rotation.clone(),
-    blinkAt: 2 + Math.random() * 3,
-    blinkUntil: 0,
-    glanceAt: 0,
-    glanceYaw: 0,
-    glancePitch: 0,
-    phase: Math.random() * Math.PI * 2,
-    mood: 'idle',
-    dealPulse: 0
+  rig.reset = function reset() {
+    this.action = null;
+    this.lookAtWorld = null;
+    this.headYaw = 0;
+    this.headPitch = 0;
+    this.lean = 0;
+    this.mood = 'idle';
+    this.handCurrent = null;
+    setRigMood(this, 'idle');
+  };
+  rig.getHoldPoint = function getHoldPoint(target = new THREE.Vector3()) {
+    this.group.updateWorldMatrix(true, false);
+    return this.group.localToWorld(target.copy(HOLD_LOCAL));
   };
   return rig;
 }
 
-/* The house dealer, standing at the far rail. */
-export function buildDealer() {
-  const group = new THREE.Group();
-  const mats = {
-    skin: material('#9a6b4c', { roughness: 0.62 }),
-    shirt: material('#efe8da', { roughness: 0.7 }),
-    vest: material('#1b1e24', { roughness: 0.5 }),
-    trousers: material('#141518', { roughness: 0.8 }),
-    hair: material('#2a211a', { roughness: 0.85 }),
-    gold: material('#b8935a', { roughness: 0.3, metalness: 0.85 }),
-    darkMetal: material('#22252a', { roughness: 0.3, metalness: 0.7 }),
-    brow: material('#2a211a', { roughness: 0.9 })
+/* ---------------- seated cast --------------------------------------- */
+
+export function buildSeatedCharacter(look, index) {
+  const model = buildCharacterModel(look, 'seated');
+  const rig = {
+    ...model,
+    index,
+    look,
+    mood: 'idle',
+    currentMood: 'idle',
+    action: null,
+    actionTime: 0,
+    lookAtWorld: null,
+    headYaw: 0,
+    headPitch: 0,
+    lean: 0,
+    handCurrent: null,
+    phase: Math.random() * Math.PI * 2,
+    blinkAt: 1.5 + Math.random() * 3,
+    blinkUntil: 0,
+    glanceAt: 0,
+    glanceYaw: 0,
+    glancePitch: 0,
+    curlSign: 1
   };
-  // legs / shoes
-  for (const side of [-1, 1]) {
-    addMesh(group, new THREE.CapsuleGeometry(0.075, 0.72, 4, 10), mats.trousers, side * 0.105, 0.45, 0);
-    const shoe = addMesh(group, new RoundedBoxGeometry(0.11, 0.06, 0.24, 3, 0.03), material('#0b0b0b', { roughness: 0.4 }), side * 0.105, 0.04, 0.045);
-  }
-  addMesh(group, new RoundedBoxGeometry(0.42, 0.22, 0.3, 3, 0.06), mats.trousers, 0, 0.86, 0);
-  // waistcoat
-  addMesh(group, new RoundedBoxGeometry(0.44, 0.52, 0.28, 4, 0.06), mats.vest, 0, 1.18, 0);
-  addMesh(group, new RoundedBoxGeometry(0.16, 0.43, 0.018, 2, 0.008), mats.shirt, 0, 1.16, 0.14);
-  // bow tie and buttons
-  for (const side of [-1, 1]) {
-    const bow = addMesh(group, new THREE.BoxGeometry(0.052, 0.035, 0.012), mats.gold, side * 0.033, 1.4, 0.155, false);
-    bow.rotation.z = side * 0.2;
-  }
-  for (let i = 0; i < 3; i++) addMesh(group, new THREE.SphereGeometry(0.009, 8, 8), mats.gold, 0, 1.26 - i * 0.07, 0.148, false);
-  // head
-  const look = { skin: '#9a6b4c', hair: '#2a211a', hairStyle: 'short', eyes: '#33261c', tieStyle: 'bow', glasses: false };
-  const { head, eyeL, eyeR } = buildHead(look, mats);
-  head.position.y = 1.65;
-  group.add(head);
-  addMesh(group, new THREE.CylinderGeometry(0.055, 0.065, 0.1, 16), mats.skin, 0, 1.5, 0.01);
-  // dealer visor
-  const visor = addMesh(group, new THREE.BoxGeometry(0.23, 0.012, 0.11), material('#1a1a1c', { roughness: 0.5 }), 0, 1.79, 0.08, false);
-  visor.rotation.x = 0.12;
-  addMesh(group, new THREE.CylinderGeometry(0.12, 0.13, 0.035, 16, 1, true), material('#1a1a1c', { roughness: 0.6 }), 0, 1.74, 0.01, false);
-  // name badge
-  addMesh(group, new THREE.BoxGeometry(0.11, 0.022, 0.008), mats.gold, 0.12, 1.18, 0.148, false).rotation.z = -0.04;
-  // articulated dealing arm
-  const arm = new THREE.Group();
-  arm.position.set(-0.23, 1.33, 0.02);
-  group.add(arm);
-  addMesh(arm, new THREE.CapsuleGeometry(0.055, 0.24, 4, 10), mats.vest, 0, -0.11, 0.045).rotation.x = 0.4;
-  const forearm = new THREE.Group();
-  forearm.position.set(0, -0.2, 0.11);
-  arm.add(forearm);
-  addMesh(forearm, new THREE.CapsuleGeometry(0.047, 0.24, 4, 10), mats.vest, 0, -0.06, 0.08).rotation.x = 1.05;
-  addMesh(forearm, new THREE.CylinderGeometry(0.045, 0.05, 0.022, 14), mats.shirt, 0, -0.02, 0.2).rotation.x = 1.05;
-  const hand = makeHand(mats.skin, mats.shirt, mats.gold);
-  hand.position.set(0, -0.03, 0.25);
-  hand.rotation.x = 0.2;
-  forearm.add(hand);
-  // other arm rests at the waist
-  const still = new THREE.Group();
-  still.position.set(0.23, 1.33, 0.02);
-  group.add(still);
-  addMesh(still, new THREE.CapsuleGeometry(0.055, 0.24, 4, 10), mats.vest, 0, -0.14, 0.02).rotation.z = -0.22;
-  addMesh(still, new THREE.CapsuleGeometry(0.047, 0.22, 4, 10), mats.vest, -0.03, -0.3, 0.08).rotation.x = 0.5;
-  return { group, head, eyeL, eyeR, arm, forearm, phase: 0, dealPulse: 0 };
+  model.group.name = `seat-${index}`;
+  attachMixer(rig, Math.random() * 4);
+  return makePerformer(rig);
 }
 
+/* ---------------- the house dealer ---------------------------------- */
+
+export function buildDealer() {
+  const model = buildCharacterModel(DEALER_LOOK, 'standing');
+  const rig = {
+    ...model,
+    mood: 'idle',
+    currentMood: 'idle',
+    phase: 0,
+    dealPulse: 0,
+    blinkAt: 2,
+    blinkUntil: 0
+  };
+  model.group.name = 'dealer';
+  attachMixer(rig, 1.2);
+  // dealer visor
+  const visor = new THREE.Group();
+  const dark = accessoryMaterial('#14171a', { roughness: 0.55 });
+  const brim = new THREE.Mesh(new THREE.BoxGeometry(0.185, 0.012, 0.105), dark);
+  brim.position.set(0, 0.218, 0.105);
+  brim.rotation.x = 0.08;
+  visor.add(brim);
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.111, 0.113, 0.03, 8), dark);
+  band.position.set(0, 0.207, 0.008);
+  visor.add(band);
+  visor.traverse((object) => { if (object.isMesh) object.castShadow = true; });
+  rig.bones.head.add(visor);
+  rig.visor = visor;
+  rig.arms = model.arms;
+  return rig;
+}
+
+/* ---------------- chairs -------------------------------------------- */
+
 export function buildChairs(count = 6) {
-  const wood = material('#2b1b12', { roughness: 0.45 });
-  const leather = material('#241a18', { roughness: 0.55 });
-  const brass = material('#a88654', { roughness: 0.35, metalness: 0.8 });
+  const wood = new THREE.MeshStandardMaterial({ color: '#2b1b12', roughness: 0.45, flatShading: true });
+  const leather = new THREE.MeshStandardMaterial({ color: '#241a18', roughness: 0.55, flatShading: true });
+  const brass = new THREE.MeshStandardMaterial({ color: '#a88654', roughness: 0.35, metalness: 0.8, flatShading: true });
   const chairs = [];
   for (let i = 0; i < count; i++) {
     const group = new THREE.Group();
-    const back = addMesh(group, new RoundedBoxGeometry(0.52, 0.62, 0.1, 4, 0.05), leather, 0, 0.92, -0.22);
-    back.rotation.x = -0.08;
-    for (const side of [-1, 1]) {
-      addMesh(group, new THREE.CylinderGeometry(0.02, 0.02, 0.68, 8), brass, side * 0.24, 0.92, -0.2, false);
-    }
+    const back = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.58, 0.075), leather);
+    back.position.set(0, 0.97, -0.205);
+    back.rotation.x = -0.07;
+    back.castShadow = true;
+    back.receiveShadow = true;
+    group.add(back);
     for (let row = 0; row < 3; row++) {
       for (let col = 0; col < 2; col++) {
-        addMesh(group, new THREE.SphereGeometry(0.006, 6, 6), brass, (col ? 1 : -1) * 0.08, 0.76 + row * 0.13, -0.165, false);
+        const stud = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 0.012), brass);
+        stud.position.set((col ? 1 : -1) * 0.08, 0.76 + row * 0.12, -0.16);
+        group.add(stud);
       }
     }
-    addMesh(group, new RoundedBoxGeometry(0.5, 0.1, 0.45, 4, 0.05), leather, 0, 0.58, -0.02);
-    addMesh(group, new RoundedBoxGeometry(0.48, 0.22, 0.42, 3, 0.04), leather, 0, 0.47, -0.02);
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.51, 0.085, 0.47), leather);
+    seat.position.set(0, 0.57, -0.01);
+    seat.castShadow = true;
+    seat.receiveShadow = true;
+    group.add(seat);
+    const seatBase = new THREE.Mesh(new THREE.BoxGeometry(0.49, 0.18, 0.44), leather);
+    seatBase.position.set(0, 0.46, -0.01);
+    seatBase.castShadow = true;
+    group.add(seatBase);
     for (const side of [-1, 1]) {
-      const leg = addMesh(group, new THREE.CylinderGeometry(0.024, 0.034, 0.42, 10), wood, side * 0.2, 0.21, -0.02);
-      leg.rotation.z = side * 0.08;
-      addMesh(group, new THREE.CylinderGeometry(0.03, 0.03, 0.016, 10), brass, side * 0.22, 0.03, -0.02, false);
+      const stile = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.58, 0.06), wood);
+      stile.position.set(side * 0.235, 0.9, -0.19);
+      stile.rotation.x = -0.07;
+      stile.castShadow = true;
+      group.add(stile);
+      for (const backSide of [-1, 1]) {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.032, 0.42, 6), wood);
+        leg.position.set(side * 0.2, 0.21, backSide * 0.16);
+        leg.rotation.z = side * 0.07;
+        leg.castShadow = true;
+        group.add(leg);
+      }
+      const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.031, 0.031, 0.016, 8), brass);
+      cap.position.set(side * 0.22, 0.02, -0.02);
+      group.add(cap);
     }
     group.userData.chair = i;
     chairs.push(group);
@@ -366,110 +317,463 @@ export function buildChairs(count = 6) {
   return chairs;
 }
 
-/* First-person hands resting at the player's edge of the table. */
+/* ---------------- first-person hands -------------------------------- */
+
 export function buildPlayerHands() {
-  const group = new THREE.Group();
-  const sleeve = material('#1c222c', { roughness: 0.72 });
-  const cuff = material('#cdbfa9', { roughness: 0.7 });
-  const skin = material('#c98f68', { roughness: 0.6 });
-  const gold = material('#b08b52', { roughness: 0.3, metalness: 0.85 });
-  const hands = [];
-  for (const side of [-1, 1]) {
-    const pivot = new THREE.Group();
-    pivot.position.set(side * 0.42, 0.94, 1.16);
-    group.add(pivot);
-    addMesh(pivot, new THREE.CapsuleGeometry(0.04, 0.26, 5, 12), sleeve, side * 0.012, 0.0, 0.15).rotation.x = Math.PI / 2;
-    addMesh(pivot, new THREE.CylinderGeometry(0.028, 0.032, 0.02, 16), cuff, side * 0.012, 0.0, -0.015).rotation.x = Math.PI / 2;
-    addMesh(pivot, new THREE.SphereGeometry(0.0075, 8, 8), gold, side * 0.044, 0.03, -0.02, false);
-    const hand = makeHand(skin, cuff, gold);
-    hand.position.set(side * 0.012, -0.02, -0.14);
-    hand.rotation.y = Math.PI;
-    hand.rotation.x = -0.18;
-    hand.scale.setScalar(0.9);
-    pivot.add(hand);
-    hands.push({ pivot, hand, side, baseY: 0.94 });
-  }
-  group.userData.hands = hands;
-  group.visible = false;
-  return group;
+  const model = buildPlayerHandsModel(PLAYER_LOOK);
+  const rig = {
+    ...model,
+    mood: 'idle',
+    currentMood: 'idle',
+    action: null,
+    actionTime: 0,
+    lean: 0,
+    handCurrent: null,
+    curlSign: -1,
+    phase: Math.random() * 10
+  };
+  model.group.name = 'first-person-hands';
+  const wrapper = new THREE.Group();
+  wrapper.add(model.group);
+  wrapper.visible = false;
+  rig.wrapper = wrapper;
+  rig.group = wrapper;
+  rig.position = new THREE.Vector3();
+  makePerformer(rig);
+  // makePerformer expects group.getWorldPositions to already be correct
+  rig.handCurrent = {
+    L: { target: new THREE.Vector3(-0.2, 0.91, 0.63), dir: new THREE.Vector3(0, -0.35, -1).normalize() },
+    R: { target: new THREE.Vector3(0.2, 0.91, 0.63), dir: new THREE.Vector3(0, -0.35, -1).normalize() }
+  };
+  return rig;
 }
 
-/* ------ animation ---------------------------------------------------- */
+/* ---------------- animation ----------------------------------------- */
+
+const _tmpVec = new THREE.Vector3();
+const _tmpVec2 = new THREE.Vector3();
+const _tmpQuat = new THREE.Quaternion();
+const _tmpQuat2 = new THREE.Quaternion();
+const _tmpEuler = new THREE.Euler();
+
+const PLAYER_REST_L = new THREE.Vector3(-0.2, 0.91, 0.63);
+const PLAYER_REST_R = new THREE.Vector3(0.2, 0.91, 0.63);
+const PLAYER_REST_DIR = new THREE.Vector3(0, -0.35, -1).normalize();
+const PLAYER_UP_DIR = new THREE.Vector3(0, 0.75, -0.5).normalize();
+const FORWARD_DIR = new THREE.Vector3(0, -0.5, 1).normalize();
+const DOWN_DIR = new THREE.Vector3(0, -1, 0.15).normalize();
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function applyLean(rig, amount) {
+  if (Math.abs(amount) < 0.0005) return;
+  _tmpQuat.setFromEuler(_tmpEuler.set(amount, 0, 0, 'YXZ'));
+  rig.bones.chest.quaternion.multiply(_tmpQuat);
+}
+
+function aimBone(bone, directionWorld, restDir, dt, speed) {
+  if (!bone.parent) return;
+  bone.parent.getWorldQuaternion(_tmpQuat2);
+  _tmpVec.copy(directionWorld).normalize().applyQuaternion(_tmpQuat2.invert());
+  if (_tmpVec.lengthSq() < 0.000001) return;
+  _tmpQuat.setFromUnitVectors(restDir, _tmpVec.normalize());
+  const alpha = Math.min(0.85, 1 - Math.exp(-dt * speed));
+  bone.quaternion.slerp(_tmpQuat, alpha);
+}
+
+function solveArm(rig, side, wristTargetWorld, handDirWorld, curl, dt) {
+  const arm = rig.arms[side];
+  if (!arm || !arm.upper) return;
+  arm.upper.getWorldPosition(_tmpVec2);
+  const shoulder = _tmpVec2.clone();
+  const target = wristTargetWorld.clone();
+  const toTarget = target.clone().sub(shoulder);
+  let distance = toTarget.length();
+  const maxReach = arm.upperLength + arm.foreLength - 0.004;
+  if (distance > maxReach) {
+    toTarget.normalize();
+    target.copy(shoulder).addScaledVector(toTarget, maxReach);
+    distance = maxReach;
+  }
+  if (distance < 0.04) return;
+  const dir = toTarget.normalize();
+  rig.group.getWorldQuaternion(_tmpQuat2);
+  const poleBase = new THREE.Vector3(side * 0.18, -1.15, -0.08).applyQuaternion(_tmpQuat2);
+  const pole = poleBase.addScaledVector(dir, -poleBase.dot(dir)).normalize();
+  const cosAngle = clamp(
+    (arm.upperLength * arm.upperLength + distance * distance - arm.foreLength * arm.foreLength) /
+      (2 * arm.upperLength * distance), -1, 1
+  );
+  const angle = Math.acos(cosAngle);
+  const elbow = shoulder.clone()
+    .addScaledVector(dir, Math.cos(angle) * arm.upperLength)
+    .addScaledVector(pole, Math.sin(angle) * arm.upperLength);
+  aimBone(arm.upper, elbow.clone().sub(shoulder), arm.upperDir, dt, 17);
+  arm.upper.updateMatrixWorld(true);
+  arm.fore.getWorldPosition(_tmpVec2);
+  aimBone(arm.fore, target.clone().sub(_tmpVec2.clone()), arm.foreDir, dt, 19);
+  arm.fore.updateMatrixWorld(true);
+  aimBone(arm.hand, handDirWorld, arm.handDir, dt, 15);
+  arm.hand.updateMatrixWorld(true);
+  applyFingerCurl(rig, side, curl, dt);
+}
+
+function applyFingerCurl(rig, side, curl, dt) {
+  const arm = rig.arms[side];
+  if (!arm) return;
+  const sign = rig.curlSign ?? 1;
+  for (const finger of arm.fingerBones) {
+    const isThumb = finger.name === 'thumb';
+    const first = curl * (isThumb ? 0.34 : 0.58) * sign;
+    const second = curl * (isThumb ? 0.46 : 0.9) * sign;
+    finger.b1.rotation.x = damp(finger.b1.rotation.x, first, dt, 13);
+    finger.b2.rotation.x = damp(finger.b2.rotation.x, second, dt, 13);
+    if (isThumb) finger.b1.rotation.z = damp(finger.b1.rotation.z, side * curl * 0.22 * sign, dt, 11);
+  }
+}
+
+function currentHands(rig, restL, restR) {
+  if (!rig.handCurrent) {
+    rig.handCurrent = {
+      L: { target: restL.clone(), dir: REST_DIR.clone() },
+      R: { target: restR.clone(), dir: REST_DIR.clone() }
+    };
+  }
+  return rig.handCurrent;
+}
+
+function aimHead(rig, targetWorld, dt, extraPitch = 0) {
+  rig.head.getWorldPosition(_tmpVec2);
+  const dir = targetWorld.clone().sub(_tmpVec2);
+  rig.group.getWorldQuaternion(_tmpQuat);
+  dir.applyQuaternion(_tmpQuat.invert());
+  const horizontal = Math.sqrt(dir.x * dir.x + dir.z * dir.z);
+  let yaw = Math.atan2(dir.x, dir.z);
+  let pitch = Math.atan2(-dir.y, horizontal) + extraPitch;
+  yaw = clamp(yaw, -0.85, 0.85);
+  pitch = clamp(pitch, -0.6, 0.42);
+  rig.headYaw = damp(rig.headYaw || 0, yaw, dt, 4.2);
+  rig.headPitch = damp(rig.headPitch || 0, pitch, dt, 4.2);
+  const neck = rig.bones.neck;
+  neck.rotation.set(rig.headPitch * 0.32, rig.headYaw * 0.34, 0, 'YXZ');
+  rig.head.rotation.set(rig.headPitch * 0.68, rig.headYaw * 0.66, 0, 'YXZ');
+}
+
+function manualHead(rig, yaw, pitch, dt) {
+  yaw = clamp(yaw, -0.85, 0.85);
+  pitch = clamp(pitch, -0.6, 0.42);
+  rig.headYaw = damp(rig.headYaw || 0, yaw, dt, 4.2);
+  rig.headPitch = damp(rig.headPitch || 0, pitch, dt, 4.2);
+  rig.bones.neck.rotation.set(rig.headPitch * 0.32, rig.headYaw * 0.34, 0, 'YXZ');
+  rig.head.rotation.set(rig.headPitch * 0.68, rig.headYaw * 0.66, 0, 'YXZ');
+}
+
+function blink(rig, dt, time) {
+  if (time > rig.blinkAt) {
+    rig.blinkUntil = time + 0.12;
+    rig.blinkAt = time + 2.6 + Math.random() * 4.5;
+  }
+  const target = time < rig.blinkUntil ? 0.12 : 1;
+  rig.eyeL.scale.y = damp(rig.eyeL.scale.y, target, dt, 22);
+  rig.eyeR.scale.y = rig.eyeL.scale.y;
+}
+
+function glanceTarget(rig, time, dt) {
+  if (!rig.glanceAt) rig.glanceAt = time + 2 + Math.random() * 3;
+  if (time > rig.glanceAt) {
+    rig.glanceAt = time + 2.6 + Math.random() * 4.5;
+    rig.glanceYaw = (Math.random() - 0.5) * 1.1;
+    rig.glancePitch = (Math.random() - 0.5) * 0.28;
+  }
+  const yaw = rig.glanceYaw || 0;
+  const pitch = rig.glancePitch || 0;
+  return new THREE.Vector3(Math.sin(yaw) * 2, 1.15 + Math.sin(pitch) * 2, Math.cos(yaw) * 2);
+}
+
+function convertWorldToLocal(rig, worldPoint, fallback) {
+  if (!worldPoint) return fallback.clone();
+  return rig.group.worldToLocal(worldPoint.clone());
+}
+
+function seatedPose(rig, dt, time) {
+  const action = rig.action;
+  const p = action ? clamp(action.time / action.duration, 0, 1) : 0;
+  const targetL = REST_L.clone();
+  const targetR = REST_R.clone();
+  const dirL = REST_DIR.clone();
+  const dirR = REST_DIR.clone();
+  let curlL = 0.4;
+  let curlR = 0.4;
+  let lean = 0;
+  let headTarget = null;
+  let headYaw = null;
+  let headPitch = null;
+
+  if (!action) {
+    headTarget = glanceTarget(rig, time, dt);
+  } else if (action.name === 'inspect') {
+    const lift = smoothstep(p / 0.22) * (1 - smoothstep((p - 0.7) / 0.3));
+    const card = convertWorldToLocal(rig, action.world.card, new THREE.Vector3(0, 0.84, 0.58));
+    targetL.set(card.x - 0.09, card.y - 0.075, card.z + 0.02);
+    targetR.set(card.x + 0.09, card.y - 0.075, card.z + 0.02);
+    dirL.copy(REST_DIR).lerp(UP_DIR, lift * 0.8).normalize();
+    dirR.copy(dirL);
+    curlL = 0.22 + 0.27 * lift;
+    curlR = curlL;
+    lean = 0.045 * lift;
+    headTarget = rig.group.localToWorld(new THREE.Vector3(card.x, card.y - 0.03, card.z));
+  } else if (action.name === 'bet' || action.name === 'call') {
+    const chip = convertWorldToLocal(rig, action.world.chip, new THREE.Vector3(0.18, 0.82, 0.5));
+    const bet = convertWorldToLocal(rig, action.world.bet, new THREE.Vector3(0.16, 0.82, 0.4));
+    let reach;
+    if (p < 0.3) {
+      reach = smoothstep(p / 0.3);
+      targetR.lerp(chip, reach);
+    } else if (p < 0.68) {
+      reach = smoothstep((p - 0.3) / 0.38);
+      targetR.copy(chip.clone().lerp(bet, reach));
+    } else {
+      reach = smoothstep((p - 0.68) / 0.32);
+      targetR.lerp(REST_R, reach);
+    }
+    targetR.y += Math.sin(p * Math.PI) * 0.025;
+    dirR.copy(DOWN_DIR);
+    curlR = 0.55;
+    lean = 0.035 * (1 - smoothstep((p - 0.75) / 0.25));
+    headTarget = rig.group.localToWorld(new THREE.Vector3(0.05, 0.8, 0.45));
+  } else if (action.name === 'check') {
+    const tap = Math.sin(Math.min(1, p / 0.7) * Math.PI);
+    targetR.set(0.13, 0.808, 0.52).lerp(REST_R, 1 - tap);
+    targetR.y += 0.02 * tap;
+    dirR.copy(REST_DIR);
+    curlR = 0.3;
+    lean = 0.02;
+    headTarget = rig.group.localToWorld(new THREE.Vector3(0.05, 0.8, 0.5));
+  } else if (action.name === 'fold') {
+    const card = convertWorldToLocal(rig, action.world.card, new THREE.Vector3(0, 0.82, 0.56));
+    const reach = smoothstep(p / 0.16) * (1 - smoothstep((p - 0.24) / 0.14));
+    const push = smoothstep((p - 0.36) / 0.2) * (1 - smoothstep((p - 0.86) / 0.14));
+    targetL.set(-0.1, 0.82, 0.54).lerp(card, reach * 0.55);
+    targetR.set(0.1, 0.82, 0.54).lerp(card, reach * 0.55);
+    targetL.z += push * 0.12;
+    targetR.z += push * 0.12;
+    targetL.y -= push * 0.015;
+    targetR.y -= push * 0.015;
+    dirL.copy(FORWARD_DIR);
+    dirR.copy(FORWARD_DIR);
+    curlL = 0.18 + 0.35 * reach;
+    curlR = curlL;
+    lean = 0.05 * push;
+    headTarget = rig.group.localToWorld(new THREE.Vector3(0, 0.8, 0.6));
+  } else if (action.name === 'think') {
+    const hold = smoothstep(p / 0.2) * (1 - smoothstep((p - 0.78) / 0.22));
+    targetR.lerp(new THREE.Vector3(0.08, 1.16, 0.22), hold);
+    dirR.copy(CHIN_DIR);
+    curlR = 0.42;
+    lean = 0.045 * hold;
+    headTarget = rig.group.localToWorld(new THREE.Vector3(0.05, 0.8, 0.5));
+  } else if (action.name === 'win') {
+    const up = smoothstep(p / 0.22) * (1 - smoothstep((p - 0.8) / 0.2));
+    const bounce = Math.sin(p * Math.PI * 3) * 0.014 * up;
+    targetL.set(-0.22, 0.84 + 0.13 * up + bounce, 0.52);
+    targetR.set(0.22, 0.84 + 0.13 * up + bounce, 0.52);
+    dirL.copy(REST_DIR).lerp(UP_DIR, up * 0.55).normalize();
+    dirR.copy(dirL);
+    curlL = 0.25 + 0.45 * up;
+    curlR = curlL;
+    lean = -0.03 * up;
+    headTarget = rig.group.localToWorld(new THREE.Vector3(0, 1.42, 0.35));
+  } else if (action.name === 'lose') {
+    const down = smoothstep(p / 0.3);
+    targetL.set(-0.12, 0.84 - 0.05 * down, 0.51);
+    targetR.set(0.12, 0.84 - 0.05 * down, 0.51);
+    dirL.copy(REST_DIR).lerp(CHIN_DIR, down * 0.6).normalize();
+    dirR.copy(dirL);
+    curlL = 0.3 + 0.3 * down;
+    curlR = curlL;
+    lean = 0.08 * down;
+    headTarget = rig.group.localToWorld(new THREE.Vector3(0, 0.74, 0.5));
+  } else if (action.name === 'deal') {
+    targetR.set(0.26, 0.84, 0.55);
+    dirR.copy(FORWARD_DIR);
+    curlR = 0.4;
+    lean = 0.04;
+    headTarget = rig.group.localToWorld(new THREE.Vector3(0, 0.8, 0.6));
+  }
+
+  if (action) rig.lookAtWorld = null;
+  if (rig.mood === 'folded' && !action) {
+    headYaw = -0.35;
+    headPitch = 0.12;
+    lean = 0.01;
+  }
+  if (rig.mood === 'thinking' && !action) {
+    headYaw = 0;
+    headPitch = 0.25;
+  }
+  return { targetL, targetR, dirL, dirR, curlL, curlR, lean, headTarget, headYaw, headPitch };
+}
 
 export function updateCharacter(rig, dt, time) {
-  const active = rig.mood !== 'out';
-  const speed = rig.mood === 'folded' ? 0.45 : 1;
-  rig.phase += dt * speed;
-  const breath = Math.sin(time * 1.35 + rig.phase) * 0.004;
-  rig.torso.position.y = 0.98 + breath;
-  rig.torso.rotation.x = Math.sin(time * 0.5 + rig.phase) * 0.008;
+  if (!rig.group.visible) return;
+  rig.group.updateWorldMatrix(true, false);
+  if (rig.action) {
+    rig.action.time += dt;
+    if (rig.action.time > rig.action.duration) rig.action = null;
+  }
+  rig.mixer.update(dt);
 
-  if (time > rig.blinkAt) {
-    rig.blinkUntil = time + 0.13;
-    rig.blinkAt = time + 3.2 + Math.random() * 4.5;
-  }
-  const blink = time < rig.blinkUntil ? 0.12 : 1;
-  rig.eyeL.scale.y += (blink - rig.eyeL.scale.y) * 0.5;
-  rig.eyeR.scale.y = rig.eyeL.scale.y;
+  const pose = seatedPose(rig, dt, time);
+  rig.handCurrent = currentHands(rig, REST_L, REST_R);
+  const smooth = 1 - Math.exp(-dt * 11);
+  rig.handCurrent.L.target.lerp(pose.targetL, smooth);
+  rig.handCurrent.R.target.lerp(pose.targetR, smooth);
+  rig.handCurrent.L.dir.lerp(pose.dirL, smooth).normalize();
+  rig.handCurrent.R.dir.lerp(pose.dirR, smooth).normalize();
 
-  if (time > rig.glanceAt) {
-    rig.glanceAt = time + 2.8 + Math.random() * 5;
-    rig.glanceYaw = (Math.random() - 0.5) * 0.55;
-    rig.glancePitch = (Math.random() - 0.5) * 0.22;
-  }
-  let yawTarget = rig.glanceYaw;
-  let pitchTarget = rig.glancePitch;
-  if (rig.mood === 'thinking') {
-    yawTarget = Math.sin(time * 0.9 + rig.phase) * 0.18;
-    pitchTarget = 0.14 + Math.sin(time * 0.6) * 0.04;
-  } else if (rig.mood === 'folded') {
-    yawTarget = -0.2;
-    pitchTarget = -0.18;
-  } else if (!active) {
-    yawTarget = 0;
-    pitchTarget = -0.25;
-  }
-  rig.head.rotation.y += (yawTarget - rig.head.rotation.y) * Math.min(1, dt * 2.4);
-  rig.head.rotation.x += (pitchTarget - rig.head.rotation.x) * Math.min(1, dt * 2.4);
+  let mood = 'idle';
+  if (rig.action?.name === 'win' || rig.mood === 'win') mood = 'win';
+  else if (rig.action?.name === 'lose' || rig.mood === 'lose') mood = 'lose';
+  else if (rig.action?.name === 'think' || rig.mood === 'thinking') mood = 'think';
+  else if (rig.mood === 'folded') mood = 'folded';
+  setRigMood(rig, mood);
 
-  // occasional hand movement: a knuckle tap or a chip fidget
-  for (const arm of rig.arms) {
-    const target = Math.sin(time * 0.7 + rig.phase + arm.side) * 0.035;
-    arm.elbow.rotation.x = target + (rig.mood === 'thinking' ? 0.12 : 0);
-    arm.elbow.rotation.z = Math.sin(time * 0.44 + arm.side * 2 + rig.phase) * 0.025;
-  }
-  if (rig.mood === 'thinking' && rig.arms[1]) {
-    rig.arms[1].pivot.rotation.x = -0.08 + Math.sin(time * 1.1) * 0.02;
-  } else if (rig.arms[1]) {
-    rig.arms[1].pivot.rotation.x *= 0.94;
-  }
+  rig.lean = damp(rig.lean, pose.lean, dt, 5.5);
+  applyLean(rig, rig.lean);
+  rig.group.updateMatrixWorld(true);
+
+  if (pose.headTarget) aimHead(rig, pose.headTarget, dt);
+  else if (pose.headYaw !== null) manualHead(rig, pose.headYaw, pose.headPitch, dt);
+  else if (rig.lookAtWorld) aimHead(rig, rig.lookAtWorld, dt);
+  else manualHead(rig, 0, 0.02, dt);
+
+  const worldTargetL = rig.group.localToWorld(rig.handCurrent.L.target.clone());
+  const worldTargetR = rig.group.localToWorld(rig.handCurrent.R.target.clone());
+  rig.group.getWorldQuaternion(_tmpQuat);
+  const worldDirL = rig.handCurrent.L.dir.clone().applyQuaternion(_tmpQuat);
+  const worldDirR = rig.handCurrent.R.dir.clone().applyQuaternion(_tmpQuat);
+  solveArm(rig, -1, worldTargetL, worldDirL, pose.curlL, dt);
+  solveArm(rig, 1, worldTargetR, worldDirR, pose.curlR, dt);
+  blink(rig, dt, time);
 }
+
+/* ---------------- dealer -------------------------------------------- */
 
 export function updateDealer(dealer, dt, time) {
   dealer.phase += dt;
-  dealer.head.rotation.y = Math.sin(time * 0.32) * 0.16;
-  dealer.head.rotation.x = Math.sin(time * 0.45 + 1) * 0.03 - 0.02;
+  dealer.mixer.update(dt);
+  const scan = Math.sin(time * 0.31) * 0.22 + Math.sin(time * 0.13) * 0.1;
+  const nod = Math.sin(time * 0.42 + 1.2) * 0.03 - 0.03;
+  manualHead(dealer, scan, nod, dt);
+
+  let swing = 0;
   if (dealer.dealPulse > 0) {
-    dealer.dealPulse = Math.max(0, dealer.dealPulse - dt * 2.4);
-    const swing = Math.sin(Math.min(1, 1 - dealer.dealPulse) * Math.PI) * 0.7;
-    dealer.forearm.rotation.x = -0.15 - swing;
-    dealer.arm.rotation.x = -swing * 0.25;
-  } else {
-    dealer.forearm.rotation.x *= 0.9;
-    dealer.arm.rotation.x *= 0.9;
+    dealer.dealPulse = Math.max(0, dealer.dealPulse - dt * 2.3);
+    swing = Math.sin(Math.min(1, 1 - dealer.dealPulse) * Math.PI);
   }
-  const blink = (time % 6.5) < 0.12 ? 0.15 : 1;
-  dealer.eyeL.scale.y += (blink - dealer.eyeL.scale.y) * 0.4;
-  dealer.eyeR.scale.y = dealer.eyeL.scale.y;
+  const upper = dealer.bones.upperArmR;
+  const fore = dealer.bones.forearmR;
+  const upperTarget = new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.72 * swing, 0.02, -0.06));
+  const foreTarget = new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.55 * swing, 0, 0));
+  const alpha = 1 - Math.exp(-dt * (swing > 0 ? 12 : 4));
+  upper.quaternion.slerp(upperTarget, alpha);
+  fore.quaternion.slerp(foreTarget, alpha);
+  const leftUpper = dealer.bones.upperArmL;
+  leftUpper.quaternion.slerp(new THREE.Quaternion(), 1 - Math.exp(-dt * 3));
+  blink(dealer, dt, time);
+}
+
+/* ---------------- first-person hands -------------------------------- */
+
+function playerPose(hands, dt, time) {
+  const action = hands.action;
+  const p = action ? clamp(action.time / action.duration, 0, 1) : 0;
+  const targetL = PLAYER_REST_L.clone();
+  const targetR = PLAYER_REST_R.clone();
+  const dirL = PLAYER_REST_DIR.clone();
+  const dirR = PLAYER_REST_DIR.clone();
+  let curlL = 0.28;
+  let curlR = 0.28;
+  let lean = 0;
+  const idle = Math.sin(time * 1.1 + hands.phase) * 0.004;
+  targetL.y += idle;
+  targetR.y += idle;
+
+  if (action?.name === 'inspect') {
+    const lift = smoothstep(p / 0.22) * (1 - smoothstep((p - 0.7) / 0.3));
+    const card = action.world.card || new THREE.Vector3(0, 1.0, 0.68);
+    targetL.set(card.x - 0.055, card.y - 0.018, card.z + 0.016);
+    targetR.set(card.x + 0.055, card.y - 0.018, card.z + 0.016);
+    dirL.copy(PLAYER_REST_DIR).lerp(new THREE.Vector3(0, -0.12, -1).normalize(), lift).normalize();
+    dirR.copy(dirL);
+    curlL = 0.28 + 0.16 * lift;
+    curlR = curlL;
+    lean = -0.015 * lift;
+  } else if (action?.name === 'bet' || action?.name === 'call') {
+    let reach;
+    if (p < 0.32) {
+      reach = smoothstep(p / 0.32);
+      targetR.lerp(new THREE.Vector3(0.14, 0.88, 0.55), reach);
+    } else if (p < 0.7) {
+      reach = smoothstep((p - 0.32) / 0.38);
+      targetR.lerp(new THREE.Vector3(0.04, 0.88, 0.48), reach);
+    } else {
+      reach = smoothstep((p - 0.7) / 0.3);
+      targetR.lerp(PLAYER_REST_R, reach);
+    }
+    targetR.y += Math.sin(p * Math.PI) * 0.03;
+    dirR.copy(new THREE.Vector3(0, -1, -0.4).normalize());
+    curlR = 0.5;
+  } else if (action?.name === 'check') {
+    const tap = Math.sin(Math.min(1, p / 0.7) * Math.PI);
+    targetR.lerp(new THREE.Vector3(0.12, 0.885, 0.56), tap);
+    targetR.y += tap * 0.02;
+    curlR = 0.28;
+  } else if (action?.name === 'fold') {
+    const push = smoothstep(p / 0.2) * (1 - smoothstep((p - 0.75) / 0.25));
+    targetL.set(-0.14, 0.88, 0.56 - 0.1 * push);
+    targetR.set(0.14, 0.88, 0.56 - 0.1 * push);
+    dirL.copy(PLAYER_REST_DIR).lerp(new THREE.Vector3(0, -0.65, -1).normalize(), push).normalize();
+    dirR.copy(dirL);
+    curlL = 0.3;
+    curlR = 0.3;
+  } else if (action?.name === 'win') {
+    const up = smoothstep(p / 0.25) * (1 - smoothstep((p - 0.8) / 0.2));
+    targetL.set(-0.19, 0.9 + 0.26 * up, 0.62 + 0.18 * up);
+    targetR.set(0.19, 0.9 + 0.26 * up, 0.62 + 0.18 * up);
+    dirL.copy(PLAYER_REST_DIR).lerp(PLAYER_UP_DIR, up).normalize();
+    dirR.copy(dirL);
+    curlL = 0.18 - 0.13 * up;
+    curlR = curlL;
+  } else if (action?.name === 'lose') {
+    const down = smoothstep(p / 0.3);
+    targetL.set(-0.11, 0.9 + 0.23 * down, 0.62 + 0.2 * down);
+    targetR.set(0.11, 0.9 + 0.23 * down, 0.62 + 0.2 * down);
+    dirL.copy(PLAYER_REST_DIR).lerp(PLAYER_UP_DIR, down).normalize();
+    dirR.copy(dirL);
+    curlL = 0.18 + 0.18 * down;
+    curlR = curlL;
+  }
+  return { targetL, targetR, dirL, dirR, curlL, curlR, lean };
 }
 
 export function updatePlayerHands(hands, dt, time, tension = 0) {
-  const data = hands.userData.hands;
-  for (const item of data) {
-    const side = item.side;
-    const idle = Math.sin(time * 0.8 + side) * 0.006;
-    item.pivot.position.y = item.baseY + idle + tension * 0.012;
-    item.pivot.rotation.x = Math.sin(time * 0.35 + side * 2) * 0.012;
-    item.pivot.rotation.z = side * 0.035 + Math.sin(time * 0.6 + side) * 0.008;
+  if (!hands.group.visible) return;
+  hands.group.updateMatrixWorld(true);
+  if (hands.action) {
+    hands.action.time += dt;
+    if (hands.action.time > hands.action.duration) hands.action = null;
   }
+  const pose = playerPose(hands, dt, time);
+  hands.handCurrent = currentHands(hands, PLAYER_REST_L, PLAYER_REST_R);
+  const smooth = 1 - Math.exp(-dt * 12);
+  hands.handCurrent.L.target.lerp(pose.targetL, smooth);
+  hands.handCurrent.R.target.lerp(pose.targetR, smooth);
+  hands.handCurrent.L.dir.lerp(pose.dirL, smooth).normalize();
+  hands.handCurrent.R.dir.lerp(pose.dirR, smooth).normalize();
+  const tremble = tension * Math.sin(time * 9) * 0.0012;
+  solveArm(hands, -1, hands.handCurrent.L.target.clone().add(new THREE.Vector3(0, tremble, 0)), hands.handCurrent.L.dir, pose.curlL, dt);
+  solveArm(hands, 1, hands.handCurrent.R.target.clone().add(new THREE.Vector3(0, -tremble, 0)), hands.handCurrent.R.dir, pose.curlR, dt);
 }

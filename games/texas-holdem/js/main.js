@@ -10,6 +10,7 @@ import { aiDecide, thinkTime } from './ai.js';
 import {
   HAND_RANKINGS, evaluateCards, describeHole, cardLabel, rankLabel, suitGlyph, suitColour
 } from './cards.js';
+import { sfx, warmAudio } from './sfx.js';
 
 const $ = (id) => document.getElementById(id);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -34,7 +35,10 @@ const els = {
   again: $('btn-again'), menuButton: $('btn-menu'), pause: $('btn-pause'),
   cinema: $('btn-cinema'), logButton: $('btn-log'), settingsButton: $('btn-settings'),
   settings: $('modal-settings'), how: $('modal-how'), credits: $('modal-credits'), pauseModal: $('modal-pause'),
-  error: $('error-banner')
+  error: $('error-banner'),
+  immersivePot: $('immersive-pot'), immersiveStack: $('immersive-stack'), immersiveTurn: $('immersive-turn'),
+  interaction: $('interaction'), interactionDot: $('interaction-dot'), interactionHint: $('interaction-hint'),
+  modeHint: $('mode-hint'), resultTiny: $('result-tiny')
 };
 
 const settingsKey = 'damp-holdem-settings-v1';
@@ -65,7 +69,15 @@ const state = {
   gameOverPending: null,
   gameOverShown: false,
   lookArmedAt: 0,
-  lastTime: performance.now()
+  lastTime: performance.now(),
+  pointer: { x: 0, y: 0 },
+  hover: null,
+  chipStage: null,
+  dragState: null,
+  resultLine: '',
+  press: null,
+  inspecting: false,
+  suppressClick: false
 };
 
 const seatUI = [];
@@ -338,6 +350,8 @@ function updateHud() {
   els.handBlinds.textContent = `Blinds ${fmt(game.sb)} / ${fmt(game.bb)}`;
   els.pot.textContent = fmt(game.totalPot());
   els.playerStack.textContent = fmt(game.human.stack);
+  if (els.immersivePot) els.immersivePot.textContent = fmt(game.totalPot());
+  if (els.immersiveStack) els.immersiveStack.textContent = fmt(game.human.stack);
   updatePlayerCards();
   updateSeatLabels();
 }
@@ -391,47 +405,289 @@ function updateRaiseValue(value) {
   els.raise.append(kbd);
 }
 
+function setModeHint(text) {
+  if (!els.modeHint) return;
+  els.modeHint.textContent = text || '';
+  els.modeHint.hidden = !text;
+}
+
+function hideModeHint() {
+  if (!els.modeHint) return;
+  els.modeHint.textContent = '';
+  els.modeHint.hidden = true;
+}
+
+function hideInteractionHint() {
+  if (els.interaction) els.interaction.hidden = true;
+  state.hover = null;
+}
+
+function showInteractionHint(kind, clientX, clientY) {
+  if (!els.interaction || !els.interactionHint) return;
+  if (state.view?.isInspecting(0)) { hideInteractionHint(); return; }
+  const labels = {
+    holeCards: 'inspect', chips: 'chips', betSpot: 'betting line', table: 'felt',
+    board: 'board', pot: 'pot', dealer: 'dealer', seat: 'player', puck: 'button'
+  };
+  let label = labels[kind] || '';
+  if (state.chipStage) {
+    if (kind === 'betSpot' || kind === 'table') label = 'push';
+    else label = '';
+  }
+  if (!label) { hideInteractionHint(); return; }
+  state.hover = kind;
+  els.interaction.hidden = false;
+  els.interaction.style.left = `${clientX}px`;
+  els.interaction.style.top = `${clientY}px`;
+  els.interactionHint.textContent = label;
+}
+
+function currentLegal() {
+  if (!state.game || !state.inGame || state.paused || !state.hudVisible) return null;
+  if (!state.game.isBetting || state.game.actor !== 0) return null;
+  return state.game.legalActions(0);
+}
+
 function showPlayerActions() {
   if (!state.game || state.paused || !state.hudVisible) return;
   const legal = state.game.legalActions(0);
   if (!legal) { hideActions(); return; }
   hideActions();
-  const game = state.game;
-  const seat = game.human;
-  els.turnLabel.textContent = legal.toCall === 0 ? 'Your turn — no bet to you' : `Your turn — ${fmt(legal.toCall)} to call`;
-  els.handName.textContent = els.playerHand.textContent || 'Your hand';
-  els.fold.disabled = false;
-  els.call.disabled = false;
-  els.call.replaceChildren(document.createTextNode(
-    legal.canCheck ? 'Check' : (legal.callAmount >= seat.stack ? `All-in ${fmt(legal.callAmount)}` : `Call ${fmt(legal.callAmount)}`)
-  ));
-  const callKbd = document.createElement('kbd'); callKbd.textContent = 'C'; els.call.append(callKbd);
-  els.raisePanel.hidden = !legal.canRaise;
-  els.raise.hidden = !legal.canRaise;
-  els.raise.disabled = !legal.canRaise;
-  if (legal.canRaise) {
-    const base = Math.max(legal.minRaiseTo, roundChips(game.currentBet + Math.max(game.bb, game.totalPot() * 0.55)));
-    const initial = clampRaise(base, legal);
-    els.raiseRange.min = String(legal.minRaiseTo);
-    els.raiseRange.max = String(legal.maxRaiseTo);
-    els.raiseRange.step = '25';
-    els.raiseRange.value = String(initial);
-    updateRaiseValue(initial);
-  } else {
-    els.raise.textContent = 'Raise';
-  }
-  els.actionBar.hidden = false;
+  if (els.immersiveTurn) els.immersiveTurn.textContent = legal.canCheck ? 'Your turn' : `${fmt(legal.toCall)} to call`;
+  setModeHint(legal.canCheck
+    ? 'Click cards to inspect · drag them away to fold · tap the felt to check'
+    : 'Click cards to inspect · drag to fold · chips to call or raise');
 }
 
 function hideActions() {
   els.actionBar.hidden = true;
+  if (!state.chipStage) {
+    hideModeHint();
+    if (els.immersiveTurn) els.immersiveTurn.textContent = '';
+  }
+}
+
+function clearChipStage() {
+  if (!state.chipStage) return;
+  state.chipStage = null;
+  state.view?.clearStagedBet();
+  hideModeHint();
+}
+
+function physicalAmount(amount, legal) {
+  const rounded = Math.max(0, Math.round(Number(amount) || 0));
+  if (legal.callAmount > 0 && rounded <= legal.callAmount) return legal.callAmount;
+  return Math.max(legal.minRaiseTo, Math.min(legal.maxRaiseTo, rounded));
+}
+
+function setChipStage(amount, focus = false) {
+  const legal = currentLegal();
+  if (!legal) return false;
+  const value = physicalAmount(amount, legal);
+  if (!state.chipStage) state.chipStage = { amount: value };
+  else state.chipStage.amount = value;
+  state.view?.setStagedBet(value, { focus, hand: focus });
+  setModeHint(`${fmt(value)} staged · wheel to adjust · click the felt to push · chips again for all-in`);
+  return true;
+}
+
+function openChipStage(options = {}) {
+  const legal = currentLegal();
+  if (!legal) return;
+  if (!legal.canRaise && legal.callAmount <= 0) {
+    setModeHint('Tap the felt to check');
+    return;
+  }
+  let amount = options.amount;
+  if (amount === undefined) {
+    amount = legal.callAmount > 0 ? legal.callAmount : legal.minRaiseTo;
+  }
+  if (!setChipStage(amount, true)) return;
+  const stage = state.chipStage;
+  if (stage) {
+    const label = legal.callAmount > 0 && stage.amount <= legal.callAmount
+      ? `Call ${fmt(stage.amount)}`
+      : stage.amount >= legal.maxRaiseTo
+        ? `All-in ${fmt(stage.amount)}`
+        : `Raise to ${fmt(stage.amount)}`;
+    setModeHint(`${label} · wheel to adjust · click the felt to push · chips again for all-in`);
+  }
+  sfx('chips');
+}
+
+function adjustChipStage(delta) {
+  const legal = currentLegal();
+  if (!legal || !state.chipStage) return;
+  const next = physicalAmount(state.chipStage.amount + delta, legal);
+  if (next === state.chipStage.amount) return;
+  state.chipStage.amount = next;
+  state.view?.setStagedBet(next, { focus: false, hand: false });
+  setModeHint(`${next >= legal.maxRaiseTo ? 'All-in' : `${fmt(next)} staged`} · wheel to adjust · click the felt to push`);
+  sfx('chip');
+}
+
+function commitChipStage() {
+  const legal = currentLegal();
+  const stage = state.chipStage;
+  if (!legal || !stage) return;
+  const amount = stage.amount;
+  let type = null;
+  let raiseTo = 0;
+  if (legal.callAmount > 0 && amount <= legal.callAmount) {
+    type = 'call';
+  } else if (legal.canRaise && amount >= legal.minRaiseTo) {
+    type = 'raise';
+    raiseTo = Math.min(legal.maxRaiseTo, amount);
+  } else if (legal.canCheck) {
+    type = 'check';
+  }
+  if (!type) {
+    showError('That amount is not a legal bet.');
+    return;
+  }
+  state.chipStage = null;
+  hideModeHint();
+  hideInteractionHint();
+  if (type !== 'check') {
+    state.view?.pushStagedBet();
+    if (raiseTo >= legal.maxRaiseTo || (type === 'call' && legal.callAmount >= legal.stack)) sfx('allin');
+    else sfx('chips');
+  } else {
+    state.view?.clearStagedBet();
+    state.view?.tapTable();
+    sfx('tap');
+  }
+  submitPlayerAction(type, type === 'raise' ? raiseTo : undefined);
+}
+
+function allInPhysical() {
+  const legal = currentLegal();
+  if (!legal || !legal.canRaise) return;
+  if (!setChipStage(legal.maxRaiseTo, true)) return;
+  sfx('allin');
+  setModeHint(`All-in · ${fmt(legal.maxRaiseTo)}`);
+  window.setTimeout(() => {
+    if (state.chipStage?.amount === legal.maxRaiseTo) commitChipStage();
+  }, 420);
+}
+
+function interactAt(point) {
+  if (!point || !state.view) return;
+  if (!state.game || state.paused || !state.hudVisible) return;
+  if (!els.result.hidden) return;
+  if (state.view.isInspecting(0)) { state.view.cancelInspect(0); return; }
+  if (state.chipStage) {
+    if (point.kind === 'betSpot' || point.kind === 'table' || point.kind === 'pot') {
+      commitChipStage();
+    } else if (point.kind === 'chips' && legal?.canRaise) {
+      setChipStage(legal.maxRaiseTo, false);
+      setModeHint(`All-in · ${fmt(legal.maxRaiseTo)} · click the felt to push`);
+      sfx('allin');
+    } else {
+      clearChipStage();
+    }
+    return;
+  }
+  const legal = currentLegal();
+  if (point.kind === 'holeCards') {
+    beginInspection();
+    return;
+  }
+  if (point.kind === 'chips') {
+    if (legal) openChipStage();
+    else setModeHint('Your chips · they wait for your turn');
+    return;
+  }
+  if (point.kind === 'betSpot') {
+    if (!legal) return;
+    if (legal.canCheck) {
+      state.view.tapTable();
+      sfx('tap');
+      submitPlayerAction('check');
+    } else {
+      openChipStage({ amount: legal.callAmount });
+    }
+    return;
+  }
+  if (point.kind === 'table') {
+    if (legal && legal.canCheck) {
+      state.view.tapTable();
+      sfx('tap');
+      submitPlayerAction('check');
+    } else if (legal) {
+      setModeHint('Move chips to the betting line to call or raise');
+    } else {
+      state.view.observeBoard();
+    }
+    return;
+  }
+  if (point.kind === 'board') { state.view.observeBoard(); return; }
+  if (point.kind === 'pot') { state.view.observePot(); return; }
+  if (point.kind === 'dealer') { state.view.observeDealer(); return; }
+  if (point.kind === 'puck') { state.view.observePuck(); return; }
+  if (point.kind === 'seat') {
+    state.view.observeSeat(point.seat);
+    const seat = state.game.seats[point.seat];
+    if (seat) showTableMessage(`${seat.name} · ${fmt(seat.stack)} behind`, 1200);
+    return;
+  }
+}
+
+function beginCardDrag(event, point) {
+  const legal = currentLegal();
+  if (!legal || state.chipStage || point.kind !== 'holeCards') return false;
+  state.dragState = {
+    startX: event.clientX, startY: event.clientY, pointerId: event.pointerId,
+    amount: 0, active: false
+  };
+  return true;
+}
+
+function updateCardDrag(event) {
+  const drag = state.dragState;
+  if (!drag) return;
+  const dx = event.clientX - drag.startX;
+  const dy = event.clientY - drag.startY;
+  const distance = Math.hypot(dx, dy);
+  if (distance > 8) drag.active = true;
+  if (!drag.active) return;
+  drag.amount = Math.max(0, Math.min(1, distance / 150));
+  state.view?.dragCards(drag.amount);
+}
+
+function finishCardDrag() {
+  const drag = state.dragState;
+  if (!drag) return;
+  state.dragState = null;
+  if (drag.active && drag.amount > 0.55) {
+    sfx('fold');
+    submitPlayerAction('fold');
+    if (state.game?.human?.folded) state.view?.releaseCardDrag();
+    else state.view?.clearCardDrag();
+  } else {
+    state.view?.clearCardDrag();
+    beginInspection();
+  }
+}
+
+function beginInspection() {
+  state.inspecting = true;
+  document.body.classList.add('is-inspecting');
+  state.view?.inspect(0);
+  setModeHint('Click anywhere to put the cards back');
+  hideInteractionHint();
+  sfx('card');
 }
 
 function submitPlayerAction(type, raiseTo) {
   if (!state.game || state.paused) return;
   const legal = state.game.legalActions(0);
   if (!legal) return;
+  state.chipStage = null;
   hideActions();
+  hideModeHint();
+  hideInteractionHint();
+  state.view?.clearStagedBet();
   const result = state.game.act(0, type, raiseTo);
   if (!result.ok) {
     showError(result.error || 'That action is not available.');
@@ -480,9 +736,15 @@ function beginTurn(delay = 0) {
     state.view.setActor(game.actor);
     updateSeatLabels();
     if (game.actor === 0) {
+      if (!state.view.isInspecting(0)) state.view.releaseFocus(0.4);
       showPlayerActions();
       return;
     }
+    clearChipStage();
+    hideModeHint();
+    hideInteractionHint();
+    if (els.immersiveTurn) els.immersiveTurn.textContent = `${seatName(game.actor)} thinking`;
+    state.view.glanceAtSeat(game.actor);
     state.aiTimer = window.setTimeout(() => runAI(token), thinkTime());
   }, delay);
 }
@@ -518,8 +780,10 @@ function startHand() {
   state.gameOverShown = false;
   state.lastReveals = [];
   state.lastResult = null;
+  clearChipStage();
   state.view.clearHighlights();
   state.view.clearActor();
+  state.view.releaseFocus(0.4);
   const events = state.game.startHand();
   processEvents(events);
   syncTable();
@@ -544,6 +808,9 @@ function scheduleAutoNext(seconds = 7) {
   const tick = () => {
     const remaining = Math.max(0, deadline - performance.now());
     els.resultCountdown.textContent = remaining > 0 ? `Next hand in ${Math.ceil(remaining / 1000)}s` : 'Dealing…';
+    if (els.resultTiny && !els.resultTiny.hidden) {
+      els.resultTiny.textContent = `${state.resultLine} · ${remaining > 0 ? `${Math.ceil(remaining / 1000)}s` : 'dealing'}`;
+    }
     if (remaining <= 0) window.clearInterval(state.countdownTimer);
   };
   tick();
@@ -564,6 +831,8 @@ function processEvents(events) {
     switch (event.type) {
       case 'hand-start': {
         hideActions();
+        clearChipStage();
+        hideInteractionHint();
         state.lastReveals = [];
         state.lastResult = null;
         hideResult();
@@ -584,10 +853,12 @@ function processEvents(events) {
       }
       case 'hole': {
         state.view.dealHole(event.seat, event.cards, event.faceUp);
+        sfx('card');
         if (event.seat === 0) {
           addLogText(`Your cards: ${cardsText(event.cards)}`, { player: true });
           updatePlayerCards();
           updateSeatLabels();
+          setModeHint('Your cards are on the felt · look down and click them');
         }
         break;
       }
@@ -596,7 +867,13 @@ function processEvents(events) {
         state.view.clearActor();
         addLogText(actionWords(event), { player: event.seat === 0 });
         state.view.react(event.seat, event.action, event.amount);
+        if (event.action === 'raise' || event.action === 'all-in') sfx(event.action === 'all-in' ? 'allin' : 'chips');
+        else if (event.action === 'call') sfx('chips');
+        else if (event.action === 'check') sfx('tap');
+        else if (event.action === 'fold') sfx('fold');
+        if (event.seat !== 0 && game.isBetting) state.view.glanceAtSeat(event.seat);
         if (event.seat === 0) {
+          state.chipStage = null;
           if (event.action === 'raise' || event.action === 'bet' || event.action === 'all-in') showTableMessage(`Raised to ${fmt(event.raiseTo || event.amount)}`, 1300);
           else if (event.action === 'call') showTableMessage(`Called ${fmt(event.amount)}`, 1100);
           else if (event.action === 'check') showTableMessage('Check', 900);
@@ -612,6 +889,8 @@ function processEvents(events) {
         state.view.collectBets();
         state.view.setPot(event.pot);
         state.view.dealBoard(event.board, event.newCards);
+        sfx('card');
+        state.view.watchBoard();
         updateStreet(event.phase);
         const label = { flop: 'Flop', turn: 'Turn', river: 'River' }[event.phase] || 'Next street';
         addLogText(`${label} · ${cardsText(event.newCards)}`);
@@ -623,6 +902,8 @@ function processEvents(events) {
       case 'showdown': {
         state.lastReveals = event.reveals || [];
         state.view.revealShowdown(event.reveals || []);
+        state.view.watchShowdown();
+        sfx('card');
         updateStreet('showdown');
         hideActions();
         showTableMessage('Showdown', 2100);
@@ -635,6 +916,7 @@ function processEvents(events) {
         if (primary) {
           state.view.sweepPotTo(primary.seat);
           state.view.showWinner(primary.seat);
+          if (primary.seat === 0) sfx('win');
         }
         updatePlayerCards();
         break;
@@ -642,7 +924,11 @@ function processEvents(events) {
       case 'hand-end': {
         state.lastResult = event;
         hideActions();
+        clearChipStage();
+        hideInteractionHint();
         state.view.clearActor();
+        state.view.releaseFocus(0.6);
+        state.view.handEnd(event.winners);
         state.view.setPot(0);
         state.view.updateStacks(game.seats.map((seat) => seat.stack));
         updateSeatLabels();
@@ -709,6 +995,14 @@ function showResultPanel(result) {
   }));
   els.resultAmount.textContent = fmt(result.totalPot);
   els.result.hidden = false;
+  state.resultLine = `${els.resultTitle.textContent} · ${fmt(result.totalPot)}`;
+  if (els.resultTiny) {
+    els.resultTiny.textContent = state.resultLine;
+    els.resultTiny.hidden = false;
+  }
+  if (els.interaction) els.interaction.hidden = true;
+  if (els.modeHint) els.modeHint.hidden = true;
+  if (els.immersiveTurn) els.immersiveTurn.textContent = '';
   state.view.clearActor();
   if (state.gameOverPending) {
     els.next.hidden = true;
@@ -722,6 +1016,8 @@ function showResultPanel(result) {
 
 function hideResult() {
   els.result.hidden = true;
+  if (els.resultTiny) { els.resultTiny.hidden = true; els.resultTiny.textContent = ''; }
+  state.resultLine = '';
   window.clearTimeout(state.nextTimer);
   window.clearInterval(state.countdownTimer);
   els.resultCountdown.textContent = '';
@@ -771,7 +1067,9 @@ function openModal(name) {
   if (state.inGame) {
     state.paused = true;
     clearTurnTimers();
+    clearChipStage();
     hideActions();
+    hideInteractionHint();
     state.view?.setLook(0, 0);
   }
   window.setTimeout(() => {
@@ -819,6 +1117,19 @@ function resetHud() {
   els.logDot.hidden = true;
   els.pot.textContent = '0';
   els.playerStack.textContent = '10,000';
+  if (els.resultTiny) { els.resultTiny.hidden = true; els.resultTiny.textContent = ''; }
+  if (els.interaction) els.interaction.hidden = true;
+  if (els.modeHint) { els.modeHint.hidden = true; els.modeHint.textContent = ''; }
+  if (els.immersivePot) els.immersivePot.textContent = '0';
+  if (els.immersiveStack) els.immersiveStack.textContent = '10,000';
+  if (els.immersiveTurn) els.immersiveTurn.textContent = '';
+  state.chipStage = null;
+  state.dragState = null;
+  state.hover = null;
+  state.inspecting = false;
+  state.suppressClick = false;
+  document.body.classList.remove('immersive-table');
+  document.body.classList.remove('is-inspecting');
   els.playerCards.replaceChildren();
   els.playerHand.textContent = '';
   els.playerState.textContent = '';
@@ -854,6 +1165,8 @@ function startSession(seatCount) {
   state.lastResult = null;
   clearLog();
   resetHud();
+  document.body.classList.add('immersive-table');
+  warmAudio();
   els.setup.hidden = true;
   const profiles = AI_PROFILES.slice(0, seatCount - 1);
   const configs = [
@@ -901,10 +1214,13 @@ function leaveTable(goMenu = true) {
   state.inGame = false;
   state.hudVisible = false;
   hideActions();
+  clearChipStage();
   hideResult();
+  hideInteractionHint();
   els.gameover.hidden = true;
   els.hud.hidden = true;
   document.body.classList.remove('in-game');
+  document.body.classList.remove('immersive-table');
   els.logPanel.classList.remove('is-open');
   state.logOpen = false;
   fadeTo(true);
@@ -1106,23 +1422,91 @@ function bindEvents() {
 
   window.addEventListener('pointermove', (event) => {
     if (!state.view || !state.inGame || state.paused || !state.hudVisible) return;
+    state.pointer.x = event.clientX;
+    state.pointer.y = event.clientY;
+    if (state.dragState) {
+      updateCardDrag(event);
+      if (state.dragState.active) return;
+    }
     if (performance.now() < state.lookArmedAt) {
       state.view.setLook(0, 0);
       return;
     }
     if (event.target.closest && event.target.closest('button, input, select, .modal, .result, .log-panel')) {
       state.view.setLook(0, 0);
+      hideInteractionHint();
       return;
     }
     const nx = (event.clientX / Math.max(1, window.innerWidth)) * 2 - 1;
     const ny = (event.clientY / Math.max(1, window.innerHeight)) * 2 - 1;
     state.view.setLook(nx, ny);
+    if (!state.view.isInspecting(0)) {
+      const point = state.view.pick(event.clientX, event.clientY);
+      if (point) showInteractionHint(point.kind, event.clientX, event.clientY);
+      else hideInteractionHint();
+    }
   });
-  document.addEventListener('mouseleave', () => state.view?.setLook(0, 0));
+
+  window.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0 || !state.view || !state.inGame || state.paused || !state.hudVisible) return;
+    if (event.target.closest && event.target.closest('button, input, select, .modal, .result, .log-panel')) return;
+    if (!els.result.hidden) return;
+    if (state.view.isInspecting(0)) {
+      state.view.cancelInspect(0);
+      state.suppressClick = true;
+      state.press = null;
+      return;
+    }
+    const point = state.view.pick(event.clientX, event.clientY);
+    state.press = { x: event.clientX, y: event.clientY, at: performance.now() };
+    if (point) beginCardDrag(event, point);
+  });
+
+  window.addEventListener('pointerup', (event) => {
+    if (state.suppressClick) { state.suppressClick = false; return; }
+    if (event.button !== 0 || !state.view || !state.inGame || state.paused || !state.hudVisible) {
+      state.dragState = null;
+      state.press = null;
+      return;
+    }
+    if (state.dragState) {
+      finishCardDrag();
+      state.press = null;
+      return;
+    }
+    const press = state.press;
+    state.press = null;
+    if (!press) return;
+    if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > 12) return;
+    if (event.target.closest && event.target.closest('button, input, select, .modal, .result, .log-panel')) return;
+    const point = state.view.pick(event.clientX, event.clientY);
+    if (point) interactAt(point);
+  });
+
+  window.addEventListener('pointercancel', () => {
+    state.press = null;
+    state.dragState = null;
+    state.suppressClick = false;
+    state.view?.clearCardDrag();
+  });
+
+  window.addEventListener('wheel', (event) => {
+    if (!state.chipStage || !currentLegal()) return;
+    event.preventDefault();
+    const step = event.shiftKey ? 100 : 25;
+    adjustChipStage(event.deltaY < 0 ? step : -step);
+  }, { passive: false });
+
+  document.addEventListener('mouseleave', () => {
+    state.view?.setLook(0, 0);
+    hideInteractionHint();
+  });
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       if (state.modal) { closeModal(); return; }
+      if (state.chipStage) { clearChipStage(); return; }
+      if (state.view?.isInspecting(0)) { state.view.cancelInspect(0); return; }
       if (!els.setup.hidden) { closeSetup(); return; }
       if (state.inGame && state.hudVisible) { openModal('pause'); return; }
     }
@@ -1134,20 +1518,47 @@ function bindEvents() {
       startNextHand();
       return;
     }
-    if (els.actionBar.hidden) {
-      if (event.key.toLowerCase() === 'v') toggleCinema();
-      if (event.key.toLowerCase() === 'l') toggleLog();
+    const key = event.key.toLowerCase();
+    if (key === 'v') { toggleCinema(); return; }
+    if (key === 'l') { toggleLog(); return; }
+    const legal = currentLegal();
+    if (key === 'arrowup' || key === 'arrowdown') {
+      if (state.chipStage) {
+        event.preventDefault();
+        adjustChipStage(key === 'arrowup' ? (event.shiftKey ? 100 : 25) : -(event.shiftKey ? 100 : 25));
+      }
       return;
     }
-    const legal = state.game?.legalActions(0);
+    if (key === 'enter' || event.code === 'Space') {
+      if (state.chipStage) { event.preventDefault(); commitChipStage(); return; }
+      if (legal && legal.canCheck) {
+        event.preventDefault();
+        state.view?.tapTable();
+        sfx('tap');
+        submitPlayerAction('check');
+      }
+      return;
+    }
     if (!legal) return;
-    const key = event.key.toLowerCase();
-    if (key === 'f') { event.preventDefault(); submitPlayerAction('fold'); }
-    else if (key === 'c') { event.preventDefault(); submitPlayerAction(legal.canCheck ? 'check' : 'call'); }
-    else if (key === 'r' && legal.canRaise) { event.preventDefault(); submitPlayerAction('raise', clampRaise(els.raiseRange.value, legal)); }
-    else if (key === 'a' && legal.canRaise) { event.preventDefault(); submitPlayerAction('raise', legal.maxRaiseTo); }
-    else if (key === 'v') toggleCinema();
-    else if (key === 'l') toggleLog();
+    if (key === 'f') {
+      event.preventDefault();
+      clearChipStage();
+      sfx('fold');
+      submitPlayerAction('fold');
+    } else if (key === 'c') {
+      event.preventDefault();
+      clearChipStage();
+      if (legal.canCheck) { state.view?.tapTable(); sfx('tap'); }
+      else sfx('chips');
+      submitPlayerAction(legal.canCheck ? 'check' : 'call');
+    } else if (key === 'r' && legal.canRaise) {
+      event.preventDefault();
+      if (state.chipStage) setChipStage(legal.minRaiseTo, false);
+      else openChipStage({ amount: legal.minRaiseTo });
+    } else if (key === 'a' && legal.canRaise) {
+      event.preventDefault();
+      allInPhysical();
+    }
   });
 }
 
@@ -1190,6 +1601,14 @@ function frame(now) {
   if (state.view) {
     state.view.update(dt, now);
     state.view.render();
+    if (state.inspecting && !state.view.isInspecting(0)) {
+      state.inspecting = false;
+      document.body.classList.remove('is-inspecting');
+      if (state.inGame && state.hudVisible && els.result.hidden) {
+        if (currentLegal()) showPlayerActions();
+        else hideModeHint();
+      }
+    }
     if (state.hudVisible) placeSeatLabels();
     watchPerformance(now);
   }
@@ -1217,3 +1636,10 @@ function init() {
 }
 
 init();
+
+// The display face is decorative; load it after the room is already running
+// so a slow or blocked font request can never hold the game behind it.
+const fontLink = document.createElement('link');
+fontLink.rel = 'stylesheet';
+fontLink.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&display=swap';
+document.head.appendChild(fontLink);

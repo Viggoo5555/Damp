@@ -10,12 +10,13 @@ import {
 } from './assets.js';
 import { tween, easeOutCubic } from './tween.js';
 
-export const CARD_WIDTH = 0.188;
-export const CARD_HEIGHT = 0.264;
+// Standard poker card: 63.5 x 88.9 mm, 0.5 mm stock.
+export const CARD_WIDTH = 0.0635;
+export const CARD_HEIGHT = 0.0889;
 
-const bodyGeometry = new RoundedBoxGeometry(CARD_WIDTH, CARD_HEIGHT, 0.0032, 2, 0.012);
+const bodyGeometry = new RoundedBoxGeometry(CARD_WIDTH, CARD_HEIGHT, 0.0007, 1, 0.0016);
 const faceGeometry = new THREE.PlaneGeometry(CARD_WIDTH * 0.965, CARD_HEIGHT * 0.967);
-const bodyMaterial = new THREE.MeshStandardMaterial({ color: '#f4eee2', roughness: 0.72 });
+const bodyMaterial = new THREE.MeshStandardMaterial({ color: '#d8cbb8', roughness: 0.78 });
 const backMaterial = new THREE.MeshStandardMaterial({
   map: cardBackTexture(), transparent: true, roughness: 0.58, metalness: 0.02
 });
@@ -23,14 +24,14 @@ const faceMaterialCache = new Map();
 
 function faceMaterial(card) {
   if (!faceMaterialCache.has(card.id)) {
-    faceMaterialCache.set(card.id, new THREE.MeshStandardMaterial({
-      map: cardFaceTexture(card), transparent: true, roughness: 0.56, metalness: 0.015
+    faceMaterialCache.set(card.id, new THREE.MeshBasicMaterial({
+      map: cardFaceTexture(card), color: '#f2eadb', transparent: true, toneMapped: false
     }));
   }
   return faceMaterialCache.get(card.id);
 }
 
-const glowGeometry = new THREE.RingGeometry(0.132, 0.176, 40);
+const glowGeometry = new THREE.RingGeometry(0.045, 0.058, 32);
 const glowMaterial = new THREE.MeshBasicMaterial({
   color: '#e7c27b', transparent: true, opacity: 0.55,
   blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
@@ -49,17 +50,17 @@ export function createCard(card, faceUp = true) {
   inner.add(body);
 
   const front = new THREE.Mesh(faceGeometry, faceMaterial(card));
-  front.position.z = 0.00185;
+  front.position.z = 0.001;
   front.receiveShadow = true;
   inner.add(front);
 
   const back = new THREE.Mesh(faceGeometry, backMaterial);
-  back.position.z = -0.00185;
+  back.position.z = -0.001;
   back.rotation.y = Math.PI;
   inner.add(back);
 
   const glow = new THREE.Mesh(glowGeometry, glowMaterial.clone());
-  glow.position.z = -0.007;
+  glow.position.z = -0.0012;
   glow.scale.set(0.95, 1.32, 1);
   glow.visible = false;
   root.add(glow);
@@ -102,7 +103,7 @@ export function flipCard(cardObject, faceUp, options = {}) {
     ease: (t) => t,
     onUpdate: (eased) => {
       data.inner.rotation.y = start + (target - start) * eased;
-      cardObject.position.y = baseY + Math.sin(eased * Math.PI) * 0.045;
+      cardObject.position.y = baseY + Math.sin(eased * Math.PI) * 0.012;
       if (!swapped && eased >= 0.5) {
         swapped = true;
         data.front.visible = faceUp;
@@ -127,7 +128,8 @@ export function highlightCard(cardObject, on = true) {
   cardObject.userData.glow.visible = on;
 }
 
-const chipGeometry = new THREE.CylinderGeometry(0.0275, 0.0275, 0.0048, 24);
+// 39 mm casino chip, 3.3 mm thick.
+const chipGeometry = new THREE.CylinderGeometry(0.0195, 0.0195, 0.0033, 20);
 const chipMaterials = new Map();
 function materialsFor(value) {
   if (!chipMaterials.has(value)) {
@@ -204,8 +206,8 @@ export function createChipStack(amount, options = {}) {
   const breakdown = expandBreakdown(value, maximum);
   const columns = Math.min(3, Math.max(1, Math.ceil(breakdown.length / 7)));
   const perColumn = Math.ceil(breakdown.length / columns);
-  const spacing = 0.061;
-  const height = 0.0049;
+  const spacing = 0.043;
+  const height = 0.0034;
 
   for (let column = 0; column < columns; column++) {
     const count = Math.min(perColumn, breakdown.length - column * perColumn);
@@ -214,14 +216,14 @@ export function createChipStack(amount, options = {}) {
       chip.position.set(
         (column - (columns - 1) / 2) * spacing,
         0.0026 + i * height,
-        (Math.random() - 0.5) * 0.002
+        (Math.random() - 0.5) * 0.0012
       );
       group.add(chip);
     }
   }
 
   const shadow = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.28 + columns * 0.055, 0.15),
+    new THREE.PlaneGeometry(0.10 + columns * 0.04, 0.07),
     new THREE.MeshBasicMaterial({ map: contactShadowTexture, transparent: true, opacity: 0.6, depthWrite: false })
   );
   shadow.rotation.x = -Math.PI / 2;
@@ -230,24 +232,24 @@ export function createChipStack(amount, options = {}) {
   return group;
 }
 
-export function createPuck(text, radius = 0.055) {
+export function createPuck(text, radius = 0.025) {
   const textures = makePuckTexture(text);
   const side = new THREE.MeshStandardMaterial({ color: '#dfd2b8', roughness: 0.45 });
   const top = new THREE.MeshStandardMaterial({ map: textures, roughness: 0.4 });
-  const puck = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.013, 28), [side, top, top]);
+  const puck = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.008, 24), [side, top, top]);
   puck.castShadow = true;
   puck.receiveShadow = true;
   return puck;
 }
 
 export function createBlindMarker(text) {
-  const puck = createPuck(text, 0.048);
+  const puck = createPuck(text, 0.021);
   const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(0.05, 0.0035, 6, 24),
+    new THREE.TorusGeometry(0.022, 0.0016, 5, 18),
     new THREE.MeshStandardMaterial({ color: '#b09056', metalness: 0.75, roughness: 0.3 })
   );
   rim.rotation.x = -Math.PI / 2;
-  rim.position.y = 0.008;
+  rim.position.y = 0.005;
   puck.add(rim);
   return puck;
 }
@@ -255,11 +257,11 @@ export function createBlindMarker(text) {
 export function animateCardDeal(cardObject, from, to, options = {}) {
   const start = from.clone();
   const end = to.clone();
-  const arc = options.arc ?? 0.22;
+  const arc = options.arc ?? 0.06;
   const duration = options.duration ?? 0.4;
   cardObject.position.copy(start);
   cardObject.rotation.y = options.startYaw ?? Math.random() * Math.PI;
-  cardObject.scale.setScalar(0.92);
+  cardObject.scale.setScalar(0.96);
   tween({
     duration,
     delay: options.delay || 0,
@@ -268,7 +270,7 @@ export function animateCardDeal(cardObject, from, to, options = {}) {
       cardObject.position.lerpVectors(start, end, eased);
       cardObject.position.y += Math.sin(eased * Math.PI) * arc;
       cardObject.rotation.y = (options.startYaw ?? 0) + ((options.endYaw ?? 0) - (options.startYaw ?? 0)) * eased;
-      cardObject.scale.setScalar(0.92 + eased * 0.08);
+      cardObject.scale.setScalar(0.96 + eased * 0.04);
     },
     onDone: () => {
       cardObject.position.copy(end);
@@ -292,7 +294,7 @@ export function animateChipToss(group, from, to, options = {}) {
     ease: easeOutCubic,
     onUpdate: (eased) => {
       group.position.lerpVectors(start, end, eased);
-      group.position.y += Math.sin(eased * Math.PI) * 0.12;
+      group.position.y += Math.sin(eased * Math.PI) * 0.06;
       group.scale.setScalar(0.01 + eased * 0.99);
     },
     onDone: () => {

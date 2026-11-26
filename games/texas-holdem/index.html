@@ -9,8 +9,8 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b0806'/%3E%3Cpath d='M32 10c6 9 15 15 15 23a15 15 0 0 1-30 0c0-8 9-14 15-23z' fill='%23d2af72'/%3E%3Cpath d='M26 50h12v4H26z' fill='%23d2af72'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&display=swap">
   <link rel="stylesheet" href="css/poker.css">
+  <link rel="stylesheet" href="css/immersive.css">
   <script type="importmap">{ "imports": { "three": "../../vendor/three/three.module.js" } }</script>
 </head>
 <body>
@@ -127,6 +127,19 @@
 
   <div id="seat-labels" class="seat-labels" aria-live="off"></div>
   <div id="table-msg" class="table-msg" role="status" aria-live="polite"></div>
+
+  <div class="immersive-hud" aria-live="off">
+    <span class="immersive-chip"><i>Stack</i><b id="immersive-stack">10,000</b></span>
+    <span class="immersive-chip"><i>Pot</i><b id="immersive-pot">0</b></span>
+    <span id="immersive-turn" class="immersive-turn"></span>
+  </div>
+  <div id="interaction" class="interaction" hidden>
+    <i id="interaction-dot" class="interaction-dot" aria-hidden="true"></i>
+    <span id="interaction-hint" class="interaction-hint">inspect</span>
+  </div>
+  <div id="mode-hint" class="mode-hint" role="status" hidden></div>
+  <div id="result-tiny" class="result-tiny" role="status" hidden></div>
+  <div id="focus-vignette" class="focus-vignette" aria-hidden="true"></div>
 
   <div class="hud-bottom">
     <div class="player-panel">
@@ -261,11 +274,14 @@
         <h3>At the table</h3>
         <ul class="control-list">
           <li><kbd>Mouse</kbd><span>Look around the room</span></li>
-          <li><kbd>F</kbd><span>Fold</span></li>
-          <li><kbd>C</kbd><span>Check or call</span></li>
-          <li><kbd>R</kbd><span>Raise the selected amount</span></li>
-          <li><kbd>A</kbd><span>All-in</span></li>
-          <li><kbd>Esc</kbd><span>Pause the table</span></li>
+          <li><kbd>Click cards</kbd><span>Pick them up and inspect your hand</span></li>
+          <li><kbd>Drag cards away</kbd><span>Fold your hand</span></li>
+          <li><kbd>Click chips</kbd><span>Bring chips to the betting line</span></li>
+          <li><kbd>Wheel</kbd><span>Adjust the staged amount</span></li>
+          <li><kbd>Click the felt</kbd><span>Push the chips · check when there is nothing to call</span></li>
+          <li><kbd>Click chips again</kbd><span>Stage the rest of your stack for all-in</span></li>
+          <li><kbd>F / C / R / A</kbd><span>Optional keyboard shortcuts</span></li>
+          <li><kbd>Esc</kbd><span>Cancel an interaction or pause the table</span></li>
         </ul>
       </section>
       <section class="how-ranks">

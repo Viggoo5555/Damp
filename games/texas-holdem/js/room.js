@@ -13,17 +13,18 @@ import {
 } from './assets.js';
 
 export const TABLE = {
-  rx: 1.9,
-  rz: 1.05,
-  topY: 0.785,
-  railY: 0.91,
-  seatRx: 2.45,
-  seatRz: 1.58,
-  dealer: { x: 1.55, z: -1.95, yaw: -0.67 },
-  deck: { x: 1.12, y: 0.8, z: -0.55 },
-  board: { x: 0, y: 0.792, z: 0.02 },
-  pot: { x: 0.62, y: 0.792, z: -0.52 },
-  muck: { x: -0.82, y: 0.79, z: -0.5 }
+  // Full-size oval poker table: 2.70 m across the rail, 1.70 m deep.
+  rx: 1.08,
+  rz: 0.6,
+  topY: 0.78,
+  railY: 0.9,
+  seatRx: 1.63,
+  seatRz: 0.99,
+  dealer: { x: 1.03, z: -1.37, yaw: -0.67 },
+  deck: { x: 0.66, y: 0.79, z: -0.36 },
+  board: { x: 0, y: 0.785, z: 0.0 },
+  pot: { x: 0.34, y: 0.785, z: -0.28 },
+  muck: { x: -0.48, y: 0.784, z: -0.28 }
 };
 
 export const ROOM = { width: 12.4, depth: 10.8, height: 4.25 };
@@ -318,7 +319,7 @@ export function buildRoom() {
     map: leatherTexture, color: '#4a2f24', roughness: 0.55, sheen: 0.06,
     sheenColor: new THREE.Color('#8d6248'), envMapIntensity: 0.28
   });
-  const feltMat = new THREE.MeshStandardMaterial({ map: feltTexture, roughness: 0.95, envMapIntensity: 0.08 });
+  const feltMat = new THREE.MeshStandardMaterial({ map: feltTexture, color: '#96aa96', roughness: 0.95, envMapIntensity: 0.05 });
   const brassMat = new THREE.MeshStandardMaterial({ color: '#b08a52', metalness: 0.9, roughness: 0.28, envMapIntensity: 1.2 });
   const blackWood = new THREE.MeshPhysicalMaterial({ map: woodRail, color: '#3b2518', roughness: 0.38, clearcoat: 0.2, envMapIntensity: 0.45 });
 
@@ -494,8 +495,8 @@ export function buildRoom() {
   tableGroup.add(felt);
 
   const railBase = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(ringShape(TABLE.rx + 0.25, TABLE.rz + 0.23, TABLE.rx + 0.015, TABLE.rz + 0.0), {
-      depth: 0.1, steps: 1, bevelEnabled: true, bevelSegments: 2, bevelSize: 0.025, bevelThickness: 0.02, curveSegments: 96
+    new THREE.ExtrudeGeometry(ringShape(TABLE.rx + 0.20, TABLE.rz + 0.17, TABLE.rx + 0.015, TABLE.rz + 0.0), {
+      depth: 0.085, steps: 1, bevelEnabled: true, bevelSegments: 2, bevelSize: 0.016, bevelThickness: 0.014, curveSegments: 96
     }),
     railMat
   );
@@ -506,31 +507,31 @@ export function buildRoom() {
   tableGroup.add(railBase);
 
   const armrest = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(ringShape(TABLE.rx + 0.27, TABLE.rz + 0.25, TABLE.rx + 0.06, TABLE.rz + 0.04), {
-      depth: 0.022, steps: 1, bevelEnabled: true, bevelSegments: 3, bevelSize: 0.024, bevelThickness: 0.015, curveSegments: 96
+    new THREE.ExtrudeGeometry(ringShape(TABLE.rx + 0.22, TABLE.rz + 0.19, TABLE.rx + 0.065, TABLE.rz + 0.045), {
+      depth: 0.018, steps: 1, bevelEnabled: true, bevelSegments: 3, bevelSize: 0.014, bevelThickness: 0.01, curveSegments: 96
     }),
     leatherMat
   );
   armrest.rotation.x = -Math.PI / 2;
-  armrest.position.y = TABLE.railY - 0.055;
+  armrest.position.y = TABLE.railY - 0.04;
   armrest.castShadow = true;
   armrest.receiveShadow = true;
   tableGroup.add(armrest);
 
   // brass inlay
-  const inlayCurve = new THREE.EllipseCurve(0, 0, TABLE.rx - 0.07, TABLE.rz - 0.035, 0, Math.PI * 2, false, 0);
+  const inlayCurve = new THREE.EllipseCurve(0, 0, TABLE.rx - 0.04, TABLE.rz - 0.025, 0, Math.PI * 2, false, 0);
   const inlayPoints = inlayCurve.getPoints(220).map((p) => new THREE.Vector3(p.x, 0, p.y));
-  const inlay = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(inlayPoints, true), 220, 0.006, 6, true), brassMat);
+  const inlay = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(inlayPoints, true), 160, 0.0025, 5, true), brassMat);
   inlay.position.y = TABLE.topY + 0.004;
   tableGroup.add(inlay);
 
   // brass tacks around the armrest
-  const tackGeo = new THREE.SphereGeometry(0.013, 8, 6);
-  for (let i = 0; i < 64; i++) {
-    const angle = (i / 64) * Math.PI * 2;
+  const tackGeo = new THREE.SphereGeometry(0.006, 6, 4);
+  for (let i = 0; i < 48; i++) {
+    const angle = (i / 48) * Math.PI * 2;
     const tack = new THREE.Mesh(tackGeo, brassMat);
-    tack.position.set(Math.cos(angle) * (TABLE.rx + 0.195) * 1.0, TABLE.railY - 0.015, Math.sin(angle) * (TABLE.rz + 0.18));
-    tack.scale.setScalar(0.7);
+    tack.position.set(Math.cos(angle) * (TABLE.rx + 0.17), TABLE.railY - 0.02, Math.sin(angle) * (TABLE.rz + 0.15));
+    tack.scale.setScalar(0.75);
     tableGroup.add(tack);
   }
 
@@ -573,18 +574,18 @@ export function buildRoom() {
 
   // dealer tray on the far rail
   const tray = new THREE.Group();
-  tray.position.set(1.18, TABLE.railY - 0.04, -0.98);
-  tray.rotation.y = -0.6;
-  box(tray, 0.7, 0.05, 0.24, blackWood, 0, 0, 0);
+  tray.position.set(0.87, TABLE.railY - 0.025, -0.53);
+  tray.rotation.y = -0.66;
+  box(tray, 0.29, 0.026, 0.095, blackWood, 0, 0, 0);
   for (let i = 0; i < 5; i++) {
     const colour = [[25, '#1f5b3b'], [100, '#181818'], [500, '#4b2864'], [1000, '#a67c28'], [5000, '#6b221d']][i];
     const textures = chipTextures(colour[0]);
-    const chip = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.012, 24), [
+    const chip = new THREE.Mesh(new THREE.CylinderGeometry(0.0195, 0.0195, 0.0033, 20), [
       new THREE.MeshStandardMaterial({ map: textures.side, roughness: 0.4 }),
       new THREE.MeshStandardMaterial({ map: textures.top, roughness: 0.35 }),
       new THREE.MeshStandardMaterial({ map: textures.top, roughness: 0.35 })
     ]);
-    chip.position.set(-0.26 + i * 0.13, 0.045, 0);
+    chip.position.set(-0.09 + i * 0.045, 0.021, 0);
     tray.add(chip);
   }
   tableGroup.add(tray);
@@ -592,12 +593,12 @@ export function buildRoom() {
   // chips under the tray that a dealer keeps to hand
   /* ---------------- light ------------------------------------------- */
 
-  const hemi = new THREE.HemisphereLight('#ffd8aa', '#140c08', 0.5);
+  const hemi = new THREE.HemisphereLight('#ffd8aa', '#140c08', 0.75);
   root.add(hemi);
-  const ambient = new THREE.AmbientLight('#5d3c25', 0.55);
+  const ambient = new THREE.AmbientLight('#5d3c25', 0.85);
   root.add(ambient);
 
-  const tableSpot = new THREE.SpotLight('#ffd3a0', 90, 10, 1.02, 0.72, 1.35);
+  const tableSpot = new THREE.SpotLight('#ffd3a0', 34, 10, 1.02, 0.72, 1.35);
   tableSpot.position.set(0, 3.9, 0.15);
   tableSpot.target.position.set(0, TABLE.topY, 0);
   tableSpot.castShadow = true;
@@ -613,7 +614,7 @@ export function buildRoom() {
   fireLight.position.set(-halfW + 0.9, 0.8, 0.9);
   root.add(fireLight);
 
-  const chandelierLight = new THREE.PointLight('#ffc37b', 50, 8, 1.9);
+  const chandelierLight = new THREE.PointLight('#ffc37b', 32, 8, 1.9);
   chandelierLight.position.set(0, 3.0, 0);
   root.add(chandelierLight);
 

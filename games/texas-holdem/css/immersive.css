@@ -1,0 +1,145 @@
+/* The table is the interface. Keep only what cannot be carved into it. */
+
+.immersive-table .hud-top,
+.immersive-table .pot-panel,
+.immersive-table .seat-labels,
+.immersive-table .hud-bottom,
+.immersive-table .table-msg,
+.immersive-table .result {
+  display: none !important;
+}
+
+.immersive-hud {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  transform: translateX(-50%);
+  color: rgba(233, 219, 191, 0.58);
+  font-family: var(--sans, "Jost", sans-serif);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  text-transform: uppercase;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.immersive-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.immersive-chip i {
+  color: rgba(197, 162, 101, 0.7);
+  font-style: normal;
+  font-size: 7px;
+  letter-spacing: 0.24em;
+}
+.immersive-chip b {
+  color: rgba(243, 228, 199, 0.88);
+  font-family: var(--display, "Cormorant Garamond", serif);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.immersive-turn {
+  color: rgba(236, 203, 139, 0.82);
+  font-size: 8px;
+  letter-spacing: 0.2em;
+}
+.immersive-turn:not(:empty)::before {
+  content: "·";
+  margin-right: 18px;
+  color: rgba(197, 162, 101, 0.4);
+}
+
+.interaction {
+  position: fixed;
+  z-index: 14;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transform: translate(-50%, calc(-100% - 10px));
+  padding: 3px 6px;
+  border: 1px solid rgba(226, 193, 133, 0.24);
+  border-radius: 2px;
+  background: rgba(7, 5, 3, 0.5);
+  color: rgba(239, 223, 193, 0.82);
+  font-family: var(--sans, "Jost", sans-serif);
+  font-size: 7.5px;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: lowercase;
+  text-shadow: 0 1px 4px #000;
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.interaction-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #edd39c;
+  box-shadow: 0 0 7px rgba(237, 211, 156, 0.7);
+  animation: interactionPulse 1.8s ease-in-out infinite;
+}
+@keyframes interactionPulse {
+  0%, 100% { opacity: 0.45; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.mode-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 48px;
+  z-index: 12;
+  max-width: min(640px, 80vw);
+  transform: translateX(-50%);
+  color: rgba(236, 220, 191, 0.64);
+  font-family: var(--sans, "Jost", sans-serif);
+  font-size: 8.5px;
+  letter-spacing: 0.17em;
+  line-height: 1.5;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.95);
+  pointer-events: none;
+}
+
+.result-tiny {
+  position: fixed;
+  left: 50%;
+  bottom: 48px;
+  z-index: 13;
+  transform: translateX(-50%);
+  color: rgba(245, 226, 189, 0.78);
+  font-family: var(--sans, "Jost", sans-serif);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.95);
+  pointer-events: none;
+}
+
+.focus-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  opacity: 0;
+  background: radial-gradient(ellipse at 50% 52%, transparent 0%, transparent 26%, rgba(3, 2, 1, 0.26) 62%, rgba(3, 2, 1, 0.62) 100%);
+  transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+body.is-inspecting .focus-vignette { opacity: 1; }
+
+/* On small screens keep the hint above the safe area. */
+@media (max-width: 760px) {
+  .immersive-hud { bottom: 14px; gap: 12px; font-size: 8px; }
+  .immersive-chip b { font-size: 15px; }
+  .mode-hint, .result-tiny { bottom: 42px; font-size: 8px; max-width: 82vw; }
+}

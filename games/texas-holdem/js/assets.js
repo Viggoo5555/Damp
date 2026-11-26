@@ -705,15 +705,15 @@ export function cardFaceTexture(card) {
   const width = 320;
   const height = 448;
   const { canvas, ctx } = canvas2d(width, height);
-  const colour = suitColour(card.suit) === 'red' ? '#a8232f' : '#191816';
+  const colour = suitColour(card.suit) === 'red' ? '#7d0f18' : '#0f0e0c';
   const glyph = suitGlyph(card.suit);
 
   ctx.clearRect(0, 0, width, height);
   roundedPath(ctx, 4, 4, width - 8, height - 8, 20);
   const paper = ctx.createLinearGradient(0, 0, width, height);
-  paper.addColorStop(0, '#fbf7ed');
-  paper.addColorStop(0.5, '#f4ecdd');
-  paper.addColorStop(1, '#efe5d3');
+  paper.addColorStop(0, '#e7dbc4');
+  paper.addColorStop(0.5, '#dccbaa');
+  paper.addColorStop(1, '#cdb894');
   ctx.fillStyle = paper;
   ctx.fill();
   ctx.save();
@@ -747,9 +747,9 @@ export function cardFaceTexture(card) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = colour;
-    ctx.font = '600 47px "Cormorant Garamond", Georgia, serif';
-    ctx.fillText(rankLabel(card.rank), 40, 56);
-    drawSuit(ctx, glyph, colour, 40, 90, 27);
+    ctx.font = '700 68px "Cormorant Garamond", Georgia, serif';
+    ctx.fillText(rankLabel(card.rank), 40, 58);
+    drawSuit(ctx, glyph, colour, 40, 100, 34);
     ctx.restore();
   };
   drawCorner(false);

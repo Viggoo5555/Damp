@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Texas Hold'em — Damp</title>
+  <meta name="description" content="A cinematic 3D Texas Hold'em table inside The Damp Room. Six seats, no-limit blinds, five distinct opponents and a dealer across the felt.">
+  <meta name="theme-color" content="#080604">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b0806'/%3E%3Cpath d='M32 10c6 9 15 15 15 23a15 15 0 0 1-30 0c0-8 9-14 15-23z' fill='%23d2af72'/%3E%3Cpath d='M26 50h12v4H26z' fill='%23d2af72'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&display=swap">
+  <link rel="stylesheet" href="css/poker.css">
+  <script type="importmap">{ "imports": { "three": "../../vendor/three/three.module.js" } }</script>
+</head>
+<body>
+
+<canvas id="gl" aria-label="The Damp Room: a private 3D poker table in a dark luxury casino"></canvas>
+<div class="vignette" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+<div class="hud-wash" aria-hidden="true"></div>
+
+<div id="loading" class="loading">
+  <div class="loading-inner">
+    <div class="loading-spade" aria-hidden="true">♠</div>
+    <p>Preparing the room</p>
+    <div class="loading-line"><span></span></div>
+    <small>Three.js · real cards · real chips</small>
+  </div>
+</div>
+
+<section id="menu" class="menu" aria-label="Texas Hold'em main menu">
+  <div class="menu-wash" aria-hidden="true"></div>
+  <header class="menu-header">
+    <a class="damp-mark" href="../../index.html" data-exit aria-label="Damp home">damp <span>/ private tables</span></a>
+    <div class="header-meta">
+      <span class="table-tag">Table Nº 7</span>
+      <span class="header-divider"></span>
+      <button class="text-button" type="button" data-open="how">How to play</button>
+      <button class="text-button" type="button" data-open="settings">Settings</button>
+      <button class="text-button" type="button" data-open="credits">Credits</button>
+      <a class="text-button" href="../../index.html" data-exit>Exit</a>
+    </div>
+  </header>
+
+  <div class="menu-layout">
+    <div class="menu-copy">
+      <p class="eyebrow"><span></span>The Damp Room<i></i>No-limit hold'em</p>
+      <h1 class="title"><span>Texas</span><em>Hold'em</em></h1>
+      <p class="tagline">A quiet room. A green table.<br>Everything on the line.</p>
+
+      <div id="menu-actions" class="menu-actions">
+        <button id="btn-play" class="play-button" type="button">
+          <span class="play-glyph" aria-hidden="true">♠</span>
+          <span class="play-copy"><strong>Play</strong><em>Take a seat</em></span>
+          <span class="play-arrow" aria-hidden="true">→</span>
+        </button>
+        <nav class="menu-links" aria-label="Main menu">
+          <button type="button" data-open="settings">Settings</button>
+          <button type="button" data-open="how">How to play</button>
+          <button type="button" data-open="credits">Credits</button>
+          <a href="../../index.html" data-exit>Exit</a>
+        </nav>
+      </div>
+
+      <p class="menu-footnote"><span class="live-dot"></span>Private table · 6-max · 50 / 100 blinds<br><span>Move the mouse to look around. No account, no downloads.</span></p>
+    </div>
+  </div>
+
+  <aside id="setup" class="setup" hidden aria-labelledby="setup-title">
+    <button id="setup-back" class="setup-back" type="button" aria-label="Back to the menu">←</button>
+    <p class="eyebrow"><span></span>A seat is waiting</p>
+    <h2 id="setup-title">Choose your table</h2>
+    <p class="setup-lede">Every seat is a different temperament. Pick the size of the game.</p>
+    <div class="seat-picker" role="radiogroup" aria-label="Number of players">
+      <button type="button" data-seats="2" role="radio" aria-checked="false"><strong>2</strong><span>Heads-up</span></button>
+      <button type="button" data-seats="3" role="radio" aria-checked="false"><strong>3</strong><span>Three</span></button>
+      <button type="button" data-seats="4" role="radio" aria-checked="false"><strong>4</strong><span>Four</span></button>
+      <button type="button" data-seats="5" role="radio" aria-checked="false"><strong>5</strong><span>Five</span></button>
+      <button type="button" data-seats="6" role="radio" aria-checked="true"><strong>6</strong><span>Full table</span></button>
+    </div>
+    <p id="seat-desc" class="seat-desc">Six-handed. The full cast takes their seats.</p>
+    <dl class="table-facts">
+      <div><dt>Buy-in</dt><dd>10,000</dd></div>
+      <div><dt>Blinds</dt><dd>50 / 100</dd></div>
+      <div><dt>Game</dt><dd>No-limit</dd></div>
+    </dl>
+    <button id="btn-deal" class="deal-button" type="button">Deal me in <span aria-hidden="true">→</span></button>
+    <p class="fineprint">Play money only. No purchases, no accounts, no real money.</p>
+  </aside>
+
+  <footer class="menu-footer">
+    <span>Play money only · No accounts · Take your time</span>
+    <span>© <span id="year"></span> Damp</span>
+  </footer>
+</section>
+
+<div id="hud" class="hud" hidden>
+  <header class="hud-top">
+    <div class="hud-brand">
+      <span class="hud-mark">♠</span>
+      <div><strong>Texas Hold'em</strong><span>The Damp Room</span></div>
+    </div>
+    <div class="hud-hand-meta">
+      <span id="hand-no">Hand 1</span>
+      <i></i>
+      <span id="hand-blinds">Blinds 50 / 100</span>
+    </div>
+    <div class="hud-tools">
+      <button id="btn-log" class="tool-button" type="button" aria-label="Hand history" aria-expanded="false"><span>History</span><b id="log-dot" class="tool-dot" hidden></b></button>
+      <button id="btn-cinema" class="tool-button" type="button" aria-pressed="false"><span>Cinematic</span></button>
+      <button id="btn-settings" class="tool-button" type="button" data-open="settings">Settings</button>
+      <button id="btn-pause" class="tool-button pause-button" type="button" aria-label="Pause menu">Menu</button>
+    </div>
+  </header>
+
+  <div class="pot-panel">
+    <div class="pot-line"><span>Pot</span><strong id="pot-amount">0</strong></div>
+    <div class="street-track" id="street-track" aria-label="Hand progression">
+      <span data-street="preflop">Pre-flop</span>
+      <span data-street="flop">Flop</span>
+      <span data-street="turn">Turn</span>
+      <span data-street="river">River</span>
+      <span data-street="showdown">Showdown</span>
+    </div>
+  </div>
+
+  <div id="seat-labels" class="seat-labels" aria-live="off"></div>
+  <div id="table-msg" class="table-msg" role="status" aria-live="polite"></div>
+
+  <div class="hud-bottom">
+    <div class="player-panel">
+      <div class="player-panel-top"><span>You</span><span id="player-state" class="player-state"></span></div>
+      <div class="player-panel-stack"><span class="chip-glyph" aria-hidden="true">◉</span><strong id="player-stack">10,000</strong></div>
+      <div id="player-hand" class="player-hand"><span id="player-cards" class="hole-tags"></span><span id="player-hand-name">Ace high</span></div>
+    </div>
+
+    <div id="action-bar" class="action-bar" hidden>
+      <div class="action-head">
+        <span id="turn-label">Your turn</span>
+        <strong id="hand-name">Ace high</strong>
+      </div>
+      <div class="action-controls">
+        <div id="raise-panel" class="raise-panel">
+          <div class="raise-quick" id="raise-quick">
+            <button type="button" data-fraction="0.5">½ pot</button>
+            <button type="button" data-fraction="0.75">¾ pot</button>
+            <button type="button" data-fraction="1">Pot</button>
+            <button type="button" id="btn-all-in">All-in</button>
+          </div>
+          <div class="raise-line">
+            <label for="raise-range">Raise to</label>
+            <input id="raise-range" type="range" min="200" max="2000" step="25" value="400">
+            <output id="raise-value" for="raise-range">400</output>
+          </div>
+        </div>
+        <div class="action-buttons">
+          <button id="btn-fold" class="action-button fold" type="button">Fold <kbd>F</kbd></button>
+          <button id="btn-call" class="action-button call" type="button">Check <kbd>C</kbd></button>
+          <button id="btn-raise" class="action-button raise" type="button">Raise <kbd>R</kbd></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="hand-meta-side">
+      <span>Table Nº 7</span>
+      <strong id="side-phase">Pre-flop</strong>
+    </div>
+  </div>
+
+  <aside id="log-panel" class="log-panel" aria-label="Hand history" aria-hidden="true">
+    <header class="log-head">
+      <div><span>Table notes</span><h2>Hand history</h2></div>
+      <button id="btn-log-close" type="button" aria-label="Close history">×</button>
+    </header>
+    <ol id="log-list" class="log-list"></ol>
+    <footer class="log-foot"><span>Play money · Table Nº 7</span><span>No hands recorded</span></footer>
+  </aside>
+
+  <div id="result" class="result" hidden>
+    <div class="result-sheet">
+      <p class="result-kicker">Hand complete</p>
+      <h2 id="result-title">You win</h2>
+      <p id="result-sub" class="result-sub"></p>
+      <div id="result-cards" class="result-cards"></div>
+      <div class="result-paid"><span>Paid from the pot</span><strong id="result-amount">0</strong></div>
+      <div class="result-actions">
+        <button id="btn-next" class="deal-button small" type="button">Next hand <span aria-hidden="true">→</span></button>
+        <span id="result-countdown" class="result-countdown"></span>
+      </div>
+    </div>
+  </div>
+
+  <div id="gameover" class="result gameover" hidden>
+    <div class="result-sheet">
+      <p class="result-kicker">Table closed</p>
+      <h2 id="gameover-title">You're out</h2>
+      <p id="gameover-sub" class="result-sub"></p>
+      <div class="result-actions stacked">
+        <button id="btn-again" class="deal-button small" type="button">Sit again <span aria-hidden="true">→</span></button>
+        <button id="btn-menu" class="ghost-button" type="button">Back to the menu</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="fade" class="fade" aria-hidden="true"></div>
+
+<div id="modal-settings" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="settings-title">
+  <div class="modal-backdrop" data-close></div>
+  <div class="sheet settings-sheet">
+    <button class="sheet-close" type="button" data-close aria-label="Close settings">×</button>
+    <p class="eyebrow"><span></span>Room preferences</p>
+    <h2 id="settings-title">Settings</h2>
+    <div class="setting-row">
+      <div><label for="set-sensitivity">Look sensitivity</label><p>How far the room turns with your mouse.</p></div>
+      <div class="range-wrap"><input id="set-sensitivity" type="range" min="0.3" max="2" step="0.05" value="1"><output id="set-sensitivity-value">1.00</output></div>
+    </div>
+    <label class="setting-row switch-row">
+      <div><span>Idle motion</span><p>Breathing, glances and the small movements that make a table feel alive.</p></div>
+      <input id="set-sway" type="checkbox" checked><span class="switch" aria-hidden="true"></span>
+    </label>
+    <label class="setting-row switch-row">
+      <div><span>Cinematic camera</span><p>A slow, seated drift. Your mouse still works.</p></div>
+      <input id="set-cinema" type="checkbox"><span class="switch" aria-hidden="true"></span>
+    </label>
+    <div class="setting-row">
+      <div><label for="set-quality">Graphics</label><p>Shadows, render resolution and atmosphere.</p></div>
+      <select id="set-quality" class="select">
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
+    <div class="sheet-actions">
+      <button id="settings-reset" class="ghost-button" type="button">Reset defaults</button>
+      <button class="deal-button small" type="button" data-close>Save &amp; close</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-how" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="how-title">
+  <div class="modal-backdrop" data-close></div>
+  <div class="sheet how-sheet">
+    <button class="sheet-close" type="button" data-close aria-label="Close how to play">×</button>
+    <p class="eyebrow"><span></span>The house rules</p>
+    <h2 id="how-title">How to play</h2>
+    <div class="how-grid">
+      <section class="how-copy">
+        <h3>No-limit Texas Hold'em</h3>
+        <p>Everyone gets two private cards. Five community cards are dealt face up in the middle: the flop, the turn, then the river. Make the best five-card hand from any combination of the seven.</p>
+        <p>Two forced bets start each hand — the small blind and the big blind. The player to the left of the big blind acts first before the flop. After the flop, action starts to the left of the dealer.</p>
+        <h3>The four actions</h3>
+        <ul class="rule-list">
+          <li><strong>Check</strong><span>Pass when there is nothing to call.</span></li>
+          <li><strong>Call</strong><span>Match the current bet.</span></li>
+          <li><strong>Bet / Raise</strong><span>Put more in. The minimum raise is the size of the last raise.</span></li>
+          <li><strong>Fold</strong><span>Give up the hand and any chips already in the pot.</span></li>
+        </ul>
+        <p>If you run out of chips in a hand, you are <strong>all-in</strong>. A side pot is created so the other players can keep betting. At showdown, the best hand in each pot takes it.</p>
+        <h3>At the table</h3>
+        <ul class="control-list">
+          <li><kbd>Mouse</kbd><span>Look around the room</span></li>
+          <li><kbd>F</kbd><span>Fold</span></li>
+          <li><kbd>C</kbd><span>Check or call</span></li>
+          <li><kbd>R</kbd><span>Raise the selected amount</span></li>
+          <li><kbd>A</kbd><span>All-in</span></li>
+          <li><kbd>Esc</kbd><span>Pause the table</span></li>
+        </ul>
+      </section>
+      <section class="how-ranks">
+        <h3>Hand rankings</h3>
+        <p class="rank-note">Strongest at the top.</p>
+        <div id="rank-list" class="rank-list"></div>
+      </section>
+    </div>
+    <div class="sheet-actions"><button class="deal-button small" type="button" data-close>Back to the table</button></div>
+  </div>
+</div>
+
+<div id="modal-credits" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="credits-title">
+  <div class="modal-backdrop" data-close></div>
+  <div class="sheet credits-sheet">
+    <button class="sheet-close" type="button" data-close aria-label="Close credits">×</button>
+    <p class="eyebrow"><span></span>The people behind the room</p>
+    <h2 id="credits-title">Credits</h2>
+    <p class="credits-lede">A private poker room, built for Damp.</p>
+    <dl class="credits-list">
+      <div><dt>Every card, chip, character and room</dt><dd>Generated in code. No stock models, no image assets.</dd></div>
+      <div><dt>3D</dt><dd>Three.js</dd></div>
+      <div><dt>Rules</dt><dd>No-limit Texas Hold'em, 2–6 seats, proper side pots.</dd></div>
+      <div><dt>Opponents</dt><dd>Five fictional regulars with their own habits and tells.</dd></div>
+      <div><dt>Built for</dt><dd>Damp — free browser games for the in-between hours.</dd></div>
+    </dl>
+    <p class="fineprint">This is a play-money game. No accounts, no purchases, no real-money gambling.</p>
+    <div class="sheet-actions"><button class="deal-button small" type="button" data-close>Close</button></div>
+  </div>
+</div>
+
+<div id="modal-pause" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="pause-title">
+  <div class="modal-backdrop" data-close></div>
+  <div class="sheet pause-sheet">
+    <button class="sheet-close" type="button" data-close aria-label="Resume">×</button>
+    <p class="eyebrow"><span></span>Take a breath</p>
+    <h2 id="pause-title">Table paused</h2>
+    <p class="pause-lede">The cards will wait. The room won't.</p>
+    <div class="pause-menu">
+      <button id="btn-resume" class="deal-button" type="button">Resume <span aria-hidden="true">→</span></button>
+      <button type="button" class="pause-link" data-open="settings">Settings</button>
+      <button type="button" class="pause-link" data-open="how">How to play</button>
+      <button id="btn-leave" type="button" class="pause-link danger">Leave the table</button>
+    </div>
+  </div>
+</div>
+
+<div id="error-banner" class="error-banner" hidden role="alert"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

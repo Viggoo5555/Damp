@@ -55,6 +55,14 @@
     "board": true
   },
   {
+    "title": "Texas Hold'em",
+    "description": "A cinematic first-person 3D poker room. Take one of up to six seats for no-limit hold'em against five distinct opponents, with real cards, chips and side pots. Play money only.",
+    "file": "games/texas-holdem/index.html",
+    "category": "Cards",
+    "image": "img/texas-holdem.png",
+    "board": true
+  },
+  {
     "title": "Star Clicker",
     "description": "Click your star, grow it and add orbiting planets.",
     "file": "games/Starclicker.html",
